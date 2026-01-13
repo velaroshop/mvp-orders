@@ -1,87 +1,38 @@
 /**
  * Serviciu pentru căutarea codurilor poștale folosind Geoapify API
+ * 
+ * Abordare:
+ * 1. Folosește Geocoding API pentru a obține coordonatele (lat/lon) din adresă
+ * 2. Folosește Postcode API cu coordonatele pentru a obține codurile poștale
  */
 
-import type { PostalCodeResult, GeoapifyResponse } from "./types";
+import type { PostalCodeResult, GeoapifyGeocodingResponse, GeoapifyPostcodeResponse } from "./types";
 
 const API_KEY = process.env.GEOAPIFY_API_KEY || "2f1914bf75294bf3868ec63c7b4d043d";
-const API_URL = "https://api.geoapify.com/v1/geocode/search";
+const GEOCODING_URL = "https://api.geoapify.com/v1/geocode/search";
+const POSTCODE_URL = "https://api.geoapify.com/v1/postcode/list";
 
 /**
- * Extrage numele străzii din adresă (fără număr)
+ * Obține coordonatele (lat/lon) pentru o adresă folosind Geocoding API
  */
-function extractStreetName(address: string): string {
-  // Elimină numerele și cuvintele comune legate de numere (nr, număr, etc.)
-  // Ex: "logovat nr 3" -> "logovat"
-  // Ex: "strada principală 25" -> "strada principală"
-  const cleaned = address
-    .replace(/\s*(nr|număr|numar|no|#)\s*\d+.*$/i, "") // Elimină "nr 3", "număr 25", etc.
-    .replace(/\s+\d+.*$/, "") // Elimină orice număr la sfârșit
-    .trim();
-  
-  return cleaned || address; // Dacă nu găsește nimic, returnează adresa originală
-}
-
-/**
- * Construiește adresa completă pentru căutare
- * Format: "Strada, Oraș, Județ, România"
- */
-function buildSearchAddress(
+async function getCoordinates(
   address: string,
   city: string,
   county: string,
   country: string = "Romania"
-): string {
-  // Extrage numele străzii (fără număr)
-  const streetName = extractStreetName(address);
+): Promise<{ lat: number; lon: number } | null> {
+  // Construiește adresa completă pentru geocoding
+  const searchText = `${address}, ${city}, ${county}, ${country}`;
   
-  // Construiește adresa în format: "Strada, Oraș, Județ, România"
-  // Prioritizăm: Strada -> Oraș -> Județ -> Țară
-  const parts = [streetName, city, county, country].filter(Boolean);
-  const searchText = parts.join(", ");
-  
-  console.log("[Geoapify] Address parsing:", {
-    original: address,
-    streetName,
-    city,
-    county,
-    searchText,
-  });
-  
-  return searchText;
-}
-
-/**
- * Caută coduri poștale pentru o adresă dată
- */
-export async function searchPostalCodes(
-  address: string,
-  city: string,
-  county: string,
-  country: string = "Romania"
-): Promise<PostalCodeResult[]> {
-  const searchText = buildSearchAddress(address, city, county, country);
-  
-  console.log("[Geoapify] Searching postal codes for:", searchText);
+  console.log("[Geoapify] Geocoding address:", searchText);
 
   try {
-    const url = new URL(API_URL);
-    
-    // Construim query-ul mai specific pentru adrese românești
-    // Încercăm mai întâi cu adresa completă structurată
-    const streetName = extractStreetName(address);
-    
-    // Construim query-ul cu prioritizare: Strada + Oraș + Județ
-    // Format: "Strada, Oraș, Județ, România"
-    const structuredQuery = `${streetName}, ${city}, ${county}, Romania`;
-    
-    url.searchParams.set("text", structuredQuery);
+    const url = new URL(GEOCODING_URL);
+    url.searchParams.set("text", searchText);
     url.searchParams.set("apiKey", API_KEY);
-    url.searchParams.set("limit", "10"); // Limitează la 10 rezultate
-    url.searchParams.set("filter", "countrycode:ro"); // Filtrează doar România
-    url.searchParams.set("lang", "ro"); // Limba română pentru rezultate mai bune
-    
-    console.log("[Geoapify] Query:", structuredQuery);
+    url.searchParams.set("limit", "1"); // Ne interesează doar primul rezultat
+    url.searchParams.set("filter", "countrycode:ro");
+    url.searchParams.set("lang", "ro");
 
     const response = await fetch(url.toString(), {
       method: "GET",
@@ -93,11 +44,85 @@ export async function searchPostalCodes(
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Geoapify API error: ${response.status} ${response.statusText} - ${errorText}`
+        `Geoapify Geocoding API error: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
-    const data: GeoapifyResponse = await response.json();
+    const data: GeoapifyGeocodingResponse = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      console.warn("[Geoapify] No coordinates found for address:", searchText);
+      return null;
+    }
+
+    const feature = data.features[0];
+    const coordinates = feature.geometry.coordinates;
+    const lat = coordinates[1];
+    const lon = coordinates[0];
+
+    console.log("[Geoapify] Found coordinates:", { lat, lon });
+
+    return { lat, lon };
+  } catch (error) {
+    console.error("[Geoapify] Error getting coordinates:", error);
+    throw error;
+  }
+}
+
+/**
+ * Caută coduri poștale pentru o adresă dată
+ * 
+ * Abordare:
+ * 1. Obține coordonatele (lat/lon) din adresă folosind Geocoding API
+ * 2. Folosește Postcode API cu coordonatele pentru a obține codurile poștale din apropiere
+ */
+export async function searchPostalCodes(
+  address: string,
+  city: string,
+  county: string,
+  country: string = "Romania"
+): Promise<PostalCodeResult[]> {
+  console.log("[Geoapify] Searching postal codes for:", { address, city, county });
+
+  try {
+    // Pasul 1: Obține coordonatele pentru adresă
+    const coordinates = await getCoordinates(address, city, county, country);
+    
+    if (!coordinates) {
+      console.warn("[Geoapify] Could not get coordinates, returning empty results");
+      return [];
+    }
+
+    // Pasul 2: Folosește Postcode API cu coordonatele
+    // Folosim un filtru circular (circle) cu raza de 2000m (2km) în jurul coordonatelor
+    const radius = 2000; // metri
+    const filter = `circle:${coordinates.lon},${coordinates.lat},${radius}`;
+    
+    console.log("[Geoapify] Searching postcodes with filter:", filter);
+
+    const url = new URL(POSTCODE_URL);
+    url.searchParams.set("apiKey", API_KEY);
+    url.searchParams.set("countrycode", "ro"); // Doar România
+    url.searchParams.set("limit", "10"); // Maxim 10 rezultate
+    url.searchParams.set("geometry", "original");
+    url.searchParams.set("filter", filter);
+    url.searchParams.set("lang", "ro");
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Geoapify Postcode API error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    const data: GeoapifyPostcodeResponse = await response.json();
 
     // Normalizează numele pentru comparație (fără diacritice, lowercase)
     function normalizeName(name: string): string {
@@ -111,58 +136,50 @@ export async function searchPostalCodes(
     const normalizedCity = normalizeName(city);
     const normalizedCounty = normalizeName(county);
 
-    // Extrage codurile poștale unice din rezultate
+    // Extrage codurile poștale din rezultate
     const postalCodeMap = new Map<string, PostalCodeResult>();
 
-    for (const feature of data.features) {
-      const props = feature.properties;
-      const postcode = props.postcode;
+    if (data.results && Array.isArray(data.results)) {
+      for (const result of data.results) {
+        const postcode = result.postcode;
 
-      if (!postcode) continue;
+        if (!postcode) continue;
 
-      // Verifică dacă rezultatul se potrivește cu orașul sau județul
-      const resultCity = normalizeName(props.city || "");
-      const resultCounty = normalizeName(props.county || "");
-      
-      // Filtrează rezultatele care nu se potrivesc cu orașul sau județul
-      // (dar acceptă dacă nu avem informații despre oraș/județ în rezultat)
-      const cityMatch = !resultCity || resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity);
-      const countyMatch = !resultCounty || resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
-      
-      // Dacă nu se potrivește nici cu orașul, nici cu județul, skip
-      if (resultCity && resultCounty && !cityMatch && !countyMatch) {
-        console.log(`[Geoapify] Skipping result - city/county mismatch:`, {
-          resultCity: props.city,
-          resultCounty: props.county,
-          expectedCity: city,
-          expectedCounty: county,
-        });
-        continue;
-      }
+        // Verifică dacă rezultatul se potrivește cu orașul sau județul
+        const resultCity = normalizeName(result.city || "");
+        const resultCounty = normalizeName(result.county || "");
+        
+        // Filtrează rezultatele care nu se potrivesc cu orașul sau județul
+        const cityMatch = !resultCity || resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity);
+        const countyMatch = !resultCounty || resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
+        
+        // Dacă nu se potrivește nici cu orașul, nici cu județul, skip
+        if (resultCity && resultCounty && !cityMatch && !countyMatch) {
+          console.log(`[Geoapify] Skipping result - city/county mismatch:`, {
+            resultCity: result.city,
+            resultCounty: result.county,
+            expectedCity: city,
+            expectedCounty: county,
+          });
+          continue;
+        }
 
-      // Dacă avem deja acest cod poștal, păstrăm cel cu confidence mai mare
-      const existing = postalCodeMap.get(postcode);
-      const confidence = props.rank?.confidence || 0;
-
-      // Bonus pentru potrivirea cu orașul/județul
-      let adjustedConfidence = confidence;
-      if (cityMatch) adjustedConfidence += 0.1;
-      if (countyMatch) adjustedConfidence += 0.1;
-
-      if (!existing || adjustedConfidence > existing.confidence) {
-        postalCodeMap.set(postcode, {
-          postcode,
-          formatted: props.formatted || `${postcode}, ${props.city || city}, ${props.county || county}`,
-          address: {
-            street: props.street,
-            city: props.city || city,
-            county: props.county || county,
-            country: props.country || country,
-          },
-          confidence: adjustedConfidence,
-          lat: props.lat || feature.geometry.coordinates[1],
-          lon: props.lon || feature.geometry.coordinates[0],
-        });
+        // Dacă avem deja acest cod poștal, păstrăm primul (sau cel mai apropiat)
+        if (!postalCodeMap.has(postcode)) {
+          postalCodeMap.set(postcode, {
+            postcode,
+            formatted: result.formatted || `${postcode}, ${result.city || city}, ${result.county || county}`,
+            address: {
+              street: result.street,
+              city: result.city || city,
+              county: result.county || county,
+              country: result.country || country,
+            },
+            confidence: cityMatch && countyMatch ? 1.0 : 0.8, // Confidence mai mare dacă se potrivește
+            lat: result.lat,
+            lon: result.lon,
+          });
+        }
       }
     }
 

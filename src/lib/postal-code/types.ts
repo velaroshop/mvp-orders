@@ -16,12 +16,12 @@ export interface PostalCodeResult {
   lon?: number;
 }
 
-export interface GeoapifyResponse {
+// Tipuri pentru Geocoding API response
+export interface GeoapifyGeocodingResponse {
   type: string;
   features: Array<{
     type: string;
     properties: {
-      postcode?: string;
       formatted?: string;
       street?: string;
       city?: string;
@@ -30,16 +30,29 @@ export interface GeoapifyResponse {
       country_code?: string;
       lat?: number;
       lon?: number;
-      rank?: {
-        confidence?: number;
-      };
     };
     geometry: {
       type: string;
-      coordinates: [number, number];
+      coordinates: [number, number]; // [lon, lat]
     };
   }>;
   query: {
     text: string;
   };
+}
+
+// Tipuri pentru Postcode API response
+export interface GeoapifyPostcodeResponse {
+  results: Array<{
+    postcode: string;
+    country: string;
+    country_code: string;
+    city?: string;
+    county?: string;
+    state?: string;
+    lat: number;
+    lon: number;
+    formatted?: string;
+    street?: string;
+  }>;
 }

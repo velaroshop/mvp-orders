@@ -472,120 +472,150 @@ class HelpshipClient {
       payload.paymentStatus = updates.paymentStatus;
     }
     
-    // Actualizăm datele clientului și adresa
+    // Dacă trebuie să actualizăm adresa, folosim endpoint-ul specific /updateAddress
     if (updates.customerName || updates.customerPhone || updates.shippingAddress || updates.postalCode) {
-      // Trebuie să construim mailingAddress complet
-      // Mai întâi, obținem comanda curentă pentru a păstra datele existente
       try {
+        // Obținem comanda curentă pentru a păstra datele existente
         const currentOrderResponse = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
           method: "GET",
         });
         
         if (currentOrderResponse.ok) {
           const currentOrder = await currentOrderResponse.json();
+          const currentAddress = currentOrder.mailingAddress || {};
           
           // Construim mailingAddress cu datele actualizate
           const nameParts = updates.customerName?.trim().split(/\s+/) || 
-                           currentOrder.mailingAddress?.name?.trim().split(/\s+/) || [];
+                           currentAddress.name?.trim().split(/\s+/) || [];
           const firstName = nameParts[0] || null;
           const lastName = nameParts.slice(1).join(" ") || null;
           
           const addressParts = updates.shippingAddress?.address?.match(/^(.+?)\s+(\d+.*)$/) || 
-                              currentOrder.mailingAddress?.addressLine1?.match(/^(.+?)\s+(\d+.*)$/) || [];
+                              currentAddress.addressLine1?.match(/^(.+?)\s+(\d+.*)$/) || [];
           const street = addressParts ? addressParts[1]?.trim() : 
                         updates.shippingAddress?.address || 
-                        currentOrder.mailingAddress?.addressLine1;
+                        currentAddress.addressLine1 || "";
           const number = addressParts ? addressParts[2]?.trim() : null;
           
-          payload.mailingAddress = {
-            ...currentOrder.mailingAddress,
-            addressLine1: updates.shippingAddress?.address || currentOrder.mailingAddress?.addressLine1,
+          // Construim payload-ul pentru updateAddress
+          const addressPayload: any = {
+            firstName: firstName || currentAddress.firstName || null,
+            lastName: lastName || currentAddress.lastName || null,
+            addressLine1: updates.shippingAddress?.address || currentAddress.addressLine1 || "",
+            addressLine2: currentAddress.addressLine2 || null,
             street: street,
-            number: number,
-            zip: updates.postalCode || updates.shippingAddress?.zip || currentOrder.mailingAddress?.zip,
-            city: updates.shippingAddress?.city || currentOrder.mailingAddress?.city,
-            province: updates.shippingAddress?.county || currentOrder.mailingAddress?.province,
-            firstName: firstName,
-            lastName: lastName,
-            name: updates.customerName || currentOrder.mailingAddress?.name,
-            phone: updates.customerPhone || currentOrder.mailingAddress?.phone,
+            number: number || currentAddress.number || null,
+            zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,
+            city: updates.shippingAddress?.city || currentAddress.city || "",
+            province: updates.shippingAddress?.county || currentAddress.province || "",
+            countryId: currentAddress.countryId || null,
+            phone: updates.customerPhone || currentAddress.phone || null,
+            email: currentAddress.email || "clienti@velaro-shop.ro",
+            isTaxpayer: currentAddress.isTaxPayer || false,
+            vatRegistrationNumber: currentAddress.vatRegistrationNumber || null,
+            tradeRegisterNumber: currentAddress.tradeRegisterNumber || null,
+            lockerId: currentAddress.lockerId || null,
           };
           
-          payload.firstName = firstName;
-          payload.lastName = lastName;
-          payload.phone = updates.customerPhone || currentOrder.phone;
+          // Folosim endpoint-ul specific pentru actualizarea adresei
+          // Încercăm ambele variante (Order și order) pentru compatibilitate
+          const updateAddressEndpoints = [
+            `/api/order/${helpshipOrderId}/updateAddress`,
+            `/api/Order/${helpshipOrderId}/updateAddress`,
+          ];
+          
+          let addressUpdated = false;
+          for (const updateAddressEndpoint of updateAddressEndpoints) {
+            try {
+              console.log(`[Helpship] Updating address using endpoint: ${updateAddressEndpoint}`);
+          
+              const addressResponse = await this.makeAuthenticatedRequest(updateAddressEndpoint, {
+                method: "POST",
+                body: JSON.stringify(addressPayload),
+              });
+              
+              if (addressResponse.ok) {
+                console.log(`[Helpship] Address updated successfully using ${updateAddressEndpoint}`);
+                addressUpdated = true;
+                break; // Ieșim din loop dacă a reușit
+              } else {
+                const errorText = await addressResponse.text();
+                console.log(`[Helpship] Endpoint ${updateAddressEndpoint} returned ${addressResponse.status}:`, errorText.substring(0, 200));
+              }
+            } catch (err) {
+              console.log(`[Helpship] Endpoint ${updateAddressEndpoint} failed:`, err instanceof Error ? err.message : String(err));
+              continue;
+            }
+          }
+          
+          if (!addressUpdated) {
+            throw new Error(`Failed to update address. Tried: ${updateAddressEndpoints.join(", ")}`);
+          }
         }
       } catch (err) {
-        console.warn("[Helpship] Failed to fetch current order, using provided data only:", err);
-        // Dacă nu putem obține comanda curentă, folosim doar datele furnizate
-        if (updates.shippingAddress) {
-          payload.mailingAddress = {
-            addressLine1: updates.shippingAddress.address,
-            zip: updates.postalCode || updates.shippingAddress.zip,
-            city: updates.shippingAddress.city,
-            province: updates.shippingAddress.county,
-          };
-        }
+        console.error("[Helpship] Failed to update address:", err);
+        throw err;
       }
     }
 
-    // Pentru update-uri complete, încearcă mai multe variante
-    const possibleEndpoints = [
-      `/api/Order/${helpshipOrderId}`,
-      `/api/orders/${helpshipOrderId}`,
-    ];
+    // Dacă mai avem alte câmpuri de actualizat (nu doar adresa), folosim update-ul general
+    if (Object.keys(payload).length > 0) {
+      const possibleEndpoints = [
+        `/api/Order/${helpshipOrderId}`,
+        `/api/orders/${helpshipOrderId}`,
+      ];
 
-    const methods = ["PUT", "PATCH"];
+      const methods = ["PUT", "PATCH"];
 
-    let lastError: Error | null = null;
+      let lastError: Error | null = null;
 
-    for (const endpoint of possibleEndpoints) {
-      for (const method of methods) {
-        try {
-          console.log(`[Helpship] Trying ${method} ${endpoint} for update`);
-          const response = await this.makeAuthenticatedRequest(endpoint, {
-            method,
-            body: JSON.stringify(payload),
-          });
+      for (const endpoint of possibleEndpoints) {
+        for (const method of methods) {
+          try {
+            console.log(`[Helpship] Trying ${method} ${endpoint} for update`);
+            const response = await this.makeAuthenticatedRequest(endpoint, {
+              method,
+              body: JSON.stringify(payload),
+            });
 
-          if (response.ok) {
-            console.log(`[Helpship] Success updating order with ${method} ${endpoint}`);
-            const responseData = await response.json().catch(() => ({}));
-            console.log("[Helpship] Update response:", JSON.stringify(responseData, null, 2));
-            
-            // După update-ul datelor, setăm status-ul dacă e necesar
-            if (shouldSetStatus) {
-              try {
-                await this.setOrderStatus(helpshipOrderId, shouldSetStatus);
-                console.log(`[Helpship] Order status set to ${shouldSetStatus} after update`);
-              } catch (statusError) {
-                console.warn("[Helpship] Failed to set order status after update:", statusError);
-                // Nu aruncăm eroare, update-ul datelor a reușit
-              }
+            if (response.ok) {
+              console.log(`[Helpship] Success updating order with ${method} ${endpoint}`);
+              const responseData = await response.json().catch(() => ({}));
+              console.log("[Helpship] Update response:", JSON.stringify(responseData, null, 2));
+              break; // Ieșim din loop dacă a reușit
+            } else if (response.status !== 404) {
+              const errorText = await response.text();
+              console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
+              lastError = new Error(
+                `Failed to update Helpship order: ${response.status} ${errorText}`,
+              );
             }
-            
-            return;
-          } else if (response.status !== 404) {
-            const errorText = await response.text();
-            console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
-            throw new Error(
-              `Failed to update Helpship order: ${response.status} ${errorText}`,
-            );
+          } catch (err) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            if (err instanceof Error && err.message.includes("Failed to update")) {
+              throw err;
+            }
+            console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
+            continue;
           }
-        } catch (err) {
-          lastError = err instanceof Error ? err : new Error(String(err));
-          if (err instanceof Error && err.message.includes("Failed to update")) {
-            throw err;
-          }
-          console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
-          continue;
         }
+      }
+
+      if (lastError && Object.keys(payload).length > 0) {
+        throw lastError;
       }
     }
 
-    throw new Error(
-      `Failed to find valid endpoint for update. Tried: ${possibleEndpoints.join(", ")}. Last error: ${lastError?.message || "Unknown"}`,
-    );
+    // După update-ul datelor, setăm status-ul dacă e necesar
+    if (shouldSetStatus) {
+      try {
+        await this.setOrderStatus(helpshipOrderId, shouldSetStatus);
+        console.log(`[Helpship] Order status set to ${shouldSetStatus} after update`);
+      } catch (statusError) {
+        console.warn("[Helpship] Failed to set order status after update:", statusError);
+        // Nu aruncăm eroare, update-ul datelor a reușit
+      }
+    }
   }
 }
 

@@ -295,44 +295,47 @@ class HelpshipClient {
    * TODO: Verifică în Swagger dacă există GET /api/Countries sau similar
    */
   async getRomaniaCountryId(): Promise<string | null> {
-    // Încearcă să obțină lista de țări din API
-    const possibleEndpoints = [
-      "/api/Countries",
-      "/api/countries",
-      "/api/Country",
-      "/api/country",
-    ];
+    // Folosim GET /api/Country pentru a obține lista de țări
+    const endpoint = "/api/Country";
 
-    for (const endpoint of possibleEndpoints) {
-      try {
-        console.log(`[Helpship] Trying to get countries from ${endpoint}...`);
-        const response = await this.makeAuthenticatedRequest(endpoint, {
-          method: "GET",
-        });
+    try {
+      console.log(`[Helpship] Getting countries from ${endpoint}...`);
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: "GET",
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`[Helpship] Countries response:`, JSON.stringify(data, null, 2));
-          
-          // Caută România în listă
-          const countries = Array.isArray(data) ? data : data.items || data.data || [];
-          const romania = countries.find(
-            (c: any) =>
-              c.name?.toLowerCase() === "romania" ||
-              c.name?.toLowerCase() === "românia" ||
-              c.code === "RO" ||
-              c.code === "ROU",
-          );
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`[Helpship] Countries response (first 100 chars):`, JSON.stringify(data).substring(0, 100));
+        
+        // Caută România în listă
+        const countries = Array.isArray(data) ? data : data.items || data.data || [];
+        const romania = countries.find(
+          (c: any) =>
+            c.name?.toLowerCase() === "romania" ||
+            c.name?.toLowerCase() === "românia" ||
+            c.alpha2Code === "RO" ||
+            c.alpha2Code === "ROU" ||
+            c.code === "RO" ||
+            c.code === "ROU",
+        );
 
-          if (romania?.id) {
-            console.log(`[Helpship] Found Romania countryId: ${romania.id}`);
-            return romania.id;
+        if (romania?.id) {
+          console.log(`[Helpship] Found Romania countryId: ${romania.id}`);
+          return romania.id;
+        } else {
+          console.warn(`[Helpship] Romania not found in countries list. Total countries: ${countries.length}`);
+          // Log primul country pentru debugging
+          if (countries.length > 0) {
+            console.log(`[Helpship] First country example:`, JSON.stringify(countries[0], null, 2));
           }
         }
-      } catch (err) {
-        console.log(`[Helpship] Endpoint ${endpoint} failed:`, err instanceof Error ? err.message : String(err));
-        continue;
+      } else {
+        const errorText = await response.text();
+        console.error(`[Helpship] Failed to get countries: ${response.status} ${errorText}`);
       }
+    } catch (err) {
+      console.error(`[Helpship] Error getting countries:`, err instanceof Error ? err.message : String(err));
     }
 
     console.warn("[Helpship] Could not find Romania countryId from API");

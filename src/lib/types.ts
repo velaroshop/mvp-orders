@@ -1,0 +1,29 @@
+export type OrderStatus = "pending" | "confirmed";
+
+export type OfferCode = "offer_1" | "offer_2" | "offer_3";
+
+export interface LandingPage {
+  id: string;
+  name: string;
+  publicKey: string;
+  active: boolean;
+}
+
+export interface Order {
+  id: string;
+  landingKey: string;
+  offerCode: OfferCode;
+  phone: string;
+  fullName: string;
+  county: string;
+  city: string;
+  address: string;
+  upsells: string[];
+  subtotal: number;
+  shippingCost: number;
+  total: number;
+  status: OrderStatus;
+  helpshipOrderId?: string;
+  createdAt: string;
+}
+

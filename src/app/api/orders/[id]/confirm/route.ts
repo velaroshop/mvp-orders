@@ -37,9 +37,12 @@ export async function POST(
     // Dacă comanda are helpshipOrderId, actualizează-o în Helpship
     if (order.helpship_order_id) {
       try {
+        console.log(`[Helpship] Attempting to update order ${order.helpship_order_id} status to PENDING...`);
         await helpshipClient.updateOrder(order.helpship_order_id, {
           status: "PENDING",
+          paymentStatus: "Pending", // Asigură-te că paymentStatus rămâne "Pending"
         });
+        console.log(`[Helpship] Order ${order.helpship_order_id} status updated to PENDING.`);
       } catch (helpshipError) {
         // Loghează eroarea dar continuă cu update-ul local
         console.error("Failed to update order in Helpship:", helpshipError);

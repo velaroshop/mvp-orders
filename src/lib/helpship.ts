@@ -240,7 +240,7 @@ class HelpshipClient {
       vatRegistrationNumber: null,
       tradeRegisterNumber: null,
       lockerId: null,
-      paymentProcessing: "Checkout", // Sau altă valoare conform documentației
+      paymentProcessing: "Manual", // Metoda de plată: Manual (nu Checkout)
       paymentStatus: "Pending", // Status-ul plății (rămâne "Pending")
       status: "OnHold", // Status-ul comenzii (trebuie "OnHold" la creare)
       customerNote: null,
@@ -431,6 +431,7 @@ class HelpshipClient {
     helpshipOrderId: string,
     updates: {
       status?: "PENDING" | "ONHOLD";
+      paymentStatus?: "Pending" | "Paid";
       customerName?: string;
       customerPhone?: string;
       shippingAddress?: {
@@ -443,8 +444,9 @@ class HelpshipClient {
   ): Promise<void> {
     console.log(`[Helpship] Updating order ${helpshipOrderId} with:`, JSON.stringify(updates, null, 2));
 
-    // Dacă se schimbă doar status-ul, folosim metoda dedicată
-    if (updates.status && Object.keys(updates).length === 1) {
+    // Dacă se schimbă doar status-ul (și nu paymentStatus), folosim metoda dedicată
+    // Dar dacă trebuie să setăm și paymentStatus, facem update complet
+    if (updates.status && !updates.paymentStatus && Object.keys(updates).length === 1) {
       try {
         // Mapăm status-ul nostru la formatul Helpship
         const helpshipStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
@@ -454,6 +456,24 @@ class HelpshipClient {
         console.warn("[Helpship] Failed to set order status, trying full update:", statusError);
         // Continuă cu update-ul complet
       }
+    }
+
+    // Construim payload-ul pentru update, mapând corect status-ul
+    const payload: any = {};
+    if (updates.status) {
+      payload.status = updates.status === "PENDING" ? "Pending" : "OnHold";
+    }
+    if (updates.paymentStatus) {
+      payload.paymentStatus = updates.paymentStatus;
+    }
+    if (updates.customerName) {
+      payload.customerName = updates.customerName;
+    }
+    if (updates.customerPhone) {
+      payload.customerPhone = updates.customerPhone;
+    }
+    if (updates.shippingAddress) {
+      payload.shippingAddress = updates.shippingAddress;
     }
 
     // Pentru update-uri complete, încearcă mai multe variante
@@ -469,10 +489,10 @@ class HelpshipClient {
     for (const endpoint of possibleEndpoints) {
       for (const method of methods) {
         try {
-          console.log(`[Helpship] Trying ${method} ${endpoint} for full update`);
+          console.log(`[Helpship] Trying ${method} ${endpoint} for update`);
           const response = await this.makeAuthenticatedRequest(endpoint, {
             method,
-            body: JSON.stringify(updates),
+            body: JSON.stringify(payload),
           });
 
           if (response.ok) {

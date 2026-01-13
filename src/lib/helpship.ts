@@ -112,6 +112,7 @@ class HelpshipClient {
     const token = await this.getAccessToken();
 
     const url = `${this.apiBaseUrl}${endpoint}`;
+    console.log("[Helpship] Making request to:", url);
     const headers = {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -164,10 +165,49 @@ class HelpshipClient {
 
     console.log("[Helpship] Creating order with payload:", JSON.stringify(payload, null, 2));
     
-    const response = await this.makeAuthenticatedRequest("/api/orders", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    // Încearcă mai multe variante de endpoint-uri comune
+    // TODO: Ajustează după ce verifici documentația Swagger
+    const possibleEndpoints = [
+      "/api/orders",
+      "/orders",
+      "/api/v1/orders",
+      "/v1/orders",
+      "/api/order",
+      "/order",
+    ];
+    
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log(`[Helpship] Trying endpoint: ${endpoint}`);
+        response = await this.makeAuthenticatedRequest(endpoint, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        
+        if (response.ok) {
+          console.log(`[Helpship] Success with endpoint: ${endpoint}`);
+          break;
+        } else if (response.status !== 404) {
+          // Dacă nu e 404, înseamnă că endpoint-ul există dar are altă problemă
+          console.log(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}`);
+          break;
+        }
+        // Dacă e 404, continuă cu următorul endpoint
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.log(`[Helpship] Endpoint ${endpoint} failed:`, lastError.message);
+        continue;
+      }
+    }
+    
+    if (!response) {
+      throw new Error(
+        `Failed to find valid endpoint. Tried: ${possibleEndpoints.join(", ")}. Last error: ${lastError?.message || "Unknown"}`,
+      );
+    }
 
     console.log("[Helpship] Response status:", response.status, response.statusText);
 

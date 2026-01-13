@@ -199,30 +199,32 @@ class HelpshipClient {
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,
-        countryId: "", // TODO: obțineți countryId pentru România din API (GUID)
+        countryId: null, // countryId trebuie să fie GUID sau null, nu string gol
       },
       firstName: firstName,
       lastName: lastName,
       phone: orderData.customerPhone,
-      email: "", // TODO: adăugați email dacă îl colectați
+      email: null, // TODO: adăugați email dacă îl colectați (null în loc de string gol)
       isTaxPayer: false,
-      vatRegistrationNumber: undefined,
-      tradeRegisterNumber: undefined,
-      lockerId: undefined,
+      vatRegistrationNumber: null,
+      tradeRegisterNumber: null,
+      lockerId: null,
       paymentProcessing: "Checkout", // Sau altă valoare conform documentației
       paymentStatus: "Pending", // Status-ul plății (rămâne "Pending")
       status: "OnHold", // Status-ul comenzii (trebuie "OnHold" la creare)
-      customerNote: undefined,
-      shopOwnerNote: undefined,
+      customerNote: null,
+      shopOwnerNote: null,
       orderLines: [
         {
           name: `Produs ${orderData.offerCode}`,
           quantity: 1, // TODO: calculați din offerCode
           price: orderData.subtotal,
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar
+          // accountId, variantName, vatName, externalSku, externalId - opționale
         },
       ],
       packagingType: "Envelope", // Sau alt tip conform documentației
+      // deliveryServiceId - opțional, probabil trebuie obținut din API
     };
 
     console.log("[Helpship] Creating order with payload:", JSON.stringify(payload, null, 2));

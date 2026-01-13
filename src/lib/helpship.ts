@@ -462,6 +462,7 @@ class HelpshipClient {
     let shouldSetStatus: "OnHold" | "Pending" | null = null;
     if (updates.status) {
       shouldSetStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
+      console.log(`[Helpship] Will set status to ${shouldSetStatus} after data update`);
     }
 
     // Construim payload-ul pentru update
@@ -554,7 +555,8 @@ class HelpshipClient {
         }
       } catch (err) {
         console.error("[Helpship] Failed to update address:", err);
-        throw err;
+        // Nu aruncăm eroarea, continuăm cu setarea status-ului dacă e necesar
+        console.warn("[Helpship] Continuing with status update despite address update failure");
       }
     }
 
@@ -607,14 +609,19 @@ class HelpshipClient {
     }
 
     // După update-ul datelor, setăm status-ul dacă e necesar
+    // IMPORTANT: Status-ul se setează ÎNTOTDEAUNA după update-ul datelor
     if (shouldSetStatus) {
+      console.log(`[Helpship] Setting order status to ${shouldSetStatus} after data update...`);
       try {
         await this.setOrderStatus(helpshipOrderId, shouldSetStatus);
-        console.log(`[Helpship] Order status set to ${shouldSetStatus} after update`);
+        console.log(`[Helpship] ✓ Order status successfully set to ${shouldSetStatus}`);
       } catch (statusError) {
-        console.warn("[Helpship] Failed to set order status after update:", statusError);
-        // Nu aruncăm eroare, update-ul datelor a reușit
+        console.error("[Helpship] ✗ Failed to set order status after update:", statusError);
+        // Aruncăm eroarea pentru a vedea problema
+        throw new Error(`Failed to set order status to ${shouldSetStatus}: ${statusError instanceof Error ? statusError.message : String(statusError)}`);
       }
+    } else {
+      console.log("[Helpship] No status update requested");
     }
   }
 }

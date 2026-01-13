@@ -5,17 +5,45 @@ import type { Order } from "@/lib/types";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  async function fetchOrders() {
+    const response = await fetch("/api/orders/list");
+    if (!response.ok) return;
+    const data = await response.json();
+    setOrders(data.orders ?? []);
+  }
 
   useEffect(() => {
-    async function fetchOrders() {
-      const response = await fetch("/api/orders/list");
-      if (!response.ok) return;
-      const data = await response.json();
-      setOrders(data.orders ?? []);
-    }
-
     fetchOrders();
   }, []);
+
+  async function handleConfirm(orderId: string) {
+    if (!confirm("Ești sigur că vrei să confirmi această comandă?")) {
+      return;
+    }
+
+    setConfirming(orderId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/confirm`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        alert(data.error || "Eroare la confirmarea comenzii");
+        return;
+      }
+
+      // Reîncarcă lista de comenzi
+      await fetchOrders();
+    } catch (error) {
+      console.error("Error confirming order", error);
+      alert("Eroare la confirmarea comenzii");
+    } finally {
+      setConfirming(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -41,13 +69,14 @@ export default function AdminPage() {
                 <th className="px-3 py-2">Telefon</th>
                 <th className="px-3 py-2">Total</th>
                 <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Acțiuni</th>
               </tr>
             </thead>
             <tbody>
               {orders.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-3 py-6 text-center text-sm text-zinc-500"
                   >
                     Nu există comenzi încă.
@@ -73,9 +102,26 @@ export default function AdminPage() {
                       {order.total.toFixed(2)} Lei
                     </td>
                     <td className="px-3 py-2">
-                      <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          order.status === "confirmed"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
                         {order.status}
                       </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      {order.status === "pending" && (
+                        <button
+                          onClick={() => handleConfirm(order.id)}
+                          disabled={confirming === order.id}
+                          className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {confirming === order.id ? "Se confirmă..." : "Confirmă"}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

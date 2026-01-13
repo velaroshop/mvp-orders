@@ -27,12 +27,36 @@ export default function AdminPage() {
   }
 
   async function handleModalConfirm(updatedOrder: Partial<Order>) {
-    // TODO: Aici vom face update efectiv în Helpship când suntem gata
-    console.log("Confirming order with updates:", updatedOrder);
-    
-    // Pentru moment, doar închidem modalul
-    setIsModalOpen(false);
-    setSelectedOrder(null);
+    if (!selectedOrder) return;
+
+    setConfirming(selectedOrder.id);
+
+    try {
+      // Trimite datele actualizate la endpoint-ul de confirmare
+      const response = await fetch(`/api/orders/${selectedOrder.id}/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedOrder),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to confirm order");
+      }
+
+      // Reîncarcă lista de comenzi
+      await fetchOrders();
+      
+      setIsModalOpen(false);
+      setSelectedOrder(null);
+    } catch (error) {
+      console.error("Error confirming order:", error);
+      alert(error instanceof Error ? error.message : "Eroare la confirmarea comenzii");
+    } finally {
+      setConfirming(null);
+    }
   }
 
   return (

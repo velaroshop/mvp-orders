@@ -396,15 +396,14 @@ class HelpshipClient {
         throw err;
       }
     } else if (status === "Pending") {
-      // Pentru Pending, folosim update normal
-      // (probabil există și un endpoint /release sau similar, dar pentru moment folosim update)
-      const endpoint = `/api/Order/${helpshipOrderId}`;
+      // Folosim endpoint-ul specific pentru a scoate comanda de pe hold (unhold)
+      const endpoint = `/api/Order/${helpshipOrderId}/unhold`;
       console.log(`[Helpship] Setting order to Pending using endpoint: ${endpoint}`);
       
       try {
         const response = await this.makeAuthenticatedRequest(endpoint, {
-          method: "PUT",
-          body: JSON.stringify({ status: 0 }), // 0 = Pending
+          method: "POST",
+          // Endpoint-ul /unhold nu necesită body, doar POST la endpoint
         });
 
         if (response.ok) {
@@ -424,7 +423,8 @@ class HelpshipClient {
   }
 
   /**
-   * Actualizează o comandă existentă în Helpship (schimbă status din ONHOLD în PENDING)
+   * Actualizează o comandă existentă în Helpship
+   * Poate actualiza datele comenzii și/sau status-ul
    */
   async updateOrder(
     helpshipOrderId: string,
@@ -433,21 +433,21 @@ class HelpshipClient {
       paymentStatus?: "Pending" | "Paid";
       customerName?: string;
       customerPhone?: string;
+      postalCode?: string;
       shippingAddress?: {
         county?: string;
         city?: string;
         address?: string;
+        zip?: string;
       };
       // Alte câmpuri care pot fi actualizate
     },
   ): Promise<void> {
     console.log(`[Helpship] Updating order ${helpshipOrderId} with:`, JSON.stringify(updates, null, 2));
 
-    // Dacă se schimbă doar status-ul (și nu paymentStatus), folosim metoda dedicată
-    // Dar dacă trebuie să setăm și paymentStatus, facem update complet
-    if (updates.status && !updates.paymentStatus && Object.keys(updates).length === 1) {
+    // Dacă trebuie să setăm doar status-ul (fără alte update-uri), folosim direct /hold sau /unhold
+    if (updates.status && Object.keys(updates).length === 1) {
       try {
-        // Mapăm status-ul nostru la formatul Helpship
         const helpshipStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
         await this.setOrderStatus(helpshipOrderId, helpshipStatus);
         return;
@@ -457,22 +457,76 @@ class HelpshipClient {
       }
     }
 
-    // Construim payload-ul pentru update, mapând corect status-ul
-    const payload: any = {};
+    // Dacă trebuie să setăm status-ul, o facem separat folosind /hold sau /unhold
+    // Status-ul se setează DUPĂ update-ul datelor
+    let shouldSetStatus: "OnHold" | "Pending" | null = null;
     if (updates.status) {
-      payload.status = updates.status === "PENDING" ? "Pending" : "OnHold";
+      shouldSetStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
     }
+
+    // Construim payload-ul pentru update
+    const payload: any = {};
+    
+    // Status-ul se setează separat folosind /hold sau /unhold
     if (updates.paymentStatus) {
       payload.paymentStatus = updates.paymentStatus;
     }
-    if (updates.customerName) {
-      payload.customerName = updates.customerName;
-    }
-    if (updates.customerPhone) {
-      payload.customerPhone = updates.customerPhone;
-    }
-    if (updates.shippingAddress) {
-      payload.shippingAddress = updates.shippingAddress;
+    
+    // Actualizăm datele clientului și adresa
+    if (updates.customerName || updates.customerPhone || updates.shippingAddress || updates.postalCode) {
+      // Trebuie să construim mailingAddress complet
+      // Mai întâi, obținem comanda curentă pentru a păstra datele existente
+      try {
+        const currentOrderResponse = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+          method: "GET",
+        });
+        
+        if (currentOrderResponse.ok) {
+          const currentOrder = await currentOrderResponse.json();
+          
+          // Construim mailingAddress cu datele actualizate
+          const nameParts = updates.customerName?.trim().split(/\s+/) || 
+                           currentOrder.mailingAddress?.name?.trim().split(/\s+/) || [];
+          const firstName = nameParts[0] || null;
+          const lastName = nameParts.slice(1).join(" ") || null;
+          
+          const addressParts = updates.shippingAddress?.address?.match(/^(.+?)\s+(\d+.*)$/) || 
+                              currentOrder.mailingAddress?.addressLine1?.match(/^(.+?)\s+(\d+.*)$/) || [];
+          const street = addressParts ? addressParts[1]?.trim() : 
+                        updates.shippingAddress?.address || 
+                        currentOrder.mailingAddress?.addressLine1;
+          const number = addressParts ? addressParts[2]?.trim() : null;
+          
+          payload.mailingAddress = {
+            ...currentOrder.mailingAddress,
+            addressLine1: updates.shippingAddress?.address || currentOrder.mailingAddress?.addressLine1,
+            street: street,
+            number: number,
+            zip: updates.postalCode || updates.shippingAddress?.zip || currentOrder.mailingAddress?.zip,
+            city: updates.shippingAddress?.city || currentOrder.mailingAddress?.city,
+            province: updates.shippingAddress?.county || currentOrder.mailingAddress?.province,
+            firstName: firstName,
+            lastName: lastName,
+            name: updates.customerName || currentOrder.mailingAddress?.name,
+            phone: updates.customerPhone || currentOrder.mailingAddress?.phone,
+          };
+          
+          payload.firstName = firstName;
+          payload.lastName = lastName;
+          payload.phone = updates.customerPhone || currentOrder.phone;
+        }
+      } catch (err) {
+        console.warn("[Helpship] Failed to fetch current order, using provided data only:", err);
+        // Dacă nu putem obține comanda curentă, folosim doar datele furnizate
+        if (updates.shippingAddress) {
+          payload.mailingAddress = {
+            addressLine1: updates.shippingAddress.address,
+            zip: updates.postalCode || updates.shippingAddress.zip,
+            city: updates.shippingAddress.city,
+            province: updates.shippingAddress.county,
+          };
+        }
+      }
     }
 
     // Pentru update-uri complete, încearcă mai multe variante
@@ -498,6 +552,18 @@ class HelpshipClient {
             console.log(`[Helpship] Success updating order with ${method} ${endpoint}`);
             const responseData = await response.json().catch(() => ({}));
             console.log("[Helpship] Update response:", JSON.stringify(responseData, null, 2));
+            
+            // După update-ul datelor, setăm status-ul dacă e necesar
+            if (shouldSetStatus) {
+              try {
+                await this.setOrderStatus(helpshipOrderId, shouldSetStatus);
+                console.log(`[Helpship] Order status set to ${shouldSetStatus} after update`);
+              } catch (statusError) {
+                console.warn("[Helpship] Failed to set order status after update:", statusError);
+                // Nu aruncăm eroare, update-ul datelor a reușit
+              }
+            }
+            
             return;
           } else if (response.status !== 404) {
             const errorText = await response.text();

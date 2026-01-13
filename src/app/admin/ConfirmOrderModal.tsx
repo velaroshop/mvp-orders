@@ -112,16 +112,18 @@ export default function ConfirmOrderModal({
     setIsSubmitting(true);
 
     try {
-      // Pentru moment, doar logăm datele (nu facem update efectiv)
-      console.log("Order data to confirm:", {
-        ...order,
-        ...formData,
-      });
+      // Trimite datele actualizate la onConfirm
+      const updatedOrder: Partial<Order> = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        county: formData.county,
+        city: formData.city,
+        address: formData.address,
+        postalCode: formData.postalCode,
+        shippingCost: formData.shippingPrice,
+      };
 
-      // TODO: Aici vom face update efectiv în Helpship când suntem gata
-      // await onConfirm({ ...order, ...formData });
-
-      alert("Pentru moment, doar afișăm datele. Update-ul efectiv va fi implementat în pasul următor.");
+      await onConfirm(updatedOrder);
       onClose();
     } catch (error) {
       console.error("Error confirming order", error);

@@ -3,8 +3,8 @@ import { supabase } from "@/lib/supabase";
 import { helpshipClient } from "@/lib/helpship";
 
 /**
- * Confirmă o comandă: schimbă status-ul din pending în confirmed
- * și actualizează comanda în Helpship din ONHOLD în PENDING
+ * Confirmă o comandă: actualizează datele în Helpship și schimbă status-ul din ONHOLD în PENDING
+ * Primește datele actualizate din modal
  */
 export async function POST(
   request: NextRequest,
@@ -12,6 +12,19 @@ export async function POST(
 ) {
   try {
     const { id: orderId } = await params;
+    const body = await request.json();
+
+    // Datele actualizate din modal
+    const {
+      fullName,
+      phone,
+      county,
+      city,
+      address,
+      postalCode,
+      shippingPrice,
+      discount,
+    } = body;
 
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabase
@@ -37,12 +50,24 @@ export async function POST(
     // Dacă comanda are helpshipOrderId, actualizează-o în Helpship
     if (order.helpship_order_id) {
       try {
-        console.log(`[Helpship] Attempting to update order ${order.helpship_order_id} status to PENDING...`);
+        console.log(`[Helpship] Updating order ${order.helpship_order_id} with new data and setting status to PENDING...`);
+        
+        // Actualizăm datele și setăm status-ul la PENDING (unhold)
         await helpshipClient.updateOrder(order.helpship_order_id, {
-          status: "PENDING",
-          paymentStatus: "Pending", // Asigură-te că paymentStatus rămâne "Pending"
+          status: "PENDING", // Va folosi /unhold endpoint
+          paymentStatus: "Pending",
+          customerName: fullName || order.fullName,
+          customerPhone: phone || order.phone,
+          postalCode: postalCode,
+          shippingAddress: {
+            county: county || order.county,
+            city: city || order.city,
+            address: address || order.address,
+            zip: postalCode,
+          },
         });
-        console.log(`[Helpship] Order ${order.helpship_order_id} status updated to PENDING.`);
+        
+        console.log(`[Helpship] Order ${order.helpship_order_id} updated and status set to PENDING.`);
       } catch (helpshipError) {
         // Loghează eroarea dar continuă cu update-ul local
         console.error("Failed to update order in Helpship:", helpshipError);
@@ -50,6 +75,16 @@ export async function POST(
         // Pentru MVP, continuăm cu update-ul local
       }
     }
+
+    // Actualizează datele în DB (dacă au fost modificate)
+    const updateData: any = { status: "confirmed" };
+    if (fullName) updateData.full_name = fullName;
+    if (phone) updateData.phone = phone;
+    if (county) updateData.county = county;
+    if (city) updateData.city = city;
+    if (address) updateData.address = address;
+    if (postalCode) updateData.postal_code = postalCode;
+    if (shippingPrice !== undefined) updateData.shipping_cost = shippingPrice;
 
     // Actualizează status-ul în DB
     const { error: updateError } = await supabase

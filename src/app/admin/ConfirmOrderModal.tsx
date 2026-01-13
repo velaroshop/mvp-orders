@@ -222,26 +222,9 @@ export default function ConfirmOrderModal({
     }
   }
 
-  // Format order number (JMR-TEST-XXXXX)
-  const formatOrderNumber = (orderNumber?: number) => {
-    if (!orderNumber) return order.id.substring(0, 8);
-    return `JMR-TEST-${String(orderNumber).padStart(5, "0")}`;
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("ro-RO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
         {/* Header */}
         <div className="sticky top-0 bg-zinc-900 text-white px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">ORDER CONFIRM</h2>
@@ -253,85 +236,9 @@ export default function ConfirmOrderModal({
           </button>
         </div>
 
-        {/* Content - Order Information Grid */}
-        <div className="p-6">
-          <div className="grid grid-cols-8 gap-4 mb-6">
-            {/* Order ID */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Order ID</p>
-              <p className="text-sm font-medium text-zinc-900">
-                {formatOrderNumber(order.orderNumber)}
-              </p>
-            </div>
-
-            {/* Status */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Status</p>
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                  order.status === "confirmed"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-800"
-                }`}
-              >
-                {order.status === "pending" ? "Pending" : "Confirmed"}
-              </span>
-            </div>
-
-            {/* Customer */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Customer</p>
-              <p className="text-sm font-medium text-zinc-900">{order.fullName}</p>
-              <p className="text-xs text-zinc-600">{order.phone}</p>
-            </div>
-
-            {/* Order Note */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Order Note</p>
-              <p className="text-sm text-zinc-900">none</p>
-            </div>
-
-            {/* Order Source */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Order Source</p>
-              <p className="text-sm text-zinc-900">{order.landingKey}</p>
-            </div>
-
-            {/* Price */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Price</p>
-              <div className="text-sm text-zinc-900 space-y-0.5">
-                <p className="font-semibold">Total: {order.total.toFixed(2)} RON</p>
-                <p className="text-xs">Items: {order.subtotal.toFixed(2)} RON (1x)</p>
-                <p className="text-xs">Pre purchase: 0,00 RON</p>
-                <p className="text-xs">Shipping: {order.shippingCost.toFixed(2)} RON</p>
-                <p className="text-xs">Discount: 0,00 RON</p>
-              </div>
-            </div>
-
-            {/* Order Date */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Order Date</p>
-              <p className="text-sm text-zinc-900">{formatDate(order.createdAt)}</p>
-            </div>
-
-            {/* Actions */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-1">Actions</p>
-              <div className="space-y-1">
-                <button
-                  type="button"
-                  className="text-xs text-blue-600 hover:text-blue-700"
-                >
-                  View
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form for editing */}
-          <form onSubmit={handleSubmit} className="border-t pt-6">
-            <div className="grid grid-cols-2 gap-6">
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-2 gap-6">
             {/* Left Column - Personal Information */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
@@ -599,33 +506,32 @@ export default function ConfirmOrderModal({
             </div>
           </div>
 
-            {/* Error Message */}
-            {submitError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800 font-medium">Eroare</p>
-                <p className="text-sm text-red-700 mt-1">{submitError}</p>
-              </div>
-            )}
+                 {/* Error Message */}
+                 {submitError && (
+                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                     <p className="text-sm text-red-800 font-medium">Eroare</p>
+                     <p className="text-sm text-red-700 mt-1">{submitError}</p>
+                   </div>
+                 )}
 
-            {/* Footer Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {isSubmitting ? "Se salvează..." : "Save & Send"}
-              </button>
-            </div>
-          </form>
-        </div>
+                 {/* Footer Buttons */}
+                 <div className="mt-6 flex justify-end gap-3">
+                   <button
+                     type="button"
+                     onClick={onClose}
+                     className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={isSubmitting}
+                     className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                   >
+                     {isSubmitting ? "Se salvează..." : "Save & Send"}
+                   </button>
+                 </div>
+        </form>
       </div>
     </div>
   );

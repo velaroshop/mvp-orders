@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { Order } from "@/lib/types";
+import ConfirmOrderModal from "./ConfirmOrderModal";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   async function fetchOrders() {
     const response = await fetch("/api/orders/list");
@@ -18,31 +21,18 @@ export default function AdminPage() {
     fetchOrders();
   }, []);
 
-  async function handleConfirm(orderId: string) {
-    if (!confirm("Ești sigur că vrei să confirmi această comandă?")) {
-      return;
-    }
+  function handleConfirmClick(order: Order) {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  }
 
-    setConfirming(orderId);
-    try {
-      const response = await fetch(`/api/orders/${orderId}/confirm`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || "Eroare la confirmarea comenzii");
-        return;
-      }
-
-      // Reîncarcă lista de comenzi
-      await fetchOrders();
-    } catch (error) {
-      console.error("Error confirming order", error);
-      alert("Eroare la confirmarea comenzii");
-    } finally {
-      setConfirming(null);
-    }
+  async function handleModalConfirm(updatedOrder: Partial<Order>) {
+    // TODO: Aici vom face update efectiv în Helpship când suntem gata
+    console.log("Confirming order with updates:", updatedOrder);
+    
+    // Pentru moment, doar închidem modalul
+    setIsModalOpen(false);
+    setSelectedOrder(null);
   }
 
   return (
@@ -115,7 +105,7 @@ export default function AdminPage() {
                     <td className="px-3 py-2">
                       {order.status === "pending" && (
                         <button
-                          onClick={() => handleConfirm(order.id)}
+                          onClick={() => handleConfirmClick(order)}
                           disabled={confirming === order.id}
                           className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                         >
@@ -129,6 +119,17 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Confirm Order Modal */}
+        <ConfirmOrderModal
+          order={selectedOrder}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedOrder(null);
+          }}
+          onConfirm={handleModalConfirm}
+        />
       </main>
     </div>
   );

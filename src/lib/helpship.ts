@@ -289,18 +289,6 @@ class HelpshipClient {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
 
-    // Extrage codul poștal sugerat de Helpship
-    // Helpship returnează codul poștal în mailingAddress.postCodeInfo sau postCodeFix
-    const postalCode =
-      responseData.mailingAddress?.postCodeInfo ||
-      responseData.mailingAddress?.postCodeFix ||
-      responseData.mailingAddress?.zip ||
-      null;
-
-    if (postalCode) {
-      console.log("[Helpship] Extracted postal code:", postalCode);
-    }
-
     // Status-ul comenzii este deja setat la "OnHold" în payload
     // Dacă nu a funcționat, încercăm să-l setăm după creare
     if (orderId && orderId !== "unknown") {
@@ -321,7 +309,6 @@ class HelpshipClient {
     return {
       orderId: orderId || "unknown",
       rawResponse: responseData,
-      postalCode: postalCode || undefined,
     };
   }
 

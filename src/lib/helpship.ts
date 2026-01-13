@@ -289,20 +289,16 @@ class HelpshipClient {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
 
-    // Status-ul comenzii este deja setat la "OnHold" în payload
-    // Dacă nu a funcționat, încercăm să-l setăm după creare
+    // Setăm status-ul la "OnHold" după creare
+    // Helpship poate ignora status-ul din payload la creare, deci îl setăm explicit după
     if (orderId && orderId !== "unknown") {
-      // Verificăm dacă status-ul a fost setat corect în răspuns
-      const responseStatus = responseData.status;
-      if (responseStatus !== "OnHold") {
-        console.log(`[Helpship] Order created with status "${responseStatus}", attempting to set to OnHold...`);
-        try {
-          await this.setOrderStatus(orderId, "OnHold");
-        } catch (statusError) {
-          console.warn("[Helpship] Failed to set order status to OnHold after creation:", statusError);
-        }
-      } else {
-        console.log("[Helpship] Order created with status OnHold successfully");
+      console.log(`[Helpship] Setting order status to OnHold for order ${orderId}...`);
+      try {
+        await this.setOrderStatus(orderId, "OnHold");
+        console.log(`[Helpship] Order ${orderId} status set to OnHold successfully`);
+      } catch (statusError) {
+        console.error("[Helpship] Failed to set order status to OnHold after creation:", statusError);
+        // Nu aruncăm eroarea, comanda a fost creată cu succes, doar status-ul nu s-a setat
       }
     }
 

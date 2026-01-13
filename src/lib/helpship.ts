@@ -558,6 +558,8 @@ class HelpshipClient {
         // Nu aruncăm eroarea, continuăm cu setarea status-ului dacă e necesar
         console.warn("[Helpship] Continuing with status update despite address update failure");
       }
+    } else {
+      console.log("[Helpship] No address update needed");
     }
 
     // Dacă mai avem alte câmpuri de actualizat (nu doar adresa), folosim update-ul general
@@ -610,8 +612,10 @@ class HelpshipClient {
 
     // După update-ul datelor, setăm status-ul dacă e necesar
     // IMPORTANT: Status-ul se setează ÎNTOTDEAUNA după update-ul datelor
+    console.log(`[Helpship] Checking if status update is needed. shouldSetStatus: ${shouldSetStatus}`);
     if (shouldSetStatus) {
       console.log(`[Helpship] Setting order status to ${shouldSetStatus} after data update...`);
+      console.log(`[Helpship] Calling setOrderStatus(${helpshipOrderId}, "${shouldSetStatus}")...`);
       try {
         await this.setOrderStatus(helpshipOrderId, shouldSetStatus);
         console.log(`[Helpship] ✓ Order status successfully set to ${shouldSetStatus}`);
@@ -621,7 +625,7 @@ class HelpshipClient {
         throw new Error(`Failed to set order status to ${shouldSetStatus}: ${statusError instanceof Error ? statusError.message : String(statusError)}`);
       }
     } else {
-      console.log("[Helpship] No status update requested");
+      console.log("[Helpship] ⚠️ No status update requested - shouldSetStatus is null/undefined");
     }
   }
 }

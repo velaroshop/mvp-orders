@@ -48,7 +48,7 @@ interface HelpshipOrderPayload {
   paymentProcessing?: string;
   deliveryServiceId?: string;
   paymentStatus?: string; // Status-ul plății (rămâne "Pending")
-  status?: string; // Status-ul comenzii (trebuie "OnHold" la creare, "Pending" la confirmare)
+  status?: string | number; // Status-ul comenzii: 7 = OnHold, 0 = Pending (poate fi string sau number)
   customerNote?: string | null;
   shopOwnerNote?: string | null;
   orderLines: Array<{
@@ -242,7 +242,7 @@ class HelpshipClient {
       lockerId: null,
       paymentProcessing: "Manual", // Metoda de plată: Manual (nu Checkout)
       paymentStatus: "Pending", // Status-ul plății (rămâne "Pending")
-      status: "OnHold", // Status-ul comenzii (trebuie "OnHold" la creare)
+      status: 7, // Status-ul comenzii: 7 = OnHold (enum: 0=Pending, 1=Packing, 2=Packed, 3=Fulfilled, 4=Incomplete, 5=Error, 6=Archived, 7=OnHold)
       customerNote: null,
       shopOwnerNote: null,
       orderLines: [
@@ -289,17 +289,17 @@ class HelpshipClient {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
 
-    // Setăm status-ul la "OnHold" după creare
-    // Helpship poate ignora status-ul din payload la creare, deci îl setăm explicit după
-    if (orderId && orderId !== "unknown") {
-      console.log(`[Helpship] Setting order status to OnHold for order ${orderId}...`);
-      try {
-        await this.setOrderStatus(orderId, "OnHold");
-        console.log(`[Helpship] Order ${orderId} status set to OnHold successfully`);
-      } catch (statusError) {
-        console.error("[Helpship] Failed to set order status to OnHold after creation:", statusError);
-        // Nu aruncăm eroarea, comanda a fost creată cu succes, doar status-ul nu s-a setat
-      }
+    // Verificăm dacă status-ul a fost setat corect la creare
+    // Status-ul trebuie setat în payload (ca număr: 7 = OnHold), nu după creare
+    // deoarece API-ul necesită permisiuni de administrator pentru modificarea status-ului
+    const responseStatus = responseData.status;
+    const responseStatusName = responseData.statusName;
+    
+    if (responseStatus === 7 || responseStatusName === "OnHold") {
+      console.log(`[Helpship] Order ${orderId} created with status OnHold successfully`);
+    } else {
+      console.warn(`[Helpship] Order ${orderId} created with status ${responseStatus} (${responseStatusName}) instead of OnHold (7)`);
+      console.warn(`[Helpship] Note: Cannot modify status after creation - requires administrator permissions`);
     }
 
     return {

@@ -165,6 +165,7 @@ class HelpshipClient {
   async createOrder(
     orderData: {
       orderId: string; // ID-ul nostru intern (externalId)
+      orderNumber: number; // Numărul comenzii (pentru ORDER NAME)
       customerName: string;
       customerPhone: string;
       county: string;
@@ -202,10 +203,14 @@ class HelpshipClient {
       console.warn("[Helpship] Failed to get Romania countryId, using null:", err);
     }
 
+    // Obține prefix-ul pentru numărul comenzii
+    const orderPrefix = await getOrderPrefix();
+    const orderName = `${orderPrefix}-${String(orderData.orderNumber).padStart(5, "0")}`;
+
     // Construim payload-ul conform documentației Helpship
     const payload: HelpshipOrderPayload = {
       externalId: orderData.orderId,
-      name: `Comandă ${orderData.offerCode} - ${orderData.customerName}`,
+      name: orderName, // Format: JMR-TEST-00001, JMR-TEST-00002, etc.
       totalPrice: orderData.total,
       discountPrice: 0, // TODO: calculați dacă există discount
       shippingPrice: orderData.shippingCost,
@@ -223,12 +228,12 @@ class HelpshipClient {
         lastName: lastName || null, // lastName în mailingAddress!
         name: orderData.customerName || null, // Nume complet în mailingAddress!
         phone: orderData.customerPhone || null, // phone în mailingAddress!
-        email: null, // TODO: adăugați email dacă îl colectați
+        email: "clienti@velaro-shop.ro", // Email fix pentru test
       },
       firstName: firstName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
       lastName: lastName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
       phone: orderData.customerPhone || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
-      email: null, // TODO: adăugați email dacă îl colectați
+      email: "clienti@velaro-shop.ro", // Email fix pentru test
       isTaxPayer: false,
       vatRegistrationNumber: null,
       tradeRegisterNumber: null,

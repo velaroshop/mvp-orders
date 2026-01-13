@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       console.log("[Helpship] Attempting to create order...");
       const helpshipResult = await helpshipClient.createOrder({
         orderId: order.id, // ID-ul nostru intern (externalId în Helpship)
+        orderNumber: order.orderNumber || 0, // Numărul comenzii pentru ORDER NAME
         customerName: fullName,
         customerPhone: phone,
         county,

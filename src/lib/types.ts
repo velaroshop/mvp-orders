@@ -24,6 +24,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   helpshipOrderId?: string;
+  orderNumber?: number;
   createdAt: string;
 }
 

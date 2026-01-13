@@ -55,6 +55,7 @@ export async function createOrder(input: {
     total: parseFloat(data.total.toString()),
     status: data.status as "pending" | "confirmed",
     helpshipOrderId: data.helpship_order_id ?? undefined,
+    orderNumber: data.order_number ?? undefined,
     createdAt: data.created_at,
   };
 }
@@ -85,7 +86,26 @@ export async function listOrders(): Promise<Order[]> {
     total: parseFloat(row.total.toString()),
     status: row.status as "pending" | "confirmed",
     helpshipOrderId: row.helpship_order_id ?? undefined,
+    orderNumber: row.order_number ?? undefined,
     createdAt: row.created_at,
   }));
+}
+
+/**
+ * Obține prefix-ul pentru numărul comenzii din settings
+ */
+export async function getOrderPrefix(): Promise<string> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "order_prefix")
+    .single();
+
+  if (error || !data) {
+    // Fallback la default dacă nu există în DB
+    return "JMR-TEST";
+  }
+
+  return data.value;
 }
 

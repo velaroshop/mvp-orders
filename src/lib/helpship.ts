@@ -291,17 +291,17 @@ class HelpshipClient {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
 
-    // Verificăm dacă status-ul a fost setat corect la creare
-    // Status-ul trebuie setat în payload (ca număr: 7 = OnHold), nu după creare
-    // deoarece API-ul necesită permisiuni de administrator pentru modificarea status-ului
-    const responseStatus = responseData.status;
-    const responseStatusName = responseData.statusName;
-    
-    if (responseStatus === 7 || responseStatusName === "OnHold") {
-      console.log(`[Helpship] Order ${orderId} created with status OnHold successfully`);
-    } else {
-      console.warn(`[Helpship] Order ${orderId} created with status ${responseStatus} (${responseStatusName}) instead of OnHold (7)`);
-      console.warn(`[Helpship] Note: Cannot modify status after creation - requires administrator permissions`);
+    // Setăm status-ul la "OnHold" după creare folosind endpoint-ul specific /hold
+    // Helpship creează comenzile cu status "Pending" (0) și trebuie să le punem pe hold explicit
+    if (orderId && orderId !== "unknown") {
+      console.log(`[Helpship] Setting order ${orderId} to OnHold using /hold endpoint...`);
+      try {
+        await this.setOrderStatus(orderId, "OnHold");
+        console.log(`[Helpship] Order ${orderId} successfully set to OnHold`);
+      } catch (statusError) {
+        console.error("[Helpship] Failed to set order status to OnHold after creation:", statusError);
+        // Nu aruncăm eroarea, comanda a fost creată cu succes, doar status-ul nu s-a setat
+      }
     }
 
     return {
@@ -364,66 +364,63 @@ class HelpshipClient {
   }
 
   /**
-   * Setează status-ul comenzii în Helpship (nu paymentStatus!)
-   * Încearcă multiple variante: status, orderStatus, fulfillmentStatus
+   * Setează status-ul comenzii în Helpship
+   * Folosește endpoint-ul specific: POST /api/Order/{id}/hold pentru OnHold
    */
   private async setOrderStatus(
     helpshipOrderId: string,
     status: "OnHold" | "Pending",
   ): Promise<void> {
-    // Încearcă mai multe variante de endpoint pentru setarea status-ului
-    const possibleEndpoints = [
-      `/api/Order/${helpshipOrderId}/status`,
-      `/api/Order/${helpshipOrderId}/fulfillment`,
-      `/api/Order/${helpshipOrderId}`,
-      `/api/orders/${helpshipOrderId}/status`,
-      `/api/orders/${helpshipOrderId}/fulfillment`,
-    ];
+    if (status === "OnHold") {
+      // Folosim endpoint-ul specific pentru a pune comanda pe hold
+      const endpoint = `/api/Order/${helpshipOrderId}/hold`;
+      console.log(`[Helpship] Setting order to OnHold using endpoint: ${endpoint}`);
+      
+      try {
+        const response = await this.makeAuthenticatedRequest(endpoint, {
+          method: "POST",
+          // Endpoint-ul /hold nu necesită body, doar POST la endpoint
+        });
 
-    const methods = ["PUT", "PATCH", "POST"];
-
-    // Variante de payload pentru status
-    const statusPayloads = [
-      { status }, // { status: "OnHold" }
-      { orderStatus: status }, // { orderStatus: "OnHold" }
-      { fulfillmentStatus: status }, // { fulfillmentStatus: "OnHold" }
-      { status, fulfillmentStatus: status }, // Ambele
-    ];
-
-    let lastError: Error | null = null;
-
-    for (const endpoint of possibleEndpoints) {
-      for (const method of methods) {
-        for (const payload of statusPayloads) {
-          try {
-            console.log(`[Helpship] Trying ${method} ${endpoint} with payload:`, JSON.stringify(payload));
-            
-            const response = await this.makeAuthenticatedRequest(endpoint, {
-              method,
-              body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-              console.log(`[Helpship] Success setting status with ${method} ${endpoint} and payload:`, JSON.stringify(payload));
-              return;
-            } else if (response.status !== 404) {
-              const errorText = await response.text();
-              console.log(`[Helpship] Endpoint ${endpoint} returned ${response.status}:`, errorText.substring(0, 200));
-              // Continuă să încerce alte variante
-            }
-          } catch (err) {
-            lastError = err instanceof Error ? err : new Error(String(err));
-            console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
-            continue;
-          }
+        if (response.ok) {
+          console.log(`[Helpship] Success setting order to OnHold using ${endpoint}`);
+          return;
+        } else {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to set order to OnHold: ${response.status} ${errorText}`,
+          );
         }
+      } catch (err) {
+        console.error(`[Helpship] Failed to set order to OnHold:`, err);
+        throw err;
+      }
+    } else if (status === "Pending") {
+      // Pentru Pending, folosim update normal
+      // (probabil există și un endpoint /release sau similar, dar pentru moment folosim update)
+      const endpoint = `/api/Order/${helpshipOrderId}`;
+      console.log(`[Helpship] Setting order to Pending using endpoint: ${endpoint}`);
+      
+      try {
+        const response = await this.makeAuthenticatedRequest(endpoint, {
+          method: "PUT",
+          body: JSON.stringify({ status: 0 }), // 0 = Pending
+        });
+
+        if (response.ok) {
+          console.log(`[Helpship] Success setting order to Pending using ${endpoint}`);
+          return;
+        } else {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to set order to Pending: ${response.status} ${errorText}`,
+          );
+        }
+      } catch (err) {
+        console.error(`[Helpship] Failed to set order to Pending:`, err);
+        throw err;
       }
     }
-
-    // Dacă niciun endpoint nu funcționează, aruncă eroare
-    throw new Error(
-      `Failed to set order status. Tried: ${possibleEndpoints.join(", ")}. Last error: ${lastError?.message || "Unknown"}`,
-    );
   }
 
   /**

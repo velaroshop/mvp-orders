@@ -19,6 +19,10 @@ ON CONFLICT (key) DO NOTHING;
 ALTER TABLE orders 
 ADD COLUMN IF NOT EXISTS order_number INTEGER;
 
+-- Adăugăm coloană postal_code în tabela orders (cod poștal sugerat de Helpship)
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS postal_code TEXT;
+
 -- Creăm o secvență pentru order_number
 CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1;
 

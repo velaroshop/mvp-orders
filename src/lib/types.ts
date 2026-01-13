@@ -18,6 +18,7 @@ export interface Order {
   county: string;
   city: string;
   address: string;
+  postalCode?: string; // Cod poștal sugerat de Helpship
   upsells: string[];
   subtotal: number;
   shippingCost: number;

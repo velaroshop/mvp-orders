@@ -84,17 +84,33 @@ export async function POST(request: NextRequest) {
       console.log("[Helpship] Order created successfully:", helpshipResult);
       helpshipOrderId = helpshipResult.orderId;
 
-      // Actualizează comanda cu helpshipOrderId
-      if (helpshipOrderId) {
+      // Extrage codul poștal din răspunsul Helpship
+      const postalCode = helpshipResult.postalCode ||
+                         helpshipResult.rawResponse?.mailingAddress?.postCodeInfo ||
+                         helpshipResult.rawResponse?.mailingAddress?.postCodeFix ||
+                         helpshipResult.rawResponse?.mailingAddress?.zip ||
+                         null;
+
+      // Actualizează comanda cu helpshipOrderId și codul poștal
+      if (helpshipOrderId || postalCode) {
+        const updateData: any = {};
+        if (helpshipOrderId) {
+          updateData.helpship_order_id = helpshipOrderId;
+        }
+        if (postalCode) {
+          updateData.postal_code = postalCode;
+          console.log("[Helpship] Saving postal code:", postalCode);
+        }
+
         const { error: updateError } = await supabase
           .from("orders")
-          .update({ helpship_order_id: helpshipOrderId })
+          .update(updateData)
           .eq("id", order.id);
         
         if (updateError) {
-          console.error("[Helpship] Failed to update order with helpshipOrderId:", updateError);
+          console.error("[Helpship] Failed to update order:", updateError);
         } else {
-          console.log("[Helpship] Order updated with helpshipOrderId:", helpshipOrderId);
+          console.log("[Helpship] Order updated successfully");
         }
       }
     } catch (err) {

@@ -22,6 +22,7 @@ export default function ConfirmOrderModal({
     county: "",
     city: "",
     address: "",
+    postalCode: "",
     shippingPrice: 0,
     discount: 0,
   });
@@ -36,6 +37,7 @@ export default function ConfirmOrderModal({
         county: order.county || "",
         city: order.city || "",
         address: order.address || "",
+        postalCode: order.postalCode || "",
         shippingPrice: order.shippingCost || 0,
         discount: 0, // TODO: adăugăm discount în Order type dacă e necesar
       });
@@ -95,7 +97,7 @@ export default function ConfirmOrderModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Full Name
                 </label>
                 <input
@@ -104,13 +106,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Full Name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Phone Number
                 </label>
                 <input
@@ -119,10 +121,10 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Phone Number"
                 />
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-zinc-600 mt-1">
                   {formData.phone.replace(/\D/g, "").length} digits
                 </p>
               </div>
@@ -146,7 +148,7 @@ export default function ConfirmOrderModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   County
                 </label>
                 <input
@@ -155,13 +157,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, county: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="County"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   City
                 </label>
                 <input
@@ -170,13 +172,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, city: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="City"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Street
                 </label>
                 <div className="flex gap-2">
@@ -186,29 +188,38 @@ export default function ConfirmOrderModal({
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
                     }
-                    className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Street"
                   />
                   <input
                     type="text"
-                    className="w-24 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-24 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Number"
                   />
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-zinc-600 mt-1">
                   Initial street: {order.address}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Post Code
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  value={formData.postalCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, postalCode: e.target.value })
+                  }
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Post code"
                 />
+                {formData.postalCode && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    ✓ Cod poștal sugerat de Helpship
+                  </p>
+                )}
               </div>
 
               {/* Order Summary */}
@@ -224,7 +235,7 @@ export default function ConfirmOrderModal({
                     View contents ▼
                   </button>
                 </div>
-                <div className="text-sm text-zinc-600">
+                <div className="text-sm text-zinc-800">
                   <p>• {order.offerCode}</p>
                   <p>Subtotal: {order.subtotal.toFixed(2)} Lei</p>
                   <p>Shipping: {order.shippingCost.toFixed(2)} Lei</p>
@@ -243,7 +254,7 @@ export default function ConfirmOrderModal({
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Shipping Price
                 </label>
                 <input
@@ -256,12 +267,12 @@ export default function ConfirmOrderModal({
                       shippingPrice: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Discount
                 </label>
                 <input
@@ -274,18 +285,18 @@ export default function ConfirmOrderModal({
                       discount: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Scheduled Date
                 </label>
                 <input
                   type="date"
                   defaultValue={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>

@@ -39,7 +39,7 @@ export async function createOrder(input: {
     throw new Error(`Failed to create order: ${error.message}`);
   }
 
-  // Map Supabase row to Order type
+    // Map Supabase row to Order type
   return {
     id: data.id,
     landingKey: data.landing_key,
@@ -49,6 +49,7 @@ export async function createOrder(input: {
     county: data.county,
     city: data.city,
     address: data.address,
+    postalCode: data.postal_code ?? undefined,
     upsells: data.upsells as string[],
     subtotal: parseFloat(data.subtotal.toString()),
     shippingCost: parseFloat(data.shipping_cost.toString()),
@@ -80,6 +81,7 @@ export async function listOrders(): Promise<Order[]> {
     county: row.county,
     city: row.city,
     address: row.address,
+    postalCode: row.postal_code ?? undefined,
     upsells: row.upsells as string[],
     subtotal: parseFloat(row.subtotal.toString()),
     shippingCost: parseFloat(row.shipping_cost.toString()),

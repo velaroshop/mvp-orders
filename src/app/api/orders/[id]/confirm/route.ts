@@ -8,10 +8,10 @@ import { helpshipClient } from "@/lib/helpship";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const orderId = params.id;
+    const { id: orderId } = await params;
 
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabase

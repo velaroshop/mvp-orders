@@ -199,7 +199,7 @@ class HelpshipClient {
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,
-        countryId: null, // countryId trebuie să fie GUID sau null, nu string gol
+        countryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // GUID pentru România (din exemplul API)
       },
       firstName: firstName,
       lastName: lastName,

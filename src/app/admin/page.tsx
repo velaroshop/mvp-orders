@@ -9,6 +9,7 @@ export default function AdminPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   async function fetchOrders() {
     const response = await fetch("/api/orders/list");
@@ -20,6 +21,23 @@ export default function AdminPage() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Închide dropdown-ul când se face click în afara lui
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".actions-dropdown")) {
+        setOpenDropdown(null);
+      }
+    }
+
+    if (openDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [openDropdown]);
 
   function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
@@ -79,6 +97,17 @@ export default function AdminPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  }
+
+  function handleActionClick(orderId: string, action: string) {
+    if (action === "confirm") {
+      const order = orders.find((o) => o.id === orderId);
+      if (order) {
+        handleConfirmClick(order);
+      }
+    }
+    // Pentru restul acțiunilor, nu facem nimic momentan
+    setOpenDropdown(null);
   }
 
   return (
@@ -185,13 +214,57 @@ export default function AdminPage() {
 
                     {/* Actions */}
                     <td className="px-3 py-2">
-                      <button
-                        onClick={() => handleConfirmClick(order)}
-                        disabled={confirming === order.id}
-                        className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                      >
-                        {confirming === order.id ? "Se confirmă..." : "Confirmă"}
-                      </button>
+                      <div className="relative actions-dropdown">
+                        <button
+                          onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                          className="rounded-md bg-zinc-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-zinc-700"
+                        >
+                          Actions ▼
+                        </button>
+                        {openDropdown === order.id && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white border border-zinc-200 rounded-md shadow-lg z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={() => handleActionClick(order.id, "confirm")}
+                                disabled={confirming === order.id}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
+                              </button>
+                              <button
+                                onClick={() => handleActionClick(order.id, "cancel")}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
+                              >
+                                Order Cancel
+                              </button>
+                              <button
+                                onClick={() => handleActionClick(order.id, "uncancel")}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
+                              >
+                                Order Uncancel
+                              </button>
+                              <button
+                                onClick={() => handleActionClick(order.id, "hold")}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
+                              >
+                                Order Hold
+                              </button>
+                              <button
+                                onClick={() => handleActionClick(order.id, "unhold")}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
+                              >
+                                Order Unhold
+                              </button>
+                              <button
+                                onClick={() => handleActionClick(order.id, "note")}
+                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
+                              >
+                                Order Note
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -468,13 +468,11 @@ class HelpshipClient {
       console.log(`[Helpship] No status update requested in updates object`);
     }
 
-    // Construim payload-ul pentru update
-    const payload: any = {};
-    
-    // Status-ul se setează separat folosind /hold sau /unhold
-    if (updates.paymentStatus) {
-      payload.paymentStatus = updates.paymentStatus;
-    }
+    // IMPORTANT: Nu putem folosi endpoint-ul general /api/Order/{id} pentru update
+    // deoarece necesită permisiuni de administrator pentru modificarea status-ului
+    // Folosim doar endpoint-uri specifice:
+    // - /api/order/{id}/updateAddress pentru adresă
+    // - /api/Order/{id}/unhold sau /hold pentru status
     
     // Dacă trebuie să actualizăm adresa, folosim endpoint-ul specific /updateAddress
     if (updates.customerName || updates.customerPhone || updates.shippingAddress || updates.postalCode) {
@@ -571,52 +569,16 @@ class HelpshipClient {
       console.log("[Helpship] No address update needed");
     }
 
-    // Dacă mai avem alte câmpuri de actualizat (nu doar adresa), folosim update-ul general
-    if (Object.keys(payload).length > 0) {
-      const possibleEndpoints = [
-        `/api/Order/${helpshipOrderId}`,
-        `/api/orders/${helpshipOrderId}`,
-      ];
-
-      const methods = ["PUT", "PATCH"];
-
-      let lastError: Error | null = null;
-
-      for (const endpoint of possibleEndpoints) {
-        for (const method of methods) {
-          try {
-            console.log(`[Helpship] Trying ${method} ${endpoint} for update`);
-            const response = await this.makeAuthenticatedRequest(endpoint, {
-              method,
-              body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-              console.log(`[Helpship] Success updating order with ${method} ${endpoint}`);
-              const responseData = await response.json().catch(() => ({}));
-              console.log("[Helpship] Update response:", JSON.stringify(responseData, null, 2));
-              break; // Ieșim din loop dacă a reușit
-            } else if (response.status !== 404) {
-              const errorText = await response.text();
-              console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
-              lastError = new Error(
-                `Failed to update Helpship order: ${response.status} ${errorText}`,
-              );
-            }
-          } catch (err) {
-            lastError = err instanceof Error ? err : new Error(String(err));
-            if (err instanceof Error && err.message.includes("Failed to update")) {
-              throw err;
-            }
-            console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
-            continue;
-          }
-        }
-      }
-
-      if (lastError && Object.keys(payload).length > 0) {
-        throw lastError;
-      }
+    // NOTĂ: Nu folosim endpoint-ul general /api/Order/{id} pentru update
+    // deoarece necesită permisiuni de administrator și returnează eroare 500/405
+    // Folosim doar endpoint-uri specifice:
+    // - /api/order/{id}/updateAddress pentru adresă (deja făcut mai sus)
+    // - /api/Order/{id}/unhold sau /hold pentru status (se face mai jos)
+    
+    // Dacă avem paymentStatus de actualizat, nu putem face update direct
+    // (ar necesita permisiuni de administrator)
+    if (updates.paymentStatus) {
+      console.log(`[Helpship] Note: paymentStatus update requested (${updates.paymentStatus}), but cannot update via general endpoint (requires admin permissions)`);
     }
 
     // După update-ul datelor, setăm status-ul dacă e necesar

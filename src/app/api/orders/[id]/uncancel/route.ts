@@ -51,10 +51,10 @@ export async function POST(
 
         console.log(`[Helpship] Uncancel order ${order.helpship_order_id} (current status: ${statusName})...`);
 
-        // Setăm statusul la Pending
-        await helpshipClient.setOrderStatus(order.helpship_order_id, "Pending");
+        // Folosim endpoint-ul specific pentru uncancel
+        await helpshipClient.uncancelOrder(order.helpship_order_id);
         
-        console.log(`[Helpship] Order ${order.helpship_order_id} uncanceled (status set to Pending).`);
+        console.log(`[Helpship] Order ${order.helpship_order_id} uncanceled successfully.`);
       } catch (helpshipError) {
         console.error("Failed to uncancel order in Helpship:", helpshipError);
         const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea anulării comenzii în Helpship";

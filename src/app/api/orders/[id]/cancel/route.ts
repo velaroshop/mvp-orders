@@ -51,10 +51,10 @@ export async function POST(
 
         console.log(`[Helpship] Canceling order ${order.helpship_order_id} (current status: ${statusName})...`);
 
-        // Setăm statusul la Archived
-        await helpshipClient.setOrderStatus(order.helpship_order_id, "Archived");
+        // Folosim endpoint-ul specific pentru cancel
+        await helpshipClient.cancelOrder(order.helpship_order_id);
         
-        console.log(`[Helpship] Order ${order.helpship_order_id} canceled (status set to Archived).`);
+        console.log(`[Helpship] Order ${order.helpship_order_id} canceled successfully.`);
       } catch (helpshipError) {
         console.error("Failed to cancel order in Helpship:", helpshipError);
         const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea comenzii în Helpship";

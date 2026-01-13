@@ -500,6 +500,64 @@ class HelpshipClient {
   }
 
   /**
+   * Anulează o comandă în Helpship folosind endpoint-ul specific
+   * POST /api/order/cancel cu array de order IDs în body
+   */
+  async cancelOrder(helpshipOrderId: string): Promise<void> {
+    const endpoint = `/api/order/cancel`;
+    console.log(`[Helpship] Canceling order ${helpshipOrderId} using endpoint: ${endpoint}`);
+    
+    try {
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: "POST",
+        body: JSON.stringify([helpshipOrderId]), // Array cu order ID
+      });
+
+      if (response.ok) {
+        console.log(`[Helpship] Success canceling order ${helpshipOrderId}`);
+        return;
+      } else {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to cancel order: ${response.status} ${errorText}`,
+        );
+      }
+    } catch (err) {
+      console.error(`[Helpship] Failed to cancel order:`, err);
+      throw err;
+    }
+  }
+
+  /**
+   * Anulează anularea unei comenzi în Helpship folosind endpoint-ul specific
+   * POST /api/Order/uncancel cu array de order IDs în body
+   */
+  async uncancelOrder(helpshipOrderId: string): Promise<void> {
+    const endpoint = `/api/Order/uncancel`;
+    console.log(`[Helpship] Uncanceling order ${helpshipOrderId} using endpoint: ${endpoint}`);
+    
+    try {
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: "POST",
+        body: JSON.stringify([helpshipOrderId]), // Array cu order ID
+      });
+
+      if (response.ok) {
+        console.log(`[Helpship] Success uncanceling order ${helpshipOrderId}`);
+        return;
+      } else {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to uncancel order: ${response.status} ${errorText}`,
+        );
+      }
+    } catch (err) {
+      console.error(`[Helpship] Failed to uncancel order:`, err);
+      throw err;
+    }
+  }
+
+  /**
    * Obține datele complete ale unei comenzi din Helpship
    */
   async getOrder(helpshipOrderId: string): Promise<any | null> {

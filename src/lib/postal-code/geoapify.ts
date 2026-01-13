@@ -121,27 +121,35 @@ export async function searchPostalCodes(
       );
     }
 
-    let data: GeoapifyPostcodeResponse = await response.json();
+    const data: any = await response.json();
 
-    // Postcode Search API poate returna fie ca `results` array, fie ca GeoJSON `features`
+    // Postcode Search API returnează GeoJSON format cu `features` array
     let postcodeResults: Array<any> = [];
     
     if (data.results && Array.isArray(data.results)) {
+      // Format JSON cu results array
       postcodeResults = data.results;
     } else if (data.features && Array.isArray(data.features)) {
-      // Convertim GeoJSON features în format results
-      postcodeResults = data.features.map((feature) => ({
-        postcode: feature.properties.postcode,
-        country: feature.properties.country,
-        country_code: feature.properties.country_code,
-        city: feature.properties.city,
-        county: feature.properties.county,
-        state: feature.properties.state,
-        lat: feature.properties.lat || feature.geometry.coordinates[1],
-        lon: feature.properties.lon || feature.geometry.coordinates[0],
-        formatted: feature.properties.formatted,
-        street: feature.properties.street,
-      }));
+      // Format GeoJSON cu features array
+      postcodeResults = data.features.map((feature: any) => {
+        const props = feature.properties || {};
+        const coords = feature.geometry?.coordinates || [];
+        
+        return {
+          postcode: props.postcode,
+          country: props.country,
+          country_code: props.country_code,
+          city: props.city,
+          county: props.county,
+          state: props.state,
+          // Coordonatele pot fi în properties sau în geometry.coordinates
+          lat: props.lat || coords[1] || null,
+          lon: props.lon || coords[0] || null,
+          formatted: props.formatted || props.address_line1,
+          street: props.street,
+          distance: props.distance, // Distanța de la coordonatele căutate
+        };
+      });
     }
 
     console.log(`[Geoapify] Postcode Search API returned ${postcodeResults.length} results`);
@@ -170,24 +178,30 @@ export async function searchPostalCodes(
       });
 
       if (listResponse.ok) {
-        const listData: GeoapifyPostcodeResponse = await listResponse.json();
+        const listData: any = await listResponse.json();
         
-        // Convertim și rezultatele din List API
+        // Convertim și rezultatele din List API (poate fi JSON sau GeoJSON)
         if (listData.results && Array.isArray(listData.results)) {
           postcodeResults = listData.results;
         } else if (listData.features && Array.isArray(listData.features)) {
-          postcodeResults = listData.features.map((feature) => ({
-            postcode: feature.properties.postcode,
-            country: feature.properties.country,
-            country_code: feature.properties.country_code,
-            city: feature.properties.city,
-            county: feature.properties.county,
-            state: feature.properties.state,
-            lat: feature.properties.lat || feature.geometry.coordinates[1],
-            lon: feature.properties.lon || feature.geometry.coordinates[0],
-            formatted: feature.properties.formatted,
-            street: feature.properties.street,
-          }));
+          postcodeResults = listData.features.map((feature: any) => {
+            const props = feature.properties || {};
+            const coords = feature.geometry?.coordinates || [];
+            
+            return {
+              postcode: props.postcode,
+              country: props.country,
+              country_code: props.country_code,
+              city: props.city,
+              county: props.county,
+              state: props.state,
+              lat: props.lat || coords[1] || null,
+              lon: props.lon || coords[0] || null,
+              formatted: props.formatted || props.address_line1,
+              street: props.street,
+              distance: props.distance,
+            };
+          });
         }
         
         console.log(`[Geoapify] Postcode List API returned ${postcodeResults.length} results`);
@@ -234,8 +248,11 @@ export async function searchPostalCodes(
           continue;
         }
 
-        // Dacă avem deja acest cod poștal, păstrăm primul (sau cel mai apropiat)
-        if (!postalCodeMap.has(postcode)) {
+        // Dacă avem deja acest cod poștal, păstrăm cel mai apropiat (cu distanță mai mică)
+        const existing = postalCodeMap.get(postcode);
+        const distance = result.distance || Infinity;
+        
+        if (!existing || (result.distance && existing.lat && existing.lon && distance < (existing as any).distance)) {
           postalCodeMap.set(postcode, {
             postcode,
             formatted: result.formatted || `${postcode}, ${result.city || city}, ${result.county || county}`,
@@ -249,14 +266,24 @@ export async function searchPostalCodes(
             lat: result.lat,
             lon: result.lon,
           });
+          
+          // Păstrăm distanța pentru sortare
+          (postalCodeMap.get(postcode) as any).distance = distance;
         }
       }
     }
 
-    // Sortează după confidence (descrescător)
-    const results = Array.from(postalCodeMap.values()).sort(
-      (a, b) => b.confidence - a.confidence
-    );
+    // Sortează după confidence și distanță (mai întâi confidence, apoi distanță)
+    const results = Array.from(postalCodeMap.values()).sort((a, b) => {
+      // Mai întâi după confidence (descrescător)
+      if (b.confidence !== a.confidence) {
+        return b.confidence - a.confidence;
+      }
+      // Apoi după distanță (crescător - mai aproape = mai bun)
+      const distA = (a as any).distance || Infinity;
+      const distB = (b as any).distance || Infinity;
+      return distA - distB;
+    });
 
     console.log(`[Geoapify] Found ${results.length} unique postal codes`);
     return results;

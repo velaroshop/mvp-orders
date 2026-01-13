@@ -183,6 +183,14 @@ class HelpshipClient {
     const street = addressParts ? addressParts[1].trim() : orderData.address;
     const number = addressParts ? addressParts[2].trim() : "";
 
+    // Obține GUID-ul pentru România (sau folosește null dacă nu se găsește)
+    let countryId: string | null = null;
+    try {
+      countryId = await this.getRomaniaCountryId();
+    } catch (err) {
+      console.warn("[Helpship] Failed to get Romania countryId, using null:", err);
+    }
+
     // Construim payload-ul conform documentației Helpship
     const payload: HelpshipOrderPayload = {
       externalId: orderData.orderId,
@@ -199,7 +207,7 @@ class HelpshipClient {
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,
-        countryId: null, // TODO: Obțineți GUID-ul real pentru România din API sau de la echipa Helpship
+        countryId: countryId, // GUID pentru România (sau null dacă nu s-a găsit)
       },
       firstName: firstName,
       lastName: lastName,
@@ -281,6 +289,55 @@ class HelpshipClient {
     };
   }
 
+
+  /**
+   * Obține GUID-ul pentru România din API (dacă există endpoint pentru țări)
+   * TODO: Verifică în Swagger dacă există GET /api/Countries sau similar
+   */
+  async getRomaniaCountryId(): Promise<string | null> {
+    // Încearcă să obțină lista de țări din API
+    const possibleEndpoints = [
+      "/api/Countries",
+      "/api/countries",
+      "/api/Country",
+      "/api/country",
+    ];
+
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log(`[Helpship] Trying to get countries from ${endpoint}...`);
+        const response = await this.makeAuthenticatedRequest(endpoint, {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`[Helpship] Countries response:`, JSON.stringify(data, null, 2));
+          
+          // Caută România în listă
+          const countries = Array.isArray(data) ? data : data.items || data.data || [];
+          const romania = countries.find(
+            (c: any) =>
+              c.name?.toLowerCase() === "romania" ||
+              c.name?.toLowerCase() === "românia" ||
+              c.code === "RO" ||
+              c.code === "ROU",
+          );
+
+          if (romania?.id) {
+            console.log(`[Helpship] Found Romania countryId: ${romania.id}`);
+            return romania.id;
+          }
+        }
+      } catch (err) {
+        console.log(`[Helpship] Endpoint ${endpoint} failed:`, err instanceof Error ? err.message : String(err));
+        continue;
+      }
+    }
+
+    console.warn("[Helpship] Could not find Romania countryId from API");
+    return null;
+  }
 
   /**
    * Setează status-ul comenzii în Helpship (nu paymentStatus!)

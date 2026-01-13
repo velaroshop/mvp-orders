@@ -13,23 +13,31 @@ interface HelpshipTokenResponse {
 }
 
 interface HelpshipOrderPayload {
-  // Vom completa structura exactă după ce testăm cu API-ul real
-  // Deocamdată, structură generică bazată pe datele noastre
-  customerName: string;
-  customerPhone: string;
-  shippingAddress: {
-    county: string;
+  externalId: string;
+  name: string;
+  totalPrice: number;
+  discountPrice: number;
+  shippingPrice: number;
+  shippingVatPercentage: number;
+  currency: string;
+  mailingAddress: {
+    addressLine1: string;
+    addressLine2?: string;
+    street: string;
+    number: string;
+    zip: string;
     city: string;
-    address: string;
+    province: string;
   };
-  items: Array<{
-    offerCode: string;
-    quantity: number;
-    price: number;
-  }>;
-  total: number;
-  status: "ONHOLD" | "PENDING";
-  // Alte câmpuri necesare vor fi adăugate după testare
+  countryId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  isTaxPayer: boolean;
+  vatRegistrationNumber?: string;
+  tradeRegisterNumber?: string;
+  lockerId?: string;
 }
 
 class HelpshipClient {
@@ -127,9 +135,13 @@ class HelpshipClient {
 
   /**
    * Creează o comandă nouă în Helpship cu status ONHOLD
+   * 
+   * NOTĂ: Pentru status ONHOLD, probabil trebuie creată normal și apoi actualizată
+   * sau există un câmp special. Vom verifica după testare.
    */
   async createOrder(
     orderData: {
+      orderId: string; // ID-ul nostru intern (externalId)
       customerName: string;
       customerPhone: string;
       county: string;
@@ -142,72 +154,51 @@ class HelpshipClient {
       upsells?: string[];
     },
   ): Promise<{ orderId: string; rawResponse?: any }> {
-    // Construim payload-ul pentru Helpship
-    // NOTĂ: Structura exactă va fi ajustată după ce testăm cu API-ul real
+    // Separăm numele în firstName și lastName
+    const nameParts = orderData.customerName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Parsăm adresa pentru a extrage street, number, etc.
+    // Pentru MVP, punem tot în addressLine1 și street
+    const addressParts = orderData.address.match(/^(.+?)\s+(\d+.*)$/);
+    const street = addressParts ? addressParts[1].trim() : orderData.address;
+    const number = addressParts ? addressParts[2].trim() : "";
+
+    // Construim payload-ul conform documentației Helpship
     const payload: HelpshipOrderPayload = {
-      customerName: orderData.customerName,
-      customerPhone: orderData.customerPhone,
-      shippingAddress: {
-        county: orderData.county,
+      externalId: orderData.orderId,
+      name: `Comandă ${orderData.offerCode} - ${orderData.customerName}`,
+      totalPrice: orderData.total,
+      discountPrice: 0, // TODO: calculați dacă există discount
+      shippingPrice: orderData.shippingCost,
+      shippingVatPercentage: 0, // TODO: adăugați TVA dacă e necesar
+      currency: "RON",
+      mailingAddress: {
+        addressLine1: orderData.address,
+        street: street,
+        number: number || "",
+        zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
-        address: orderData.address,
+        province: orderData.county,
       },
-      items: [
-        {
-          offerCode: orderData.offerCode,
-          quantity: 1, // TODO: calculați cantitatea din offerCode
-          price: orderData.subtotal,
-        },
-      ],
-      total: orderData.total,
-      status: "ONHOLD",
+      countryId: "", // TODO: obțineți countryId pentru România din API
+      firstName: firstName,
+      lastName: lastName,
+      phone: orderData.customerPhone,
+      email: "", // TODO: adăugați email dacă îl colectați
+      isTaxPayer: false,
+      vatRegistrationNumber: undefined,
+      tradeRegisterNumber: undefined,
+      lockerId: undefined,
     };
 
     console.log("[Helpship] Creating order with payload:", JSON.stringify(payload, null, 2));
-    
-    // Încearcă mai multe variante de endpoint-uri comune
-    // TODO: Ajustează după ce verifici documentația Swagger
-    const possibleEndpoints = [
-      "/api/orders",
-      "/orders",
-      "/api/v1/orders",
-      "/v1/orders",
-      "/api/order",
-      "/order",
-    ];
-    
-    let response: Response | null = null;
-    let lastError: Error | null = null;
-    
-    for (const endpoint of possibleEndpoints) {
-      try {
-        console.log(`[Helpship] Trying endpoint: ${endpoint}`);
-        response = await this.makeAuthenticatedRequest(endpoint, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        
-        if (response.ok) {
-          console.log(`[Helpship] Success with endpoint: ${endpoint}`);
-          break;
-        } else if (response.status !== 404) {
-          // Dacă nu e 404, înseamnă că endpoint-ul există dar are altă problemă
-          console.log(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}`);
-          break;
-        }
-        // Dacă e 404, continuă cu următorul endpoint
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        console.log(`[Helpship] Endpoint ${endpoint} failed:`, lastError.message);
-        continue;
-      }
-    }
-    
-    if (!response) {
-      throw new Error(
-        `Failed to find valid endpoint. Tried: ${possibleEndpoints.join(", ")}. Last error: ${lastError?.message || "Unknown"}`,
-      );
-    }
+
+    const response = await this.makeAuthenticatedRequest("/api/Order", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
 
     console.log("[Helpship] Response status:", response.status, response.statusText);
 
@@ -232,7 +223,7 @@ class HelpshipClient {
     if (!orderId) {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
-    
+
     return {
       orderId: orderId || "unknown",
       rawResponse: responseData,

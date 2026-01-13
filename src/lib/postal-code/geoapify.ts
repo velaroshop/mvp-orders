@@ -123,8 +123,31 @@ export async function searchPostalCodes(
 
     let data: GeoapifyPostcodeResponse = await response.json();
 
+    // Postcode Search API poate returna fie ca `results` array, fie ca GeoJSON `features`
+    let postcodeResults: Array<any> = [];
+    
+    if (data.results && Array.isArray(data.results)) {
+      postcodeResults = data.results;
+    } else if (data.features && Array.isArray(data.features)) {
+      // Convertim GeoJSON features în format results
+      postcodeResults = data.features.map((feature) => ({
+        postcode: feature.properties.postcode,
+        country: feature.properties.country,
+        country_code: feature.properties.country_code,
+        city: feature.properties.city,
+        county: feature.properties.county,
+        state: feature.properties.state,
+        lat: feature.properties.lat || feature.geometry.coordinates[1],
+        lon: feature.properties.lon || feature.geometry.coordinates[0],
+        formatted: feature.properties.formatted,
+        street: feature.properties.street,
+      }));
+    }
+
+    console.log(`[Geoapify] Postcode Search API returned ${postcodeResults.length} results`);
+
     // Dacă Postcode Search API nu returnează rezultate, încercăm cu Postcode List API cu filter circular
-    if (!data.results || data.results.length === 0) {
+    if (postcodeResults.length === 0) {
       console.log("[Geoapify] Postcode Search API returned no results, trying Postcode List API with circle filter...");
       
       // Mărim raza la 5000m (5km) pentru a găsi mai multe rezultate
@@ -147,8 +170,27 @@ export async function searchPostalCodes(
       });
 
       if (listResponse.ok) {
-        data = await listResponse.json();
-        console.log(`[Geoapify] Postcode List API returned ${data.results?.length || 0} results`);
+        const listData: GeoapifyPostcodeResponse = await listResponse.json();
+        
+        // Convertim și rezultatele din List API
+        if (listData.results && Array.isArray(listData.results)) {
+          postcodeResults = listData.results;
+        } else if (listData.features && Array.isArray(listData.features)) {
+          postcodeResults = listData.features.map((feature) => ({
+            postcode: feature.properties.postcode,
+            country: feature.properties.country,
+            country_code: feature.properties.country_code,
+            city: feature.properties.city,
+            county: feature.properties.county,
+            state: feature.properties.state,
+            lat: feature.properties.lat || feature.geometry.coordinates[1],
+            lon: feature.properties.lon || feature.geometry.coordinates[0],
+            formatted: feature.properties.formatted,
+            street: feature.properties.street,
+          }));
+        }
+        
+        console.log(`[Geoapify] Postcode List API returned ${postcodeResults.length} results`);
       }
     }
 
@@ -167,8 +209,8 @@ export async function searchPostalCodes(
     // Extrage codurile poștale din rezultate
     const postalCodeMap = new Map<string, PostalCodeResult>();
 
-    if (data.results && Array.isArray(data.results)) {
-      for (const result of data.results) {
+    if (postcodeResults.length > 0) {
+      for (const result of postcodeResults) {
         const postcode = result.postcode;
 
         if (!postcode) continue;

@@ -41,9 +41,9 @@ export interface GeoapifyGeocodingResponse {
   };
 }
 
-// Tipuri pentru Postcode API response
+// Tipuri pentru Postcode Search API response (poate returna direct un array sau un obiect cu results)
 export interface GeoapifyPostcodeResponse {
-  results: Array<{
+  results?: Array<{
     postcode: string;
     country: string;
     country_code: string;
@@ -54,5 +54,26 @@ export interface GeoapifyPostcodeResponse {
     lon: number;
     formatted?: string;
     street?: string;
+  }>;
+  // Sau poate returna direct un array (GeoJSON FeatureCollection)
+  type?: string;
+  features?: Array<{
+    type: string;
+    properties: {
+      postcode?: string;
+      country?: string;
+      country_code?: string;
+      city?: string;
+      county?: string;
+      state?: string;
+      lat?: number;
+      lon?: number;
+      formatted?: string;
+      street?: string;
+    };
+    geometry: {
+      type: string;
+      coordinates: [number, number];
+    };
   }>;
 }

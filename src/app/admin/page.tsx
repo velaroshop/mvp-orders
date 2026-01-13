@@ -99,13 +99,62 @@ export default function AdminPage() {
     });
   }
 
-  function handleActionClick(orderId: string, action: string) {
+  async function handleActionClick(orderId: string, action: string) {
     if (action === "confirm") {
       const order = orders.find((o) => o.id === orderId);
       if (order) {
         handleConfirmClick(order);
       }
+      setOpenDropdown(null);
+      return;
     }
+
+    if (action === "cancel") {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/cancel`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to cancel order");
+        }
+
+        // Reîncarcă lista de comenzi
+        await fetchOrders();
+        alert("Comanda a fost anulată cu succes");
+      } catch (error) {
+        console.error("Error canceling order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la anularea comenzii";
+        alert(errorMessage);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
+    if (action === "uncancel") {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/uncancel`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to uncancel order");
+        }
+
+        // Reîncarcă lista de comenzi
+        await fetchOrders();
+        alert("Anularea comenzii a fost anulată cu succes");
+      } catch (error) {
+        console.error("Error uncanceling order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la anularea anulării comenzii";
+        alert(errorMessage);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }

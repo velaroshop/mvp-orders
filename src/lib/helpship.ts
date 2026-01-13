@@ -365,11 +365,14 @@ class HelpshipClient {
 
   /**
    * Setează status-ul comenzii în Helpship
-   * Folosește endpoint-ul specific: POST /api/Order/{id}/hold pentru OnHold
+   * Folosește endpoint-uri specifice pentru diferite statusuri:
+   * - POST /api/Order/{id}/hold pentru OnHold
+   * - POST /api/Order/{id}/unhold pentru Pending
+   * - PUT /api/Order/{id} pentru Archived
    */
-  private async setOrderStatus(
+  async setOrderStatus(
     helpshipOrderId: string,
-    status: "OnHold" | "Pending",
+    status: "OnHold" | "Pending" | "Archived",
   ): Promise<void> {
     if (status === "OnHold") {
       // Folosim endpoint-ul specific pentru a pune comanda pe hold
@@ -419,6 +422,52 @@ class HelpshipClient {
         console.error(`[Helpship] Failed to set order to Pending:`, err);
         throw err;
       }
+    } else if (status === "Archived") {
+      // Pentru Archived, folosim endpoint-ul general de update sau un endpoint specific
+      // Încercăm mai întâi cu endpoint-ul general PUT /api/Order/{id}
+      const endpoint = `/api/Order/${helpshipOrderId}`;
+      console.log(`[Helpship] Setting order to Archived using endpoint: ${endpoint}`);
+      
+      try {
+        // Obținem comanda curentă pentru a păstra datele
+        const currentOrderResponse = await this.makeAuthenticatedRequest(endpoint, {
+          method: "GET",
+        });
+
+        if (!currentOrderResponse.ok) {
+          const errorText = await currentOrderResponse.text();
+          throw new Error(`Failed to get order: ${currentOrderResponse.status} ${errorText}`);
+        }
+
+        const currentOrder = await currentOrderResponse.json();
+        
+        // Actualizăm doar status-ul
+        const updatePayload = {
+          ...currentOrder,
+          status: 6, // 6 = Archived (conform enum-ului din documentație)
+          statusName: "Archived",
+        };
+
+        const response = await this.makeAuthenticatedRequest(endpoint, {
+          method: "PUT",
+          body: JSON.stringify(updatePayload),
+        });
+
+        if (response.ok) {
+          console.log(`[Helpship] Success setting order to Archived using ${endpoint}`);
+          return;
+        } else {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to set order to Archived: ${response.status} ${errorText}`,
+          );
+        }
+      } catch (err) {
+        console.error(`[Helpship] Failed to set order to Archived:`, err);
+        throw err;
+      }
+    } else {
+      throw new Error(`Unsupported status: ${status}`);
     }
   }
 

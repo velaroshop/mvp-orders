@@ -65,6 +65,25 @@ export async function POST(
       }
     }
 
+    // Actualizăm statusul în DB la "cancelled"
+    // Salvăm statusul curent în cancelled_from_status pentru a-l putea restabili la uncancel
+    const currentStatus = order.status;
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ 
+        status: "cancelled",
+        cancelled_from_status: currentStatus, // Salvăm statusul inițial
+      })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error("Failed to update order status in DB:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update order status" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error canceling order", error);

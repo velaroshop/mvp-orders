@@ -65,6 +65,25 @@ export async function POST(
       }
     }
 
+    // Restabilim statusul inițial în DB
+    // Folosim cancelled_from_status dacă există, altfel "pending" (default)
+    const previousStatus = (order.cancelled_from_status as string) || "pending";
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ 
+        status: previousStatus,
+        cancelled_from_status: null, // Ștergem câmpul după restabilire
+      })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error("Failed to update order status in DB:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update order status" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error uncanceling order", error);

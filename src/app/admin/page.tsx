@@ -214,10 +214,12 @@ export default function AdminPage() {
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
                           order.status === "confirmed"
                             ? "bg-emerald-100 text-emerald-800"
+                            : order.status === "cancelled"
+                            ? "bg-red-100 text-red-800"
                             : "bg-amber-100 text-amber-800"
                         }`}
                       >
-                        {order.status === "pending" ? "Pending" : "Confirmed"}
+                        {order.status === "pending" ? "Pending" : order.status === "cancelled" ? "Cancelled" : "Confirmed"}
                       </span>
                     </td>
 

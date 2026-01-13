@@ -363,6 +363,7 @@ class HelpshipClient {
 
   /**
    * Setează status-ul comenzii în Helpship (nu paymentStatus!)
+   * Încearcă multiple variante: status, orderStatus, fulfillmentStatus
    */
   private async setOrderStatus(
     helpshipOrderId: string,
@@ -371,45 +372,48 @@ class HelpshipClient {
     // Încearcă mai multe variante de endpoint pentru setarea status-ului
     const possibleEndpoints = [
       `/api/Order/${helpshipOrderId}/status`,
+      `/api/Order/${helpshipOrderId}/fulfillment`,
       `/api/Order/${helpshipOrderId}`,
       `/api/orders/${helpshipOrderId}/status`,
+      `/api/orders/${helpshipOrderId}/fulfillment`,
     ];
 
     const methods = ["PUT", "PATCH", "POST"];
+
+    // Variante de payload pentru status
+    const statusPayloads = [
+      { status }, // { status: "OnHold" }
+      { orderStatus: status }, // { orderStatus: "OnHold" }
+      { fulfillmentStatus: status }, // { fulfillmentStatus: "OnHold" }
+      { status, fulfillmentStatus: status }, // Ambele
+    ];
 
     let lastError: Error | null = null;
 
     for (const endpoint of possibleEndpoints) {
       for (const method of methods) {
-        try {
-          console.log(`[Helpship] Trying ${method} ${endpoint} to set status to ${status}`);
-          
-          // Încearcă cu payload simplu { status: "OnHold" sau "Pending" }
-          let response = await this.makeAuthenticatedRequest(endpoint, {
-            method,
-            body: JSON.stringify({ status }),
-          });
-
-          // Dacă nu merge, încearcă cu { orderStatus: "OnHold" sau "Pending" }
-          if (!response.ok && method === "PUT") {
-            response = await this.makeAuthenticatedRequest(endpoint, {
+        for (const payload of statusPayloads) {
+          try {
+            console.log(`[Helpship] Trying ${method} ${endpoint} with payload:`, JSON.stringify(payload));
+            
+            const response = await this.makeAuthenticatedRequest(endpoint, {
               method,
-              body: JSON.stringify({ orderStatus: status }),
+              body: JSON.stringify(payload),
             });
-          }
 
-          if (response.ok) {
-            console.log(`[Helpship] Success setting status with ${method} ${endpoint}`);
-            return;
-          } else if (response.status !== 404) {
-            const errorText = await response.text();
-            console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
-            // Continuă să încerce alte variante
+            if (response.ok) {
+              console.log(`[Helpship] Success setting status with ${method} ${endpoint} and payload:`, JSON.stringify(payload));
+              return;
+            } else if (response.status !== 404) {
+              const errorText = await response.text();
+              console.log(`[Helpship] Endpoint ${endpoint} returned ${response.status}:`, errorText.substring(0, 200));
+              // Continuă să încerce alte variante
+            }
+          } catch (err) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
+            continue;
           }
-        } catch (err) {
-          lastError = err instanceof Error ? err : new Error(String(err));
-          console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
-          continue;
         }
       }
     }

@@ -49,6 +49,7 @@ interface HelpshipOrderPayload {
   deliveryServiceId?: string;
   paymentStatus?: string; // Status-ul plății (rămâne "Pending")
   status?: string | number; // Status-ul comenzii: 7 = OnHold, 0 = Pending (poate fi string sau number)
+  statusName?: string; // Numele status-ului: "OnHold", "Pending", etc.
   customerNote?: string | null;
   shopOwnerNote?: string | null;
   orderLines: Array<{
@@ -243,6 +244,7 @@ class HelpshipClient {
       paymentProcessing: "Manual", // Metoda de plată: Manual (nu Checkout)
       paymentStatus: "Pending", // Status-ul plății (rămâne "Pending")
       status: 7, // Status-ul comenzii: 7 = OnHold (enum: 0=Pending, 1=Packing, 2=Packed, 3=Fulfilled, 4=Incomplete, 5=Error, 6=Archived, 7=OnHold)
+      statusName: "OnHold", // Încercăm și cu statusName (string)
       customerNote: null,
       shopOwnerNote: null,
       orderLines: [

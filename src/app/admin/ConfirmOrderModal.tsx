@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Order } from "@/lib/types";
+import type { PostalCodeResult } from "@/lib/postal-code/types";
 
 interface ConfirmOrderModalProps {
   order: Order | null;
@@ -27,11 +28,65 @@ export default function ConfirmOrderModal({
     discount: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [postalCodes, setPostalCodes] = useState<PostalCodeResult[]>([]);
+  const [isLoadingPostalCodes, setIsLoadingPostalCodes] = useState(false);
+  const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
+
+  // Funcție pentru căutarea codurilor poștale
+  async function searchPostalCodes(address?: string, city?: string, county?: string) {
+    const searchAddress = address || formData.address;
+    const searchCity = city || formData.city;
+    const searchCounty = county || formData.county;
+
+    if (!searchAddress || !searchCity || !searchCounty) {
+      setPostalCodeError("Completează adresa, orașul și județul pentru a căuta coduri poștale");
+      return;
+    }
+
+    setIsLoadingPostalCodes(true);
+    setPostalCodeError(null);
+
+    try {
+      const params = new URLSearchParams({
+        address: searchAddress,
+        city: searchCity,
+        county: searchCounty,
+        country: "Romania",
+      });
+
+      const response = await fetch(`/api/postal-code/search?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to search postal codes");
+      }
+
+      const data = await response.json();
+      setPostalCodes(data.postalCodes || []);
+      
+      if (data.postalCodes && data.postalCodes.length === 0) {
+        setPostalCodeError("Nu s-au găsit coduri poștale pentru această adresă");
+      }
+    } catch (error) {
+      console.error("Error searching postal codes:", error);
+      setPostalCodeError(
+        error instanceof Error ? error.message : "Eroare la căutarea codurilor poștale"
+      );
+      setPostalCodes([]);
+    } finally {
+      setIsLoadingPostalCodes(false);
+    }
+  }
+
+  // Funcție pentru selectarea unui cod poștal
+  function selectPostalCode(postalCode: string) {
+    setFormData({ ...formData, postalCode });
+  }
 
   // Populează formularul când se deschide modalul
   useEffect(() => {
     if (order && isOpen) {
-      setFormData({
+      const initialData = {
         fullName: order.fullName || "",
         phone: order.phone || "",
         county: order.county || "",
@@ -39,8 +94,14 @@ export default function ConfirmOrderModal({
         address: order.address || "",
         postalCode: order.postalCode || "",
         shippingPrice: order.shippingCost || 0,
-        discount: 0, // TODO: adăugăm discount în Order type dacă e necesar
-      });
+        discount: 0,
+      };
+      setFormData(initialData);
+      
+      // Caută automat codurile poștale când se deschide modalul (dacă avem adresa completă)
+      if (initialData.address && initialData.city && initialData.county) {
+        searchPostalCodes(initialData.address, initialData.city, initialData.county);
+      }
     }
   }, [order, isOpen]);
 
@@ -213,13 +274,65 @@ export default function ConfirmOrderModal({
                     setFormData({ ...formData, postalCode: e.target.value })
                   }
                   className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Post code"
+                  placeholder="@ Post code"
                 />
-                {formData.postalCode && (
-                  <p className="text-xs text-emerald-600 mt-1">
-                    ✓ Cod poștal sugerat de Helpship
-                  </p>
-                )}
+                
+                {/* Recommended postal codes */}
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-zinc-900">
+                      Recommended postal codes:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => searchPostalCodes()}
+                      disabled={isLoadingPostalCodes}
+                      className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoadingPostalCodes ? "Loading..." : "Reload"}
+                    </button>
+                  </div>
+                  
+                  {isLoadingPostalCodes && (
+                    <p className="text-xs text-zinc-500">Căutare coduri poștale...</p>
+                  )}
+                  
+                  {postalCodeError && (
+                    <p className="text-xs text-red-600">{postalCodeError}</p>
+                  )}
+                  
+                  {!isLoadingPostalCodes && postalCodes.length > 0 && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {postalCodes.map((result, index) => (
+                        <div
+                          key={`${result.postcode}-${index}`}
+                          className="p-2 border border-zinc-200 rounded-md hover:bg-zinc-50 cursor-pointer transition-colors"
+                          onClick={() => selectPostalCode(result.postcode)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-zinc-900">
+                                {result.postcode}
+                              </p>
+                              <p className="text-xs text-zinc-600 mt-1">
+                                {result.formatted}
+                              </p>
+                            </div>
+                            {formData.postalCode === result.postcode && (
+                              <span className="text-emerald-600 text-xs">✓</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {!isLoadingPostalCodes && postalCodes.length === 0 && !postalCodeError && (
+                    <p className="text-xs text-zinc-500">
+                      Apasă "Reload" pentru a căuta coduri poștale
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Order Summary */}

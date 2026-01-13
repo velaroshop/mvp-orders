@@ -176,6 +176,12 @@ class HelpshipClient {
     const nameParts = orderData.customerName.trim().split(/\s+/);
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
+    
+    console.log("[Helpship] Parsed customer name:", {
+      fullName: orderData.customerName,
+      firstName,
+      lastName,
+    });
 
     // Parsăm adresa pentru a extrage street, number, etc.
     // Pentru MVP, punem tot în addressLine1 și street
@@ -209,9 +215,9 @@ class HelpshipClient {
         province: orderData.county,
         countryId: countryId, // GUID pentru România (sau null dacă nu s-a găsit)
       },
-      firstName: firstName,
-      lastName: lastName,
-      phone: orderData.customerPhone,
+      firstName: firstName || "N/A", // Asigură-te că nu e string gol
+      lastName: lastName || "N/A", // Asigură-te că nu e string gol
+      phone: orderData.customerPhone || "", // Verifică dacă telefonul e trimis corect
       email: null, // TODO: adăugați email dacă îl colectați (null în loc de string gol)
       isTaxPayer: false,
       vatRegistrationNumber: null,

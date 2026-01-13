@@ -40,7 +40,8 @@ interface HelpshipOrderPayload {
   lockerId?: string;
   paymentProcessing?: string;
   deliveryServiceId?: string;
-  paymentStatus?: string; // Probabil controlează status-ul comenzii
+  paymentStatus?: string; // Status-ul plății (rămâne "Pending")
+  status?: string; // Status-ul comenzii (trebuie "OnHold" la creare, "Pending" la confirmare)
   customerNote?: string;
   shopOwnerNote?: string;
   orderLines: Array<{
@@ -209,8 +210,8 @@ class HelpshipClient {
       tradeRegisterNumber: undefined,
       lockerId: undefined,
       paymentProcessing: "Checkout", // Sau altă valoare conform documentației
-      // NU setăm paymentStatus la creare - îl setăm după pentru a controla status-ul
-      // paymentStatus: "Pending", // Va fi setat după creare
+      paymentStatus: "Pending", // Status-ul plății (rămâne "Pending")
+      status: "OnHold", // Status-ul comenzii (trebuie "OnHold" la creare)
       customerNote: undefined,
       shopOwnerNote: undefined,
       orderLines: [
@@ -255,21 +256,20 @@ class HelpshipClient {
       console.warn("[Helpship] No orderId found in response, full response:", responseData);
     }
 
-    // După creare, setăm paymentStatus la o valoare care să indice ONHOLD
-    // Încearcă mai multe variante: "OnHold", "On Hold", sau poate trebuie un câmp separat
+    // Status-ul comenzii este deja setat la "OnHold" în payload
+    // Dacă nu a funcționat, încercăm să-l setăm după creare
     if (orderId && orderId !== "unknown") {
-      try {
-        console.log(`[Helpship] Setting order ${orderId} paymentStatus to OnHold...`);
-        // Încearcă să seteze paymentStatus la "OnHold" sau altă valoare
-        await this.setPaymentStatus(orderId, "OnHold");
-      } catch (statusError) {
-        console.warn("[Helpship] Failed to set paymentStatus to OnHold, trying alternative methods:", statusError);
-        // Încearcă și metoda veche pentru status
+      // Verificăm dacă status-ul a fost setat corect în răspuns
+      const responseStatus = responseData.status;
+      if (responseStatus !== "OnHold") {
+        console.log(`[Helpship] Order created with status "${responseStatus}", attempting to set to OnHold...`);
         try {
-          await this.setOrderStatus(orderId, "ONHOLD");
-        } catch (altError) {
-          console.warn("[Helpship] Also failed to set order status, but order was created:", altError);
+          await this.setOrderStatus(orderId, "OnHold");
+        } catch (statusError) {
+          console.warn("[Helpship] Failed to set order status to OnHold after creation:", statusError);
         }
+      } else {
+        console.log("[Helpship] Order created with status OnHold successfully");
       }
     }
 
@@ -279,55 +279,13 @@ class HelpshipClient {
     };
   }
 
-  /**
-   * Setează paymentStatus-ul unei comenzi în Helpship
-   */
-  private async setPaymentStatus(
-    helpshipOrderId: string,
-    paymentStatus: string,
-  ): Promise<void> {
-    // Încearcă să actualizeze paymentStatus prin update-ul comenzii
-    const possibleEndpoints = [
-      `/api/Order/${helpshipOrderId}`,
-      `/api/orders/${helpshipOrderId}`,
-    ];
-
-    const methods = ["PUT", "PATCH"];
-
-    for (const endpoint of possibleEndpoints) {
-      for (const method of methods) {
-        try {
-          console.log(`[Helpship] Trying ${method} ${endpoint} to set paymentStatus to ${paymentStatus}`);
-          
-          const response = await this.makeAuthenticatedRequest(endpoint, {
-            method,
-            body: JSON.stringify({ paymentStatus }),
-          });
-
-          if (response.ok) {
-            console.log(`[Helpship] Success setting paymentStatus with ${method} ${endpoint}`);
-            return;
-          } else if (response.status !== 404) {
-            const errorText = await response.text();
-            console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
-            // Continuă să încerce alte variante
-          }
-        } catch (err) {
-          console.log(`[Helpship] ${method} ${endpoint} failed:`, err instanceof Error ? err.message : String(err));
-          continue;
-        }
-      }
-    }
-
-    throw new Error(`Failed to set paymentStatus. Tried: ${possibleEndpoints.join(", ")}`);
-  }
 
   /**
-   * Setează status-ul unei comenzi în Helpship (metodă alternativă)
+   * Setează status-ul comenzii în Helpship (nu paymentStatus!)
    */
   private async setOrderStatus(
     helpshipOrderId: string,
-    status: "ONHOLD" | "PENDING",
+    status: "OnHold" | "Pending",
   ): Promise<void> {
     // Încearcă mai multe variante de endpoint pentru setarea status-ului
     const possibleEndpoints = [
@@ -345,13 +303,13 @@ class HelpshipClient {
         try {
           console.log(`[Helpship] Trying ${method} ${endpoint} to set status to ${status}`);
           
-          // Încearcă cu payload simplu { status: "ONHOLD" }
+          // Încearcă cu payload simplu { status: "OnHold" sau "Pending" }
           let response = await this.makeAuthenticatedRequest(endpoint, {
             method,
             body: JSON.stringify({ status }),
           });
 
-          // Dacă nu merge, încearcă cu { orderStatus: "ONHOLD" }
+          // Dacă nu merge, încearcă cu { orderStatus: "OnHold" sau "Pending" }
           if (!response.ok && method === "PUT") {
             response = await this.makeAuthenticatedRequest(endpoint, {
               method,
@@ -403,20 +361,13 @@ class HelpshipClient {
     // Dacă se schimbă doar status-ul, folosim metoda dedicată
     if (updates.status && Object.keys(updates).length === 1) {
       try {
-        // Mapăm status-ul nostru la paymentStatus
-        const paymentStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
-        await this.setPaymentStatus(helpshipOrderId, paymentStatus);
+        // Mapăm status-ul nostru la formatul Helpship
+        const helpshipStatus = updates.status === "PENDING" ? "Pending" : "OnHold";
+        await this.setOrderStatus(helpshipOrderId, helpshipStatus);
         return;
       } catch (statusError) {
-        console.warn("[Helpship] Failed to set paymentStatus, trying alternative methods:", statusError);
-        // Încearcă și metoda veche pentru status
-        try {
-          await this.setOrderStatus(helpshipOrderId, updates.status);
-          return;
-        } catch (altError) {
-          console.warn("[Helpship] Also failed to set order status, trying full update:", altError);
-          // Continuă cu update-ul complet
-        }
+        console.warn("[Helpship] Failed to set order status, trying full update:", statusError);
+        // Continuă cu update-ul complet
       }
     }
 

@@ -28,7 +28,7 @@ interface HelpshipOrderPayload {
     zip: string;
     city: string;
     province: string;
-    countryId: string; // countryId este în mailingAddress!
+    countryId: string | null; // countryId este în mailingAddress! (null dacă nu e setat)
   };
   firstName: string;
   lastName: string;
@@ -199,7 +199,7 @@ class HelpshipClient {
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,
-        countryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6", // GUID pentru România (din exemplul API)
+        countryId: null, // TODO: Obțineți GUID-ul real pentru România din API sau de la echipa Helpship
       },
       firstName: firstName,
       lastName: lastName,

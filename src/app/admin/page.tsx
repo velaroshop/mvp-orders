@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "./ConfirmOrderModal";
+import HoldOrderModal from "./HoldOrderModal";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -10,6 +11,8 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
+  const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
 
   async function fetchOrders() {
     const response = await fetch("/api/orders/list");
@@ -42,6 +45,36 @@ export default function AdminPage() {
   function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
     setIsModalOpen(true);
+  }
+
+  async function handleHoldConfirm(note: string): Promise<void> {
+    if (!holdOrderId) return;
+
+    setConfirming(holdOrderId);
+
+    try {
+      const response = await fetch(`/api/orders/${holdOrderId}/hold`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to hold order");
+      }
+
+      await fetchOrders();
+      setIsHoldModalOpen(false);
+      setHoldOrderId(null);
+    } catch (error) {
+      console.error("Error holding order:", error);
+      throw error; // Re-aruncă pentru a fi prins de modal
+    } finally {
+      setConfirming(null);
+    }
   }
 
   async function handleModalConfirm(updatedOrder: Partial<Order>): Promise<void> {
@@ -155,6 +188,13 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "hold") {
+      setHoldOrderId(orderId);
+      setIsHoldModalOpen(true);
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }
@@ -216,10 +256,18 @@ export default function AdminPage() {
                             ? "bg-emerald-100 text-emerald-800"
                             : order.status === "cancelled"
                             ? "bg-red-100 text-red-800"
+                            : order.status === "hold"
+                            ? "bg-orange-100 text-orange-800"
                             : "bg-amber-100 text-amber-800"
                         }`}
                       >
-                        {order.status === "pending" ? "Pending" : order.status === "cancelled" ? "Cancelled" : "Confirmed"}
+                        {order.status === "pending" 
+                          ? "Pending" 
+                          : order.status === "cancelled" 
+                          ? "Cancelled" 
+                          : order.status === "hold"
+                          ? "Hold"
+                          : "Confirmed"}
                       </span>
                     </td>
 
@@ -233,7 +281,9 @@ export default function AdminPage() {
 
                     {/* Order Note */}
                     <td className="px-3 py-2">
-                      <span className="text-zinc-900">none</span>
+                      <span className="text-zinc-900">
+                        {order.orderNote || "none"}
+                      </span>
                     </td>
 
                     {/* Order Source */}
@@ -324,18 +374,29 @@ export default function AdminPage() {
           </table>
         </div>
 
-        {/* Confirm Order Modal */}
-        <ConfirmOrderModal
-          order={selectedOrder}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedOrder(null);
-          }}
-          onConfirm={handleModalConfirm}
-        />
-      </main>
-    </div>
-  );
-}
+              {/* Confirm Order Modal */}
+              <ConfirmOrderModal
+                order={selectedOrder}
+                isOpen={isModalOpen}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setSelectedOrder(null);
+                }}
+                onConfirm={handleModalConfirm}
+              />
+
+              {/* Hold Order Modal */}
+              <HoldOrderModal
+                isOpen={isHoldModalOpen}
+                onClose={() => {
+                  setIsHoldModalOpen(false);
+                  setHoldOrderId(null);
+                }}
+                onConfirm={handleHoldConfirm}
+                orderId={holdOrderId || ""}
+              />
+            </main>
+          </div>
+        );
+      }
 

@@ -33,17 +33,17 @@ interface HelpshipOrderPayload {
   firstName: string;
   lastName: string;
   phone: string;
-  email?: string;
+  email?: string | null;
   isTaxPayer: boolean;
-  vatRegistrationNumber?: string;
-  tradeRegisterNumber?: string;
-  lockerId?: string;
+  vatRegistrationNumber?: string | null;
+  tradeRegisterNumber?: string | null;
+  lockerId?: string | null;
   paymentProcessing?: string;
   deliveryServiceId?: string;
   paymentStatus?: string; // Status-ul plății (rămâne "Pending")
   status?: string; // Status-ul comenzii (trebuie "OnHold" la creare, "Pending" la confirmare)
-  customerNote?: string;
-  shopOwnerNote?: string;
+  customerNote?: string | null;
+  shopOwnerNote?: string | null;
   orderLines: Array<{
     accountId?: string;
     name: string;

@@ -232,6 +232,9 @@ class HelpshipClient {
 
   /**
    * Actualizează o comandă existentă în Helpship (schimbă status din ONHOLD în PENDING)
+   * 
+   * NOTĂ: Trebuie să verificăm în documentație cum se face update-ul exact
+   * și ce structură de payload cere (poate trebuie întreg obiectul, nu doar câmpurile modificate)
    */
   async updateOrder(
     helpshipOrderId: string,
@@ -247,20 +250,56 @@ class HelpshipClient {
       // Alte câmpuri care pot fi actualizate
     },
   ): Promise<void> {
-    const response = await this.makeAuthenticatedRequest(
+    console.log(`[Helpship] Updating order ${helpshipOrderId} with:`, JSON.stringify(updates, null, 2));
+    
+    // Încearcă mai multe variante de endpoint și metodă
+    const possibleEndpoints = [
+      `/api/Order/${helpshipOrderId}`,
       `/api/orders/${helpshipOrderId}`,
-      {
-        method: "PUT", // sau PATCH, în funcție de API
-        body: JSON.stringify(updates),
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Failed to update Helpship order: ${response.status} ${errorText}`,
-      );
+      `/api/Order/${helpshipOrderId}/status`,
+    ];
+    
+    const methods = ["PUT", "PATCH"];
+    
+    let lastError: Error | null = null;
+    
+    for (const endpoint of possibleEndpoints) {
+      for (const method of methods) {
+        try {
+          console.log(`[Helpship] Trying ${method} ${endpoint}`);
+          const response = await this.makeAuthenticatedRequest(endpoint, {
+            method,
+            body: JSON.stringify(updates),
+          });
+          
+          if (response.ok) {
+            console.log(`[Helpship] Success updating order with ${method} ${endpoint}`);
+            const responseData = await response.json().catch(() => ({}));
+            console.log("[Helpship] Update response:", JSON.stringify(responseData, null, 2));
+            return;
+          } else if (response.status !== 404) {
+            // Dacă nu e 404, înseamnă că endpoint-ul există dar are altă problemă
+            const errorText = await response.text();
+            console.error(`[Helpship] Endpoint ${endpoint} exists but returned ${response.status}:`, errorText);
+            throw new Error(
+              `Failed to update Helpship order: ${response.status} ${errorText}`,
+            );
+          }
+          // Dacă e 404, continuă cu următorul endpoint
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          if (err instanceof Error && err.message.includes("Failed to update")) {
+            throw err; // Re-throw dacă e eroare de la API (nu 404)
+          }
+          console.log(`[Helpship] ${method} ${endpoint} failed:`, lastError.message);
+          continue;
+        }
+      }
     }
+    
+    throw new Error(
+      `Failed to find valid endpoint for update. Tried: ${possibleEndpoints.join(", ")}. Last error: ${lastError?.message || "Unknown"}`,
+    );
   }
 }
 

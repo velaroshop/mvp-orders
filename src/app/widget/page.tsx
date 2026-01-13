@@ -12,6 +12,26 @@ export default function WidgetFormPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
+
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    // Permite doar cifre
+    const digitsOnly = value.replace(/\D/g, "");
+    
+    // Verifică dacă începe cu 0
+    if (digitsOnly.length > 0 && digitsOnly[0] !== "0") {
+      // Dacă nu începe cu 0, adaugă 0 la început
+      const withZero = "0" + digitsOnly;
+      // Limitează la 10 cifre
+      const limited = withZero.slice(0, 10);
+      setPhone(limited);
+    } else {
+      // Limitează la 10 cifre
+      const limited = digitsOnly.slice(0, 10);
+      setPhone(limited);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -19,12 +39,30 @@ export default function WidgetFormPage() {
     setLoading(true);
     setError(null);
 
+    // Validare număr telefon
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length === 0) {
+      setError("Numărul de telefon este obligatoriu.");
+      setLoading(false);
+      return;
+    }
+    if (phoneDigits[0] !== "0") {
+      setError("Numărul de telefon trebuie să înceapă cu 0.");
+      setLoading(false);
+      return;
+    }
+    if (phoneDigits.length !== 10) {
+      setError("Numărul de telefon trebuie să aibă exact 10 cifre.");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData(formElement);
 
     const payload = {
       landingKey: (formData.get("landingKey") as string) || "DEMO_LANDING",
       offerCode: (formData.get("offerCode") as OfferCode) || "offer_1",
-      phone: (formData.get("phone") as string) || "",
+      phone: phoneDigits, // Folosim numărul validat
       fullName: (formData.get("fullName") as string) || "",
       county: (formData.get("county") as string) || "",
       city: (formData.get("city") as string) || "",
@@ -51,6 +89,7 @@ export default function WidgetFormPage() {
 
       setSuccess(true);
       formElement.reset();
+      setPhone(""); // Resetăm și numărul de telefon
     } catch (err) {
       setError(
         err instanceof Error
@@ -83,9 +122,17 @@ export default function WidgetFormPage() {
               name="phone"
               type="tel"
               required
+              value={phone}
+              onChange={handlePhoneChange}
+              maxLength={10}
               className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
-              placeholder="Introdu numărul de telefon"
+              placeholder="0XXXXXXXXX (10 cifre)"
             />
+            {phone && (
+              <p className="text-xs text-zinc-600">
+                {phone.replace(/\D/g, "").length} / 10 cifre
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">

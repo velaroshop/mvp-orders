@@ -40,21 +40,42 @@ export async function POST(
       );
     }
 
-    if (order.status === "confirmed") {
-      return NextResponse.json(
-        { error: "Order already confirmed" },
-        { status: 400 },
-      );
-    }
-
-    // Dacă comanda are helpshipOrderId, actualizează-o în Helpship
+    // Dacă comanda are helpshipOrderId, verificăm statusul în Helpship
     if (order.helpship_order_id) {
       try {
-        console.log(`[Helpship] Updating order ${order.helpship_order_id} with new data and setting status to PENDING...`);
+        // Verificăm statusul comenzii în Helpship
+        const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
         
-        // Actualizăm datele și setăm status-ul la PENDING (unhold)
+        if (!orderStatus) {
+          return NextResponse.json(
+            { error: "Nu s-a putut verifica statusul comenzii în Helpship" },
+            { status: 500 },
+          );
+        }
+
+        // Verificăm că statusul este OnHold sau Pending
+        const statusName = orderStatus.statusName;
+        if (statusName !== "OnHold" && statusName !== "Pending") {
+          return NextResponse.json(
+            { 
+              error: "Comanda nu mai poate fi modificată",
+              helpshipStatus: statusName,
+            },
+            { status: 400 },
+          );
+        }
+
+        console.log(`[Helpship] Order ${order.helpship_order_id} has status ${statusName}, proceeding with update...`);
+
+        // Dacă statusul este OnHold, trebuie să facem unhold după update
+        // Dacă statusul este Pending, facem doar update la adresă (fără unhold)
+        const shouldUnhold = statusName === "OnHold";
+
+        // Actualizăm datele în Helpship
         await helpshipClient.updateOrder(order.helpship_order_id, {
-          status: "PENDING", // Va folosi /unhold endpoint
+          // Doar dacă e OnHold, setăm status la PENDING (va face unhold)
+          // Dacă e deja Pending, nu setăm status (doar update la adresă)
+          status: shouldUnhold ? "PENDING" : undefined,
           paymentStatus: "Pending",
           customerName: fullName || order.fullName,
           customerPhone: phone || order.phone,
@@ -67,12 +88,15 @@ export async function POST(
           },
         });
         
-        console.log(`[Helpship] Order ${order.helpship_order_id} updated and status set to PENDING.`);
+        console.log(`[Helpship] Order ${order.helpship_order_id} updated successfully.`);
       } catch (helpshipError) {
-        // Loghează eroarea dar continuă cu update-ul local
         console.error("Failed to update order in Helpship:", helpshipError);
-        // Poți alege să returnezi eroare sau să continui
-        // Pentru MVP, continuăm cu update-ul local
+        // Aruncăm eroarea pentru a fi prinsă de frontend
+        const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la actualizarea comenzii în Helpship";
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: 500 },
+        );
       }
     }
 

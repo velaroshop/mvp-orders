@@ -31,6 +31,7 @@ export default function ConfirmOrderModal({
   const [postalCodes, setPostalCodes] = useState<PostalCodeResult[]>([]);
   const [isLoadingPostalCodes, setIsLoadingPostalCodes] = useState(false);
   const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Funcție pentru căutarea codurilor poștale
   async function searchPostalCodes(address?: string, city?: string, county?: string) {
@@ -110,6 +111,7 @@ export default function ConfirmOrderModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       // Trimite datele actualizate la onConfirm
@@ -127,7 +129,14 @@ export default function ConfirmOrderModal({
       onClose();
     } catch (error) {
       console.error("Error confirming order", error);
-      alert("Eroare la confirmarea comenzii");
+      const errorMessage = error instanceof Error ? error.message : "Eroare la confirmarea comenzii";
+      
+      // Verificăm dacă eroarea este despre status
+      if (errorMessage.includes("nu mai poate fi modificată") || errorMessage.includes("cannot be modified")) {
+        setSubmitError("Comanda nu mai poate fi modificată. Statusul comenzii în Helpship nu permite modificări.");
+      } else {
+        setSubmitError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -417,23 +426,31 @@ export default function ConfirmOrderModal({
             </div>
           </div>
 
-          {/* Footer Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {isSubmitting ? "Se salvează..." : "Save & Send"}
-            </button>
-          </div>
+                 {/* Error Message */}
+                 {submitError && (
+                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                     <p className="text-sm text-red-800 font-medium">Eroare</p>
+                     <p className="text-sm text-red-700 mt-1">{submitError}</p>
+                   </div>
+                 )}
+
+                 {/* Footer Buttons */}
+                 <div className="mt-6 flex justify-end gap-3">
+                   <button
+                     type="button"
+                     onClick={onClose}
+                     className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={isSubmitting}
+                     className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                   >
+                     {isSubmitting ? "Se salvează..." : "Save & Send"}
+                   </button>
+                 </div>
         </form>
       </div>
     </div>

@@ -26,7 +26,7 @@ export default function AdminPage() {
     setIsModalOpen(true);
   }
 
-  async function handleModalConfirm(updatedOrder: Partial<Order>) {
+  async function handleModalConfirm(updatedOrder: Partial<Order>): Promise<void> {
     if (!selectedOrder) return;
 
     setConfirming(selectedOrder.id);
@@ -43,7 +43,8 @@ export default function AdminPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to confirm order");
+        const errorMessage = errorData.error || "Failed to confirm order";
+        throw new Error(errorMessage);
       }
 
       // Reîncarcă lista de comenzi
@@ -53,7 +54,9 @@ export default function AdminPage() {
       setSelectedOrder(null);
     } catch (error) {
       console.error("Error confirming order:", error);
-      alert(error instanceof Error ? error.message : "Eroare la confirmarea comenzii");
+      // Eroarea va fi afișată în modal prin setSubmitError
+      // Re-aruncăm eroarea pentru a fi prinsă de modal
+      throw error;
     } finally {
       setConfirming(null);
     }
@@ -127,15 +130,13 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      {order.status === "pending" && (
-                        <button
-                          onClick={() => handleConfirmClick(order)}
-                          disabled={confirming === order.id}
-                          className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                        >
-                          {confirming === order.id ? "Se confirmă..." : "Confirmă"}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleConfirmClick(order)}
+                        disabled={confirming === order.id}
+                        className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {confirming === order.id ? "Se confirmă..." : "Confirmă"}
+                      </button>
                     </td>
                   </tr>
                 ))

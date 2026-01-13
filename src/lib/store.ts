@@ -1,12 +1,9 @@
-import { randomUUID } from "crypto";
 import type { Order, OfferCode } from "./types";
+import { supabase } from "./supabase";
 
-// Simple in-memory store for the MVP phase.
-// Later we will replace this with a real database (Supabase / PostgreSQL).
+// Store folosind Supabase PostgreSQL
 
-const orders = new Map<string, Order>();
-
-export function createOrder(input: {
+export async function createOrder(input: {
   landingKey: string;
   offerCode: OfferCode;
   phone: string;
@@ -18,34 +15,77 @@ export function createOrder(input: {
   subtotal: number;
   shippingCost: number;
   total: number;
-}): Order {
-  const id = randomUUID();
-  const now = new Date().toISOString();
+}): Promise<Order> {
+  const { data, error } = await supabase
+    .from("orders")
+    .insert({
+      landing_key: input.landingKey,
+      offer_code: input.offerCode,
+      phone: input.phone,
+      full_name: input.fullName,
+      county: input.county,
+      city: input.city,
+      address: input.address,
+      upsells: input.upsells ?? [],
+      subtotal: input.subtotal,
+      shipping_cost: input.shippingCost,
+      total: input.total,
+      status: "pending",
+    })
+    .select()
+    .single();
 
-  const order: Order = {
-    id,
-    landingKey: input.landingKey,
-    offerCode: input.offerCode,
-    phone: input.phone,
-    fullName: input.fullName,
-    county: input.county,
-    city: input.city,
-    address: input.address,
-    upsells: input.upsells ?? [],
-    subtotal: input.subtotal,
-    shippingCost: input.shippingCost,
-    total: input.total,
-    status: "pending",
-    createdAt: now,
+  if (error) {
+    throw new Error(`Failed to create order: ${error.message}`);
+  }
+
+  // Map Supabase row to Order type
+  return {
+    id: data.id,
+    landingKey: data.landing_key,
+    offerCode: data.offer_code as OfferCode,
+    phone: data.phone,
+    fullName: data.full_name,
+    county: data.county,
+    city: data.city,
+    address: data.address,
+    upsells: data.upsells as string[],
+    subtotal: parseFloat(data.subtotal.toString()),
+    shippingCost: parseFloat(data.shipping_cost.toString()),
+    total: parseFloat(data.total.toString()),
+    status: data.status as "pending" | "confirmed",
+    helpshipOrderId: data.helpship_order_id ?? undefined,
+    createdAt: data.created_at,
   };
-
-  orders.set(id, order);
-  return order;
 }
 
-export function listOrders(): Order[] {
-  return Array.from(orders.values()).sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+export async function listOrders(): Promise<Order[]> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to list orders: ${error.message}`);
+  }
+
+  // Map Supabase rows to Order type
+  return (data || []).map((row) => ({
+    id: row.id,
+    landingKey: row.landing_key,
+    offerCode: row.offer_code as OfferCode,
+    phone: row.phone,
+    fullName: row.full_name,
+    county: row.county,
+    city: row.city,
+    address: row.address,
+    upsells: row.upsells as string[],
+    subtotal: parseFloat(row.subtotal.toString()),
+    shippingCost: parseFloat(row.shipping_cost.toString()),
+    total: parseFloat(row.total.toString()),
+    status: row.status as "pending" | "confirmed",
+    helpshipOrderId: row.helpship_order_id ?? undefined,
+    createdAt: row.created_at,
+  }));
 }
 

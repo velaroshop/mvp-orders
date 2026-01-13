@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const order = createOrder({
+    const order = await createOrder({
       landingKey,
       offerCode,
       phone,

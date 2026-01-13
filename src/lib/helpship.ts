@@ -6,6 +6,8 @@
  * API Base: https://helpship-api-develop.azurewebsites.net
  */
 
+import { getOrderPrefix } from "./store";
+
 interface HelpshipTokenResponse {
   access_token: string;
   token_type: string;

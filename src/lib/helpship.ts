@@ -64,9 +64,11 @@ class HelpshipClient {
     // Verifică dacă token-ul existent este încă valid (cu 5 minute buffer)
     const now = Date.now();
     if (this.accessToken && this.tokenExpiresAt > now + 5 * 60 * 1000) {
+      console.log("[Helpship] Using cached access token");
       return this.accessToken;
     }
 
+    console.log("[Helpship] Requesting new access token...");
     const response = await fetch(this.tokenUrl, {
       method: "POST",
       headers: {
@@ -82,6 +84,11 @@ class HelpshipClient {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("[Helpship] Token request failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
       throw new Error(
         `Failed to get Helpship access token: ${response.status} ${errorText}`,
       );
@@ -91,6 +98,7 @@ class HelpshipClient {
     this.accessToken = data.access_token;
     this.tokenExpiresAt = now + data.expires_in * 1000;
 
+    console.log("[Helpship] Access token obtained successfully");
     return this.accessToken;
   }
 
@@ -154,24 +162,39 @@ class HelpshipClient {
       status: "ONHOLD",
     };
 
+    console.log("[Helpship] Creating order with payload:", JSON.stringify(payload, null, 2));
+    
     const response = await this.makeAuthenticatedRequest("/api/orders", {
       method: "POST",
       body: JSON.stringify(payload),
     });
 
+    console.log("[Helpship] Response status:", response.status, response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("[Helpship] Order creation failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
       throw new Error(
         `Failed to create Helpship order: ${response.status} ${errorText}`,
       );
     }
 
     const responseData = await response.json();
+    console.log("[Helpship] Order creation response:", JSON.stringify(responseData, null, 2));
 
     // Helpship ar trebui să returneze un orderId
     // Ajustăm câmpul exact după ce testăm
+    const orderId = responseData.id || responseData.orderId || responseData.order_id;
+    if (!orderId) {
+      console.warn("[Helpship] No orderId found in response, full response:", responseData);
+    }
+    
     return {
-      orderId: responseData.id || responseData.orderId || responseData.order_id,
+      orderId: orderId || "unknown",
       rawResponse: responseData,
     };
   }

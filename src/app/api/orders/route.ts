@@ -63,7 +63,9 @@ export async function POST(request: NextRequest) {
     // Încearcă să creeze comanda în Helpship cu status ONHOLD
     // Dacă eșuează, comanda rămâne în DB dar fără helpshipOrderId
     let helpshipOrderId: string | undefined;
+    let helpshipError: any = null;
     try {
+      console.log("[Helpship] Attempting to create order...");
       const helpshipResult = await helpshipClient.createOrder({
         customerName: fullName,
         customerPhone: phone,
@@ -77,19 +79,29 @@ export async function POST(request: NextRequest) {
         upsells,
       });
 
+      console.log("[Helpship] Order created successfully:", helpshipResult);
       helpshipOrderId = helpshipResult.orderId;
 
       // Actualizează comanda cu helpshipOrderId
       if (helpshipOrderId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("orders")
           .update({ helpship_order_id: helpshipOrderId })
           .eq("id", order.id);
+        
+        if (updateError) {
+          console.error("[Helpship] Failed to update order with helpshipOrderId:", updateError);
+        } else {
+          console.log("[Helpship] Order updated with helpshipOrderId:", helpshipOrderId);
+        }
       }
-    } catch (helpshipError) {
-      // Loghează eroarea dar nu oprește procesul
-      // Comanda este salvată local, poate fi trimisă manual mai târziu
-      console.error("Failed to create order in Helpship:", helpshipError);
+    } catch (err) {
+      // Loghează eroarea detaliată
+      helpshipError = err;
+      console.error("[Helpship] Failed to create order in Helpship:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
     }
 
     return NextResponse.json(

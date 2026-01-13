@@ -10,7 +10,8 @@ import type { PostalCodeResult, GeoapifyGeocodingResponse, GeoapifyPostcodeRespo
 
 const API_KEY = process.env.GEOAPIFY_API_KEY || "2f1914bf75294bf3868ec63c7b4d043d";
 const GEOCODING_URL = "https://api.geoapify.com/v1/geocode/search";
-const POSTCODE_URL = "https://api.geoapify.com/v1/postcode/list";
+const POSTCODE_SEARCH_URL = "https://api.geoapify.com/v1/postcode/search";
+const POSTCODE_LIST_URL = "https://api.geoapify.com/v1/postcode/list";
 
 /**
  * Obține coordonatele (lat/lon) pentru o adresă folosind Geocoding API
@@ -93,19 +94,17 @@ export async function searchPostalCodes(
       return [];
     }
 
-    // Pasul 2: Folosește Postcode API cu coordonatele
-    // Folosim un filtru circular (circle) cu raza de 2000m (2km) în jurul coordonatelor
-    const radius = 2000; // metri
-    const filter = `circle:${coordinates.lon},${coordinates.lat},${radius}`;
-    
-    console.log("[Geoapify] Searching postcodes with filter:", filter);
+    // Pasul 2: Folosește Postcode Search API cu coordonatele direct
+    // Încercăm mai întâi cu Postcode Search API (mai precis)
+    console.log("[Geoapify] Searching postcodes with coordinates:", coordinates);
 
-    const url = new URL(POSTCODE_URL);
+    let url = new URL(POSTCODE_SEARCH_URL);
     url.searchParams.set("apiKey", API_KEY);
+    url.searchParams.set("lat", coordinates.lat.toString());
+    url.searchParams.set("lon", coordinates.lon.toString());
     url.searchParams.set("countrycode", "ro"); // Doar România
     url.searchParams.set("limit", "10"); // Maxim 10 rezultate
     url.searchParams.set("geometry", "original");
-    url.searchParams.set("filter", filter);
     url.searchParams.set("lang", "ro");
 
     const response = await fetch(url.toString(), {
@@ -122,7 +121,36 @@ export async function searchPostalCodes(
       );
     }
 
-    const data: GeoapifyPostcodeResponse = await response.json();
+    let data: GeoapifyPostcodeResponse = await response.json();
+
+    // Dacă Postcode Search API nu returnează rezultate, încercăm cu Postcode List API cu filter circular
+    if (!data.results || data.results.length === 0) {
+      console.log("[Geoapify] Postcode Search API returned no results, trying Postcode List API with circle filter...");
+      
+      // Mărim raza la 5000m (5km) pentru a găsi mai multe rezultate
+      const radius = 5000; // metri
+      const filter = `circle:${coordinates.lon},${coordinates.lat},${radius}`;
+      
+      url = new URL(POSTCODE_LIST_URL);
+      url.searchParams.set("apiKey", API_KEY);
+      url.searchParams.set("countrycode", "ro");
+      url.searchParams.set("limit", "10");
+      url.searchParams.set("geometry", "original");
+      url.searchParams.set("filter", filter);
+      url.searchParams.set("lang", "ro");
+
+      const listResponse = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      if (listResponse.ok) {
+        data = await listResponse.json();
+        console.log(`[Geoapify] Postcode List API returned ${data.results?.length || 0} results`);
+      }
+    }
 
     // Normalizează numele pentru comparație (fără diacritice, lowercase)
     function normalizeName(name: string): string {

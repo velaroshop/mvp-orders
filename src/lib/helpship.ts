@@ -451,6 +451,31 @@ class HelpshipClient {
   }
 
   /**
+   * Obține datele complete ale unei comenzi din Helpship
+   */
+  async getOrder(helpshipOrderId: string): Promise<any | null> {
+    try {
+      console.log(`[Helpship] Getting order data for ${helpshipOrderId}...`);
+      const response = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Helpship] Failed to get order: ${response.status} ${errorText}`);
+        return null;
+      }
+
+      const order = await response.json();
+      console.log(`[Helpship] Order ${helpshipOrderId} retrieved successfully`);
+      return order;
+    } catch (err) {
+      console.error(`[Helpship] Error getting order:`, err);
+      return null;
+    }
+  }
+
+  /**
    * Actualizează o comandă existentă în Helpship
    * Poate actualiza datele comenzii și/sau status-ul
    */

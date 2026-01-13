@@ -87,22 +87,102 @@ export default function ConfirmOrderModal({
   // Populează formularul când se deschide modalul
   useEffect(() => {
     if (order && isOpen) {
-      const initialData = {
-        fullName: order.fullName || "",
-        phone: order.phone || "",
-        county: order.county || "",
-        city: order.city || "",
-        address: order.address || "",
-        postalCode: order.postalCode || "",
-        shippingPrice: order.shippingCost || 0,
-        discount: 0,
-      };
-      setFormData(initialData);
-      
-      // Caută automat codurile poștale când se deschide modalul (dacă avem adresa completă)
-      if (initialData.address && initialData.city && initialData.county) {
-        searchPostalCodes(initialData.address, initialData.city, initialData.county);
+      // Obține datele din Helpship pentru a prelua codul poștal
+      async function fetchHelpshipData() {
+        const currentOrder = order; // Salvează referința pentru a evita problemele cu closure
+        if (!currentOrder) return;
+
+        if (!currentOrder.helpshipOrderId) {
+          // Dacă nu avem helpshipOrderId, folosim datele din DB
+          const initialData = {
+            fullName: currentOrder.fullName || "",
+            phone: currentOrder.phone || "",
+            county: currentOrder.county || "",
+            city: currentOrder.city || "",
+            address: currentOrder.address || "",
+            postalCode: currentOrder.postalCode || "",
+            shippingPrice: currentOrder.shippingCost || 0,
+            discount: 0,
+          };
+          setFormData(initialData);
+          
+          if (initialData.address && initialData.city && initialData.county) {
+            searchPostalCodes(initialData.address, initialData.city, initialData.county);
+          }
+          return;
+        }
+
+        try {
+          // Obține datele din Helpship
+          const response = await fetch(`/api/orders/${currentOrder.id}/helpship`);
+          if (response.ok) {
+            const helpshipData = await response.json();
+            const helpshipOrder = helpshipData.order;
+            
+            // Extrage codul poștal din Helpship
+            const postalCode = helpshipOrder?.mailingAddress?.zip || 
+                              currentOrder.postalCode || 
+                              "";
+
+            const initialData = {
+              fullName: helpshipOrder?.mailingAddress?.name || 
+                       (helpshipOrder?.mailingAddress?.firstName && helpshipOrder?.mailingAddress?.lastName
+                         ? `${helpshipOrder.mailingAddress.firstName} ${helpshipOrder.mailingAddress.lastName}`
+                         : currentOrder.fullName || ""),
+              phone: helpshipOrder?.mailingAddress?.phone || currentOrder.phone || "",
+              county: helpshipOrder?.mailingAddress?.province || currentOrder.county || "",
+              city: helpshipOrder?.mailingAddress?.city || currentOrder.city || "",
+              address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
+              postalCode: postalCode,
+              shippingPrice: currentOrder.shippingCost || 0,
+              discount: 0,
+            };
+            setFormData(initialData);
+            
+            // Caută automat codurile poștale dacă avem adresa completă
+            if (initialData.address && initialData.city && initialData.county) {
+              searchPostalCodes(initialData.address, initialData.city, initialData.county);
+            }
+          } else {
+            // Dacă nu putem obține datele din Helpship, folosim datele din DB
+            const initialData = {
+              fullName: currentOrder.fullName || "",
+              phone: currentOrder.phone || "",
+              county: currentOrder.county || "",
+              city: currentOrder.city || "",
+              address: currentOrder.address || "",
+              postalCode: currentOrder.postalCode || "",
+              shippingPrice: currentOrder.shippingCost || 0,
+              discount: 0,
+            };
+            setFormData(initialData);
+            
+            if (initialData.address && initialData.city && initialData.county) {
+              searchPostalCodes(initialData.address, initialData.city, initialData.county);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching Helpship data:", error);
+          // Dacă apare o eroare, folosim datele din DB
+          const initialData = {
+            fullName: currentOrder.fullName || "",
+            phone: currentOrder.phone || "",
+            county: currentOrder.county || "",
+            city: currentOrder.city || "",
+            address: currentOrder.address || "",
+            postalCode: currentOrder.postalCode || "",
+            shippingPrice: currentOrder.shippingCost || 0,
+            discount: 0,
+          };
+          setFormData(initialData);
+          
+          if (initialData.address && initialData.city && initialData.county) {
+            searchPostalCodes(initialData.address, initialData.city, initialData.county);
+          }
+        }
       }
+
+      fetchHelpshipData();
     }
   }, [order, isOpen]);
 

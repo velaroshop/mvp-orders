@@ -29,10 +29,15 @@ interface HelpshipOrderPayload {
     city: string;
     province: string;
     countryId: string | null; // countryId este în mailingAddress! (null dacă nu e setat)
+    firstName?: string | null; // firstName este în mailingAddress!
+    lastName?: string | null; // lastName este în mailingAddress!
+    name?: string | null; // name (nume complet) este în mailingAddress!
+    phone?: string | null; // phone este în mailingAddress!
+    email?: string | null; // email este în mailingAddress!
   };
-  firstName: string;
-  lastName: string;
-  phone: string;
+  firstName?: string; // Poate fi și la nivel principal (pentru compatibilitate)
+  lastName?: string; // Poate fi și la nivel principal (pentru compatibilitate)
+  phone?: string; // Poate fi și la nivel principal (pentru compatibilitate)
   email?: string | null;
   isTaxPayer: boolean;
   vatRegistrationNumber?: string | null;
@@ -214,11 +219,16 @@ class HelpshipClient {
         city: orderData.city,
         province: orderData.county,
         countryId: countryId, // GUID pentru România (sau null dacă nu s-a găsit)
+        firstName: firstName || null, // firstName în mailingAddress!
+        lastName: lastName || null, // lastName în mailingAddress!
+        name: orderData.customerName || null, // Nume complet în mailingAddress!
+        phone: orderData.customerPhone || null, // phone în mailingAddress!
+        email: null, // TODO: adăugați email dacă îl colectați
       },
-      firstName: firstName || "N/A", // Asigură-te că nu e string gol
-      lastName: lastName || "N/A", // Asigură-te că nu e string gol
-      phone: orderData.customerPhone || "", // Verifică dacă telefonul e trimis corect
-      email: null, // TODO: adăugați email dacă îl colectați (null în loc de string gol)
+      firstName: firstName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
+      lastName: lastName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
+      phone: orderData.customerPhone || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
+      email: null, // TODO: adăugați email dacă îl colectați
       isTaxPayer: false,
       vatRegistrationNumber: null,
       tradeRegisterNumber: null,

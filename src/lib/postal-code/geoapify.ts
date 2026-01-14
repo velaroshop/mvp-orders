@@ -20,10 +20,18 @@ async function getCoordinates(
   address: string,
   city: string,
   county: string,
-  country: string = "Romania"
+  country: string = "Romania",
+  houseNumber?: string
 ): Promise<{ lat: number; lon: number } | null> {
   // Construiește adresa completă pentru geocoding
-  const searchText = `${address}, ${city}, ${county}, ${country}`;
+  // Include numărul de casă dacă este disponibil pentru precizie mai mare
+  let searchText: string;
+  if (houseNumber) {
+    // Dacă avem număr de casă, îl includem explicit în query pentru precizie mai mare
+    searchText = `${address} ${houseNumber}, ${city}, ${county}, ${country}`;
+  } else {
+    searchText = `${address}, ${city}, ${county}, ${country}`;
+  }
   
   console.log("[Geoapify] Geocoding address:", searchText);
 
@@ -81,13 +89,14 @@ export async function searchPostalCodes(
   address: string,
   city: string,
   county: string,
-  country: string = "Romania"
+  country: string = "Romania",
+  houseNumber?: string
 ): Promise<PostalCodeResult[]> {
-  console.log("[Geoapify] Searching postal codes for:", { address, city, county });
+  console.log("[Geoapify] Searching postal codes for:", { address, city, county, houseNumber });
 
   try {
-    // Pasul 1: Obține coordonatele pentru adresă
-    const coordinates = await getCoordinates(address, city, county, country);
+    // Pasul 1: Obține coordonatele pentru adresă (include numărul de casă dacă este disponibil)
+    const coordinates = await getCoordinates(address, city, county, country, houseNumber);
     
     if (!coordinates) {
       console.warn("[Geoapify] Could not get coordinates, returning empty results");

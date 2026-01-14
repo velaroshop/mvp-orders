@@ -32,11 +32,13 @@ export async function findPostalCodes(
     : sanitized.street;
 
   // Pasul 3: Caută coduri poștale folosind Geoapify
+  // Trimitem și numărul de casă pentru precizie mai mare
   const geoapifyResults = await searchPostalCodes(
-    fullAddress,
+    sanitized.street,
     sanitized.city,
     sanitized.county,
-    "Romania"
+    "Romania",
+    sanitized.number // Trimitem numărul de casă separat pentru precizie
   );
 
   // Pasul 4: Transformă rezultatele și adaugă informații despre sanitizare

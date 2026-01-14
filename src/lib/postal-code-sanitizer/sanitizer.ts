@@ -28,6 +28,55 @@ export function sanitizeCounty(input: string): string | null {
 }
 
 /**
+ * Mapping județ -> localitate principală (capitala județului)
+ * Folosit când utilizatorul introduce doar numele județului ca localitate
+ */
+const COUNTY_CAPITALS: Record<string, string> = {
+  "Alba": "ALBA IULIA",
+  "Arad": "ARAD",
+  "Argeș": "PITEȘTI",
+  "Bacău": "BACĂU",
+  "Bihor": "ORADEA",
+  "Bistrița-Năsăud": "BISTRIȚA",
+  "Botoșani": "BOTOȘANI",
+  "Brașov": "BRAȘOV",
+  "Brăila": "BRĂILA",
+  "București": "BUCUREȘTI",
+  "Buzău": "BUZĂU",
+  "Caraș-Severin": "REȘIȚA",
+  "Călărași": "CĂLĂRAȘI",
+  "Cluj": "CLUJ-NAPOCA",
+  "Constanța": "CONSTANȚA",
+  "Covasna": "SFÂNTU GHEORGHE",
+  "Dâmbovița": "TÂRGOVIȘTE",
+  "Dolj": "CRAIOVA",
+  "Galați": "GALAȚI",
+  "Giurgiu": "GIURGIU",
+  "Gorj": "TÂRGU JIU",
+  "Harghita": "MIERCUREA CIUC",
+  "Hunedoara": "DEVA",
+  "Ialomița": "SLOBOZIA",
+  "Iași": "IAȘI",
+  "Ilfov": "BUFTEA",
+  "Maramureș": "BAIA MARE",
+  "Mehedinți": "DROBETA-TURNU SEVERIN",
+  "Mureș": "TÂRGU MUREȘ",
+  "Neamț": "PIATRA NEAMȚ",
+  "Olt": "SLATINA",
+  "Prahova": "PLOIEȘTI",
+  "Sălaj": "ZALĂU",
+  "Satu Mare": "SATU MARE",
+  "Sibiu": "SIBIU",
+  "Suceava": "SUCEAVA",
+  "Teleorman": "ALEXANDRIA",
+  "Timiș": "TIMIȘOARA",
+  "Tulcea": "TULCEA",
+  "Vâlcea": "RÂMNICU VÂLCEA",
+  "Vaslui": "VASLUI",
+  "Vrancea": "FOCȘANI",
+};
+
+/**
  * Sanitizează localitatea în funcție de județ
  */
 export function sanitizeCity(county: string | null, input: string): string | null {
@@ -37,6 +86,22 @@ export function sanitizeCity(county: string | null, input: string): string | nul
   let localities: string[];
 
   if (county) {
+    // Verifică dacă localitatea introdusă este același cu județul
+    // În acest caz, returnează localitatea principală (capitala județului)
+    const normalizedCounty = normalizeText(county);
+    const normalizedInput = normalizeText(input);
+    
+    if (normalizedCounty === normalizedInput || 
+        normalizedCounty.includes(normalizedInput) || 
+        normalizedInput.includes(normalizedCounty)) {
+      // Localitatea este același cu județul, returnează capitala
+      const capital = COUNTY_CAPITALS[county];
+      if (capital) {
+        console.log(`[Sanitizer] City "${input}" matches county "${county}", using capital: "${capital}"`);
+        return capital;
+      }
+    }
+
     // Caută doar în localitățile din județ
     localities = getLocalitiesForCounty(county);
   } else {

@@ -233,9 +233,16 @@ export async function searchPostalCodes(
         const resultCity = normalizeName(result.city || "");
         const resultCounty = normalizeName(result.county || "");
         
-        // Filtrează rezultatele care nu se potrivesc cu orașul sau județul
-        const cityMatch = !resultCity || resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity);
-        const countyMatch = !resultCounty || resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
+        // Verificare strictă: localitatea din rezultat trebuie să se potrivească cu localitatea căutată
+        // Folosim matching exact sau matching parțial doar dacă unul conține pe celălalt
+        const cityMatchExact = resultCity === normalizedCity;
+        const cityMatchPartial = resultCity && normalizedCity && (
+          resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity)
+        );
+        const cityMatch = cityMatchExact || cityMatchPartial;
+        
+        const countyMatch = !resultCounty || resultCounty === normalizedCounty || 
+                          resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
         
         // Dacă nu se potrivește nici cu orașul, nici cu județul, skip
         if (resultCity && resultCounty && !cityMatch && !countyMatch) {
@@ -252,17 +259,22 @@ export async function searchPostalCodes(
         const existing = postalCodeMap.get(postcode);
         const distance = result.distance || Infinity;
         
+        // Dacă localitatea din rezultat nu se potrivește cu cea căutată, folosim localitatea căutată în formatted
+        // Asta previne situațiile când Geoapify returnează codul postal corect dar cu localitatea greșită
+        const useCity = cityMatchExact ? result.city : city;
+        const useCounty = countyMatch ? (result.county || county) : county;
+        
         if (!existing || (result.distance && existing.lat && existing.lon && distance < (existing as any).distance)) {
           postalCodeMap.set(postcode, {
             postcode,
-            formatted: result.formatted || `${postcode}, ${result.city || city}, ${result.county || county}`,
+            formatted: `${postcode}, ${useCity}, ${useCounty}`,
             address: {
               street: result.street,
-              city: result.city || city,
-              county: result.county || county,
+              city: useCity,
+              county: useCounty,
               country: result.country || country,
             },
-            confidence: cityMatch && countyMatch ? 1.0 : 0.8, // Confidence mai mare dacă se potrivește
+            confidence: cityMatchExact && countyMatch ? 1.0 : cityMatch ? 0.9 : 0.7, // Confidence mai mare dacă se potrivește exact
             lat: result.lat,
             lon: result.lon,
           });

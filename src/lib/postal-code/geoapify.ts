@@ -10,6 +10,7 @@ import type { PostalCodeResult, GeoapifyGeocodingResponse, GeoapifyPostcodeRespo
 
 const API_KEY = process.env.GEOAPIFY_API_KEY || "2f1914bf75294bf3868ec63c7b4d043d";
 const GEOCODING_URL = "https://api.geoapify.com/v1/geocode/search";
+const AUTOCOMPLETE_URL = "https://api.geoapify.com/v1/geocode/autocomplete";
 const POSTCODE_SEARCH_URL = "https://api.geoapify.com/v1/postcode/search";
 const POSTCODE_LIST_URL = "https://api.geoapify.com/v1/postcode/list";
 
@@ -17,7 +18,161 @@ const POSTCODE_LIST_URL = "https://api.geoapify.com/v1/postcode/list";
  * Obține coordonatele (lat/lon) pentru o adresă folosind Geocoding API
  */
 /**
- * Obține codul poștal direct din Geocoding API (cea mai precisă metodă)
+ * Obține coduri poștale folosind Autocomplete API (cea mai precisă metodă)
+ * Autocomplete API returnează rezultate foarte precise cu județ, oraș, stradă și cod poștal
+ */
+async function getPostalCodeFromAutocomplete(
+  address: string,
+  city: string,
+  county: string,
+  country: string = "Romania",
+  houseNumber?: string
+): Promise<PostalCodeResult[]> {
+  // Construiește adresa completă pentru autocomplete
+  let searchText: string;
+  if (houseNumber) {
+    searchText = `${address} ${houseNumber}, ${city}, ${county}, ${country}`;
+  } else {
+    searchText = `${address}, ${city}, ${county}, ${country}`;
+  }
+  
+  console.log("[Geoapify] Autocomplete search for:", searchText);
+
+  try {
+    const url = new URL(AUTOCOMPLETE_URL);
+    url.searchParams.set("text", searchText);
+    url.searchParams.set("apiKey", API_KEY);
+    url.searchParams.set("limit", "10"); // Luăm mai multe rezultate pentru variante
+    url.searchParams.set("filter", "countrycode:ro"); // Doar România
+    url.searchParams.set("lang", "ro");
+    url.searchParams.set("format", "geojson");
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Geoapify Autocomplete API error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    const data: GeoapifyGeocodingResponse = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      console.warn("[Geoapify] No results from autocomplete:", searchText);
+      return [];
+    }
+
+    // Normalizează pentru matching
+    function normalizeName(name: string): string {
+      return (name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function normalizeStreetName(streetName: string): string {
+      if (!streetName) return "";
+      const normalized = normalizeName(streetName);
+      return normalized
+        .replace(/^(strada|str|bd|bulevardul|bulevard|calea|cal)\s+/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    const normalizedCity = normalizeName(city);
+    const normalizedCounty = normalizeName(county);
+    const normalizedStreet = normalizeStreetName(address);
+
+    const results: PostalCodeResult[] = [];
+    const seenPostcodes = new Map<string, PostalCodeResult>();
+
+    for (const feature of data.features) {
+      const props = feature.properties;
+      const postcode = props.postcode;
+
+      // Autocomplete API poate returna și rezultate fără cod poștal (doar orașe, etc.)
+      // Ne interesează doar cele cu cod poștal
+      if (!postcode) {
+        continue;
+      }
+
+      const resultCity = normalizeName(props.city || "");
+      const resultCounty = normalizeName(props.county || "");
+      const resultStreet = normalizeStreetName(props.street || "");
+
+      // Verifică matching
+      const cityMatch = resultCity === normalizedCity || 
+                       (resultCity && normalizedCity && (resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity)));
+      const countyMatch = !resultCounty || resultCounty === normalizedCounty || 
+                        resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
+      const streetMatch = normalizedStreet && resultStreet && (
+        resultStreet.includes(normalizedStreet) || 
+        normalizedStreet.includes(resultStreet) ||
+        resultStreet === normalizedStreet
+      );
+
+      // Calculăm confidence bazat pe matching și confidence-ul din API
+      const apiConfidence = props.rank?.confidence ? props.rank.confidence : 0.5;
+      let confidence = 0.5;
+      
+      if (streetMatch && cityMatch && countyMatch) {
+        confidence = Math.min(1.0, apiConfidence); // Perfect match
+      } else if (streetMatch && cityMatch) {
+        confidence = Math.min(0.95, apiConfidence * 0.95);
+      } else if (streetMatch && countyMatch) {
+        confidence = Math.min(0.9, apiConfidence * 0.9);
+      } else if (cityMatch && countyMatch) {
+        confidence = Math.min(0.85, apiConfidence * 0.85);
+      } else if (cityMatch) {
+        confidence = Math.min(0.75, apiConfidence * 0.75);
+      } else if (countyMatch) {
+        confidence = Math.min(0.7, apiConfidence * 0.7);
+      }
+
+      // Dacă avem deja acest cod poștal, păstrăm cel cu confidence mai mare
+      const existing = seenPostcodes.get(postcode);
+      if (!existing || confidence > existing.confidence) {
+        const coordinates = feature.geometry.coordinates;
+        
+        const result: PostalCodeResult = {
+          postcode,
+          formatted: props.formatted || `${postcode}, ${props.city || city}, ${props.county || county}`,
+          address: {
+            street: props.street || address,
+            city: props.city || city,
+            county: props.county || county,
+            country: props.country || country,
+          },
+          confidence,
+          lat: coordinates[1],
+          lon: coordinates[0],
+        };
+
+        seenPostcodes.set(postcode, result);
+      }
+    }
+
+    // Convertim Map în array și sortăm
+    const resultsArray = Array.from(seenPostcodes.values());
+    resultsArray.sort((a, b) => b.confidence - a.confidence);
+
+    console.log(`[Geoapify] Found ${resultsArray.length} postal codes from autocomplete`);
+    return resultsArray;
+  } catch (error) {
+    console.error("[Geoapify] Error getting postal code from autocomplete:", error);
+    return []; // Return empty array, va folosi fallback
+  }
+}
+
+/**
+ * Obține codul poștal direct din Geocoding API (fallback)
  * Geocoding API returnează codul poștal direct în răspuns pentru adrese complete
  */
 async function getPostalCodeFromGeocoding(
@@ -244,17 +399,29 @@ export async function searchPostalCodes(
   console.log("[Geoapify] Searching postal codes for:", { address, city, county, houseNumber });
 
   try {
-    // Pasul 1: Încercăm să obținem codul poștal direct din Geocoding API
-    // Dar doar dacă avem matching bun (confidence >= 0.9 pentru cel puțin un rezultat)
-    const geocodingResults = await getPostalCodeFromGeocoding(address, city, county, country, houseNumber);
+    // Pasul 1: Încercăm Autocomplete API (cea mai precisă metodă)
+    // Autocomplete API returnează rezultate foarte precise cu județ, oraș, stradă și cod poștal
+    const autocompleteResults = await getPostalCodeFromAutocomplete(address, city, county, country, houseNumber);
     
     // Verificăm dacă avem rezultate cu confidence bun
-    const goodResults = geocodingResults.filter(r => r.confidence >= 0.85);
+    const goodResults = autocompleteResults.filter(r => r.confidence >= 0.7);
     
     if (goodResults.length > 0) {
-      console.log(`[Geoapify] Using postal codes from geocoding (${goodResults.length} high-confidence results)`);
+      console.log(`[Geoapify] Using postal codes from autocomplete (${goodResults.length} results)`);
       // Sortăm după confidence și returnăm maxim 3
       const sorted = goodResults.sort((a, b) => b.confidence - a.confidence);
+      return sorted.slice(0, 3);
+    }
+
+    console.log("[Geoapify] Autocomplete results not good enough, trying geocoding...");
+    
+    // Pasul 2: Fallback la Geocoding API
+    const geocodingResults = await getPostalCodeFromGeocoding(address, city, county, country, houseNumber);
+    const geocodingGoodResults = geocodingResults.filter(r => r.confidence >= 0.85);
+    
+    if (geocodingGoodResults.length > 0) {
+      console.log(`[Geoapify] Using postal codes from geocoding (${geocodingGoodResults.length} results)`);
+      const sorted = geocodingGoodResults.sort((a, b) => b.confidence - a.confidence);
       return sorted.slice(0, 3);
     }
 

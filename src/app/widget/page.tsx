@@ -519,7 +519,7 @@ function WidgetFormContent() {
 export default function WidgetFormPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center">
+      <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
           <p className="mt-4 text-zinc-600">Se încarcă formularul...</p>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import UserMenu from "./UserMenu";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -120,9 +121,12 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 py-4 border-t border-zinc-800">
-          <p className="text-xs text-zinc-500">v1.0.0 • MVP Orders</p>
+        {/* Footer with User Menu */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-zinc-800">
+          <div className="mb-3">
+            <UserMenu />
+          </div>
+          <p className="text-xs text-zinc-500 text-center">v1.0.0 • MVP Orders</p>
         </div>
       </aside>
     </>

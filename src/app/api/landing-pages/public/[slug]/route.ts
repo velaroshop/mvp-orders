@@ -22,30 +22,51 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    // Fetch landing page with related product and store data
+    // Fetch landing page
     const { data: landingPage, error } = await supabase
       .from("landing_pages")
-      .select(`
-        *,
-        products:product_id (
-          id,
-          name,
-          sku
-        ),
-        stores:store_id (
-          id,
-          url
-        )
-      `)
+      .select("*")
       .eq("slug", slug)
       .eq("status", "published")
       .single();
 
+    if (error || !landingPage) {
+      return NextResponse.json(
+        { error: "Landing page not found" },
+        { status: 404 }
+      );
+    }
+
+    // Fetch related product and store separately
+    const productId = landingPage.product_id;
+    const storeId = landingPage.store_id;
+
+    let productData = null;
+    let storeData = null;
+
+    if (productId) {
+      const { data: product } = await supabase
+        .from("products")
+        .select("id, name, sku")
+        .eq("id", productId)
+        .single();
+      productData = product;
+    }
+
+    if (storeId) {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("id, url")
+        .eq("id", storeId)
+        .single();
+      storeData = store;
+    }
+
     return NextResponse.json({
       landingPage: {
         ...landingPage,
-        products: product,
-        stores: store,
+        products: productData,
+        stores: storeData,
       },
     });
   } catch (error) {

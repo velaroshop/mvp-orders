@@ -149,7 +149,7 @@ export default function LandingPagesPage() {
 
   function getEmbedCode(slug: string) {
     const widgetUrl = getWidgetUrl(slug);
-    return `<iframe src="${widgetUrl}" width="100%" height="auto" style="border: none; display: block;" scrolling="no"></iframe>`;
+    return `<iframe src="${widgetUrl}" width="100%" style="border: none; display: block; min-height: 2000px;" scrolling="no"></iframe>`;
   }
 
   function copyToClipboard(text: string) {

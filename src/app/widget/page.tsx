@@ -230,38 +230,6 @@ function WidgetFormContent() {
   const totalPrice = getTotalPrice();
   const discount = calculateDiscount();
 
-  // Send height to parent window if in iframe
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const sendHeight = () => {
-      try {
-        if (window.parent && window.parent !== window) {
-          const height = document.documentElement.scrollHeight;
-          window.parent.postMessage(
-            { type: 'velaro-widget-height', height },
-            '*'
-          );
-        }
-      } catch (error) {
-        // Silently fail if cross-origin restrictions prevent communication
-        console.debug('Could not send height to parent:', error);
-      }
-    };
-
-    sendHeight();
-    window.addEventListener('resize', sendHeight);
-    // Also send height after a short delay to account for dynamic content
-    const timeout = setTimeout(sendHeight, 100);
-    const interval = setInterval(sendHeight, 500); // Periodic check
-
-    return () => {
-      window.removeEventListener('resize', sendHeight);
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
-  }, [landingPage, selectedOffer, phone, fullName, county, city, address]);
-
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-4xl mx-auto">

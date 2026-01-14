@@ -1,209 +1,194 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Product {
   id: string;
   name: string;
-  status: "active" | "inactive";
+  sku?: string;
+  status: "active" | "testing" | "inactive";
+  created_at: string;
+  updated_at: string;
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([
-    // Placeholder data
-    { id: "1", name: "Sample Product 1", status: "active" },
-    { id: "2", name: "Sample Product 2", status: "inactive" },
-  ]);
+  const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({ name: "", status: "active" as "active" | "inactive" });
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  function handleCreate() {
-    setEditingProduct(null);
-    setFormData({ name: "", status: "active" });
-    setIsModalOpen(true);
-  }
+  async function fetchProducts() {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/products");
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
 
-  function handleEdit(product: Product) {
-    setEditingProduct(product);
-    setFormData({ name: product.name, status: product.status });
-    setIsModalOpen(true);
-  }
-
-  function handleSave() {
-    if (editingProduct) {
-      // Update existing product
-      setProducts(products.map(p =>
-        p.id === editingProduct.id
-          ? { ...p, name: formData.name, status: formData.status }
-          : p
-      ));
-    } else {
-      // Create new product
-      const newProduct: Product = {
-        id: String(Date.now()),
-        name: formData.name,
-        status: formData.status,
-      };
-      setProducts([...products, newProduct]);
+      const data = await response.json();
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError(err instanceof Error ? err.message : "Failed to load products");
+    } finally {
+      setIsLoading(false);
     }
-    setIsModalOpen(false);
   }
 
-  function handleDelete(id: string) {
-    if (confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(p => p.id !== id));
+  async function handleDelete(productId: string) {
+    if (!confirm("Are you sure you want to delete this product?")) {
+      return;
     }
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      // Refresh the list
+      fetchProducts();
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      alert(err instanceof Error ? err.message : "Failed to delete product");
+    }
+  }
+
+  function formatDate(dateString: string) {
+    return new Date(dateString).toLocaleDateString("ro-RO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
 
   return (
-    <div>
+    <div className="max-w-6xl">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Products</h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            Manage your product catalog
-          </p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-zinc-900">Products</h1>
+        <p className="text-zinc-600 mt-2">
+          Manage your product catalog
+        </p>
+      </div>
+
+      {/* Add Product Button - Centered */}
+      <div className="mb-6 flex justify-center">
+        <Link
+          href="/admin/products/new"
+          className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium shadow-sm"
         >
-          + Create Product
-        </button>
+          + Add New Product
+        </Link>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-zinc-200">
-        <table className="min-w-full">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200">
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-sm text-zinc-500">
-                  No products yet. Create your first product to get started.
-                </td>
-              </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product.id} className="hover:bg-zinc-50">
-                  <td className="px-6 py-4 text-sm font-medium text-zinc-900">
-                    {product.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.status === "active"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-zinc-100 text-zinc-800"
-                      }`}
-                    >
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right space-x-2">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="text-emerald-600 hover:text-emerald-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                  </td>
+      {/* Products List */}
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
+          <p className="text-zinc-600">Loading products...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
+          <p className="text-zinc-600 mb-4">No products found.</p>
+          <Link
+            href="/admin/products/new"
+            className="inline-block px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+          >
+            Create your first product
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-zinc-50 border-b border-zinc-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    SKU
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Create/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-xl">
-            {/* Header */}
-            <div className="bg-zinc-900 text-white px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                {editingProduct ? "Edit Product" : "Create Product"}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              <div className="space-y-4">
-                {/* Name */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Enter product name"
-                    required
-                  />
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    Status *
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "inactive" })}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={!formData.name}
-                  className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {editingProduct ? "Save Changes" : "Create Product"}
-                </button>
-              </div>
-            </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-200">
+                {products.map((product) => (
+                  <tr key={product.id} className="hover:bg-zinc-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-zinc-900">
+                        {product.name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-zinc-600">
+                        {product.sku || "-"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          product.status === "active"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : product.status === "testing"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-zinc-100 text-zinc-800"
+                        }`}
+                      >
+                        {product.status === "active"
+                          ? "Active"
+                          : product.status === "testing"
+                          ? "Testing"
+                          : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-zinc-600">
+                        {formatDate(product.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/products/${product.id}/edit`}
+                          className="text-emerald-600 hover:text-emerald-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

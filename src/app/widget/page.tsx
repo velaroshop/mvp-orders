@@ -177,12 +177,17 @@ function WidgetFormContent() {
       
       // Send height update after success message appears
       setTimeout(() => {
-        if (window.parent !== window) {
-          const height = document.documentElement.scrollHeight;
-          window.parent.postMessage(
-            { type: 'velaro-widget-height', height },
-            '*'
-          );
+        try {
+          if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+            const height = document.documentElement.scrollHeight;
+            window.parent.postMessage(
+              { type: 'velaro-widget-height', height },
+              '*'
+            );
+          }
+        } catch (error) {
+          // Silently fail if cross-origin restrictions prevent communication
+          console.debug('Could not send height to parent:', error);
         }
       }, 100);
     } catch (err) {
@@ -243,13 +248,20 @@ function WidgetFormContent() {
 
   // Send height to parent window if in iframe
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const sendHeight = () => {
-      if (window.parent !== window) {
-        const height = document.documentElement.scrollHeight;
-        window.parent.postMessage(
-          { type: 'velaro-widget-height', height },
-          '*'
-        );
+      try {
+        if (window.parent && window.parent !== window) {
+          const height = document.documentElement.scrollHeight;
+          window.parent.postMessage(
+            { type: 'velaro-widget-height', height },
+            '*'
+          );
+        }
+      } catch (error) {
+        // Silently fail if cross-origin restrictions prevent communication
+        console.debug('Could not send height to parent:', error);
       }
     };
 
@@ -257,10 +269,12 @@ function WidgetFormContent() {
     window.addEventListener('resize', sendHeight);
     // Also send height after a short delay to account for dynamic content
     const timeout = setTimeout(sendHeight, 100);
+    const interval = setInterval(sendHeight, 500); // Periodic check
 
     return () => {
       window.removeEventListener('resize', sendHeight);
       clearTimeout(timeout);
+      clearInterval(interval);
     };
   }, [landingPage, selectedOffer, phone, fullName, county, city, address]);
 

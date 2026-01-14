@@ -11,6 +11,11 @@ interface LandingPage {
   status: "draft" | "published" | "archived";
   product_id: string;
   store_id: string;
+  price_1?: number;
+  price_2?: number;
+  price_3?: number;
+  shipping_price?: number;
+  post_purchase_status?: boolean;
   products?: {
     id: string;
     name: string;
@@ -29,6 +34,8 @@ export default function LandingPagesPage() {
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [embedModalOpen, setEmbedModalOpen] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLandingPages();
@@ -117,6 +124,40 @@ export default function LandingPagesPage() {
     });
   }
 
+  function formatPrice(price: number | undefined) {
+    if (price === undefined || price === null) return "-";
+    return new Intl.NumberFormat("ro-RO", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+  }
+
+  function toggleRowExpansion(pageId: string) {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(pageId)) {
+      newExpanded.delete(pageId);
+    } else {
+      newExpanded.add(pageId);
+    }
+    setExpandedRows(newExpanded);
+  }
+
+  function getWidgetUrl(slug: string) {
+    if (typeof window === "undefined") return "";
+    return `${window.location.origin}/widget?slug=${slug}`;
+  }
+
+  function getEmbedCode(slug: string) {
+    const widgetUrl = getWidgetUrl(slug);
+    return `<iframe src="${widgetUrl}" width="100%" height="600" frameborder="0"></iframe>`;
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Cod copiat în clipboard!");
+    });
+  }
+
   return (
     <div className="max-w-6xl">
       {/* Header */}
@@ -187,56 +228,63 @@ export default function LandingPagesPage() {
               </thead>
               <tbody className="divide-y divide-zinc-200">
                 {landingPages.map((page) => (
-                  <tr key={page.id} className="hover:bg-zinc-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-zinc-900">
-                        {page.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-600">
-                        {page.slug}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-900">
-                        {page.products?.name || "-"}
-                      </div>
-                      {page.products?.sku && (
-                        <div className="text-xs text-zinc-500">
-                          SKU: {page.products.sku}
+                  <>
+                    <tr key={page.id} className="hover:bg-zinc-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-zinc-900">
+                          {page.name}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-600">
-                        {page.stores?.url || "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          page.status === "published"
-                            ? "bg-emerald-100 text-emerald-800"
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-600">
+                          {page.slug}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-900">
+                          {page.products?.name || "-"}
+                        </div>
+                        {page.products?.sku && (
+                          <div className="text-xs text-zinc-500">
+                            SKU: {page.products.sku}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-600">
+                          {page.stores?.url || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            page.status === "published"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : page.status === "archived"
+                              ? "bg-zinc-100 text-zinc-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {page.status === "published"
+                            ? "Published"
                             : page.status === "archived"
-                            ? "bg-zinc-100 text-zinc-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {page.status === "published"
-                          ? "Published"
-                          : page.status === "archived"
-                          ? "Archived"
-                          : "Draft"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-600">
-                        {formatDate(page.created_at)}
-                      </div>
-                    </td>
+                            ? "Archived"
+                            : "Draft"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-600">
+                          {formatDate(page.created_at)}
+                        </div>
+                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => toggleRowExpansion(page.id)}
+                          className="text-zinc-600 hover:text-zinc-900 text-xs"
+                        >
+                          {expandedRows.has(page.id) ? "▲" : "▼"}
+                        </button>
                         <button
                           onClick={() => handleToggleStatus(page.id, page.status)}
                           className={`${
@@ -262,9 +310,183 @@ export default function LandingPagesPage() {
                       </div>
                     </td>
                   </tr>
+                    {/* Expanded Details Row */}
+                    {expandedRows.has(page.id) && (
+                      <tr key={`${page.id}-details`} className="bg-zinc-50">
+                        <td colSpan={7} className="px-6 py-4">
+                          <div className="space-y-4">
+                            {/* Pricing Details */}
+                            <div>
+                              <h4 className="text-sm font-semibold text-zinc-900 mb-3">
+                                Pricing Details
+                              </h4>
+                              <div className="grid grid-cols-5 gap-4">
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 uppercase mb-1">
+                                    Price 1
+                                  </div>
+                                  <div className="text-sm text-zinc-900">
+                                    {formatPrice(page.price_1)} RON
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 uppercase mb-1">
+                                    Price 2
+                                  </div>
+                                  <div className="text-sm text-zinc-900">
+                                    {formatPrice(page.price_2)} RON
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 uppercase mb-1">
+                                    Price 3
+                                  </div>
+                                  <div className="text-sm text-zinc-900">
+                                    {formatPrice(page.price_3)} RON
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 uppercase mb-1">
+                                    Shipping Price
+                                  </div>
+                                  <div className="text-sm text-zinc-900">
+                                    {formatPrice(page.shipping_price)} RON
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 uppercase mb-1">
+                                    Post Purchase Status
+                                  </div>
+                                  <div className="flex items-center">
+                                    {page.post_purchase_status ? (
+                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100">
+                                        <svg
+                                          className="w-4 h-4 text-emerald-600"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 13l4 4L19 7"
+                                          />
+                                        </svg>
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-100">
+                                        <svg
+                                          className="w-4 h-4 text-zinc-400"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M6 18L18 6M6 6l12 12"
+                                          />
+                                        </svg>
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-4 pt-4 border-t border-zinc-200">
+                              <Link
+                                href={getWidgetUrl(page.slug)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium"
+                              >
+                                Vezi formular
+                              </Link>
+                              <button
+                                onClick={() => setEmbedModalOpen(page.id)}
+                                className="px-4 py-2 bg-zinc-600 text-white rounded-md hover:bg-zinc-700 transition-colors text-sm font-medium"
+                              >
+                                Cod embed
+                              </button>
+                              <button
+                                onClick={() => toggleRowExpansion(page.id)}
+                                className="px-4 py-2 text-zinc-600 hover:text-zinc-900 text-sm"
+                              >
+                                Ascunde detalii
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Embed Code Modal */}
+      {embedModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-zinc-900">
+                  Cod embed pentru formular
+                </h3>
+                <button
+                  onClick={() => setEmbedModalOpen(null)}
+                  className="text-zinc-400 hover:text-zinc-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-zinc-600 mb-4">
+                Copiază acest cod și inserează-l în pagina ta de vânzare pentru a afișa formularul.
+              </p>
+              <div className="bg-zinc-50 rounded-md p-4 mb-4">
+                <pre className="text-xs text-zinc-900 overflow-x-auto">
+                  <code>{embedModalOpen && getEmbedCode(landingPages.find(p => p.id === embedModalOpen)?.slug || "")}</code>
+                </pre>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const page = landingPages.find(p => p.id === embedModalOpen);
+                    if (page) {
+                      copyToClipboard(getEmbedCode(page.slug));
+                    }
+                  }}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium"
+                >
+                  Copiază cod
+                </button>
+                <button
+                  onClick={() => setEmbedModalOpen(null)}
+                  className="px-4 py-2 bg-zinc-200 text-zinc-900 rounded-md hover:bg-zinc-300 transition-colors text-sm font-medium"
+                >
+                  Închide
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

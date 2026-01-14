@@ -27,6 +27,7 @@ export interface Order {
   helpshipOrderId?: string;
   orderNumber?: number;
   orderNote?: string; // Notă pentru comanda (max 2 linii)
+  holdFromStatus?: OrderStatus; // Status-ul înainte de hold (pentru UNHOLD)
   createdAt: string;
 }
 

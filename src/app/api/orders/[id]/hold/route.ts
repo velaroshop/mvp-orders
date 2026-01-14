@@ -98,9 +98,14 @@ export async function POST(
       );
     }
 
+    // Salvăm statusul curent înainte de a-l schimba pe "hold"
+    const currentStatus = order.status;
+    console.log(`[Hold] Saving current status "${currentStatus}" before setting to hold`);
+
     // Actualizăm statusul în DB la "hold" și salvăm nota
     const updateData: any = {
       status: "hold",
+      hold_from_status: currentStatus, // Salvăm statusul pentru UNHOLD
     };
 
     if (note !== undefined) {
@@ -120,7 +125,7 @@ export async function POST(
       );
     }
 
-    console.log(`[Hold] Order ${orderId} set to hold status with note: ${note || "none"}`);
+    console.log(`[Hold] Order ${orderId} set to hold (was: ${currentStatus}) with note: ${note || "none"}`);
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error holding order", error);

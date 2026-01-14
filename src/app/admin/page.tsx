@@ -195,6 +195,29 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "unhold") {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/unhold`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to unhold order");
+        }
+
+        // Reîncarcă lista de comenzi
+        await fetchOrders();
+        alert("Comanda a fost scoasă din hold cu succes (status: pending)");
+      } catch (error) {
+        console.error("Error unholding order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la scoaterea comenzii din hold";
+        alert(errorMessage);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }

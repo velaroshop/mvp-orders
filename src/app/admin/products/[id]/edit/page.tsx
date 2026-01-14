@@ -143,14 +143,14 @@ export default function EditProductPage() {
             <div className="space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                   placeholder="Enter product name"
                   required
                 />
@@ -158,36 +158,36 @@ export default function EditProductPage() {
 
               {/* SKU */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   SKU
                 </label>
                 <input
                   type="text"
                   value={formData.sku || ""}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                   placeholder="Enter product SKU (optional)"
                 />
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-zinc-700 mt-1">
                   Stock Keeping Unit - unique identifier for this product
                 </p>
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Status *
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900"
                   required
                 >
                   <option value="active">Active</option>
                   <option value="testing">Testing</option>
                 </select>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-zinc-700 mt-1">
                   Active: Product is live and available. Testing: Product is in testing phase.
                 </p>
               </div>

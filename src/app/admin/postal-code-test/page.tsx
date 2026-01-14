@@ -112,7 +112,7 @@ export default function PostalCodeTestPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, county: e.target.value })
                 }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="ex: vilcea, iasi, Cluj"
               />
             </div>
@@ -127,7 +127,7 @@ export default function PostalCodeTestPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
                 }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="ex: drgasani, iasi, Cluj-Napoca"
               />
             </div>
@@ -142,7 +142,7 @@ export default function PostalCodeTestPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="ex: str viilor numaru 5a, Strada Logovat nr 3"
               />
             </div>

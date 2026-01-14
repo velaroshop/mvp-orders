@@ -125,7 +125,7 @@ export default function WidgetFormPage() {
               value={phone}
               onChange={handlePhoneChange}
               maxLength={10}
-              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
+              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700"
               placeholder="0XXXXXXXXX (10 cifre)"
             />
             {phone && (
@@ -142,7 +142,7 @@ export default function WidgetFormPage() {
             <input
               name="fullName"
               required
-              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
+              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700"
               placeholder="Introduceți numele dvs. complet"
             />
           </div>
@@ -152,7 +152,7 @@ export default function WidgetFormPage() {
             <input
               name="county"
               required
-              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
+              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700"
               placeholder="Introduceți județul"
             />
           </div>
@@ -164,7 +164,7 @@ export default function WidgetFormPage() {
             <input
               name="city"
               required
-              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
+              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700"
               placeholder="Introduceți localitatea / comuna / satul"
             />
           </div>
@@ -176,7 +176,7 @@ export default function WidgetFormPage() {
             <input
               name="address"
               required
-              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500"
+              className="w-full rounded-md border border-zinc-400 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700"
               placeholder="Introduceți adresa completă"
             />
           </div>

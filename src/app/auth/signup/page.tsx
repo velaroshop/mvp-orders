@@ -96,7 +96,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Full Name
               </label>
@@ -107,7 +107,7 @@ export default function SignUpPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="John Doe"
                 required
                 disabled={isLoading}
@@ -118,7 +118,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Email
               </label>
@@ -129,7 +129,7 @@ export default function SignUpPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="your@email.com"
                 required
                 disabled={isLoading}
@@ -140,7 +140,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="organizationName"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Organization Name
               </label>
@@ -151,12 +151,12 @@ export default function SignUpPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, organizationName: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="Your Company"
                 required
                 disabled={isLoading}
               />
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-zinc-700 mt-1">
                 This will be your organization's workspace
               </p>
             </div>
@@ -165,7 +165,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Password
               </label>
@@ -176,12 +176,12 @@ export default function SignUpPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
               />
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-zinc-700 mt-1">
                 At least 8 characters
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Confirm Password
               </label>
@@ -201,7 +201,7 @@ export default function SignUpPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, confirmPassword: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
                 disabled={isLoading}

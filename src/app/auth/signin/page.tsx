@@ -63,7 +63,7 @@ export default function SignInPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Email
               </label>
@@ -72,7 +72,7 @@ export default function SignInPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="your@email.com"
                 required
                 disabled={isLoading}
@@ -83,7 +83,7 @@ export default function SignInPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-zinc-700 mb-1"
+                className="block text-sm font-medium text-zinc-900 mb-1"
               >
                 Password
               </label>
@@ -92,7 +92,7 @@ export default function SignInPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
                 disabled={isLoading}

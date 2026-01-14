@@ -115,21 +115,20 @@ async function getPostalCodeFromGeocoding(
         resultStreet === normalizedStreet
       );
 
-      // Calculăm confidence bazat pe matching (nu pe rank-ul API-ului care poate fi imprecis)
-      let confidence = 0.5;
+      // Calculăm confidence bazat pe matching (mai strict pentru geocoding)
+      // Pentru geocoding, vrem doar rezultate foarte bune, altfel folosim postcode search
+      let confidence = 0.3; // Default mai mic pentru geocoding
       if (streetMatch && cityMatch && countyMatch) {
-        confidence = 1.0; // Perfect match
+        confidence = 1.0; // Perfect match - doar acestea sunt acceptabile din geocoding
       } else if (streetMatch && cityMatch) {
         confidence = 0.95;
       } else if (streetMatch && countyMatch) {
         confidence = 0.9;
-      } else if (cityMatch && countyMatch) {
+      } else if (cityMatch && countyMatch && normalizedStreet.length < 5) {
+        // Dacă strada este foarte scurtă sau nu am putut face matching, dar orașul și județul se potrivesc
         confidence = 0.85;
-      } else if (cityMatch) {
-        confidence = 0.75;
-      } else if (countyMatch) {
-        confidence = 0.7;
       }
+      // Dacă nu avem matching bun cu strada, confidence rămâne mic (0.3) și va folosi fallback
 
       // Dacă avem deja acest cod poștal, păstrăm cel cu confidence mai mare
       const existing = seenPostcodes.get(postcode);
@@ -245,20 +244,24 @@ export async function searchPostalCodes(
   console.log("[Geoapify] Searching postal codes for:", { address, city, county, houseNumber });
 
   try {
-    // Pasul 1: Încercăm să obținem codul poștal direct din Geocoding API (cea mai precisă metodă)
-    // Geocoding API returnează codul poștal direct pentru adrese complete
+    // Pasul 1: Încercăm să obținem codul poștal direct din Geocoding API
+    // Dar doar dacă avem matching bun (confidence >= 0.9 pentru cel puțin un rezultat)
     const geocodingResults = await getPostalCodeFromGeocoding(address, city, county, country, houseNumber);
     
-    if (geocodingResults.length > 0) {
-      console.log(`[Geoapify] Using postal codes from geocoding (${geocodingResults.length} results)`);
+    // Verificăm dacă avem rezultate cu confidence bun
+    const goodResults = geocodingResults.filter(r => r.confidence >= 0.85);
+    
+    if (goodResults.length > 0) {
+      console.log(`[Geoapify] Using postal codes from geocoding (${goodResults.length} high-confidence results)`);
       // Sortăm după confidence și returnăm maxim 3
-      const sorted = geocodingResults.sort((a, b) => b.confidence - a.confidence);
+      const sorted = goodResults.sort((a, b) => b.confidence - a.confidence);
       return sorted.slice(0, 3);
     }
 
-    console.log("[Geoapify] No postal codes from geocoding, falling back to postcode search API...");
+    console.log("[Geoapify] Geocoding results not confident enough, using postcode search API with coordinates...");
     
-    // Pasul 2: Fallback - Obține coordonatele pentru adresă (include numărul de casă dacă este disponibil)
+    // Pasul 2: Folosim metoda cu coordonate → postcode search (mai precisă pentru adrese)
+    // Obține coordonatele pentru adresă (include numărul de casă dacă este disponibil)
     const coordinates = await getCoordinates(address, city, county, country, houseNumber);
     
     if (!coordinates) {

@@ -67,40 +67,99 @@ async function getPostalCodeFromGeocoding(
       return [];
     }
 
+    // Normalizează pentru matching
+    function normalizeName(name: string): string {
+      return (name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function normalizeStreetName(streetName: string): string {
+      if (!streetName) return "";
+      const normalized = normalizeName(streetName);
+      return normalized
+        .replace(/^(strada|str|bd|bulevardul|bulevard|calea|cal)\s+/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    const normalizedCity = normalizeName(city);
+    const normalizedCounty = normalizeName(county);
+    const normalizedStreet = normalizeStreetName(address);
+
     const results: PostalCodeResult[] = [];
-    const seenPostcodes = new Set<string>();
+    const seenPostcodes = new Map<string, PostalCodeResult>();
 
     for (const feature of data.features) {
       const props = feature.properties;
       const postcode = props.postcode;
 
-      if (!postcode || seenPostcodes.has(postcode)) {
-        continue; // Skip dacă nu are cod poștal sau l-am văzut deja
+      if (!postcode) {
+        continue;
       }
 
-      seenPostcodes.add(postcode);
-      const coordinates = feature.geometry.coordinates;
-      
-      // Calculăm confidence bazat pe cât de bine se potrivește rezultatul
-      const confidence = props.rank?.confidence ? props.rank.confidence / 100 : 0.8;
+      const resultCity = normalizeName(props.city || "");
+      const resultCounty = normalizeName(props.county || "");
+      const resultStreet = normalizeStreetName(props.street || "");
 
-      results.push({
-        postcode,
-        formatted: `${postcode}, ${city}, ${county}`,
-        address: {
-          street: props.street || address,
-          city: props.city || city,
-          county: props.county || county,
-          country: props.country || country,
-        },
-        confidence,
-        lat: coordinates[1],
-        lon: coordinates[0],
-      });
+      // Verifică matching
+      const cityMatch = resultCity === normalizedCity || 
+                       (resultCity && normalizedCity && (resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity)));
+      const countyMatch = !resultCounty || resultCounty === normalizedCounty || 
+                        resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
+      const streetMatch = normalizedStreet && resultStreet && (
+        resultStreet.includes(normalizedStreet) || 
+        normalizedStreet.includes(resultStreet) ||
+        resultStreet === normalizedStreet
+      );
+
+      // Calculăm confidence bazat pe matching (nu pe rank-ul API-ului care poate fi imprecis)
+      let confidence = 0.5;
+      if (streetMatch && cityMatch && countyMatch) {
+        confidence = 1.0; // Perfect match
+      } else if (streetMatch && cityMatch) {
+        confidence = 0.95;
+      } else if (streetMatch && countyMatch) {
+        confidence = 0.9;
+      } else if (cityMatch && countyMatch) {
+        confidence = 0.85;
+      } else if (cityMatch) {
+        confidence = 0.75;
+      } else if (countyMatch) {
+        confidence = 0.7;
+      }
+
+      // Dacă avem deja acest cod poștal, păstrăm cel cu confidence mai mare
+      const existing = seenPostcodes.get(postcode);
+      if (!existing || confidence > existing.confidence) {
+        const coordinates = feature.geometry.coordinates;
+        
+        const result: PostalCodeResult = {
+          postcode,
+          formatted: `${postcode}, ${city}, ${county}`,
+          address: {
+            street: props.street || address,
+            city: props.city || city,
+            county: props.county || county,
+            country: props.country || country,
+          },
+          confidence,
+          lat: coordinates[1],
+          lon: coordinates[0],
+        };
+
+        seenPostcodes.set(postcode, result);
+      }
     }
 
-    console.log(`[Geoapify] Found ${results.length} postal codes from geocoding`);
-    return results;
+    // Convertim Map în array și sortăm
+    const resultsArray = Array.from(seenPostcodes.values());
+    resultsArray.sort((a, b) => b.confidence - a.confidence);
+
+    console.log(`[Geoapify] Found ${resultsArray.length} postal codes from geocoding`);
+    return resultsArray;
   } catch (error) {
     console.error("[Geoapify] Error getting postal code from geocoding:", error);
     return []; // Return empty array, va folosi fallback

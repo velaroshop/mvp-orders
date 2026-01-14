@@ -108,22 +108,79 @@ export async function PUT(
       }
     }
 
+    // Validate required fields if they're being updated
+    if (body.thankYouPath !== undefined && !body.thankYouPath) {
+      return NextResponse.json(
+        { error: "Thank You Path is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.offerHeading1 !== undefined && !body.offerHeading1) {
+      return NextResponse.json(
+        { error: "Offer Heading 1 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.offerHeading2 !== undefined && !body.offerHeading2) {
+      return NextResponse.json(
+        { error: "Offer Heading 2 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.offerHeading3 !== undefined && !body.offerHeading3) {
+      return NextResponse.json(
+        { error: "Offer Heading 3 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.numeral1 !== undefined && !body.numeral1) {
+      return NextResponse.json(
+        { error: "Numeral 1 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.numeral2 !== undefined && !body.numeral2) {
+      return NextResponse.json(
+        { error: "Numeral 2 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.numeral3 !== undefined && !body.numeral3) {
+      return NextResponse.json(
+        { error: "Numeral 3 is required" },
+        { status: 400 }
+      );
+    }
+
+    if (body.orderButtonText !== undefined && !body.orderButtonText) {
+      return NextResponse.json(
+        { error: "Order Button Text is required" },
+        { status: 400 }
+      );
+    }
+
     // Update the landing page
     const updateData: any = {};
     if (body.productId !== undefined) updateData.product_id = body.productId;
     if (body.storeId !== undefined) updateData.store_id = body.storeId;
     if (body.name !== undefined) updateData.name = body.name;
     if (body.slug !== undefined) updateData.slug = body.slug;
-    if (body.thankYouPath !== undefined) updateData.thank_you_path = body.thankYouPath || null;
+    if (body.thankYouPath !== undefined) updateData.thank_you_path = body.thankYouPath;
     
     // Offer Settings
     if (body.mainSku !== undefined) updateData.main_sku = body.mainSku || null;
-    if (body.offerHeading1 !== undefined) updateData.offer_heading_1 = body.offerHeading1 || null;
-    if (body.offerHeading2 !== undefined) updateData.offer_heading_2 = body.offerHeading2 || null;
-    if (body.offerHeading3 !== undefined) updateData.offer_heading_3 = body.offerHeading3 || null;
-    if (body.numeral1 !== undefined) updateData.numeral_1 = body.numeral1 || null;
-    if (body.numeral2 !== undefined) updateData.numeral_2 = body.numeral2 || null;
-    if (body.numeral3 !== undefined) updateData.numeral_3 = body.numeral3 || null;
+    if (body.offerHeading1 !== undefined) updateData.offer_heading_1 = body.offerHeading1;
+    if (body.offerHeading2 !== undefined) updateData.offer_heading_2 = body.offerHeading2;
+    if (body.offerHeading3 !== undefined) updateData.offer_heading_3 = body.offerHeading3;
+    if (body.numeral1 !== undefined) updateData.numeral_1 = body.numeral1;
+    if (body.numeral2 !== undefined) updateData.numeral_2 = body.numeral2;
+    if (body.numeral3 !== undefined) updateData.numeral_3 = body.numeral3;
     if (body.orderButtonText !== undefined) updateData.order_button_text = body.orderButtonText;
     
     // Pricing

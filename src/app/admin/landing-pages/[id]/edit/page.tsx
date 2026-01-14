@@ -149,14 +149,14 @@ export default function EditLandingPagePage() {
           storeId: formData.store_id,
           name: formData.name,
           slug: formData.slug,
-          thankYouPath: formData.thank_you_path || "",
-          mainSku: formData.main_sku || "",
-          offerHeading1: formData.offer_heading_1 || "",
-          offerHeading2: formData.offer_heading_2 || "",
-          offerHeading3: formData.offer_heading_3 || "",
-          numeral1: formData.numeral_1 || "",
-          numeral2: formData.numeral_2 || "",
-          numeral3: formData.numeral_3 || "",
+          thankYouPath: formData.thank_you_path || "thank-you",
+          mainSku: products.find(p => p.id === formData.product_id)?.sku || "",
+          offerHeading1: formData.offer_heading_1 || "Ieftin",
+          offerHeading2: formData.offer_heading_2 || "Avantajos",
+          offerHeading3: formData.offer_heading_3 || "Super ofertă",
+          numeral1: formData.numeral_1 || "1 bucată",
+          numeral2: formData.numeral_2 || "Două bucăți",
+          numeral3: formData.numeral_3 || "Trei bucăți",
           orderButtonText: formData.order_button_text,
           srp: formData.srp,
           price1: formData.price_1,
@@ -267,8 +267,8 @@ export default function EditLandingPagePage() {
                           key={product.id}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, product_id: product.id, main_sku: product.sku || "" });
-                            setProductSearch(product.name);
+                            setFormData({ ...formData, product_id: product.id });
+                            setProductSearch("");
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-50 text-sm text-zinc-900"
                         >
@@ -313,7 +313,7 @@ export default function EditLandingPagePage() {
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, store_id: store.id });
-                            setStoreSearch(store.url);
+                            setStoreSearch("");
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-50 text-sm text-zinc-900"
                         >
@@ -324,9 +324,11 @@ export default function EditLandingPagePage() {
                   )}
                 </div>
                 {formData.store_id && (
-                  <p className="text-xs text-zinc-700 mt-1">
-                    Selected: {stores.find(s => s.id === formData.store_id)?.url || "Loading..."}
-                  </p>
+                  <div className="mt-2 p-2 bg-zinc-50 rounded-md">
+                    <p className="text-sm text-zinc-900 font-medium">
+                      {stores.find(s => s.id === formData.store_id)?.url || "Loading..."}
+                    </p>
+                  </div>
                 )}
                 <p className="text-xs text-zinc-700 mt-1">
                   Choose the store this landing page belongs to.
@@ -372,17 +374,18 @@ export default function EditLandingPagePage() {
               {/* Thank You Path */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Thank You Path
+                  Thank You Path *
                 </label>
                 <input
                   type="text"
-                  value={formData.thank_you_path || ""}
+                  value={formData.thank_you_path || "thank-you"}
                   onChange={(e) => setFormData({ ...formData, thank_you_path: e.target.value })}
                   className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                  placeholder="Thank You Path"
+                  placeholder="thank-you"
+                  required
                 />
                 <p className="text-xs text-zinc-700 mt-1">
-                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you. (Optional)
+                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you
                 </p>
               </div>
             </div>
@@ -395,59 +398,45 @@ export default function EditLandingPagePage() {
             </h2>
 
             <div className="space-y-4">
-              {/* Main SKU */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Main SKU
-                </label>
-                <input
-                  type="text"
-                  value={formData.main_sku || ""}
-                  onChange={(e) => setFormData({ ...formData, main_sku: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                  placeholder="Search for Main SKU..."
-                />
-                <p className="text-xs text-zinc-700 mt-1">
-                  Main SKU for this landing page (usually from selected product).
-                </p>
-              </div>
-
               {/* Offer Headings */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 1
+                    Offer Heading 1 *
                   </label>
                   <input
                     type="text"
-                    value={formData.offer_heading_1 || ""}
+                    value={formData.offer_heading_1 || "Ieftin"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_1: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., leftin"
+                    placeholder="Ieftin"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 2
+                    Offer Heading 2 *
                   </label>
                   <input
                     type="text"
-                    value={formData.offer_heading_2 || ""}
+                    value={formData.offer_heading_2 || "Avantajos"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_2: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., Cel mai vandut"
+                    placeholder="Avantajos"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 3
+                    Offer Heading 3 *
                   </label>
                   <input
                     type="text"
-                    value={formData.offer_heading_3 || ""}
+                    value={formData.offer_heading_3 || "Super ofertă"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_3: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., Avantajos"
+                    placeholder="Super ofertă"
+                    required
                   />
                 </div>
               </div>
@@ -456,38 +445,41 @@ export default function EditLandingPagePage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 1
+                    Numeral 1 *
                   </label>
                   <input
                     type="text"
-                    value={formData.numeral_1 || ""}
+                    value={formData.numeral_1 || "1 bucată"}
                     onChange={(e) => setFormData({ ...formData, numeral_1: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: One"
+                    placeholder="1 bucată"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 2
+                    Numeral 2 *
                   </label>
                   <input
                     type="text"
-                    value={formData.numeral_2 || ""}
+                    value={formData.numeral_2 || "Două bucăți"}
                     onChange={(e) => setFormData({ ...formData, numeral_2: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: Two"
+                    placeholder="Două bucăți"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 3
+                    Numeral 3 *
                   </label>
                   <input
                     type="text"
-                    value={formData.numeral_3 || ""}
+                    value={formData.numeral_3 || "Trei bucăți"}
                     onChange={(e) => setFormData({ ...formData, numeral_3: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: Three"
+                    placeholder="Trei bucăți"
+                    required
                   />
                 </div>
               </div>
@@ -495,14 +487,15 @@ export default function EditLandingPagePage() {
               {/* Order Button Text */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Order Button Text
+                  Order Button Text *
                 </label>
                 <input
                   type="text"
-                  value={formData.order_button_text}
+                  value={formData.order_button_text || "Plasează comanda!"}
                   onChange={(e) => setFormData({ ...formData, order_button_text: e.target.value })}
                   className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                   placeholder="Plasează comanda!"
+                  required
                 />
               </div>
             </div>

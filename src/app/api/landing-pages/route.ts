@@ -141,9 +141,31 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!productId || !storeId || !name || !slug) {
+    if (!productId || !storeId || !name || !slug || !thankYouPath) {
       return NextResponse.json(
-        { error: "Product, Store, Name, and Slug are required" },
+        { error: "Product, Store, Name, Slug, and Thank You Path are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate offer settings
+    if (!offerHeading1 || !offerHeading2 || !offerHeading3) {
+      return NextResponse.json(
+        { error: "All offer headings (1, 2, 3) are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!numeral1 || !numeral2 || !numeral3) {
+      return NextResponse.json(
+        { error: "All numerals (1, 2, 3) are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!orderButtonText) {
+      return NextResponse.json(
+        { error: "Order Button Text is required" },
         { status: 400 }
       );
     }
@@ -215,16 +237,16 @@ export async function POST(request: NextRequest) {
       slug,
     };
 
-    // Add optional fields only if they exist in the database
-    if (thankYouPath !== undefined) insertData.thank_you_path = thankYouPath || null;
-    if (mainSku !== undefined) insertData.main_sku = mainSku || null;
-    if (offerHeading1 !== undefined) insertData.offer_heading_1 = offerHeading1 || null;
-    if (offerHeading2 !== undefined) insertData.offer_heading_2 = offerHeading2 || null;
-    if (offerHeading3 !== undefined) insertData.offer_heading_3 = offerHeading3 || null;
-    if (numeral1 !== undefined) insertData.numeral_1 = numeral1 || null;
-    if (numeral2 !== undefined) insertData.numeral_2 = numeral2 || null;
-    if (numeral3 !== undefined) insertData.numeral_3 = numeral3 || null;
-    if (orderButtonText !== undefined) insertData.order_button_text = orderButtonText;
+    // Required fields
+    insertData.thank_you_path = thankYouPath;
+    insertData.main_sku = mainSku || null; // Populated automatically from product
+    insertData.offer_heading_1 = offerHeading1;
+    insertData.offer_heading_2 = offerHeading2;
+    insertData.offer_heading_3 = offerHeading3;
+    insertData.numeral_1 = numeral1;
+    insertData.numeral_2 = numeral2;
+    insertData.numeral_3 = numeral3;
+    insertData.order_button_text = orderButtonText;
     
     // Pricing (required)
     insertData.srp = srp;

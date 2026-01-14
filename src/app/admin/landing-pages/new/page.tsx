@@ -27,15 +27,14 @@ export default function NewLandingPagePage() {
     storeId: "",
     name: "",
     slug: "",
-    thankYouPath: "",
-    // Offer Settings
-    mainSku: "",
-    offerHeading1: "",
-    offerHeading2: "",
-    offerHeading3: "",
-    numeral1: "",
-    numeral2: "",
-    numeral3: "",
+    thankYouPath: "thank-you",
+    // Offer Settings (with defaults)
+    offerHeading1: "Ieftin",
+    offerHeading2: "Avantajos",
+    offerHeading3: "Super ofertă",
+    numeral1: "1 bucată",
+    numeral2: "Două bucăți",
+    numeral3: "Trei bucăți",
     orderButtonText: "Plasează comanda!",
     // Pricing
     srp: "",
@@ -188,8 +187,8 @@ export default function NewLandingPagePage() {
                           key={product.id}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, productId: product.id, mainSku: product.sku || "" });
-                            setProductSearch(product.name);
+                            setFormData({ ...formData, productId: product.id });
+                            setProductSearch("");
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-50 text-sm text-zinc-900"
                         >
@@ -234,7 +233,7 @@ export default function NewLandingPagePage() {
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, storeId: store.id });
-                            setStoreSearch(store.url);
+                            setStoreSearch("");
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-50 text-sm text-zinc-900"
                         >
@@ -245,9 +244,11 @@ export default function NewLandingPagePage() {
                   )}
                 </div>
                 {formData.storeId && (
-                  <p className="text-xs text-zinc-700 mt-1">
-                    Selected: {stores.find(s => s.id === formData.storeId)?.url}
-                  </p>
+                  <div className="mt-2 p-2 bg-zinc-50 rounded-md">
+                    <p className="text-sm text-zinc-900 font-medium">
+                      {stores.find(s => s.id === formData.storeId)?.url}
+                    </p>
+                  </div>
                 )}
                 <p className="text-xs text-zinc-700 mt-1">
                   Choose the store this landing page belongs to.
@@ -293,17 +294,18 @@ export default function NewLandingPagePage() {
               {/* Thank You Path */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Thank You Path
+                  Thank You Path *
                 </label>
                 <input
                   type="text"
                   value={formData.thankYouPath}
                   onChange={(e) => setFormData({ ...formData, thankYouPath: e.target.value })}
                   className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                  placeholder="Thank You Path"
+                  placeholder="thank-you"
+                  required
                 />
                 <p className="text-xs text-zinc-700 mt-1">
-                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you. (Optional)
+                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you
                 </p>
               </div>
             </div>
@@ -316,59 +318,45 @@ export default function NewLandingPagePage() {
             </h2>
 
             <div className="space-y-4">
-              {/* Main SKU */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Main SKU
-                </label>
-                <input
-                  type="text"
-                  value={formData.mainSku}
-                  onChange={(e) => setFormData({ ...formData, mainSku: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                  placeholder="Search for Main SKU..."
-                />
-                <p className="text-xs text-zinc-700 mt-1">
-                  Main SKU for this landing page (usually from selected product).
-                </p>
-              </div>
-
               {/* Offer Headings */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 1
+                    Offer Heading 1 *
                   </label>
                   <input
                     type="text"
                     value={formData.offerHeading1}
                     onChange={(e) => setFormData({ ...formData, offerHeading1: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., leftin"
+                    placeholder="Ieftin"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 2
+                    Offer Heading 2 *
                   </label>
                   <input
                     type="text"
                     value={formData.offerHeading2}
                     onChange={(e) => setFormData({ ...formData, offerHeading2: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., Cel mai vandut"
+                    placeholder="Avantajos"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Offer Heading 3
+                    Offer Heading 3 *
                   </label>
                   <input
                     type="text"
                     value={formData.offerHeading3}
                     onChange={(e) => setFormData({ ...formData, offerHeading3: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="e.g., Avantajos"
+                    placeholder="Super ofertă"
+                    required
                   />
                 </div>
               </div>
@@ -377,38 +365,41 @@ export default function NewLandingPagePage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 1
+                    Numeral 1 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral1}
                     onChange={(e) => setFormData({ ...formData, numeral1: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: One"
+                    placeholder="1 bucată"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 2
+                    Numeral 2 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral2}
                     onChange={(e) => setFormData({ ...formData, numeral2: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: Two"
+                    placeholder="Două bucăți"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Numeral 3
+                    Numeral 3 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral3}
                     onChange={(e) => setFormData({ ...formData, numeral3: e.target.value })}
                     className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                    placeholder="Example: Three"
+                    placeholder="Trei bucăți"
+                    required
                   />
                 </div>
               </div>
@@ -416,7 +407,7 @@ export default function NewLandingPagePage() {
               {/* Order Button Text */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Order Button Text
+                  Order Button Text *
                 </label>
                 <input
                   type="text"
@@ -424,6 +415,7 @@ export default function NewLandingPagePage() {
                   onChange={(e) => setFormData({ ...formData, orderButtonText: e.target.value })}
                   className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                   placeholder="Plasează comanda!"
+                  required
                 />
               </div>
             </div>

@@ -88,14 +88,13 @@ export default function PostalCodeTestPage() {
   return (
     <>
       <header className="mb-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            Test Sistem Coduri Poștale
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            Testează sistemul de sanitizare și căutare coduri poștale
-          </p>
-        </header>
+        <h1 className="text-2xl font-semibold text-zinc-900">
+          Test Sistem Coduri Poștale
+        </h1>
+        <p className="mt-1 text-sm text-zinc-600">
+          Testează sistemul de sanitizare și căutare coduri poștale
+        </p>
+      </header>
 
         <div className="rounded-lg bg-white shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-zinc-900 mb-4">

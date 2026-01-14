@@ -28,8 +28,12 @@ export interface GeoapifyGeocodingResponse {
       county?: string;
       country?: string;
       country_code?: string;
+      postcode?: string; // Codul poștal direct din geocoding
       lat?: number;
       lon?: number;
+      rank?: {
+        confidence?: number; // Confidence score pentru rezultat
+      };
     };
     geometry: {
       type: string;

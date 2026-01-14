@@ -174,22 +174,6 @@ function WidgetFormContent() {
       setCity("");
       setAddress("");
       setSelectedOffer("offer_1");
-      
-      // Send height update after success message appears
-      setTimeout(() => {
-        try {
-          if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-            const height = document.documentElement.scrollHeight;
-            window.parent.postMessage(
-              { type: 'velaro-widget-height', height },
-              '*'
-            );
-          }
-        } catch (error) {
-          // Silently fail if cross-origin restrictions prevent communication
-          console.debug('Could not send height to parent:', error);
-        }
-      }, 100);
     } catch (err) {
       setError(
         err instanceof Error

@@ -149,15 +149,7 @@ export default function LandingPagesPage() {
 
   function getEmbedCode(slug: string) {
     const widgetUrl = getWidgetUrl(slug);
-    return `<iframe id="velaro-widget-${slug}" src="${widgetUrl}" width="100%" style="border: none; min-height: 100vh;" onload="this.style.height = this.contentWindow.document.body.scrollHeight + 'px';"></iframe>
-<script>
-  window.addEventListener('message', function(e) {
-    var iframe = document.getElementById('velaro-widget-${slug}');
-    if (iframe && e.data && e.data.type === 'velaro-widget-height') {
-      iframe.style.height = e.data.height + 'px';
-    }
-  });
-</script>`;
+    return `<iframe src="${widgetUrl}" width="100%" height="auto" style="border: none; display: block;" scrolling="no"></iframe>`;
   }
 
   function copyToClipboard(text: string) {
@@ -184,7 +176,7 @@ export default function LandingPagesPage() {
         >
           + Add New Landing Page
         </Link>
-      </div>
+          </div>
 
       {/* Landing Pages List */}
       {isLoading ? (
@@ -194,7 +186,7 @@ export default function LandingPagesPage() {
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error}</p>
-        </div>
+      </div>
       ) : landingPages.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
           <p className="text-zinc-600 mb-4">No landing pages found.</p>

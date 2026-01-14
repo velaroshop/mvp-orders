@@ -118,22 +118,58 @@ async function getPostalCodeFromAutocomplete(
         resultStreet === normalizedStreet
       );
 
-      // Calculăm confidence bazat pe matching și confidence-ul din API
-      const apiConfidence = props.rank?.confidence ? props.rank.confidence : 0.5;
+      // Calculăm confidence bazat pe informațiile detaliate din Autocomplete API
+      // Folosim confidence levels specifice: building_level, street_level, city_level
+      const apiConfidence = props.rank?.confidence || 0.5;
+      const streetLevelConfidence = props.rank?.confidence_street_level || 0;
+      const buildingLevelConfidence = props.rank?.confidence_building_level || 0;
+      const cityLevelConfidence = props.rank?.confidence_city_level || 0;
+      const matchType = props.rank?.match_type || "";
+      const resultType = props.result_type || "";
+
+      // Prioritizăm rezultatele bazate pe match_type și confidence levels
       let confidence = 0.5;
       
-      if (streetMatch && cityMatch && countyMatch) {
-        confidence = Math.min(1.0, apiConfidence); // Perfect match
-      } else if (streetMatch && cityMatch) {
-        confidence = Math.min(0.95, apiConfidence * 0.95);
-      } else if (streetMatch && countyMatch) {
-        confidence = Math.min(0.9, apiConfidence * 0.9);
-      } else if (cityMatch && countyMatch) {
-        confidence = Math.min(0.85, apiConfidence * 0.85);
-      } else if (cityMatch) {
-        confidence = Math.min(0.75, apiConfidence * 0.75);
-      } else if (countyMatch) {
-        confidence = Math.min(0.7, apiConfidence * 0.7);
+      // Dacă avem full_match sau match_by_building, este cel mai bun
+      if (matchType === "full_match" || matchType === "match_by_building") {
+        confidence = Math.max(apiConfidence, buildingLevelConfidence || streetLevelConfidence || 0.9);
+      } 
+      // Dacă avem match_by_street, folosim street_level confidence
+      else if (matchType === "match_by_street" && streetMatch) {
+        confidence = Math.max(apiConfidence * 0.95, streetLevelConfidence || 0.85);
+      }
+      // Dacă avem match_by_postcode, verificăm dacă se potrivește cu strada
+      else if (matchType === "match_by_postcode") {
+        if (streetMatch && cityMatch && countyMatch) {
+          confidence = Math.max(apiConfidence * 0.9, cityLevelConfidence || 0.85);
+        } else if (cityMatch && countyMatch) {
+          confidence = Math.max(apiConfidence * 0.85, cityLevelConfidence || 0.8);
+        } else {
+          confidence = apiConfidence * 0.7;
+        }
+      }
+      // Pentru alte tipuri de matching, folosim logica noastră de matching
+      else {
+        if (streetMatch && cityMatch && countyMatch) {
+          confidence = Math.max(apiConfidence, streetLevelConfidence || cityLevelConfidence || 0.9);
+        } else if (streetMatch && cityMatch) {
+          confidence = Math.max(apiConfidence * 0.95, streetLevelConfidence || 0.85);
+        } else if (streetMatch && countyMatch) {
+          confidence = Math.max(apiConfidence * 0.9, streetLevelConfidence || 0.8);
+        } else if (cityMatch && countyMatch) {
+          confidence = Math.max(apiConfidence * 0.85, cityLevelConfidence || 0.75);
+        } else if (cityMatch) {
+          confidence = Math.max(apiConfidence * 0.75, cityLevelConfidence || 0.7);
+        } else if (countyMatch) {
+          confidence = apiConfidence * 0.7;
+        }
+      }
+
+      // Prioritizăm rezultatele de tip "building" sau "street" peste "postcode" sau "city"
+      if (resultType === "building" || resultType === "street") {
+        confidence = Math.min(1.0, confidence * 1.1); // Bonus pentru rezultate precise
+      } else if (resultType === "postcode" && !streetMatch) {
+        confidence = confidence * 0.9; // Penalizare dacă nu avem matching cu strada
       }
 
       // Dacă avem deja acest cod poștal, păstrăm cel cu confidence mai mare

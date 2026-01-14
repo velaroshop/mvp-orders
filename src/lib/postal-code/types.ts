@@ -32,8 +32,13 @@ export interface GeoapifyGeocodingResponse {
       lat?: number;
       lon?: number;
       rank?: {
-        confidence?: number; // Confidence score pentru rezultat
+        confidence?: number; // Confidence score pentru rezultat (0-1)
+        confidence_city_level?: number; // City-level confidence (0-1)
+        confidence_street_level?: number; // Street-level confidence (0-1)
+        confidence_building_level?: number; // Building-level confidence (0-1)
+        match_type?: string; // full_match, inner_part, match_by_building, match_by_street, match_by_postcode, etc.
       };
+      result_type?: string; // unknown, amenity, building, street, suburb, district, postcode, city, county, state, country
     };
     geometry: {
       type: string;

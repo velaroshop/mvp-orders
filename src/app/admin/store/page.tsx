@@ -1,283 +1,225 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+interface Store {
+  id: string;
+  url: string;
+  order_series: string;
+  primary_color: string;
+  accent_color: string;
+  background_color: string;
+  fb_pixel_id?: string;
+  fb_conversion_token?: string;
+  client_side_tracking: boolean;
+  server_side_tracking: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function StorePage() {
-  const [formData, setFormData] = useState({
-    url: "",
-    orderSeries: "VLR",
-    primaryColor: "#FF6B00",
-    accentColor: "#00A854",
-    backgroundColor: "#2C3E50",
-    fbPixelId: "",
-    fbConversionToken: "",
-    clientSideTracking: false,
-    serverSideTracking: false,
-  });
+  const router = useRouter();
+  const [stores, setStores] = useState<Store[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  useEffect(() => {
+    fetchStores();
+  }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSaving(true);
-    setMessage(null);
-
+  async function fetchStores() {
     try {
-      // TODO: Implement API call to save store settings
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsLoading(true);
+      const response = await fetch("/api/stores");
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch stores");
+      }
 
-      setMessage({ type: "success", text: "Store settings saved successfully!" });
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to save store settings" });
+      const data = await response.json();
+      setStores(data.stores || []);
+    } catch (err) {
+      console.error("Error fetching stores:", err);
+      setError(err instanceof Error ? err.message : "Failed to load stores");
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   }
 
+  async function handleDelete(storeId: string) {
+    if (!confirm("Are you sure you want to delete this store?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/stores/${storeId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete store");
+      }
+
+      // Refresh the list
+      fetchStores();
+    } catch (err) {
+      console.error("Error deleting store:", err);
+      alert(err instanceof Error ? err.message : "Failed to delete store");
+    }
+  }
+
+  function formatDate(dateString: string) {
+    return new Date(dateString).toLocaleDateString("ro-RO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900">Store Settings</h1>
+        <h1 className="text-3xl font-bold text-zinc-900">Stores</h1>
         <p className="text-zinc-600 mt-2">
-          Configure your store details and customizations
+          Manage your stores and their settings
         </p>
       </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border border-zinc-200">
-        <form onSubmit={handleSubmit}>
-          {/* Store Details */}
-          <div className="p-6 border-b border-zinc-200">
-            <h2 className="text-xl font-semibold text-zinc-900 mb-4">
-              Store Details
-            </h2>
-
-            <div className="space-y-4">
-              {/* URL */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  URL *
-                </label>
-                <input
-                  type="text"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="e.g., yourstore.com"
-                  required
-                />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Enter the unique URL for this store. (e.g., yoursite.com)
-                </p>
-              </div>
-
-              {/* Order Series */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Order Series *
-                </label>
-                <input
-                  type="text"
-                  value={formData.orderSeries}
-                  onChange={(e) => setFormData({ ...formData, orderSeries: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="e.g., VLR"
-                  required
-                />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Specify the order series for this store (e.g., ECM). This will be used in order numbering.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Color Scheme */}
-          <div className="p-6 border-b border-zinc-200">
-            <h2 className="text-xl font-semibold text-zinc-900 mb-4">
-              Color Scheme
-            </h2>
-
-            <div className="grid grid-cols-3 gap-4">
-              {/* Primary Color */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Primary Color
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.primaryColor}
-                    onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                    className="h-10 w-16 rounded border border-zinc-300 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.primaryColor}
-                    onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Accent Color */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Accent Color
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.accentColor}
-                    onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
-                    className="h-10 w-16 rounded border border-zinc-300 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.accentColor}
-                    onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Background Color */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-2">
-                  Background Color
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={formData.backgroundColor}
-                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
-                    className="h-10 w-16 rounded border border-zinc-300 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={formData.backgroundColor}
-                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-500 mt-4">
-              Please allow a couple minutes for changes to take place & refresh your local cache (CMD/CTRL + SHIFT + R)
-            </p>
-          </div>
-
-          {/* Conversion Tracking */}
-          <div className="p-6 border-b border-zinc-200">
-            <h2 className="text-xl font-semibold text-zinc-900 mb-4">
-              Conversion Tracking
-            </h2>
-
-            <div className="space-y-4">
-              {/* Facebook Pixel ID */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Facebook Pixel ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.fbPixelId}
-                  onChange={(e) => setFormData({ ...formData, fbPixelId: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Enter your Facebook Pixel ID for tracking"
-                />
-              </div>
-
-              {/* Conversion API Token */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Conversion API Token
-                </label>
-                <input
-                  type="text"
-                  value={formData.fbConversionToken}
-                  onChange={(e) => setFormData({ ...formData, fbConversionToken: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Enter your Facebook Conversion API Token"
-                />
-              </div>
-
-              {/* Client-side Tracking */}
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="clientSideTracking"
-                  checked={formData.clientSideTracking}
-                  onChange={(e) => setFormData({ ...formData, clientSideTracking: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-300 rounded"
-                />
-                <label htmlFor="clientSideTracking" className="ml-2">
-                  <span className="block text-sm font-medium text-zinc-700">
-                    Client-side Tracking Enabled (Facebook Pixel)
-                  </span>
-                  <span className="block text-xs text-zinc-500">
-                    This automatically installs the Facebook Pixel code to your website
-                  </span>
-                </label>
-              </div>
-
-              {/* Server-side Tracking */}
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="serverSideTracking"
-                  checked={formData.serverSideTracking}
-                  onChange={(e) => setFormData({ ...formData, serverSideTracking: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-300 rounded"
-                />
-                <label htmlFor="serverSideTracking" className="ml-2">
-                  <span className="block text-sm font-medium text-zinc-700">
-                    Server-side Tracking Enabled (Conversion API)
-                  </span>
-                  <span className="block text-xs text-zinc-500">
-                    Enable server-side tracking via Facebook Conversion API
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Message */}
-          {message && (
-            <div className="p-6 border-b border-zinc-200">
-              <div
-                className={`p-3 rounded-md ${
-                  message.type === "success"
-                    ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-                    : "bg-red-50 border border-red-200 text-red-800"
-                }`}
-              >
-                {message.text}
-              </div>
-            </div>
-          )}
-
-          {/* Save Button */}
-          <div className="p-6 bg-zinc-50 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSaving ? "Saving..." : "Save Settings"}
-            </button>
-          </div>
-        </form>
+      {/* Add Store Button - Centered */}
+      <div className="mb-6 flex justify-center">
+        <Link
+          href="/admin/store/new"
+          className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium shadow-sm"
+        >
+          + Add New Store
+        </Link>
       </div>
 
-      {/* Note about implementation */}
-      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
-        <p className="text-sm text-amber-800">
-          <strong>Note:</strong> This is a placeholder UI. Backend implementation
-          for saving store settings to database is pending.
-        </p>
-      </div>
+      {/* Stores List */}
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
+          <p className="text-zinc-600">Loading stores...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      ) : stores.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
+          <p className="text-zinc-600 mb-4">No stores found.</p>
+          <Link
+            href="/admin/store/new"
+            className="inline-block px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+          >
+            Create your first store
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-zinc-50 border-b border-zinc-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    URL
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Order Series
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Colors
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Tracking
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200">
+                {stores.map((store) => (
+                  <tr key={store.id} className="hover:bg-zinc-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-zinc-900">
+                        {store.url}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-zinc-900">
+                        {store.order_series}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-6 h-6 rounded border border-zinc-300"
+                          style={{ backgroundColor: store.primary_color }}
+                          title={`Primary: ${store.primary_color}`}
+                        />
+                        <div
+                          className="w-6 h-6 rounded border border-zinc-300"
+                          style={{ backgroundColor: store.accent_color }}
+                          title={`Accent: ${store.accent_color}`}
+                        />
+                        <div
+                          className="w-6 h-6 rounded border border-zinc-300"
+                          style={{ backgroundColor: store.background_color }}
+                          title={`Background: ${store.background_color}`}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {store.client_side_tracking && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Pixel
+                          </span>
+                        )}
+                        {store.server_side_tracking && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            API
+                          </span>
+                        )}
+                        {!store.client_side_tracking && !store.server_side_tracking && (
+                          <span className="text-xs text-zinc-500">None</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-zinc-600">
+                        {formatDate(store.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/store/${store.id}/edit`}
+                          className="text-emerald-600 hover:text-emerald-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(store.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

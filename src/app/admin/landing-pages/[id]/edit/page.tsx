@@ -282,9 +282,16 @@ export default function EditLandingPagePage() {
                   )}
                 </div>
                 {formData.product_id && (
-                  <p className="text-xs text-zinc-700 mt-1">
-                    Selected: {products.find(p => p.id === formData.product_id)?.name || "Loading..."}
-                  </p>
+                  <div className="mt-2 p-2 bg-zinc-50 rounded-md">
+                    <p className="text-sm text-zinc-900 font-medium">
+                      {products.find(p => p.id === formData.product_id)?.name || "Loading..."}
+                    </p>
+                    {products.find(p => p.id === formData.product_id)?.sku && (
+                      <p className="text-xs text-zinc-600 mt-1">
+                        SKU: {products.find(p => p.id === formData.product_id)?.sku}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <p className="text-xs text-zinc-700 mt-1">
                   Select the product associated with this landing page.

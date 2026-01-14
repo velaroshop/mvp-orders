@@ -44,6 +44,14 @@ export default function LandingPagesPage() {
       }
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        const errorMsg = data.details 
+          ? `${data.error}: ${data.details}` 
+          : data.error || "Failed to fetch landing pages";
+        throw new Error(errorMsg);
+      }
+      
       setLandingPages(data.landingPages || []);
     } catch (err) {
       console.error("Error fetching landing pages:", err);

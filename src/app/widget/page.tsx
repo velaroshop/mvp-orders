@@ -174,6 +174,17 @@ function WidgetFormContent() {
       setCity("");
       setAddress("");
       setSelectedOffer("offer_1");
+      
+      // Send height update after success message appears
+      setTimeout(() => {
+        if (window.parent !== window) {
+          const height = document.documentElement.scrollHeight;
+          window.parent.postMessage(
+            { type: 'velaro-widget-height', height },
+            '*'
+          );
+        }
+      }, 100);
     } catch (err) {
       setError(
         err instanceof Error

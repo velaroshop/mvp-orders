@@ -468,10 +468,10 @@ export default function LandingPagesPage() {
                 </button>
               </div>
               <p className="text-sm text-zinc-600 mb-4">
-                Copiază acest cod și inserează-l în pagina ta de vânzare pentru a afișa formularul.
+                Copiază acest cod și inserează-l în pagina ta de vânzare pentru a afișa formularul. Iframe-ul se va adapta automat la înălțimea conținutului.
               </p>
               <div className="bg-zinc-50 rounded-md p-4 mb-4">
-                <pre className="text-xs text-zinc-900 overflow-x-auto">
+                <pre className="text-xs text-zinc-900 overflow-x-auto whitespace-pre-wrap break-words">
                   <code>{embedModalOpen && getEmbedCode(landingPages.find(p => p.id === embedModalOpen)?.slug || "")}</code>
                 </pre>
               </div>

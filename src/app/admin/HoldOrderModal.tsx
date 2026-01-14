@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface HoldOrderModalProps {
   isOpen: boolean;
@@ -18,6 +18,15 @@ export default function HoldOrderModal({
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resetează state-ul când modalul se deschide sau când se schimbă comanda
+  useEffect(() => {
+    if (isOpen) {
+      setNote("");
+      setError(null);
+      setIsSubmitting(false);
+    }
+  }, [isOpen, orderId]);
 
   if (!isOpen) return null;
 

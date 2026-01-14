@@ -226,8 +226,20 @@ export async function searchPostalCodes(
         .trim();
     }
 
+    // Normalizează numele străzii pentru matching (elimină prefixe comune)
+    function normalizeStreetName(streetName: string): string {
+      if (!streetName) return "";
+      const normalized = normalizeName(streetName);
+      // Elimină prefixe comune: "strada", "str", "bd", "bulevardul", etc.
+      return normalized
+        .replace(/^(strada|str|bd|bulevardul|bulevard|calea|cal)\s+/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     const normalizedCity = normalizeName(city);
     const normalizedCounty = normalizeName(county);
+    const normalizedStreet = normalizeStreetName(address);
 
     // Extrage codurile poștale din rezultate
     const postalCodeMap = new Map<string, PostalCodeResult>();
@@ -241,6 +253,7 @@ export async function searchPostalCodes(
         // Verifică dacă rezultatul se potrivește cu orașul sau județul
         const resultCity = normalizeName(result.city || "");
         const resultCounty = normalizeName(result.county || "");
+        const resultStreet = normalizeStreetName(result.street || "");
         
         // Verificare matching pentru localitate
         const cityMatchExact = resultCity === normalizedCity;
@@ -252,6 +265,13 @@ export async function searchPostalCodes(
         // Verificare matching pentru județ
         const countyMatch = !resultCounty || resultCounty === normalizedCounty || 
                           resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
+        
+        // Verificare matching pentru stradă (foarte important pentru precizie!)
+        const streetMatch = normalizedStreet && resultStreet && (
+          resultStreet.includes(normalizedStreet) || 
+          normalizedStreet.includes(resultStreet) ||
+          resultStreet === normalizedStreet
+        );
         
         // IMPORTANT: Nu eliminăm rezultatele care nu se potrivesc cu localitatea
         // Geoapify poate returna codul poștal corect chiar dacă localitatea din rezultat este diferită
@@ -276,14 +296,21 @@ export async function searchPostalCodes(
         const useCity = city; // Folosim localitatea căutată/sanitizată
         const useCounty = county; // Folosim județul căutat/sanitizat
         
-        // Calculăm confidence: mai mare dacă se potrivește cu localitatea, mai mic dacă nu
+        // Calculăm confidence: prioritizăm matching-ul străzii!
+        // Street match = cel mai important pentru precizie
         let confidence = 0.5; // Default pentru rezultate care se potrivesc doar cu județul
-        if (cityMatchExact && countyMatch) {
-          confidence = 1.0; // Perfect match
+        if (streetMatch && cityMatchExact && countyMatch) {
+          confidence = 1.0; // Perfect match: stradă + localitate + județ
+        } else if (streetMatch && cityMatch && countyMatch) {
+          confidence = 0.95; // Stradă match + partial city match
+        } else if (streetMatch && countyMatch) {
+          confidence = 0.9; // Stradă match (foarte important!)
+        } else if (cityMatchExact && countyMatch) {
+          confidence = 0.85; // Perfect city match fără stradă
         } else if (cityMatch && countyMatch) {
-          confidence = 0.9; // Partial city match
+          confidence = 0.8; // Partial city match
         } else if (countyMatch) {
-          confidence = 0.7; // Only county match (codul poștal poate fi corect dar localitatea diferită)
+          confidence = 0.7; // Only county match
         }
         
         // Dacă nu există deja sau dacă acest rezultat are confidence mai mare sau distanță mai mică
@@ -296,7 +323,7 @@ export async function searchPostalCodes(
             postcode,
             formatted: `${postcode}, ${useCity}, ${useCounty}`,
             address: {
-              street: result.street,
+              street: result.street || address, // Păstrăm strada din rezultat dacă există
               city: useCity,
               county: useCounty,
               country: result.country || country,
@@ -306,8 +333,9 @@ export async function searchPostalCodes(
             lon: result.lon,
           });
           
-          // Păstrăm distanța pentru sortare
+          // Păstrăm distanța și informații despre matching pentru sortare
           (postalCodeMap.get(postcode) as any).distance = distance;
+          (postalCodeMap.get(postcode) as any).streetMatch = streetMatch;
         }
       }
     }

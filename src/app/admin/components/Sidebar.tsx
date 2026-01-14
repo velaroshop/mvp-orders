@@ -31,6 +31,11 @@ export default function Sidebar() {
       icon: "📄",
     },
     {
+      name: "Postal Code Test",
+      href: "/admin/postal-code-test",
+      icon: "📮",
+    },
+    {
       name: "Settings",
       href: "/admin/settings",
       icon: "⚙️",

@@ -233,20 +233,22 @@ export async function searchPostalCodes(
         const resultCity = normalizeName(result.city || "");
         const resultCounty = normalizeName(result.county || "");
         
-        // Verificare strictă: localitatea din rezultat trebuie să se potrivească cu localitatea căutată
-        // Folosim matching exact sau matching parțial doar dacă unul conține pe celălalt
+        // Verificare matching pentru localitate
         const cityMatchExact = resultCity === normalizedCity;
         const cityMatchPartial = resultCity && normalizedCity && (
           resultCity.includes(normalizedCity) || normalizedCity.includes(resultCity)
         );
         const cityMatch = cityMatchExact || cityMatchPartial;
         
+        // Verificare matching pentru județ
         const countyMatch = !resultCounty || resultCounty === normalizedCounty || 
                           resultCounty.includes(normalizedCounty) || normalizedCounty.includes(resultCounty);
         
-        // Dacă nu se potrivește nici cu orașul, nici cu județul, skip
-        if (resultCity && resultCounty && !cityMatch && !countyMatch) {
-          console.log(`[Geoapify] Skipping result - city/county mismatch:`, {
+        // IMPORTANT: Nu eliminăm rezultatele care nu se potrivesc cu localitatea
+        // Geoapify poate returna codul poștal corect chiar dacă localitatea din rezultat este diferită
+        // Eliminăm doar rezultatele care nu se potrivesc nici cu județul
+        if (resultCounty && !countyMatch) {
+          console.log(`[Geoapify] Skipping result - county mismatch:`, {
             resultCity: result.city,
             resultCounty: result.county,
             expectedCity: city,
@@ -256,15 +258,31 @@ export async function searchPostalCodes(
         }
 
         // Dacă avem deja acest cod poștal, păstrăm cel mai apropiat (cu distanță mai mică)
+        // Dar prioritizăm rezultatele care se potrivesc cu localitatea
         const existing = postalCodeMap.get(postcode);
         const distance = result.distance || Infinity;
         
-        // Dacă localitatea din rezultat nu se potrivește cu cea căutată, folosim localitatea căutată în formatted
+        // Folosim ÎNTOTDEAUNA localitatea sanitizată în formatted, nu cea din rezultatul Geoapify
         // Asta previne situațiile când Geoapify returnează codul postal corect dar cu localitatea greșită
-        const useCity = cityMatchExact ? result.city : city;
-        const useCounty = countyMatch ? (result.county || county) : county;
+        const useCity = city; // Folosim localitatea căutată/sanitizată
+        const useCounty = county; // Folosim județul căutat/sanitizat
         
-        if (!existing || (result.distance && existing.lat && existing.lon && distance < (existing as any).distance)) {
+        // Calculăm confidence: mai mare dacă se potrivește cu localitatea, mai mic dacă nu
+        let confidence = 0.5; // Default pentru rezultate care se potrivesc doar cu județul
+        if (cityMatchExact && countyMatch) {
+          confidence = 1.0; // Perfect match
+        } else if (cityMatch && countyMatch) {
+          confidence = 0.9; // Partial city match
+        } else if (countyMatch) {
+          confidence = 0.7; // Only county match (codul poștal poate fi corect dar localitatea diferită)
+        }
+        
+        // Dacă nu există deja sau dacă acest rezultat are confidence mai mare sau distanță mai mică
+        const shouldReplace = !existing || 
+          (confidence > (existing.confidence || 0)) ||
+          (confidence === existing.confidence && distance < ((existing as any).distance || Infinity));
+        
+        if (shouldReplace) {
           postalCodeMap.set(postcode, {
             postcode,
             formatted: `${postcode}, ${useCity}, ${useCounty}`,
@@ -274,7 +292,7 @@ export async function searchPostalCodes(
               county: useCounty,
               country: result.country || country,
             },
-            confidence: cityMatchExact && countyMatch ? 1.0 : cityMatch ? 0.9 : 0.7, // Confidence mai mare dacă se potrivește exact
+            confidence,
             lat: result.lat,
             lon: result.lon,
           });
@@ -297,8 +315,12 @@ export async function searchPostalCodes(
       return distA - distB;
     });
 
-    console.log(`[Geoapify] Found ${results.length} unique postal codes`);
-    return results;
+    // Returnează maxim 3 rezultate (cele mai relevante)
+    // Dacă avem mai multe rezultate, le limităm la primele 3 pentru a oferi variante clare
+    const limitedResults = results.slice(0, 3);
+
+    console.log(`[Geoapify] Found ${results.length} unique postal codes, returning top ${limitedResults.length}`);
+    return limitedResults;
   } catch (error) {
     console.error("[Geoapify] Error searching postal codes:", error);
     throw error;

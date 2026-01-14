@@ -83,6 +83,32 @@ export default function LandingPagesPage() {
     }
   }
 
+  async function handleToggleStatus(landingPageId: string, currentStatus: string) {
+    try {
+      // Toggle between 'draft' and 'published'
+      const newStatus = currentStatus === "published" ? "draft" : "published";
+
+      const response = await fetch(`/api/landing-pages/${landingPageId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update status");
+      }
+
+      // Refresh the list
+      fetchLandingPages();
+    } catch (err) {
+      console.error("Error updating landing page status:", err);
+      alert(err instanceof Error ? err.message : "Failed to update status");
+    }
+  }
+
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString("ro-RO", {
       year: "numeric",
@@ -211,6 +237,16 @@ export default function LandingPagesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(page.id, page.status)}
+                          className={`${
+                            page.status === "published"
+                              ? "text-amber-600 hover:text-amber-900"
+                              : "text-emerald-600 hover:text-emerald-900"
+                          }`}
+                        >
+                          {page.status === "published" ? "Set Draft" : "Set Active"}
+                        </button>
                         <Link
                           href={`/admin/landing-pages/${page.id}/edit`}
                           className="text-emerald-600 hover:text-emerald-900"

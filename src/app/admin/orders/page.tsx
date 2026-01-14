@@ -14,6 +14,10 @@ export default function AdminPage() {
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 25;
+
   async function fetchOrders() {
     const response = await fetch("/api/orders/list");
     if (!response.ok) return;
@@ -222,16 +226,29 @@ export default function AdminPage() {
     setOpenDropdown(null);
   }
 
+  // Calculate pagination
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            Comenzi – MVP
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            Pagină foarte simplă pentru a vedea comenzile primite prin formular.
-          </p>
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-zinc-900">
+              Comenzi – MVP
+            </h1>
+            <p className="mt-1 text-sm text-zinc-600">
+              {orders.length} total comenzi • Pagina {currentPage} din {totalPages}
+            </p>
+          </div>
         </header>
 
         <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -249,17 +266,17 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.length === 0 ? (
+              {currentOrders.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}
                     className="px-3 py-6 text-center text-sm text-zinc-500"
                   >
-                    Nu există comenzi încă.
+                    {orders.length === 0 ? "Nu există comenzi încă." : "Nu există comenzi pe această pagină."}
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                currentOrders.map((order) => (
                   <tr
                     key={order.id}
                     className="border-t text-xs text-zinc-800 last:border-b"
@@ -396,6 +413,72 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-zinc-600">
+              Afișare {indexOfFirstOrder + 1}-{Math.min(indexOfLastOrder, orders.length)} din {orders.length} comenzi
+            </div>
+
+            <div className="flex gap-2">
+              {/* Previous button */}
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 2 && page <= currentPage + 2);
+
+                  if (!showPage) {
+                    // Show ellipsis
+                    if (page === currentPage - 3 || page === currentPage + 3) {
+                      return (
+                        <span key={page} className="px-3 py-1 text-sm text-zinc-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`px-3 py-1 text-sm rounded-md ${
+                        currentPage === page
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white border border-zinc-300 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Next button */}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Următor
+              </button>
+            </div>
+          </div>
+        )}
 
               {/* Confirm Order Modal */}
               <ConfirmOrderModal

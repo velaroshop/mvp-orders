@@ -15,6 +15,21 @@ export default function Sidebar() {
       icon: "📦",
     },
     {
+      name: "Products",
+      href: "/admin/products",
+      icon: "🏷️",
+    },
+    {
+      name: "Store",
+      href: "/admin/store",
+      icon: "🏪",
+    },
+    {
+      name: "Landing Pages",
+      href: "/admin/landing-pages",
+      icon: "📄",
+    },
+    {
       name: "Settings",
       href: "/admin/settings",
       icon: "⚙️",

@@ -53,6 +53,15 @@ function WidgetFormContent() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+  
+  // Error states for validation
+  const [errors, setErrors] = useState<{
+    phone?: string;
+    fullName?: string;
+    county?: string;
+    city?: string;
+    address?: string;
+  }>({});
 
   useEffect(() => {
     if (slug) {
@@ -164,30 +173,72 @@ function WidgetFormContent() {
     return landingPage.srp - currentPrice;
   }
 
+  // Validation function
+  function validateField(fieldName: string, value: string): string | undefined {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      switch (fieldName) {
+        case "phone":
+          return "Introduceți numărul de telefon";
+        case "fullName":
+          return "Introduceți numele complet";
+        case "county":
+          return "Introduceți județul";
+        case "city":
+          return "Introduceți localitatea";
+        case "address":
+          return "Introduceți adresa";
+        default:
+          return "Acest câmp este obligatoriu";
+      }
+    }
+    return undefined;
+  }
+
+  // Handle field blur for validation
+  function handleFieldBlur(fieldName: string, value: string) {
+    const error = validateField(fieldName, value);
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: error,
+    }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     
     if (!landingPage) return;
 
+    // Validate all fields
+    const phoneDigits = phone.replace(/\D/g, "");
+    const newErrors: typeof errors = {};
+    
+    if (!phoneDigits) {
+      newErrors.phone = "Introduceți numărul de telefon";
+    }
+    if (!fullName.trim()) {
+      newErrors.fullName = "Introduceți numele complet";
+    }
+    if (!county.trim()) {
+      newErrors.county = "Introduceți județul";
+    }
+    if (!city.trim()) {
+      newErrors.city = "Introduceți localitatea";
+    }
+    if (!address.trim()) {
+      newErrors.address = "Introduceți adresa";
+    }
+
+    // If there are errors, set them and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setSubmitting(false);
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
-
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length === 0) {
-      setError("Numărul de telefon este obligatoriu.");
-      setSubmitting(false);
-      return;
-    }
-    if (phoneDigits[0] !== "0") {
-      setError("Numărul de telefon trebuie să înceapă cu 0.");
-      setSubmitting(false);
-      return;
-    }
-    if (phoneDigits.length !== 10) {
-      setError("Numărul de telefon trebuie să aibă exact 10 cifre.");
-      setSubmitting(false);
-      return;
-    }
+    setErrors({});
 
     const payload = {
       landingKey: landingPage.slug,
@@ -361,20 +412,36 @@ function WidgetFormContent() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={handlePhoneChange}
+                  onChange={(e) => {
+                    handlePhoneChange(e);
+                    // Clear error when user starts typing
+                    if (errors.phone) {
+                      setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }
+                  }}
                   placeholder="Necesar pentru a intră în legătură cu curierul"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
-                  style={{ 
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
+                    errors.phone 
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.phone ? {} : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    if (!errors.phone) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("phone", phone);
                   }}
                   required
                 />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
@@ -383,20 +450,36 @@ function WidgetFormContent() {
                 <input
                   type="text"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    // Clear error when user starts typing
+                    if (errors.fullName) {
+                      setErrors((prev) => ({ ...prev, fullName: undefined }));
+                    }
+                  }}
                   placeholder="Introduceți numele dvs. complet"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
-                  style={{ 
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
+                    errors.fullName 
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.fullName ? {} : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    if (!errors.fullName) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("fullName", fullName);
                   }}
                   required
                 />
+                {errors.fullName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -406,20 +489,36 @@ function WidgetFormContent() {
                   <input
                     type="text"
                     value={county}
-                    onChange={(e) => setCounty(e.target.value)}
+                    onChange={(e) => {
+                      setCounty(e.target.value);
+                      // Clear error when user starts typing
+                      if (errors.county) {
+                        setErrors((prev) => ({ ...prev, county: undefined }));
+                      }
+                    }}
                     placeholder="Introduceți județul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
-                    style={{ 
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
+                      errors.county 
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                        : 'border-zinc-300'
+                    }`}
+                    style={errors.county ? {} : { 
                       '--tw-ring-color': accentColor 
                     } as React.CSSProperties & { '--tw-ring-color': string }}
                     onFocus={(e) => {
-                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      if (!errors.county) {
+                        e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      }
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.boxShadow = '';
+                      handleFieldBlur("county", county);
                     }}
                     required
                   />
+                  {errors.county && (
+                    <p className="mt-1 text-sm text-red-600">{errors.county}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-1">
@@ -428,20 +527,36 @@ function WidgetFormContent() {
                   <input
                     type="text"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      // Clear error when user starts typing
+                      if (errors.city) {
+                        setErrors((prev) => ({ ...prev, city: undefined }));
+                      }
+                    }}
                     placeholder="Introduceți localitatea / comuna / satul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
-                    style={{ 
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
+                      errors.city 
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                        : 'border-zinc-300'
+                    }`}
+                    style={errors.city ? {} : { 
                       '--tw-ring-color': accentColor 
                     } as React.CSSProperties & { '--tw-ring-color': string }}
                     onFocus={(e) => {
-                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      if (!errors.city) {
+                        e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      }
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.boxShadow = '';
+                      handleFieldBlur("city", city);
                     }}
                     required
                   />
+                  {errors.city && (
+                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -451,20 +566,36 @@ function WidgetFormContent() {
                 <input
                   type="text"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    // Clear error when user starts typing
+                    if (errors.address) {
+                      setErrors((prev) => ({ ...prev, address: undefined }));
+                    }
+                  }}
                   placeholder="Introduceți adresa"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
-                  style={{ 
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
+                    errors.address 
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.address ? {} : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    if (!errors.address) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("address", address);
                   }}
                   required
                 />
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                )}
               </div>
             </div>
           </div>

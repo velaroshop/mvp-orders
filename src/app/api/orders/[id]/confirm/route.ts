@@ -27,6 +27,14 @@ export async function POST(
       discount,
     } = body;
 
+    // Validare cod poștal: maxim 6 cifre
+    if (postalCode && (!/^\d{1,6}$/.test(postalCode))) {
+      return NextResponse.json(
+        { error: "Codul poștal trebuie să conțină maxim 6 cifre" },
+        { status: 400 },
+      );
+    }
+
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
@@ -115,10 +123,10 @@ export async function POST(
     if (postalCode) updateData.postal_code = postalCode;
     if (shippingPrice !== undefined) updateData.shipping_cost = shippingPrice;
 
-    // Actualizează status-ul în DB
+    // Actualizează status-ul și datele în DB
     const { error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({ status: "confirmed" })
+      .update(updateData)
       .eq("id", orderId);
 
     if (updateError) {

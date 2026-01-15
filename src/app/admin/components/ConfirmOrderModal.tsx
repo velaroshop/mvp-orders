@@ -361,11 +361,15 @@ export default function ConfirmOrderModal({
                 <input
                   type="text"
                   value={formData.postalCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, postalCode: e.target.value })
-                  }
+                  onChange={(e) => {
+                    // Accept only digits and max 6 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setFormData({ ...formData, postalCode: value });
+                  }}
+                  maxLength={6}
+                  pattern="[0-9]{1,6}"
                   className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="@ Post code"
+                  placeholder="@ Post code (max 6 digits)"
                 />
                 
                 {/* Recommended postal codes */}

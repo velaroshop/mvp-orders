@@ -149,7 +149,35 @@ export default function LandingPagesPage() {
 
   function getEmbedCode(slug: string) {
     const widgetUrl = getWidgetUrl(slug);
-    return `<iframe src="${widgetUrl}" width="100%" style="border: none; display: block; min-height: 2000px;" scrolling="no"></iframe>`;
+    const iframeId = `velaro-widget-${slug}`;
+    return `<iframe id="${iframeId}" src="${widgetUrl}" width="100%" style="border: none; display: block; min-height: 600px;" scrolling="no"></iframe>
+<script>
+  (function() {
+    var iframe = document.getElementById('${iframeId}');
+    if (!iframe) return;
+    
+    function adjustHeight(event) {
+      if (event.data && event.data.type === 'velaro-widget-height' && event.data.height) {
+        iframe.style.height = event.data.height + 'px';
+      }
+    }
+    
+    window.addEventListener('message', adjustHeight);
+    
+    // Initial height adjustment after iframe loads
+    iframe.onload = function() {
+      setTimeout(function() {
+        if (iframe.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+          } catch (e) {
+            console.debug('Could not request height from iframe');
+          }
+        }
+      }, 500);
+    };
+  })();
+</script>`;
   }
 
   function copyToClipboard(text: string) {

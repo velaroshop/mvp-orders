@@ -55,6 +55,42 @@ function WidgetFormContent() {
     }
   }, [slug]);
 
+  // Send height to parent window if in iframe
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const sendHeight = () => {
+      try {
+        if (window.parent && window.parent !== window) {
+          const height = document.documentElement.scrollHeight;
+          window.parent.postMessage(
+            { type: 'velaro-widget-height', height },
+            '*' // Consider restricting to specific origin in production
+          );
+        }
+      } catch (error) {
+        // Silently fail if cross-origin restrictions prevent communication
+        console.debug('Could not send height to parent:', error);
+      }
+    };
+
+    // Send height on initial render and when content changes
+    sendHeight();
+    
+    // Send height on resize
+    window.addEventListener('resize', sendHeight);
+    
+    // Send height after a delay to account for dynamic content
+    const timeout = setTimeout(sendHeight, 100);
+    const interval = setInterval(sendHeight, 500);
+
+    return () => {
+      window.removeEventListener('resize', sendHeight);
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [loading, success, landingPage, selectedOffer, phone, fullName, county, city, address]);
+
   async function fetchLandingPage() {
     try {
       setLoading(true);

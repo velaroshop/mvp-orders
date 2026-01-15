@@ -473,8 +473,7 @@ function WidgetFormContent() {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 sm:p-4 border border-zinc-200 rounded-lg">
               <div>
-                <div className="font-medium text-sm sm:text-base text-zinc-900">Livrare Standard - GLS</div>
-                <div className="text-xs sm:text-sm text-zinc-600">2-3 zile lucrătoare</div>
+                <div className="font-medium text-sm sm:text-base text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
               </div>
               <div className="text-base sm:text-lg font-bold text-zinc-900">
                 {landingPage.shipping_price.toFixed(2)} Lei
@@ -483,28 +482,28 @@ function WidgetFormContent() {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
+          <div className="bg-black rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
               Rezumatul comenzii
             </h2>
             <div className="space-y-2 mb-3 sm:mb-4">
-              <div className="flex justify-between text-sm sm:text-base text-zinc-700">
+              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
                 <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base text-zinc-700">
-                <span className="break-words pr-2">• Livrare Standard - GLS</span>
+              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
+                <span className="break-words pr-2">• Livrare Standard - Curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base text-zinc-700">
+              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
                 <span className="break-words pr-2">• Oferte speciale</span>
                 <span className="whitespace-nowrap">0.00 Lei</span>
               </div>
             </div>
-            <div className="pt-3 sm:pt-4 border-t border-zinc-200">
+            <div className="pt-3 sm:pt-4 border-t border-zinc-700">
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-base sm:text-lg font-bold text-zinc-900">PREȚ TOTAL</span>
-                <span className="text-xl sm:text-2xl font-bold text-emerald-600">
+                <span className="text-base sm:text-lg font-bold text-white">PREȚ TOTAL</span>
+                <span className="text-xl sm:text-2xl font-bold text-emerald-400">
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>

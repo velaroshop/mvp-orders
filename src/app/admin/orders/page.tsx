@@ -271,22 +271,22 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-zinc-900">
       <main className="mx-auto max-w-5xl px-4 py-8">
         <header className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">
+            <h1 className="text-2xl font-semibold text-white">
               Comenzi – MVP
             </h1>
-            <p className="mt-1 text-sm text-zinc-600">
+            <p className="mt-1 text-sm text-zinc-400">
               {orders.length} total comenzi • Pagina {currentPage} din {totalPages}
             </p>
           </div>
         </header>
 
-        <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-lg bg-zinc-800 shadow-xl border border-zinc-700">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b bg-zinc-100 text-xs font-semibold uppercase text-zinc-600">
+            <thead className="border-b border-zinc-700 bg-zinc-900 text-xs font-semibold uppercase text-zinc-400">
               <tr>
                 <th className="px-3 py-2">Order ID</th>
                 <th className="px-3 py-2">Status</th>
@@ -303,7 +303,7 @@ export default function AdminPage() {
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-3 py-6 text-center text-sm text-zinc-500"
+                    className="px-3 py-6 text-center text-sm text-zinc-400"
                   >
                     {orders.length === 0 ? "Nu există comenzi încă." : "Nu există comenzi pe această pagină."}
                   </td>
@@ -312,11 +312,11 @@ export default function AdminPage() {
                 currentOrders.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-t text-xs text-zinc-800 last:border-b"
+                    className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50"
                   >
                     {/* Order ID */}
                     <td className="px-3 py-2">
-                      <span className="font-medium text-zinc-900">
+                      <span className="font-medium text-white">
                         {formatOrderNumber(order.orderNumber, order.id)}
                       </span>
                     </td>
@@ -324,16 +324,16 @@ export default function AdminPage() {
                     {/* Status */}
                     <td className="px-3 py-2">
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
                           order.status === "confirmed"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-600 text-white"
                             : order.status === "cancelled"
-                            ? "bg-red-100 text-red-800"
+                            ? "bg-red-600 text-white"
                             : order.status === "hold"
-                            ? "bg-orange-100 text-orange-800"
+                            ? "bg-orange-600 text-white"
                             : order.status === "sync_error"
-                            ? "bg-rose-100 text-rose-900"
-                            : "bg-amber-100 text-amber-800"
+                            ? "bg-rose-600 text-white"
+                            : "bg-amber-500 text-white"
                         }`}
                       >
                         {order.status === "pending"
@@ -351,105 +351,121 @@ export default function AdminPage() {
                     {/* Customer */}
                     <td className="px-3 py-2">
                       <div>
-                        <p className="font-medium text-zinc-900">{order.fullName}</p>
-                        <p className="text-zinc-600">{order.phone}</p>
+                        <p className="font-medium text-white">{order.fullName}</p>
+                        <p className="text-zinc-400">{order.phone}</p>
                       </div>
                     </td>
 
                     {/* Order Note */}
                     <td className="px-3 py-2">
-                      <span className="text-zinc-900">
+                      <span className="text-zinc-300">
                         {order.orderNote || "none"}
                       </span>
                     </td>
 
                     {/* Order Source */}
                     <td className="px-3 py-2">
-                      <span className="text-zinc-900">{order.landingKey}</span>
+                      <span className="text-zinc-300">{order.landingKey}</span>
                     </td>
 
                     {/* Price */}
                     <td className="px-3 py-2">
                       <div className="space-y-0.5">
-                        <p className="font-semibold text-zinc-900">
+                        <p className="font-semibold text-white">
                           Total: {order.total.toFixed(2)} RON
                         </p>
-                        <p className="text-zinc-600">
+                        <p className="text-zinc-400">
                           Items: {order.subtotal.toFixed(2)} RON (1x)
                         </p>
-                        <p className="text-zinc-600">Pre purchase: 0,00 RON</p>
-                        <p className="text-zinc-600">
+                        <p className="text-zinc-400">Pre purchase: 0,00 RON</p>
+                        <p className="text-zinc-400">
                           Shipping: {order.shippingCost.toFixed(2)} RON
                         </p>
-                        <p className="text-zinc-600">Discount: 0,00 RON</p>
+                        <p className="text-zinc-400">Discount: 0,00 RON</p>
                       </div>
                     </td>
 
                     {/* Order Date */}
                     <td className="px-3 py-2">
-                      <span className="text-zinc-900">{formatDate(order.createdAt)}</span>
+                      <span className="text-zinc-300">{formatDate(order.createdAt)}</span>
                     </td>
 
                     {/* Actions */}
                     <td className="px-3 py-2">
-                      <div className="relative actions-dropdown">
+                      <div className="flex flex-col gap-2">
+                        {/* CONFIRM Button - Always visible, disabled if confirmed */}
                         <button
-                          onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
-                          className="rounded-md bg-zinc-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-zinc-700"
+                          onClick={() => handleActionClick(order.id, "confirm")}
+                          disabled={order.status === "confirmed" || confirming === order.id}
+                          className={`rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all ${
+                            order.status === "confirmed"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
+                          }`}
                         >
-                          Actions ▼
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : "CONFIRM"}
                         </button>
-                        {openDropdown === order.id && (
-                          <div className="absolute right-0 mt-1 w-48 bg-white border border-zinc-200 rounded-md shadow-lg z-10">
-                            <div className="py-1">
-                              <button
-                                onClick={() => handleActionClick(order.id, "confirm")}
-                                disabled={confirming === order.id}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(order.id, "cancel")}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
-                              >
-                                Order Cancel
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(order.id, "uncancel")}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
-                              >
-                                Order Uncancel
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(order.id, "hold")}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
-                              >
-                                Order Hold
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(order.id, "unhold")}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
-                              >
-                                Order Unhold
-                              </button>
-                              <button
-                                onClick={() => handleActionClick(order.id, "note")}
-                                className="w-full text-left px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50"
-                              >
-                                Order Note
-                              </button>
-                              {order.status === "sync_error" && (
+
+                        {/* Actions Dropdown */}
+                        <div className="relative actions-dropdown">
+                          <button
+                            onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                            className="rounded-md bg-zinc-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-zinc-500 w-full"
+                          >
+                            Actions ▼
+                          </button>
+                          {openDropdown === order.id && (
+                            <div className="absolute right-0 mt-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10">
+                              <div className="py-1">
                                 <button
-                                  onClick={() => handleActionClick(order.id, "resync")}
-                                  className="w-full text-left px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 font-medium border-t border-zinc-200"
+                                  onClick={() => handleActionClick(order.id, "confirm")}
+                                  disabled={confirming === order.id}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  🔄 Resync to Helpship
+                                  {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
                                 </button>
-                              )}
+                                <button
+                                  onClick={() => handleActionClick(order.id, "cancel")}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                >
+                                  Order Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleActionClick(order.id, "uncancel")}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                >
+                                  Order Uncancel
+                                </button>
+                                <button
+                                  onClick={() => handleActionClick(order.id, "hold")}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                >
+                                  Order Hold
+                                </button>
+                                <button
+                                  onClick={() => handleActionClick(order.id, "unhold")}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                >
+                                  Order Unhold
+                                </button>
+                                <button
+                                  onClick={() => handleActionClick(order.id, "note")}
+                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                >
+                                  Order Note
+                                </button>
+                                {order.status === "sync_error" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "resync")}
+                                    className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    🔄 Resync to Helpship
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -462,7 +478,7 @@ export default function AdminPage() {
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-zinc-600">
+            <div className="text-sm text-zinc-400">
               Afișare {indexOfFirstOrder + 1}-{Math.min(indexOfLastOrder, orders.length)} din {orders.length} comenzi
             </div>
 
@@ -471,7 +487,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Anterior
               </button>
@@ -489,7 +505,7 @@ export default function AdminPage() {
                     // Show ellipsis
                     if (page === currentPage - 3 || page === currentPage + 3) {
                       return (
-                        <span key={page} className="px-3 py-1 text-sm text-zinc-400">
+                        <span key={page} className="px-3 py-1 text-sm text-zinc-500">
                           ...
                         </span>
                       );
@@ -504,7 +520,7 @@ export default function AdminPage() {
                       className={`px-3 py-1 text-sm rounded-md ${
                         currentPage === page
                           ? "bg-emerald-600 text-white"
-                          : "bg-white border border-zinc-300 hover:bg-zinc-50"
+                          : "bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700"
                       }`}
                     >
                       {page}
@@ -517,7 +533,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm bg-white border border-zinc-300 rounded-md hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Următor
               </button>

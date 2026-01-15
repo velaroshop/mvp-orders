@@ -172,7 +172,13 @@ export async function PUT(
     if (body.name !== undefined) updateData.name = body.name;
     if (body.slug !== undefined) updateData.slug = body.slug;
     if (body.thankYouPath !== undefined) updateData.thank_you_path = body.thankYouPath;
-    
+
+    // Product SKU & Quantities
+    if (body.productSku !== undefined) updateData.product_sku = body.productSku || null;
+    if (body.quantityOffer1 !== undefined) updateData.quantity_offer_1 = body.quantityOffer1;
+    if (body.quantityOffer2 !== undefined) updateData.quantity_offer_2 = body.quantityOffer2;
+    if (body.quantityOffer3 !== undefined) updateData.quantity_offer_3 = body.quantityOffer3;
+
     // Offer Settings
     if (body.mainSku !== undefined) updateData.main_sku = body.mainSku || null;
     if (body.offerHeading1 !== undefined) updateData.offer_heading_1 = body.offerHeading1;

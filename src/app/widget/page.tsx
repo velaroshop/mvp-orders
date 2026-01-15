@@ -550,7 +550,7 @@ function WidgetFormContent() {
               cu reducere aplicată
             </p>
           </div>
-          <style jsx>{`
+          <style dangerouslySetInnerHTML={{__html: `
             @keyframes pulse-button {
               0%, 100% {
                 box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -559,7 +559,7 @@ function WidgetFormContent() {
                 box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
             }
-          `}</style>
+          `}} />
         </form>
       </div>
     </div>

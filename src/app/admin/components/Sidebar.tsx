@@ -36,6 +36,11 @@ export default function Sidebar() {
       icon: "📮",
     },
     {
+      name: "Autocomplete Test",
+      href: "/admin/autocomplete-test",
+      icon: "🔍",
+    },
+    {
       name: "Settings",
       href: "/admin/settings",
       icon: "⚙️",

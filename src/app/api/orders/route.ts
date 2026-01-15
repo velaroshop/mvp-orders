@@ -45,6 +45,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obține store_id din landing page pentru a folosi order_series
+    const { data: landingPage } = await supabase
+      .from("landing_pages")
+      .select("store_id")
+      .eq("slug", landingKey)
+      .single();
+
+    let orderSeries = "VLR"; // Default fallback
+    if (landingPage?.store_id) {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("order_series")
+        .eq("id", landingPage.store_id)
+        .single();
+      
+      if (store?.order_series) {
+        orderSeries = store.order_series;
+      }
+    }
+
     // Creează comanda în baza noastră de date
     const order = await createOrder({
       landingKey,
@@ -69,6 +89,7 @@ export async function POST(request: NextRequest) {
       const helpshipResult = await helpshipClient.createOrder({
         orderId: order.id, // ID-ul nostru intern (externalId în Helpship)
         orderNumber: order.orderNumber || 0, // Numărul comenzii pentru ORDER NAME
+        orderSeries: orderSeries, // Order series din store
         customerName: fullName,
         customerPhone: phone,
         county,

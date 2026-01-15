@@ -6,7 +6,7 @@
  * API Base: https://helpship-api-develop.azurewebsites.net
  */
 
-import { getOrderPrefix } from "./store";
+// Removed getOrderPrefix import - now using orderSeries from store
 
 interface HelpshipTokenResponse {
   access_token: string;
@@ -169,6 +169,7 @@ class HelpshipClient {
     orderData: {
       orderId: string; // ID-ul nostru intern (externalId)
       orderNumber: number; // Numărul comenzii (pentru ORDER NAME)
+      orderSeries: string; // Order series din store (ex: "VLR", "JMR-TEST")
       customerName: string;
       customerPhone: string;
       county: string;
@@ -206,9 +207,8 @@ class HelpshipClient {
       console.warn("[Helpship] Failed to get Romania countryId, using null:", err);
     }
 
-    // Obține prefix-ul pentru numărul comenzii
-    const orderPrefix = await getOrderPrefix();
-    const orderName = `${orderPrefix}-${String(orderData.orderNumber).padStart(5, "0")}`;
+    // Folosește order_series din store pentru numele comenzii
+    const orderName = `${orderData.orderSeries}-${String(orderData.orderNumber).padStart(5, "0")}`;
 
     // Construim payload-ul conform documentației Helpship
     const payload: HelpshipOrderPayload = {

@@ -19,6 +19,9 @@ export interface Order {
   city: string;
   address: string;
   postalCode?: string; // Cod poștal sugerat de Helpship
+  productName?: string; // Numele produsului
+  productSku?: string; // SKU-ul produsului
+  productQuantity?: number; // Cantitatea produsului
   upsells: string[];
   subtotal: number;
   shippingCost: number;

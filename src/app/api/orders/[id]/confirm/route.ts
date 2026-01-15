@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { helpshipClient } from "@/lib/helpship";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { HelpshipClient } from "@/lib/helpship";
 
 /**
  * Confirmă o comandă: actualizează datele în Helpship și schimbă status-ul din ONHOLD în PENDING
@@ -27,7 +28,7 @@ export async function POST(
     } = body;
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -43,6 +44,10 @@ export async function POST(
     // Dacă comanda are helpshipOrderId, verificăm statusul în Helpship
     if (order.helpship_order_id) {
       try {
+        // Obține credențialele Helpship pentru organizație
+        const credentials = await getHelpshipCredentials(order.organization_id);
+        const helpshipClient = new HelpshipClient(credentials);
+
         // Verificăm statusul comenzii în Helpship
         const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
         
@@ -111,7 +116,7 @@ export async function POST(
     if (shippingPrice !== undefined) updateData.shipping_cost = shippingPrice;
 
     // Actualizează status-ul în DB
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ status: "confirmed" })
       .eq("id", orderId);

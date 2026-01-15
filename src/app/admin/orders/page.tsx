@@ -222,6 +222,39 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "resync") {
+      if (!confirm("Sigur vrei să re-sincronizezi această comandă cu Helpship?")) {
+        setOpenDropdown(null);
+        return;
+      }
+
+      setConfirming(orderId);
+      try {
+        const response = await fetch(`/api/orders/${orderId}/resync`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to resync order");
+        }
+
+        const result = await response.json();
+
+        // Reîncarcă lista de comenzi
+        await fetchOrders();
+        alert(`✅ Comanda a fost sincronizată cu succes!\nHelpship Order ID: ${result.helpshipOrderId}`);
+      } catch (error) {
+        console.error("Error resyncing order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la re-sincronizarea comenzii";
+        alert(`❌ ${errorMessage}`);
+      } finally {
+        setConfirming(null);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }
@@ -406,6 +439,14 @@ export default function AdminPage() {
                               >
                                 Order Note
                               </button>
+                              {order.status === "sync_error" && (
+                                <button
+                                  onClick={() => handleActionClick(order.id, "resync")}
+                                  className="w-full text-left px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 font-medium border-t border-zinc-200"
+                                >
+                                  🔄 Resync to Helpship
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}

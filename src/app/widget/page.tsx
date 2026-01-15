@@ -277,18 +277,18 @@ function WidgetFormContent() {
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-4xl mx-auto">
         {/* Price Header */}
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-black rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="text-center mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-2">
-              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-600">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
                 Preț: {currentPrice.toFixed(2)} Lei
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <span className="text-lg sm:text-xl text-zinc-400 line-through">
                 {landingPage.srp.toFixed(2)} Lei
               </span>
-              <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
+              <span className="px-4 py-2 bg-red-600 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg">
                 REDUCERE {discount}%
               </span>
             </div>
@@ -296,17 +296,17 @@ function WidgetFormContent() {
 
           {/* Features Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center gap-2 text-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              <span className="text-xs sm:text-sm text-zinc-700 break-words">LIVRARE ÎN 1-3 ZILE</span>
+              <span className="text-xs sm:text-sm text-zinc-300 break-words">LIVRARE ÎN 1-3 ZILE</span>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center gap-2 text-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span className="text-xs sm:text-sm text-zinc-700 break-words">PLATĂ LA LIVRARE</span>
+              <span className="text-xs sm:text-sm text-zinc-300 break-words">PLATĂ LA LIVRARE</span>
             </div>
           </div>
         </div>
@@ -397,19 +397,19 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_1")}
-                className={`p-3 sm:p-4 border-2 rounded-lg transition-all ${
+                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_1"
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
               >
-                <div className="text-xs font-semibold text-zinc-600 uppercase mb-2">
+                <div className="text-xs font-bold text-white uppercase mb-2 px-2 py-1 bg-zinc-700 rounded inline-block">
                   {landingPage.offer_heading_1}
                 </div>
-                <div className="text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_1}
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold text-emerald-600">
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_1" && (
@@ -421,19 +421,19 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_2")}
-                className={`p-4 border-2 rounded-lg transition-all ${
+                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_2"
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
               >
-                <div className="text-xs font-semibold text-zinc-600 uppercase mb-2">
+                <div className="text-sm font-bold text-white uppercase mb-2 px-3 py-1.5 bg-zinc-800 rounded inline-block">
                   {landingPage.offer_heading_2}
                 </div>
-                <div className="text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_2}
                 </div>
-                <div className="text-xl font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold text-emerald-600">
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_2" && (
@@ -445,19 +445,19 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_3")}
-                className={`p-4 border-2 rounded-lg transition-all ${
+                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_3"
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
               >
-                <div className="text-xs font-semibold text-zinc-600 uppercase mb-2">
+                <div className="text-base font-bold text-white uppercase mb-2 px-4 py-2 bg-black rounded inline-block">
                   {landingPage.offer_heading_3}
                 </div>
-                <div className="text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_3}
                 </div>
-                <div className="text-xl font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold text-emerald-600">
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_3" && (
@@ -489,7 +489,7 @@ function WidgetFormContent() {
             </h2>
             <div className="space-y-2 mb-3 sm:mb-4">
               <div className="flex justify-between text-sm sm:text-base text-zinc-700">
-                <span className="break-words pr-2">• {landingPage.numeral_1}</span>
+                <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
               <div className="flex justify-between text-sm sm:text-base text-zinc-700">
@@ -501,12 +501,7 @@ function WidgetFormContent() {
                 <span className="whitespace-nowrap">0.00 Lei</span>
               </div>
             </div>
-            <div className="pt-3 sm:pt-4 border-t border-zinc-200 space-y-2">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <div className="text-sm font-semibold text-emerald-900">
-                  Ați economisit: <span className="text-lg font-bold text-emerald-700">{calculateSavings().toFixed(2)} RON</span>
-                </div>
-              </div>
+            <div className="pt-3 sm:pt-4 border-t border-zinc-200">
               <div className="flex justify-between items-center flex-wrap gap-2">
                 <span className="text-base sm:text-lg font-bold text-zinc-900">PREȚ TOTAL</span>
                 <span className="text-xl sm:text-2xl font-bold text-emerald-600">

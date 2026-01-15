@@ -64,6 +64,7 @@ export async function PUT(
     if (body.primaryColor !== undefined) updateData.primary_color = body.primaryColor;
     if (body.accentColor !== undefined) updateData.accent_color = body.accentColor;
     if (body.backgroundColor !== undefined) updateData.background_color = body.backgroundColor;
+    if (body.textOnDarkColor !== undefined) updateData.text_on_dark_color = body.textOnDarkColor;
     if (body.fbPixelId !== undefined) updateData.fb_pixel_id = body.fbPixelId || null;
     if (body.fbConversionToken !== undefined) updateData.fb_conversion_token = body.fbConversionToken || null;
     if (body.clientSideTracking !== undefined) updateData.client_side_tracking = body.clientSideTracking;

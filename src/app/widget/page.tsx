@@ -27,6 +27,14 @@ interface LandingPage {
     name: string;
     sku?: string;
   };
+  stores?: {
+    id: string;
+    url: string;
+    primary_color: string;
+    accent_color: string;
+    background_color: string;
+    text_on_dark_color: string;
+  };
 }
 
 function WidgetFormContent() {
@@ -273,36 +281,50 @@ function WidgetFormContent() {
   const totalPrice = getTotalPrice();
   const discount = calculateDiscount();
 
+  // Get colors from store with fallback to defaults
+  const storeColors = landingPage.stores;
+  const backgroundColor = storeColors?.background_color || "#000000";
+  const accentColor = storeColors?.accent_color || "#10b981"; // emerald-600
+  const primaryColor = storeColors?.primary_color || "#10b981"; // emerald-600 fallback
+  const textOnDarkColor = storeColors?.text_on_dark_color || "#FFFFFF";
+  
+  // Helper function to create lighter variant of accent color for selected states
+  const getAccentLightColor = (color: string) => {
+    // Simple approach: add opacity or use a lighter variant
+    // For now, we'll use a CSS variable approach or inline style
+    return color;
+  };
+
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-4xl mx-auto">
         {/* Price Header */}
-        <div className="bg-black rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6" style={{ backgroundColor }}>
           <div className="text-center mb-4 sm:mb-6">
             {/* Product Name */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4" style={{ color: textOnDarkColor }}>
               {landingPage.products?.name || landingPage.name}
             </h1>
             
             {/* Price */}
             <div className="mb-3">
-              <div className="text-sm sm:text-base text-zinc-400 mb-1">Preț:</div>
-              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+              <div className="text-sm sm:text-base mb-1" style={{ color: textOnDarkColor, opacity: 0.8 }}>Preț:</div>
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ color: textOnDarkColor }}>
                 {landingPage.price_1.toFixed(2)} Lei
               </span>
             </div>
             
             {/* Original Price - More Visible */}
             <div className="mb-3">
-              <div className="text-sm sm:text-base text-zinc-400 mb-1">Preț întreg:</div>
-              <span className="text-xl sm:text-2xl md:text-3xl font-bold text-zinc-500 line-through decoration-2 decoration-zinc-400">
+              <div className="text-sm sm:text-base mb-1" style={{ color: textOnDarkColor, opacity: 0.8 }}>Preț întreg:</div>
+              <span className="text-xl sm:text-2xl md:text-3xl font-bold line-through decoration-2" style={{ color: textOnDarkColor, opacity: 0.6, textDecorationColor: textOnDarkColor }}>
                 {landingPage.srp.toFixed(2)} Lei
               </span>
             </div>
             
             {/* Discount Badge */}
             <div className="flex justify-center">
-              <span className="px-4 py-2 bg-emerald-600 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg">
+              <span className="px-4 py-2 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg" style={{ backgroundColor: accentColor }}>
                 REDUCERE {discount}%
               </span>
             </div>
@@ -311,16 +333,16 @@ function WidgetFormContent() {
           {/* Features Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="flex flex-col items-center justify-center gap-2 text-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: accentColor }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
-              <span className="text-xs sm:text-sm text-zinc-300 break-words">LIVRARE ÎN 1-3 ZILE</span>
+              <span className="text-xs sm:text-sm break-words" style={{ color: textOnDarkColor, opacity: 0.8 }}>LIVRARE ÎN 1-3 ZILE</span>
             </div>
             <div className="flex flex-col items-center justify-center gap-2 text-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: accentColor }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span className="text-xs sm:text-sm text-zinc-300 break-words">PLATĂ LA LIVRARE</span>
+              <span className="text-xs sm:text-sm break-words" style={{ color: textOnDarkColor, opacity: 0.8 }}>PLATĂ LA LIVRARE</span>
             </div>
           </div>
         </div>
@@ -341,7 +363,16 @@ function WidgetFormContent() {
                   value={phone}
                   onChange={handlePhoneChange}
                   placeholder="Necesar pentru a intră în legătură cu curierul"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
+                  style={{ 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                  }}
                   required
                 />
               </div>
@@ -354,7 +385,16 @@ function WidgetFormContent() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Introduceți numele dvs. complet"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
+                  style={{ 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                  }}
                   required
                 />
               </div>
@@ -368,7 +408,16 @@ function WidgetFormContent() {
                     value={county}
                     onChange={(e) => setCounty(e.target.value)}
                     placeholder="Introduceți județul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
+                    style={{ 
+                      '--tw-ring-color': accentColor 
+                    } as React.CSSProperties & { '--tw-ring-color': string }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                    }}
                     required
                   />
                 </div>
@@ -381,7 +430,16 @@ function WidgetFormContent() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Introduceți localitatea / comuna / satul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
+                    style={{ 
+                      '--tw-ring-color': accentColor 
+                    } as React.CSSProperties & { '--tw-ring-color': string }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                    }}
                     required
                   />
                 </div>
@@ -395,7 +453,16 @@ function WidgetFormContent() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Introduceți adresa"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500"
+                  style={{ 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                  }}
                   required
                 />
               </div>
@@ -413,21 +480,25 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_1")}
                 className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_1"
-                    ? "border-emerald-500 bg-emerald-50"
+                    ? ""
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
+                style={selectedOffer === "offer_1" ? {
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
+                } : {}}
               >
-                <div className="text-xs font-bold text-white uppercase mb-2 px-2 py-1 bg-zinc-700 rounded inline-block">
+                <div className="text-xs font-bold text-white uppercase mb-2 px-2 py-1 rounded inline-block" style={{ backgroundColor: backgroundColor, opacity: 0.7 }}>
                   {landingPage.offer_heading_1}
                 </div>
                 <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_1}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_1" && (
-                  <div className="mt-2 text-xs text-emerald-600 font-medium">
+                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}
@@ -437,21 +508,25 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_2")}
                 className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_2"
-                    ? "border-emerald-500 bg-emerald-50"
+                    ? ""
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
+                style={selectedOffer === "offer_2" ? {
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
+                } : {}}
               >
-                <div className="text-sm font-bold text-white uppercase mb-2 px-3 py-1.5 bg-zinc-800 rounded inline-block">
+                <div className="text-sm font-bold text-white uppercase mb-2 px-3 py-1.5 rounded inline-block" style={{ backgroundColor: backgroundColor, opacity: 0.8 }}>
                   {landingPage.offer_heading_2}
                 </div>
                 <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_2}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_2" && (
-                  <div className="mt-2 text-xs text-emerald-600 font-medium">
+                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}
@@ -461,21 +536,25 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_3")}
                 className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
                   selectedOffer === "offer_3"
-                    ? "border-emerald-500 bg-emerald-50"
+                    ? ""
                     : "border-zinc-200 hover:border-zinc-300"
                 }`}
+                style={selectedOffer === "offer_3" ? {
+                  borderColor: accentColor,
+                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
+                } : {}}
               >
-                <div className="text-base font-bold text-white uppercase mb-2 px-4 py-2 bg-black rounded inline-block">
+                <div className="text-base font-bold text-white uppercase mb-2 px-4 py-2 rounded inline-block" style={{ backgroundColor: backgroundColor }}>
                   {landingPage.offer_heading_3}
                 </div>
                 <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_3}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-emerald-600">
+                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_3" && (
-                  <div className="mt-2 text-xs text-emerald-600 font-medium">
+                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}
@@ -496,28 +575,28 @@ function WidgetFormContent() {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-black rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
+          <div className="rounded-lg shadow-lg p-4 sm:p-6" style={{ backgroundColor }}>
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
             <div className="space-y-2 mb-3 sm:mb-4">
-              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
+              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
+              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Livrare Standard - Curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base text-zinc-300">
+              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Oferte speciale</span>
                 <span className="whitespace-nowrap">0.00 Lei</span>
               </div>
             </div>
-            <div className="pt-3 sm:pt-4 border-t border-zinc-700">
+            <div className="pt-3 sm:pt-4 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-base sm:text-lg font-bold text-white">PREȚ TOTAL</span>
-                <span className="text-xl sm:text-2xl font-bold text-emerald-400">
+                <span className="text-base sm:text-lg font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
+                <span className="text-xl sm:text-2xl font-bold" style={{ color: accentColor }}>
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>
@@ -536,13 +615,33 @@ function WidgetFormContent() {
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-base sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-base sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
-              style={!submitting ? {
-                boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.7)',
-                animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              } : {}}
+              style={{
+                backgroundColor: primaryColor,
+                ...(!submitting ? {
+                  boxShadow: `0 0 0 0 ${primaryColor}B3`,
+                  animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                } : {})
+              }}
+              onMouseEnter={(e) => {
+                if (!submitting) {
+                  // Darken color on hover (reduce brightness by ~10%)
+                  const rgb = primaryColor.match(/\d+/g);
+                  if (rgb && rgb.length === 3) {
+                    const r = Math.max(0, parseInt(rgb[0]) - 20);
+                    const g = Math.max(0, parseInt(rgb[1]) - 20);
+                    const b = Math.max(0, parseInt(rgb[2]) - 20);
+                    e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                  }
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.backgroundColor = primaryColor;
+                }
+              }}
             >
               {submitting ? "Se procesează..." : landingPage.order_button_text}
             </button>
@@ -553,10 +652,10 @@ function WidgetFormContent() {
           <style dangerouslySetInnerHTML={{__html: `
             @keyframes pulse-button {
               0%, 100% {
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 0 ${primaryColor}B3, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
               50% {
-                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 10px ${primaryColor}00, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
             }
           `}} />

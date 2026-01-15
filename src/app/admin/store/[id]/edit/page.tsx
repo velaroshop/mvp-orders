@@ -11,6 +11,7 @@ interface Store {
   primary_color: string;
   accent_color: string;
   background_color: string;
+  text_on_dark_color: string;
   fb_pixel_id?: string;
   fb_conversion_token?: string;
   client_side_tracking: boolean;
@@ -80,6 +81,7 @@ export default function EditStorePage() {
           primaryColor: formData.primary_color,
           accentColor: formData.accent_color,
           backgroundColor: formData.background_color,
+          textOnDarkColor: formData.text_on_dark_color,
           fbPixelId: formData.fb_pixel_id || "",
           fbConversionToken: formData.fb_conversion_token || "",
           clientSideTracking: formData.client_side_tracking,
@@ -197,11 +199,11 @@ export default function EditStorePage() {
               Color Scheme
             </h2>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {/* Primary Color */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-2">
-                  Primary Color
+                  Primary Color (Buton Submit)
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -222,7 +224,7 @@ export default function EditStorePage() {
               {/* Accent Color */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-2">
-                  Accent Color
+                  Accent Color (Verde - Badge, Iconițe, Prețuri)
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -243,7 +245,7 @@ export default function EditStorePage() {
               {/* Background Color */}
               <div>
                 <label className="block text-sm font-medium text-zinc-900 mb-2">
-                  Background Color
+                  Background Color (Header & Rezumat)
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -256,6 +258,27 @@ export default function EditStorePage() {
                     type="text"
                     value={formData.background_color}
                     onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
+                  />
+                </div>
+              </div>
+
+              {/* Text on Dark Color */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-900 mb-2">
+                  Text on Dark Color (Text pe Header & Rezumat)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={formData.text_on_dark_color}
+                    onChange={(e) => setFormData({ ...formData, text_on_dark_color: e.target.value })}
+                    className="h-10 w-16 rounded border border-zinc-300 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={formData.text_on_dark_color}
+                    onChange={(e) => setFormData({ ...formData, text_on_dark_color: e.target.value })}
                     className="flex-1 px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                   />
                 </div>

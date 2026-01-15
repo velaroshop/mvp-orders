@@ -56,7 +56,7 @@ export async function GET(
     if (storeId) {
       const { data: store } = await supabase
         .from("stores")
-        .select("id, url")
+        .select("id, url, primary_color, accent_color, background_color, text_on_dark_color")
         .eq("id", storeId)
         .single();
       storeData = store;

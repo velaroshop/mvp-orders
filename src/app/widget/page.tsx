@@ -279,15 +279,29 @@ function WidgetFormContent() {
         {/* Price Header */}
         <div className="bg-black rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="text-center mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3">
+            {/* Product Name */}
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">
+              {landingPage.products?.name || landingPage.name}
+            </h1>
+            
+            {/* Price */}
+            <div className="mb-3">
+              <div className="text-sm sm:text-base text-zinc-400 mb-1">Preț:</div>
               <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                Preț: {currentPrice.toFixed(2)} Lei
+                {landingPage.price_1.toFixed(2)} Lei
               </span>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <span className="text-lg sm:text-xl text-zinc-400 line-through">
+            
+            {/* Original Price - More Visible */}
+            <div className="mb-3">
+              <div className="text-sm sm:text-base text-zinc-400 mb-1">Preț întreg:</div>
+              <span className="text-xl sm:text-2xl md:text-3xl font-bold text-zinc-500 line-through decoration-2 decoration-zinc-400">
                 {landingPage.srp.toFixed(2)} Lei
               </span>
+            </div>
+            
+            {/* Discount Badge */}
+            <div className="flex justify-center">
               <span className="px-4 py-2 bg-emerald-600 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg">
                 REDUCERE {discount}%
               </span>
@@ -518,13 +532,34 @@ function WidgetFormContent() {
           )}
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-base sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg animate-pulse hover:animate-none hover:scale-105 active:scale-100"
-          >
-            {submitting ? "Se procesează..." : landingPage.order_button_text}
-          </button>
+          <div className="space-y-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-base sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+                !submitting ? 'animate-pulse' : ''
+              }`}
+              style={!submitting ? {
+                boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.7)',
+                animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              } : {}}
+            >
+              {submitting ? "Se procesează..." : landingPage.order_button_text}
+            </button>
+            <p className="text-center text-xs sm:text-sm text-zinc-600 italic">
+              cu reducere aplicată
+            </p>
+          </div>
+          <style jsx>{`
+            @keyframes pulse-button {
+              0%, 100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+              }
+              50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+              }
+            }
+          `}</style>
         </form>
       </div>
     </div>

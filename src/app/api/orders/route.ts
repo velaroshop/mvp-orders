@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obține organization_id și store_id din landing page
+    // Obține organization_id, store_id și SKU-uri din landing page
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("organization_id, store_id")
+      .select("organization_id, store_id, sku_offer_1, sku_offer_2, sku_offer_3")
       .eq("slug", landingKey)
       .single();
 
@@ -59,6 +59,14 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
     }
+
+    // Determine SKU based on offer code
+    const skuMap: Record<string, string | null> = {
+      offer_1: landingPage.sku_offer_1,
+      offer_2: landingPage.sku_offer_2,
+      offer_3: landingPage.sku_offer_3,
+    };
+    const productSku = skuMap[offerCode] || null;
 
     let orderSeries = "VLR"; // Default fallback
     if (landingPage.store_id) {
@@ -110,6 +118,7 @@ export async function POST(request: NextRequest) {
         city,
         address,
         offerCode,
+        productSku, // SKU-ul produsului bazat pe oferta selectată
         subtotal: Number(subtotal) || 0,
         shippingCost: Number(shippingCost) || 0,
         total: Number(total) || 0,

@@ -22,10 +22,10 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    // Fetch landing page
+    // Fetch landing page (explicitly select SKU fields)
     const { data: landingPage, error } = await supabase
       .from("landing_pages")
-      .select("*")
+      .select("*, sku_offer_1, sku_offer_2, sku_offer_3")
       .eq("slug", slug)
       .eq("status", "published")
       .single();

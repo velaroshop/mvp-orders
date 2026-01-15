@@ -183,6 +183,7 @@ class HelpshipClient {
       city: string;
       address: string;
       offerCode: string;
+      productSku?: string | null; // SKU-ul produsului pentru Helpship
       subtotal: number;
       shippingCost: number;
       total: number;
@@ -260,7 +261,8 @@ class HelpshipClient {
           quantity: 1, // TODO: calculați din offerCode
           price: orderData.subtotal,
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar
-          // accountId, variantName, vatName, externalSku, externalId - opționale
+          externalSku: orderData.productSku || undefined, // SKU-ul produsului din landing page
+          // accountId, variantName, vatName, externalId - opționale
         },
       ],
       packagingType: "Envelope", // Sau alt tip conform documentației

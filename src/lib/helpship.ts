@@ -261,7 +261,9 @@ class HelpshipClient {
         {
           name: orderData.productName || orderData.productSku || "Product", // Numele produsului din baza noastră sau SKU ca fallback
           quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
-          price: orderData.subtotal,
+          price: (orderData.productQuantity || 1) > 0
+            ? orderData.subtotal / (orderData.productQuantity || 1)
+            : orderData.subtotal, // Preț per bucată (subtotal împărțit la cantitate)
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar
           externalSku: orderData.productSku || undefined, // SKU-ul produsului (același pentru toate ofertele)
           // accountId, variantName, vatName, externalId - opționale

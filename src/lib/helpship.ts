@@ -184,6 +184,7 @@ class HelpshipClient {
       address: string;
       offerCode: string;
       productSku?: string | null; // SKU-ul produsului pentru Helpship (același pentru toate ofertele)
+      productName?: string | null; // Numele produsului din baza noastră
       productQuantity?: number; // Cantitatea produsului din oferta selectată
       subtotal: number;
       shippingCost: number;
@@ -258,7 +259,7 @@ class HelpshipClient {
       shopOwnerNote: null,
       orderLines: [
         {
-          name: "", // TODO: De completat ulterior cu numele produsului
+          name: orderData.productName || orderData.productSku || "Product", // Numele produsului din baza noastră sau SKU ca fallback
           quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
           price: orderData.subtotal,
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar

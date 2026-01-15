@@ -50,7 +50,7 @@ export async function POST(
     // Get landing page to find store_id, SKU and quantities
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("store_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
+      .select("store_id, product_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
       .eq("slug", order.landing_key)
       .single();
 
@@ -62,6 +62,17 @@ export async function POST(
     };
     const productQuantity = quantityMap[order.offer_code] || 1;
     const productSku = landingPage?.main_sku || null;
+
+    // Get product name from database
+    let productName: string | null = null;
+    if (landingPage?.product_id) {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("name")
+        .eq("id", landingPage.product_id)
+        .single();
+      productName = product?.name || null;
+    }
 
     // Get order series from store
     let orderSeries = "VLR";
@@ -96,6 +107,7 @@ export async function POST(
         address: order.address,
         offerCode: order.offer_code,
         productSku, // SKU-ul produsului (același pentru toate ofertele)
+        productName, // Numele produsului din baza noastră
         productQuantity, // Cantitatea din oferta selectată
         subtotal: parseFloat(order.subtotal.toString()),
         shippingCost: parseFloat(order.shipping_cost.toString()),

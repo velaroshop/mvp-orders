@@ -22,17 +22,18 @@ export async function POST(
     // Get order details
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("*, landing_pages!inner(organization_id, store_id)")
+      .select("*")
       .eq("id", orderId)
       .single();
 
     if (orderError || !order) {
+      console.error("[Resync] Order not found:", orderError);
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
     // Verify user has access to this organization
     const activeOrganizationId = (session.user as any).activeOrganizationId;
-    const orderOrganizationId = (order.landing_pages as any).organization_id;
+    const orderOrganizationId = order.organization_id;
 
     if (activeOrganizationId !== orderOrganizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -46,13 +47,20 @@ export async function POST(
       );
     }
 
+    // Get landing page to find store_id
+    const { data: landingPage } = await supabaseAdmin
+      .from("landing_pages")
+      .select("store_id")
+      .eq("slug", order.landing_key)
+      .single();
+
     // Get order series from store
     let orderSeries = "VLR";
-    if ((order.landing_pages as any).store_id) {
+    if (landingPage?.store_id) {
       const { data: store } = await supabaseAdmin
         .from("stores")
         .select("order_series")
-        .eq("id", (order.landing_pages as any).store_id)
+        .eq("id", landingPage.store_id)
         .single();
 
       if (store?.order_series) {

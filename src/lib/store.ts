@@ -15,11 +15,13 @@ export async function createOrder(input: {
   subtotal: number;
   shippingCost: number;
   total: number;
+  organizationId: string;
 }): Promise<Order> {
   // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
   const { data, error } = await supabaseAdmin
     .from("orders")
     .insert({
+      organization_id: input.organizationId,
       landing_key: input.landingKey,
       offer_code: input.offerCode,
       phone: input.phone,

@@ -45,15 +45,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obține store_id din landing page pentru a folosi order_series
+    // Obține organization_id și store_id din landing page
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("store_id")
+      .select("organization_id, store_id")
       .eq("slug", landingKey)
       .single();
 
+    if (!landingPage) {
+      return NextResponse.json(
+        { error: "Landing page not found" },
+        { status: 404 },
+      );
+    }
+
     let orderSeries = "VLR"; // Default fallback
-    if (landingPage?.store_id) {
+    if (landingPage.store_id) {
       const { data: store } = await supabaseAdmin
         .from("stores")
         .select("order_series")
@@ -67,6 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Creează comanda în baza noastră de date
     const order = await createOrder({
+      organizationId: landingPage.organization_id,
       landingKey,
       offerCode,
       phone,

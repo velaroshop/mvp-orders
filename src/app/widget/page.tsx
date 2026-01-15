@@ -34,6 +34,7 @@ interface LandingPage {
     accent_color: string;
     background_color: string;
     text_on_dark_color: string;
+    thank_you_slug?: string;
   };
 }
 
@@ -268,14 +269,28 @@ function WidgetFormContent() {
         throw new Error(data.error || "Nu s-a putut trimite comanda.");
       }
 
-      setSuccess(true);
-      // Reset form
-      setPhone("");
-      setFullName("");
-      setCounty("");
-      setCity("");
-      setAddress("");
-      setSelectedOffer("offer_1");
+      // Redirect to thank you page
+      if (landingPage.stores?.url) {
+        const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
+        const thankYouUrl = `${landingPage.stores.url}/${thankYouSlug}`;
+
+        // If in iframe, redirect parent window
+        if (window.parent && window.parent !== window) {
+          window.parent.location.href = thankYouUrl;
+        } else {
+          window.location.href = thankYouUrl;
+        }
+      } else {
+        // Fallback to success message if no store URL
+        setSuccess(true);
+        // Reset form
+        setPhone("");
+        setFullName("");
+        setCounty("");
+        setCity("");
+        setAddress("");
+        setSelectedOffer("offer_1");
+      }
     } catch (err) {
       setError(
         err instanceof Error

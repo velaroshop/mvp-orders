@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { helpshipClient } from "@/lib/helpship";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { HelpshipClient } from "@/lib/helpship";
 
 /**
  * Pune o comandă pe hold: schimbă status-ul în OnHold în Helpship și în "hold" în MVP
@@ -25,7 +26,7 @@ export async function POST(
     const { note } = body;
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -45,6 +46,10 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    // Obține credențialele Helpship pentru organizație
+    const credentials = await getHelpshipCredentials(order.organization_id);
+    const helpshipClient = new HelpshipClient(credentials);
 
     // Încercăm să punem comanda pe hold în Helpship
     console.log(`[Hold] Setting order ${orderId} to OnHold in Helpship...`);
@@ -112,7 +117,7 @@ export async function POST(
       updateData.order_note = note.trim() || null;
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update(updateData)
       .eq("id", orderId);

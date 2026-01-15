@@ -45,12 +45,6 @@ function WidgetFormContent() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
-  
-  // Postal code search states
-  const [postalCodes, setPostalCodes] = useState<Array<{ postcode: string; formatted: string }>>([]);
-  const [selectedPostalCode, setSelectedPostalCode] = useState<string>("");
-  const [isSearchingPostalCode, setIsSearchingPostalCode] = useState(false);
-  const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug) {
@@ -80,58 +74,6 @@ function WidgetFormContent() {
     }
   }
 
-  // Postal code search function
-  async function searchPostalCode() {
-    if (!address || !city || !county) {
-      setPostalCodeError("Completează adresa, localitatea și județul pentru a căuta codul poștal");
-      return;
-    }
-
-    setIsSearchingPostalCode(true);
-    setPostalCodeError(null);
-    setPostalCodes([]);
-    setSelectedPostalCode("");
-
-    try {
-      const params = new URLSearchParams({
-        address: address,
-        city: city,
-        county: county,
-        country: "Romania",
-      });
-
-      const response = await fetch(`/api/postal-code/search?${params.toString()}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to search postal codes");
-      }
-
-      const data = await response.json();
-      const codes = data.postalCodes || [];
-      
-      if (codes.length === 0) {
-        setPostalCodeError("Nu s-au găsit coduri poștale pentru această adresă");
-      } else {
-        setPostalCodes(codes);
-        // Auto-select primul cod poștal dacă există doar unul
-        if (codes.length === 1) {
-          setSelectedPostalCode(codes[0].postcode);
-        }
-      }
-    } catch (error) {
-      console.error("Error searching postal codes:", error);
-      setPostalCodeError(
-        error instanceof Error ? error.message : "Eroare la căutarea codului poștal"
-      );
-    } finally {
-      setIsSearchingPostalCode(false);
-    }
-  }
-
-  function selectPostalCode(postcode: string) {
-    setSelectedPostalCode(postcode);
-  }
 
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;

@@ -298,15 +298,19 @@ export default function AdminPage() {
                             ? "bg-red-100 text-red-800"
                             : order.status === "hold"
                             ? "bg-orange-100 text-orange-800"
+                            : order.status === "sync_error"
+                            ? "bg-rose-100 text-rose-900"
                             : "bg-amber-100 text-amber-800"
                         }`}
                       >
-                        {order.status === "pending" 
-                          ? "Pending" 
-                          : order.status === "cancelled" 
-                          ? "Cancelled" 
+                        {order.status === "pending"
+                          ? "Pending"
+                          : order.status === "cancelled"
+                          ? "Cancelled"
                           : order.status === "hold"
                           ? "Hold"
+                          : order.status === "sync_error"
+                          ? "Sync Error"
                           : "Confirmed"}
                       </span>
                     </td>

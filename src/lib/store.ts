@@ -1,4 +1,4 @@
-import type { Order, OfferCode } from "./types";
+import type { Order, OfferCode, OrderStatus } from "./types";
 import { supabase } from "./supabase";
 
 // Store folosind Supabase PostgreSQL
@@ -54,7 +54,7 @@ export async function createOrder(input: {
     subtotal: parseFloat(data.subtotal.toString()),
     shippingCost: parseFloat(data.shipping_cost.toString()),
     total: parseFloat(data.total.toString()),
-    status: data.status as "pending" | "confirmed" | "cancelled" | "hold",
+    status: data.status as OrderStatus,
     helpshipOrderId: data.helpship_order_id ?? undefined,
     orderNumber: data.order_number ?? undefined,
     orderNote: data.order_note ?? undefined,
@@ -87,7 +87,7 @@ export async function listOrders(): Promise<Order[]> {
     subtotal: parseFloat(row.subtotal.toString()),
     shippingCost: parseFloat(row.shipping_cost.toString()),
     total: parseFloat(row.total.toString()),
-          status: row.status as "pending" | "confirmed" | "cancelled" | "hold",
+    status: row.status as OrderStatus,
     helpshipOrderId: row.helpship_order_id ?? undefined,
     orderNumber: row.order_number ?? undefined,
     orderNote: row.order_note ?? undefined,

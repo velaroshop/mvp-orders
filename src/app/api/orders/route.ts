@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Încearcă să creeze comanda în Helpship cu status ONHOLD
-    // Dacă eșuează, comanda rămâne în DB dar fără helpshipOrderId
+    // Dacă eșuează, comanda rămâne în DB dar cu status 'sync_error'
     let helpshipOrderId: string | undefined;
     let helpshipError: any = null;
     try {
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
           .from("orders")
           .update({ helpship_order_id: helpshipOrderId })
           .eq("id", order.id);
-        
+
         if (updateError) {
           console.error("[Helpship] Failed to update order with helpshipOrderId:", updateError);
         } else {
@@ -119,12 +119,24 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (err) {
-      // Loghează eroarea detaliată
+      // Loghează eroarea detaliată și setează status la 'sync_error'
       helpshipError = err;
       console.error("[Helpship] Failed to create order in Helpship:", {
         error: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,
       });
+
+      // Actualizează comanda cu status 'sync_error'
+      const { error: statusUpdateError } = await supabase
+        .from("orders")
+        .update({ status: "sync_error" })
+        .eq("id", order.id);
+
+      if (statusUpdateError) {
+        console.error("[Helpship] Failed to update order status to sync_error:", statusUpdateError);
+      } else {
+        console.log("[Helpship] Order status updated to sync_error");
+      }
     }
 
     return NextResponse.json(

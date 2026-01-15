@@ -1,4 +1,4 @@
-export type OrderStatus = "pending" | "confirmed" | "cancelled" | "hold";
+export type OrderStatus = "pending" | "confirmed" | "cancelled" | "hold" | "sync_error";
 
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 

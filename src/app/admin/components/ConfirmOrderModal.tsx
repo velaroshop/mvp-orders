@@ -267,18 +267,58 @@ export default function ConfirmOrderModal({
                 <label className="block text-sm font-medium text-zinc-900 mb-1">
                   Phone Number
                 </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Phone Number"
-                />
-                <p className="text-xs text-zinc-600 mt-1">
-                  {formData.phone.replace(/\D/g, "").length} digits
-                </p>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      // Accept only digits and max 10 characters
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, phone: value });
+                    }}
+                    maxLength={10}
+                    pattern="07[0-9]{8}"
+                    className={`w-full rounded-md border px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 pr-10 ${
+                      formData.phone.length === 0
+                        ? 'border-zinc-300 focus:ring-emerald-500'
+                        : formData.phone.length === 10 && formData.phone.startsWith('07')
+                        ? 'border-emerald-500 focus:ring-emerald-500'
+                        : 'border-red-500 focus:ring-red-500'
+                    }`}
+                    placeholder="07XXXXXXXX"
+                  />
+                  {formData.phone.length > 0 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {formData.phone.length === 10 && formData.phone.startsWith('07') ? (
+                        <svg className="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <p className={`text-xs ${
+                    formData.phone.length === 0
+                      ? 'text-zinc-600'
+                      : formData.phone.length === 10 && formData.phone.startsWith('07')
+                      ? 'text-emerald-600'
+                      : 'text-red-600'
+                  }`}>
+                    {formData.phone.length} digits
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(formData.phone)}
+                    className="text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -431,25 +471,45 @@ export default function ConfirmOrderModal({
               </div>
 
               {/* Order Summary */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-zinc-900">
+              <div className="mt-4 pt-4 border-t border-zinc-700">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <span className="text-lg">📄</span>
                     Order Summary
                   </h4>
                   <button
                     type="button"
-                    className="text-xs text-blue-600 hover:text-blue-700"
+                    className="text-xs text-blue-400 hover:text-blue-300"
                   >
-                    View contents ▼
+                    Hide contents ▲
                   </button>
                 </div>
-                <div className="text-sm text-zinc-800">
-                  <p>• {order.offerCode}</p>
-                  <p>Subtotal: {order.subtotal.toFixed(2)} Lei</p>
-                  <p>Shipping: {order.shippingCost.toFixed(2)} Lei</p>
-                  <p className="font-semibold text-zinc-900">
-                    Total: {order.total.toFixed(2)} Lei
-                  </p>
+                <div className="space-y-3 bg-zinc-800 rounded-lg p-4">
+                  {/* Main Product */}
+                  <div className="pb-3 border-b border-zinc-700">
+                    <p className="text-sm text-white font-medium mb-1">
+                      {order.productName || 'Produs'}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
+                    </p>
+                    <p className="text-sm text-white mt-2">
+                      {order.subtotal.toFixed(2)} RON
+                    </p>
+                  </div>
+
+                  {/* TODO: Upsells will be listed here when available */}
+
+                  {/* Total */}
+                  <div className="pt-2">
+                    <div className="flex justify-between items-center text-white font-semibold">
+                      <span>Total</span>
+                      <span className="text-lg">{order.total.toFixed(2)} RON</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      including {order.shippingCost.toFixed(2)} RON shipping
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

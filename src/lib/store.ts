@@ -16,6 +16,9 @@ export async function createOrder(input: {
   shippingCost: number;
   total: number;
   organizationId: string;
+  productName?: string | null;
+  productSku?: string | null;
+  productQuantity?: number;
 }): Promise<Order> {
   // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
   const { data, error } = await supabaseAdmin
@@ -34,6 +37,9 @@ export async function createOrder(input: {
       shipping_cost: input.shippingCost,
       total: input.total,
       status: "pending",
+      product_name: input.productName,
+      product_sku: input.productSku,
+      product_quantity: input.productQuantity,
     })
     .select()
     .single();
@@ -53,6 +59,9 @@ export async function createOrder(input: {
     city: data.city,
     address: data.address,
     postalCode: data.postal_code ?? undefined,
+    productName: data.product_name ?? undefined,
+    productSku: data.product_sku ?? undefined,
+    productQuantity: data.product_quantity ?? undefined,
     upsells: data.upsells as string[],
     subtotal: parseFloat(data.subtotal.toString()),
     shippingCost: parseFloat(data.shipping_cost.toString()),
@@ -86,6 +95,9 @@ export async function listOrders(): Promise<Order[]> {
     city: row.city,
     address: row.address,
     postalCode: row.postal_code ?? undefined,
+    productName: row.product_name ?? undefined,
+    productSku: row.product_sku ?? undefined,
+    productQuantity: row.product_quantity ?? undefined,
     upsells: row.upsells as string[],
     subtotal: parseFloat(row.subtotal.toString()),
     shippingCost: parseFloat(row.shipping_cost.toString()),

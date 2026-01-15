@@ -107,6 +107,9 @@ export async function POST(request: NextRequest) {
       subtotal: Number(subtotal) || 0,
       shippingCost: Number(shippingCost) || 0,
       total: Number(total) || 0,
+      productName,
+      productSku,
+      productQuantity,
     });
 
     // Încearcă să creeze comanda în Helpship cu status ONHOLD

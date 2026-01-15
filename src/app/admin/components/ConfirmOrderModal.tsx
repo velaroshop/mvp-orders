@@ -301,23 +301,106 @@ export default function ConfirmOrderModal({
                     </div>
                   )}
                 </div>
-                <div className="flex items-center justify-between mt-1">
-                  <p className={`text-xs ${
-                    formData.phone.length === 0
-                      ? 'text-zinc-600'
-                      : formData.phone.length === 10 && formData.phone.startsWith('07')
-                      ? 'text-emerald-600'
-                      : 'text-red-600'
-                  }`}>
-                    {formData.phone.length} digits
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(formData.phone)}
-                    className="text-xs text-blue-600 hover:text-blue-700"
-                  >
-                    Copy
-                  </button>
+                <p className={`text-xs mt-1 ${
+                  formData.phone.length === 0
+                    ? 'text-zinc-600'
+                    : formData.phone.length === 10 && formData.phone.startsWith('07')
+                    ? 'text-emerald-600'
+                    : 'text-red-600'
+                }`}>
+                  {formData.phone.length} digits
+                </p>
+              </div>
+
+              {/* Shipping & Scheduling */}
+              <div className="mt-6 pt-6 border-t border-zinc-200">
+                <h3 className="text-lg font-semibold text-zinc-900 mb-4">
+                  Shipping & Scheduling
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-900 mb-1">
+                      Shipping Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.shippingPrice}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          shippingPrice: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-900 mb-1">
+                      Discount
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.discount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          discount: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-900 mb-1">
+                      Scheduled Date
+                    </label>
+                    <input
+                      type="date"
+                      defaultValue={new Date().toISOString().split("T")[0]}
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div className="mt-6 pt-6 border-t border-zinc-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">📄</span>
+                  <h4 className="text-sm font-semibold text-zinc-900">
+                    Order Summary
+                  </h4>
+                </div>
+                <div className="space-y-3 bg-zinc-800 rounded-lg p-4">
+                  {/* Main Product */}
+                  <div className="pb-3 border-b border-zinc-700">
+                    <p className="text-sm text-white font-medium mb-1">
+                      {order.productName || 'Produs'}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
+                    </p>
+                    <p className="text-sm text-white mt-2">
+                      {order.subtotal.toFixed(2)} RON
+                    </p>
+                  </div>
+
+                  {/* TODO: Upsells will be listed here when available */}
+
+                  {/* Total */}
+                  <div className="pt-2">
+                    <div className="flex justify-between items-center text-white font-semibold">
+                      <span>Total</span>
+                      <span className="text-lg">{order.total.toFixed(2)} RON</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      including {order.shippingCost.toFixed(2)} RON shipping
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -470,103 +553,6 @@ export default function ConfirmOrderModal({
                 </div>
               </div>
 
-              {/* Order Summary */}
-              <div className="mt-4 pt-4 border-t border-zinc-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <span className="text-lg">📄</span>
-                    Order Summary
-                  </h4>
-                  <button
-                    type="button"
-                    className="text-xs text-blue-400 hover:text-blue-300"
-                  >
-                    Hide contents ▲
-                  </button>
-                </div>
-                <div className="space-y-3 bg-zinc-800 rounded-lg p-4">
-                  {/* Main Product */}
-                  <div className="pb-3 border-b border-zinc-700">
-                    <p className="text-sm text-white font-medium mb-1">
-                      {order.productName || 'Produs'}
-                    </p>
-                    <p className="text-xs text-zinc-400">
-                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
-                    </p>
-                    <p className="text-sm text-white mt-2">
-                      {order.subtotal.toFixed(2)} RON
-                    </p>
-                  </div>
-
-                  {/* TODO: Upsells will be listed here when available */}
-
-                  {/* Total */}
-                  <div className="pt-2">
-                    <div className="flex justify-between items-center text-white font-semibold">
-                      <span>Total</span>
-                      <span className="text-lg">{order.total.toFixed(2)} RON</span>
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-1">
-                      including {order.shippingCost.toFixed(2)} RON shipping
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Section - Shipping & Scheduling */}
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-lg font-semibold text-zinc-900 mb-4">
-              Shipping & Scheduling
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Shipping Price
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.shippingPrice}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      shippingPrice: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Discount
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.discount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      discount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Scheduled Date
-                </label>
-                <input
-                  type="date"
-                  defaultValue={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
             </div>
           </div>
 

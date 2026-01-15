@@ -341,7 +341,7 @@ function WidgetFormContent() {
                   value={phone}
                   onChange={handlePhoneChange}
                   placeholder="Necesar pentru a intră în legătură cu curierul"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
                   required
                 />
               </div>
@@ -354,7 +354,7 @@ function WidgetFormContent() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Introduceți numele dvs. complet"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
                   required
                 />
               </div>
@@ -368,7 +368,7 @@ function WidgetFormContent() {
                     value={county}
                     onChange={(e) => setCounty(e.target.value)}
                     placeholder="Introduceți județul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base text-zinc-900 placeholder:text-zinc-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
                     required
                   />
                 </div>
@@ -381,7 +381,7 @@ function WidgetFormContent() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Introduceți localitatea / comuna / satul"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base text-zinc-900 placeholder:text-zinc-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
                     required
                   />
                 </div>
@@ -395,7 +395,7 @@ function WidgetFormContent() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Introduceți adresa"
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm sm:text-base text-zinc-900 placeholder:text-zinc-500"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base text-zinc-900 placeholder:text-zinc-500"
                   required
                 />
               </div>

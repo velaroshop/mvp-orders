@@ -258,7 +258,7 @@ class HelpshipClient {
       shopOwnerNote: null,
       orderLines: [
         {
-          name: `Produs ${orderData.offerCode}`,
+          name: undefined, // TODO: De completat ulterior cu numele produsului
           quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
           price: orderData.subtotal,
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar

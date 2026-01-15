@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * Scoate o comandă din hold: revine întotdeauna la status "pending" în MVP
@@ -19,7 +19,7 @@ export async function POST(
     const { id: orderId } = await params;
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -44,7 +44,7 @@ export async function POST(
 
     // UNHOLD: Întotdeauna revine la "pending" în MVP
     // Helpship rămâne OnHold (comanda așteaptă confirmare)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         status: "pending",

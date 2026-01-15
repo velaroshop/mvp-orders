@@ -46,6 +46,7 @@ function WidgetFormContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [phone, setPhone] = useState("");
@@ -269,38 +270,44 @@ function WidgetFormContent() {
         throw new Error(data.error || "Nu s-a putut trimite comanda.");
       }
 
-      // Redirect to thank you page
-      if (landingPage.stores?.url) {
-        const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
+      // Show success popup
+      setShowSuccessPopup(true);
 
-        // Ensure URL has protocol
-        let storeUrl = landingPage.stores.url;
-        if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
-          storeUrl = `https://${storeUrl}`;
-        }
+      // Wait 3 seconds then redirect to thank you page
+      setTimeout(() => {
+        if (landingPage.stores?.url) {
+          const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
 
-        // Remove trailing slash from store URL if present
-        storeUrl = storeUrl.replace(/\/$/, '');
+          // Ensure URL has protocol
+          let storeUrl = landingPage.stores.url;
+          if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+            storeUrl = `https://${storeUrl}`;
+          }
 
-        const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+          // Remove trailing slash from store URL if present
+          storeUrl = storeUrl.replace(/\/$/, '');
 
-        // If in iframe, redirect parent window
-        if (window.parent && window.parent !== window) {
-          window.parent.location.href = thankYouUrl;
+          const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+
+          // If in iframe, redirect parent window
+          if (window.parent && window.parent !== window) {
+            window.parent.location.href = thankYouUrl;
+          } else {
+            window.location.href = thankYouUrl;
+          }
         } else {
-          window.location.href = thankYouUrl;
+          // Fallback to success message if no store URL
+          setSuccess(true);
+          setShowSuccessPopup(false);
+          // Reset form
+          setPhone("");
+          setFullName("");
+          setCounty("");
+          setCity("");
+          setAddress("");
+          setSelectedOffer("offer_1");
         }
-      } else {
-        // Fallback to success message if no store URL
-        setSuccess(true);
-        // Reset form
-        setPhone("");
-        setFullName("");
-        setCounty("");
-        setCity("");
-        setAddress("");
-        setSelectedOffer("offer_1");
-      }
+      }, 3000); // 3 seconds delay
     } catch (err) {
       setError(
         err instanceof Error
@@ -814,7 +821,77 @@ function WidgetFormContent() {
                 box-shadow: 0 0 0 10px ${primaryColor}00, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
             }
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
           `}} />
+
+          {/* Success Popup */}
+          {showSuccessPopup && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              style={{
+                animation: 'fadeIn 0.3s ease-out'
+              }}
+            >
+              <div
+                className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center"
+                style={{
+                  animation: 'fadeIn 0.3s ease-out'
+                }}
+              >
+                {/* Success Icon */}
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: `${accentColor}20` }}
+                >
+                  <svg
+                    className="w-12 h-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: accentColor }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Success Message */}
+                <h2
+                  className="text-2xl sm:text-3xl font-bold mb-3"
+                  style={{ color: accentColor }}
+                >
+                  FELICITĂRI!
+                </h2>
+                <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-4">
+                  COMANDA A FOST TRIMISĂ!
+                </p>
+                <p className="text-sm sm:text-base text-zinc-600">
+                  Așteptați câteva secunde...
+                </p>
+
+                {/* Loading Spinner */}
+                <div className="mt-6">
+                  <div
+                    className="animate-spin rounded-full h-10 w-10 border-b-4 mx-auto"
+                    style={{ borderColor: accentColor }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

@@ -50,7 +50,7 @@ export async function POST(
     // Get landing page to find store_id, SKU and quantities
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("store_id, product_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
+      .select("store_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
       .eq("slug", order.landing_key)
       .single();
 
@@ -61,7 +61,7 @@ export async function POST(
       offer_3: landingPage?.quantity_offer_3 || 3,
     };
     const productQuantity = quantityMap[order.offer_code] || 1;
-    const productSku = landingPage?.product_sku || null;
+    const productSku = landingPage?.main_sku || null;
 
     // Get order series from store
     let orderSeries = "VLR";

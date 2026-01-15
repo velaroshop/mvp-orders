@@ -23,7 +23,6 @@ interface LandingPage {
   slug: string;
   thank_you_path?: string;
   main_sku?: string;
-  product_sku?: string;
   quantity_offer_1?: number;
   quantity_offer_2?: number;
   quantity_offer_3?: number;
@@ -155,7 +154,6 @@ export default function EditLandingPagePage() {
           slug: formData.slug,
           thankYouPath: formData.thank_you_path || "thank-you",
           mainSku: products.find(p => p.id === formData.product_id)?.sku || "",
-          productSku: formData.product_sku || "",
           quantityOffer1: formData.quantity_offer_1 || 1,
           quantityOffer2: formData.quantity_offer_2 || 2,
           quantityOffer3: formData.quantity_offer_3 || 3,
@@ -516,33 +514,16 @@ export default function EditLandingPagePage() {
             </div>
           </div>
 
-          {/* Product SKU & Quantities */}
+          {/* Offer Quantities */}
           <div className="p-6 border-b border-zinc-200">
             <h2 className="text-xl font-semibold text-zinc-900 mb-4">
-              Product SKU & Quantities
+              Offer Quantities
             </h2>
             <p className="text-sm text-zinc-600 mb-4">
-              Configure the product SKU and quantities for each offer to be sent to Helpship.
+              Configure how many pieces each offer contains. The product SKU is taken automatically from the selected product.
             </p>
 
             <div className="space-y-4">
-              {/* Product SKU */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Product SKU
-                </label>
-                <input
-                  type="text"
-                  value={formData.product_sku || ""}
-                  onChange={(e) => setFormData({ ...formData, product_sku: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
-                  placeholder="e.g., CREMA-OCHI-ABC"
-                />
-                <p className="text-xs text-zinc-700 mt-1">
-                  The SKU that will be sent to Helpship (same for all offers). This should match your Helpship product catalog.
-                </p>
-              </div>
-
               {/* Quantities */}
               <div className="grid grid-cols-3 gap-4">
                 <div>

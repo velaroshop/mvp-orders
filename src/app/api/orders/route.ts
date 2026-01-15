@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Obține organization_id, store_id, SKU și cantități din landing page
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("organization_id, store_id, product_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
+      .select("organization_id, store_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
       .eq("slug", landingKey)
       .single();
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       offer_3: landingPage.quantity_offer_3 || 3,
     };
     const productQuantity = quantityMap[offerCode] || 1;
-    const productSku = landingPage.product_sku || null;
+    const productSku = landingPage.main_sku || null;
 
     let orderSeries = "VLR"; // Default fallback
     if (landingPage.store_id) {

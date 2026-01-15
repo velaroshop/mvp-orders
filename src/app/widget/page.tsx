@@ -288,7 +288,7 @@ function WidgetFormContent() {
               <span className="text-lg sm:text-xl text-zinc-400 line-through">
                 {landingPage.srp.toFixed(2)} Lei
               </span>
-              <span className="px-4 py-2 bg-red-600 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg">
+              <span className="px-4 py-2 bg-emerald-600 text-white rounded-full text-base sm:text-lg font-bold whitespace-nowrap shadow-lg">
                 REDUCERE {discount}%
               </span>
             </div>

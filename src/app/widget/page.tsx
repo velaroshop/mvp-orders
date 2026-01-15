@@ -272,7 +272,17 @@ function WidgetFormContent() {
       // Redirect to thank you page
       if (landingPage.stores?.url) {
         const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
-        const thankYouUrl = `${landingPage.stores.url}/${thankYouSlug}`;
+
+        // Ensure URL has protocol
+        let storeUrl = landingPage.stores.url;
+        if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+          storeUrl = `https://${storeUrl}`;
+        }
+
+        // Remove trailing slash from store URL if present
+        storeUrl = storeUrl.replace(/\/$/, '');
+
+        const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
 
         // If in iframe, redirect parent window
         if (window.parent && window.parent !== window) {

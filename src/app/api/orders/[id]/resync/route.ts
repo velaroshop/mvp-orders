@@ -47,20 +47,21 @@ export async function POST(
       );
     }
 
-    // Get landing page to find store_id and SKUs
+    // Get landing page to find store_id, SKU and quantities
     const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
-      .select("store_id, sku_offer_1, sku_offer_2, sku_offer_3")
+      .select("store_id, product_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
       .eq("slug", order.landing_key)
       .single();
 
-    // Determine SKU based on offer code
-    const skuMap: Record<string, string | null> = {
-      offer_1: landingPage?.sku_offer_1 || null,
-      offer_2: landingPage?.sku_offer_2 || null,
-      offer_3: landingPage?.sku_offer_3 || null,
+    // Determine quantity based on offer code
+    const quantityMap: Record<string, number> = {
+      offer_1: landingPage?.quantity_offer_1 || 1,
+      offer_2: landingPage?.quantity_offer_2 || 2,
+      offer_3: landingPage?.quantity_offer_3 || 3,
     };
-    const productSku = skuMap[order.offer_code] || null;
+    const productQuantity = quantityMap[order.offer_code] || 1;
+    const productSku = landingPage?.product_sku || null;
 
     // Get order series from store
     let orderSeries = "VLR";
@@ -94,7 +95,8 @@ export async function POST(
         city: order.city,
         address: order.address,
         offerCode: order.offer_code,
-        productSku, // SKU-ul produsului bazat pe oferta din comandă
+        productSku, // SKU-ul produsului (același pentru toate ofertele)
+        productQuantity, // Cantitatea din oferta selectată
         subtotal: parseFloat(order.subtotal.toString()),
         shippingCost: parseFloat(order.shipping_cost.toString()),
         total: parseFloat(order.total.toString()),

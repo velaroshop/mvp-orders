@@ -183,7 +183,8 @@ class HelpshipClient {
       city: string;
       address: string;
       offerCode: string;
-      productSku?: string | null; // SKU-ul produsului pentru Helpship
+      productSku?: string | null; // SKU-ul produsului pentru Helpship (același pentru toate ofertele)
+      productQuantity?: number; // Cantitatea produsului din oferta selectată
       subtotal: number;
       shippingCost: number;
       total: number;
@@ -258,10 +259,10 @@ class HelpshipClient {
       orderLines: [
         {
           name: `Produs ${orderData.offerCode}`,
-          quantity: 1, // TODO: calculați din offerCode
+          quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
           price: orderData.subtotal,
           vatPercentage: 0, // TODO: adăugați TVA dacă e necesar
-          externalSku: orderData.productSku || undefined, // SKU-ul produsului din landing page
+          externalSku: orderData.productSku || undefined, // SKU-ul produsului (același pentru toate ofertele)
           // accountId, variantName, vatName, externalId - opționale
         },
       ],

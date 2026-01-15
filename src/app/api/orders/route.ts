@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder } from "@/lib/store";
-import { helpshipClient } from "@/lib/helpship";
+import { HelpshipClient } from "@/lib/helpship";
 import { supabaseAdmin } from "@/lib/supabase";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import type { OfferCode } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -94,6 +95,11 @@ export async function POST(request: NextRequest) {
     let helpshipError: any = null;
     try {
       console.log("[Helpship] Attempting to create order...");
+
+      // Obține credențialele Helpship pentru organizație
+      const credentials = await getHelpshipCredentials(landingPage.organization_id);
+      const helpshipClient = new HelpshipClient(credentials);
+
       const helpshipResult = await helpshipClient.createOrder({
         orderId: order.id, // ID-ul nostru intern (externalId în Helpship)
         orderNumber: order.orderNumber || 0, // Numărul comenzii pentru ORDER NAME

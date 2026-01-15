@@ -9,10 +9,23 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    // TODO: Load settings from API/database
-    // Placeholder pentru loading din backend
-    setHelpshipClientId("velaro-trading-dev");
-    setHelpshipClientSecret("••••••••••••"); // Masked pentru securitate
+    // Load settings from API
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/settings");
+        if (!response.ok) throw new Error("Failed to load settings");
+
+        const data = await response.json();
+        setHelpshipClientId(data.settings.helpship_client_id || "");
+        // Don't show the actual secret, leave it empty for security
+        setHelpshipClientSecret("");
+      } catch (error) {
+        console.error("Error loading settings:", error);
+        setMessage({ type: "error", text: "Failed to load settings" });
+      }
+    }
+
+    loadSettings();
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -21,12 +34,30 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      // TODO: Implement save to database via API
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          helpshipClientId,
+          helpshipClientSecret,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save settings");
+      }
 
       setMessage({ type: "success", text: "Settings saved successfully!" });
+      // Clear the secret field after saving for security
+      setHelpshipClientSecret("");
     } catch (error) {
-      setMessage({ type: "error", text: "Failed to save settings" });
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to save settings"
+      });
     } finally {
       setIsSaving(false);
     }
@@ -119,11 +150,12 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      {/* Note about implementation */}
-      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
-        <p className="text-sm text-amber-800">
-          <strong>Note:</strong> This is a placeholder UI. Backend implementation
-          for saving settings to database is pending.
+      {/* Security Note */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+        <p className="text-sm text-blue-800">
+          <strong>Security Note:</strong> The Client Secret is encrypted and stored securely.
+          For security reasons, the secret is not displayed after saving.
+          Leave the field empty if you don't want to change it.
         </p>
       </div>
     </div>

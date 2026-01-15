@@ -74,13 +74,20 @@ class HelpshipClient {
   private accessToken: string | null = null;
   private tokenExpiresAt: number = 0;
 
-  constructor() {
-    this.clientId = process.env.HELPSHIP_CLIENT_ID || "";
-    this.clientSecret = process.env.HELPSHIP_CLIENT_SECRET || "";
+  constructor(credentials?: {
+    clientId?: string;
+    clientSecret?: string;
+    tokenUrl?: string;
+    apiBaseUrl?: string;
+  }) {
+    this.clientId = credentials?.clientId || process.env.HELPSHIP_CLIENT_ID || "";
+    this.clientSecret = credentials?.clientSecret || process.env.HELPSHIP_CLIENT_SECRET || "";
     this.tokenUrl =
+      credentials?.tokenUrl ||
       process.env.HELPSHIP_TOKEN_URL ||
       "https://helpship-auth-develop.azurewebsites.net/connect/token";
     this.apiBaseUrl =
+      credentials?.apiBaseUrl ||
       process.env.HELPSHIP_API_BASE_URL ||
       "https://helpship-api-develop.azurewebsites.net";
 
@@ -766,5 +773,8 @@ class HelpshipClient {
   }
 }
 
-// Exportăm o instanță singleton
+// Exportăm clasa pentru a putea crea instanțe cu credențiale custom
+export { HelpshipClient };
+
+// Exportăm o instanță singleton cu credențiale din env (pentru backward compatibility)
 export const helpshipClient = new HelpshipClient();

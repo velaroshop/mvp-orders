@@ -1,5 +1,5 @@
 import type { Order, OfferCode, OrderStatus } from "./types";
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 
 // Store folosind Supabase PostgreSQL
 
@@ -16,7 +16,8 @@ export async function createOrder(input: {
   shippingCost: number;
   total: number;
 }): Promise<Order> {
-  const { data, error } = await supabase
+  // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
+  const { data, error } = await supabaseAdmin
     .from("orders")
     .insert({
       landing_key: input.landingKey,

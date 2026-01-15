@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder } from "@/lib/store";
 import { helpshipClient } from "@/lib/helpship";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import type { OfferCode } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obține store_id din landing page pentru a folosi order_series
-    const { data: landingPage } = await supabase
+    const { data: landingPage } = await supabaseAdmin
       .from("landing_pages")
       .select("store_id")
       .eq("slug", landingKey)
@@ -54,12 +54,12 @@ export async function POST(request: NextRequest) {
 
     let orderSeries = "VLR"; // Default fallback
     if (landingPage?.store_id) {
-      const { data: store } = await supabase
+      const { data: store } = await supabaseAdmin
         .from("stores")
         .select("order_series")
         .eq("id", landingPage.store_id)
         .single();
-      
+
       if (store?.order_series) {
         orderSeries = store.order_series;
       }
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
       // Actualizează comanda cu helpshipOrderId
       if (helpshipOrderId) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from("orders")
           .update({ helpship_order_id: helpshipOrderId })
           .eq("id", order.id);
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Actualizează comanda cu status 'sync_error'
-      const { error: statusUpdateError } = await supabase
+      const { error: statusUpdateError } = await supabaseAdmin
         .from("orders")
         .update({ status: "sync_error" })
         .eq("id", order.id);

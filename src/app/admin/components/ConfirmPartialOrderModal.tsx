@@ -50,16 +50,34 @@ export default function ConfirmPartialOrderModal({
     address?: string;
   }>({});
 
+  function validatePhone(phoneValue: string): string | undefined {
+    const phoneDigits = phoneValue.replace(/\D/g, "");
+    if (!phoneDigits) {
+      return "Numărul de telefon este obligatoriu";
+    } else if (phoneDigits.length !== 10) {
+      return "Numărul de telefon trebuie să aibă 10 cifre";
+    } else if (!phoneDigits.startsWith("07")) {
+      return "Numărul de telefon trebuie să înceapă cu 07";
+    }
+    return undefined;
+  }
+
   // Populate form with partial order data
   useEffect(() => {
     if (partialOrder && isOpen) {
+      const phoneValue = partialOrder.phone || "";
       setFullName(partialOrder.fullName || "");
-      setPhone(partialOrder.phone || "");
+      setPhone(phoneValue);
       setCounty(partialOrder.county || "");
       setCity(partialOrder.city || "");
       setAddress(partialOrder.address || "");
       setSelectedOffer(partialOrder.offerCode || "offer_1");
-      setErrors({}); // Clear errors when opening modal
+
+      // Validate phone immediately when modal opens
+      const phoneError = validatePhone(phoneValue);
+      setErrors({
+        phone: phoneError,
+      });
 
       // Fetch landing page data for quantity options
       fetchQuantityOptions(partialOrder.landingKey);
@@ -117,18 +135,6 @@ export default function ConfirmPartialOrderModal({
     } finally {
       setIsLoadingOptions(false);
     }
-  }
-
-  function validatePhone(phoneValue: string): string | undefined {
-    const phoneDigits = phoneValue.replace(/\D/g, "");
-    if (!phoneDigits) {
-      return "Numărul de telefon este obligatoriu";
-    } else if (phoneDigits.length !== 10) {
-      return "Numărul de telefon trebuie să aibă 10 cifre";
-    } else if (!phoneDigits.startsWith("07")) {
-      return "Numărul de telefon trebuie să înceapă cu 07";
-    }
-    return undefined;
   }
 
   function validateForm(): boolean {
@@ -338,6 +344,8 @@ export default function ConfirmPartialOrderModal({
             </label>
             {isLoadingOptions ? (
               <div className="text-zinc-400 text-sm">Loading options...</div>
+            ) : quantityOptions.length === 0 ? (
+              <div className="text-red-400 text-sm">No quantity options available</div>
             ) : (
               <div className="flex gap-2">
                 {quantityOptions.map((option) => (

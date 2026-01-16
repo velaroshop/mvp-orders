@@ -3,6 +3,7 @@ import { createOrder } from "@/lib/store";
 import { HelpshipClient } from "@/lib/helpship";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { findOrCreateCustomer, updateCustomerStats } from "@/lib/customer";
 import type { OfferCode } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -93,9 +94,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Creează comanda în baza noastră de date
+    // Step 1: Find or create customer
+    const customer = await findOrCreateCustomer({
+      organizationId: landingPage.organization_id,
+      phone,
+    });
+
+    // Step 2: Create order with customer reference
     const order = await createOrder({
       organizationId: landingPage.organization_id,
+      customerId: customer.id,
       landingKey,
       offerCode,
       phone,
@@ -110,6 +118,12 @@ export async function POST(request: NextRequest) {
       productName,
       productSku,
       productQuantity,
+    });
+
+    // Step 3: Update customer stats
+    await updateCustomerStats({
+      customerId: customer.id,
+      orderTotal: Number(total) || 0,
     });
 
     // Încearcă să creeze comanda în Helpship cu status ONHOLD

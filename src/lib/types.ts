@@ -2,6 +2,18 @@ export type OrderStatus = "pending" | "confirmed" | "cancelled" | "hold" | "sync
 
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 
+export interface Customer {
+  id: string;
+  organizationId: string;
+  phone: string;
+  firstOrderDate?: string;
+  lastOrderDate?: string;
+  totalOrders: number;
+  totalSpent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LandingPage {
   id: string;
   name: string;
@@ -11,10 +23,11 @@ export interface LandingPage {
 
 export interface Order {
   id: string;
+  customerId: string; // Reference to customer
   landingKey: string;
   offerCode: OfferCode;
-  phone: string;
-  fullName: string;
+  phone: string; // Kept in order for historical record
+  fullName: string; // Kept in order for historical record
   county: string;
   city: string;
   address: string;

@@ -37,6 +37,7 @@ export async function GET() {
     // Map Supabase rows to Order type
     const orders = (data || []).map((row) => ({
       id: row.id,
+      customerId: row.customer_id,
       landingKey: row.landing_key,
       offerCode: row.offer_code,
       phone: row.phone,

@@ -4,6 +4,7 @@ import { supabase, supabaseAdmin } from "./supabase";
 // Store folosind Supabase PostgreSQL
 
 export async function createOrder(input: {
+  customerId: string;
   landingKey: string;
   offerCode: OfferCode;
   phone: string;
@@ -25,6 +26,7 @@ export async function createOrder(input: {
     .from("orders")
     .insert({
       organization_id: input.organizationId,
+      customer_id: input.customerId,
       landing_key: input.landingKey,
       offer_code: input.offerCode,
       phone: input.phone,
@@ -51,6 +53,7 @@ export async function createOrder(input: {
     // Map Supabase row to Order type
   return {
     id: data.id,
+    customerId: data.customer_id,
     landingKey: data.landing_key,
     offerCode: data.offer_code as OfferCode,
     phone: data.phone,
@@ -87,6 +90,7 @@ export async function listOrders(): Promise<Order[]> {
   // Map Supabase rows to Order type
   return (data || []).map((row) => ({
     id: row.id,
+    customerId: row.customer_id,
     landingKey: row.landing_key,
     offerCode: row.offer_code as OfferCode,
     phone: row.phone,

@@ -55,7 +55,6 @@ export async function PATCH(
       })
       .eq("id", id)
       .eq("organization_id", activeOrganizationId)
-      .is("converted_to_order_id", null) // Only update if not already converted
       .select()
       .single();
 
@@ -69,7 +68,7 @@ export async function PATCH(
 
     if (!data) {
       return NextResponse.json(
-        { error: "Partial order not found or already converted" },
+        { error: "Partial order not found" },
         { status: 404 }
       );
     }

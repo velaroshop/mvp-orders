@@ -15,6 +15,7 @@ interface Store {
   fb_conversion_token?: string;
   client_side_tracking: boolean;
   server_side_tracking: boolean;
+  duplicate_order_days: number;
   created_at: string;
   updated_at: string;
 }

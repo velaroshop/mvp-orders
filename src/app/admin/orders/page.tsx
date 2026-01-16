@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
+import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -13,6 +14,12 @@ export default function AdminPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
+
+  // Duplicate detection state
+  const [duplicateOrders, setDuplicateOrders] = useState<Order[]>([]);
+  const [duplicateOrderDays, setDuplicateOrderDays] = useState(14);
+  const [isDuplicateWarningOpen, setIsDuplicateWarningOpen] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,8 +97,48 @@ export default function AdminPage() {
     }
   }, [openDropdown]);
 
-  function handleConfirmClick(order: Order) {
+  async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
+    setIsCheckingDuplicates(true);
+
+    try {
+      // Check for duplicate orders
+      const params = new URLSearchParams({
+        customerId: order.customerId,
+        currentOrderId: order.id,
+      });
+
+      const response = await fetch(`/api/orders/check-duplicates?${params.toString()}`);
+
+      if (!response.ok) {
+        console.error("Failed to check duplicates, proceeding with confirmation");
+        setIsModalOpen(true);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.hasDuplicates && data.orders.length > 0) {
+        // Show duplicate warning modal
+        setDuplicateOrders(data.orders);
+        setDuplicateOrderDays(data.duplicateOrderDays);
+        setIsDuplicateWarningOpen(true);
+      } else {
+        // No duplicates, proceed with confirmation
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error checking duplicates:", error);
+      // On error, proceed with confirmation anyway
+      setIsModalOpen(true);
+    } finally {
+      setIsCheckingDuplicates(false);
+    }
+  }
+
+  function handleDuplicateWarningProceed() {
+    // Close duplicate warning and open confirm modal
+    setIsDuplicateWarningOpen(false);
     setIsModalOpen(true);
   }
 
@@ -635,6 +682,20 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+              {/* Duplicate Warning Modal */}
+              <DuplicateOrderWarningModal
+                isOpen={isDuplicateWarningOpen}
+                onClose={() => {
+                  setIsDuplicateWarningOpen(false);
+                  setSelectedOrder(null);
+                  setDuplicateOrders([]);
+                }}
+                onProceed={handleDuplicateWarningProceed}
+                duplicateOrders={duplicateOrders}
+                duplicateOrderDays={duplicateOrderDays}
+                customerId={selectedOrder?.customerId || ""}
+              />
 
               {/* Confirm Order Modal */}
               <ConfirmOrderModal

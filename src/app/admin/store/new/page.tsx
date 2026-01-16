@@ -16,6 +16,7 @@ export default function NewStorePage() {
     fbConversionToken: "",
     clientSideTracking: false,
     serverSideTracking: false,
+    duplicateOrderDays: 14,
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -111,6 +112,26 @@ export default function NewStorePage() {
                 />
                 <p className="text-xs text-zinc-700 mt-1">
                   Specify the order series for this store (e.g., ECM). This will be used in order numbering.
+                </p>
+              </div>
+
+              {/* Duplicate Order Detection Days */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                  Zile pentru Detectare Comenzi Duplicate *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={formData.duplicateOrderDays}
+                  onChange={(e) => setFormData({ ...formData, duplicateOrderDays: parseInt(e.target.value) || 14 })}
+                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
+                  placeholder="14"
+                  required
+                />
+                <p className="text-xs text-zinc-700 mt-1">
+                  Numărul de zile înapoi pentru detectarea comenzilor duplicate de la același client (implicit: 14 zile).
                 </p>
               </div>
             </div>

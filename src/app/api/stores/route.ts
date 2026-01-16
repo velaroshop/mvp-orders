@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       fbConversionToken = "",
       clientSideTracking = false,
       serverSideTracking = false,
+      duplicateOrderDays = 14,
     } = body;
 
     // Validate required fields
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
         fb_conversion_token: fbConversionToken || null,
         client_side_tracking: clientSideTracking,
         server_side_tracking: serverSideTracking,
+        duplicate_order_days: duplicateOrderDays,
       })
       .select()
       .single();

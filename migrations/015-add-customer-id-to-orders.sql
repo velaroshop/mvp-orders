@@ -17,6 +17,7 @@ SELECT
 FROM orders
 WHERE phone IS NOT NULL
   AND phone != ''
+  AND organization_id IS NOT NULL  -- Skip orders with NULL organization_id
 GROUP BY organization_id, phone
 ON CONFLICT (organization_id, phone) DO NOTHING;
 

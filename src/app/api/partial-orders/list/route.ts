@@ -30,7 +30,6 @@ export async function GET(request: Request) {
       .from("partial_orders")
       .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId)
-      .is("converted_to_order_id", null) // Only show non-converted orders
       .order("created_at", { ascending: false });
 
     // Filter by status if provided

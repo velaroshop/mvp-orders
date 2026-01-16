@@ -23,6 +23,7 @@ export async function GET(
     const { slug } = await params;
 
     // Fetch landing page (explicitly select SKU, quantity and price fields)
+    console.log("[API] Querying landing page with slug:", slug);
     const { data: landingPage, error } = await supabase
       .from("landing_pages")
       .select("*, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3, price_offer_1, price_offer_2, price_offer_3")
@@ -30,7 +31,10 @@ export async function GET(
       // Removed status check - landing pages may have different status values
       .single();
 
+    console.log("[API] Landing page query result:", { data: landingPage, error });
+
     if (error || !landingPage) {
+      console.error("[API] Landing page not found. Error:", error);
       return NextResponse.json(
         { error: "Landing page not found" },
         { status: 404 }

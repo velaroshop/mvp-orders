@@ -20,13 +20,6 @@ export interface ConfirmPartialData {
   selectedOffer: OfferCode;
 }
 
-interface QuantityOption {
-  code: OfferCode;
-  quantity: number;
-  price: number;
-  label: string;
-}
-
 export default function ConfirmPartialOrderModal({
   isOpen,
   onClose,
@@ -40,8 +33,6 @@ export default function ConfirmPartialOrderModal({
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
-  const [quantityOptions, setQuantityOptions] = useState<QuantityOption[]>([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [errors, setErrors] = useState<{
     fullName?: string;
     phone?: string;
@@ -78,64 +69,8 @@ export default function ConfirmPartialOrderModal({
       setErrors({
         phone: phoneError,
       });
-
-      // Fetch landing page data for quantity options
-      fetchQuantityOptions(partialOrder.landingKey);
     }
   }, [partialOrder, isOpen]);
-
-  async function fetchQuantityOptions(landingKey: string) {
-    try {
-      setIsLoadingOptions(true);
-      console.log("Fetching landing page data for:", landingKey);
-      const response = await fetch(`/api/landing-pages/public/${landingKey}`);
-
-      if (!response.ok) {
-        console.error("Failed to fetch landing page:", response.status, response.statusText);
-        throw new Error("Failed to fetch landing page data");
-      }
-
-      const data = await response.json();
-      console.log("Landing page data:", data);
-      const lp = data.landingPage;
-
-      const options: QuantityOption[] = [];
-
-      if (lp.quantity_offer_1 && lp.price_1) {
-        options.push({
-          code: "offer_1",
-          quantity: lp.quantity_offer_1,
-          price: lp.price_1,
-          label: `${lp.quantity_offer_1}x - ${lp.price_1} RON`,
-        });
-      }
-
-      if (lp.quantity_offer_2 && lp.price_2) {
-        options.push({
-          code: "offer_2",
-          quantity: lp.quantity_offer_2,
-          price: lp.price_2,
-          label: `${lp.quantity_offer_2}x - ${lp.price_2} RON`,
-        });
-      }
-
-      if (lp.quantity_offer_3 && lp.price_3) {
-        options.push({
-          code: "offer_3",
-          quantity: lp.quantity_offer_3,
-          price: lp.price_3,
-          label: `${lp.quantity_offer_3}x - ${lp.price_3} RON`,
-        });
-      }
-
-      console.log("Quantity options built:", options);
-      setQuantityOptions(options);
-    } catch (error) {
-      console.error("Error fetching quantity options:", error);
-    } finally {
-      setIsLoadingOptions(false);
-    }
-  }
 
   function validateForm(): boolean {
     const newErrors: typeof errors = {};
@@ -337,32 +272,23 @@ export default function ConfirmPartialOrderModal({
             </div>
           </div>
 
-          {/* Quantity Selector */}
+          {/* Quantity Display */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Quantity
-            </label>
-            {isLoadingOptions ? (
-              <div className="text-zinc-400 text-sm">Loading options...</div>
-            ) : quantityOptions.length === 0 ? (
-              <div className="text-red-400 text-sm">No quantity options available</div>
-            ) : (
-              <div className="flex gap-2">
-                {quantityOptions.map((option) => (
-                  <button
-                    key={option.code}
-                    onClick={() => setSelectedOffer(option.code)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      selectedOffer === option.code
-                        ? "bg-emerald-600 text-white"
-                        : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            <h3 className="text-sm font-medium text-zinc-400 mb-4">Quantity</h3>
+            <div className="bg-zinc-800 rounded-md p-4">
+              <div className="text-white font-medium">
+                {partialOrder?.productQuantity ? (
+                  `${partialOrder.productQuantity} bucăți`
+                ) : (
+                  "—"
+                )}
               </div>
-            )}
+              {partialOrder?.offerCode && (
+                <div className="text-zinc-400 text-sm mt-1">
+                  Offer: {partialOrder.offerCode.replace("_", " ")}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

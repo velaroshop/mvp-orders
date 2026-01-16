@@ -1,5 +1,7 @@
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "hold" | "sync_error";
 
+export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later";
+
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 
 export interface Customer {
@@ -45,5 +47,33 @@ export interface Order {
   orderNote?: string; // Notă pentru comanda (max 2 linii)
   holdFromStatus?: OrderStatus; // Status-ul înainte de hold (pentru UNHOLD)
   createdAt: string;
+}
+
+export interface PartialOrder {
+  id: string;
+  organizationId: string;
+  landingKey: string;
+  offerCode?: OfferCode;
+  phone?: string;
+  fullName?: string;
+  county?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
+  productName?: string;
+  productSku?: string;
+  productQuantity?: number;
+  upsells: string[];
+  subtotal?: number;
+  shippingCost?: number;
+  total?: number;
+  lastCompletedField?: string;
+  completionPercentage: number;
+  status: PartialOrderStatus;
+  convertedToOrderId?: string;
+  convertedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  abandonedAt?: string;
 }
 

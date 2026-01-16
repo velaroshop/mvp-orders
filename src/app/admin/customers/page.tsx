@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Customer } from "@/lib/types";
 
@@ -8,6 +9,9 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const phoneFilter = searchParams.get("phone");
 
   useEffect(() => {
     fetchCustomers();
@@ -24,6 +28,21 @@ export default function CustomersPage() {
       }
 
       setCustomers(data.customers);
+
+      // If phone filter is present, check for matching customer
+      if (phoneFilter && data.customers.length > 0) {
+        const matchingCustomer = data.customers.find(
+          (c: Customer) => c.phone === phoneFilter
+        );
+
+        if (matchingCustomer) {
+          // Redirect to customer details page
+          router.push(`/admin/customers/${matchingCustomer.id}`);
+        } else {
+          // Show error if no matching customer found
+          setError(`Nu s-a găsit niciun client cu numărul de telefon: ${phoneFilter}`);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

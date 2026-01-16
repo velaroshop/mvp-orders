@@ -25,7 +25,7 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [totalOrders, setTotalOrders] = useState(0);
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);

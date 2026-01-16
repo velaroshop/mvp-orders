@@ -59,7 +59,7 @@ function WidgetFormContent() {
 
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
-  const [lastSaveTimeout, setLastSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [lastSaveTimeout, setLastSaveTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Error states for validation
   const [errors, setErrors] = useState<{

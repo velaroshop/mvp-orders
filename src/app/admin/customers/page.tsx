@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Customer } from "@/lib/types";
 
-export default function CustomersPage() {
+function CustomersPageContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,5 +182,25 @@ export default function CustomersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white">Clienți</h1>
+          <p className="text-zinc-400 mt-2">
+            Lista completă a clienților și istoricul comenzilor
+          </p>
+        </div>
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
+          <p className="text-zinc-400">Se încarcă clienții...</p>
+        </div>
+      </div>
+    }>
+      <CustomersPageContent />
+    </Suspense>
   );
 }

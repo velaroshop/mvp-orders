@@ -35,6 +35,7 @@ interface LandingPage {
     background_color: string;
     text_on_dark_color: string;
     thank_you_slug?: string;
+    organization_id: string;
   };
 }
 
@@ -48,14 +49,18 @@ function WidgetFormContent() {
   const [success, setSuccess] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [county, setCounty] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
-  
+
+  // Partial order tracking
+  const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
+  const [lastSaveTimeout, setLastSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Error states for validation
   const [errors, setErrors] = useState<{
     phone?: string;
@@ -110,6 +115,34 @@ function WidgetFormContent() {
     };
   }, [loading, success, landingPage, selectedOffer, phone, fullName, county, city, address]);
 
+  // Auto-save partial order with debouncing
+  useEffect(() => {
+    // Don't save if form is empty or already submitted successfully
+    if (!landingPage || success || !phone) return;
+
+    // Clear previous timeout
+    if (lastSaveTimeout) {
+      clearTimeout(lastSaveTimeout);
+    }
+
+    // Save after 3 seconds of inactivity
+    const timeout = setTimeout(() => {
+      let lastField = "phone";
+      if (address) lastField = "address";
+      else if (city) lastField = "city";
+      else if (county) lastField = "county";
+      else if (fullName) lastField = "fullName";
+
+      savePartialOrder(lastField);
+    }, 3000);
+
+    setLastSaveTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [phone, fullName, county, city, address, selectedOffer, landingPage, success]);
+
   async function fetchLandingPage() {
     try {
       setLoading(true);
@@ -130,10 +163,52 @@ function WidgetFormContent() {
   }
 
 
+  // Save partial order (auto-save as user fills form)
+  async function savePartialOrder(lastField?: string) {
+    if (!landingPage || !landingPage.stores?.organization_id) return;
+
+    try {
+      const payload = {
+        partialOrderId,
+        organizationId: landingPage.stores.organization_id,
+        landingKey: landingPage.slug,
+        offerCode: selectedOffer,
+        phone: phone || undefined,
+        fullName: fullName.trim() || undefined,
+        county: county.trim() || undefined,
+        city: city.trim() || undefined,
+        address: address.trim() || undefined,
+        productName: landingPage.products?.name,
+        productSku: landingPage.products?.sku,
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
+        subtotal: getCurrentPrice(),
+        shippingCost: landingPage.shipping_price,
+        total: getTotalPrice(),
+        lastCompletedField: lastField,
+      };
+
+      const response = await fetch("/api/partial-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (!partialOrderId && data.partialOrder?.id) {
+          setPartialOrderId(data.partialOrder.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving partial order:", error);
+      // Silently fail - don't interrupt user experience
+    }
+  }
+
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     const digitsOnly = value.replace(/\D/g, "");
-    
+
     if (digitsOnly.length > 0 && digitsOnly[0] !== "0") {
       const withZero = "0" + digitsOnly;
       const limited = withZero.slice(0, 10);

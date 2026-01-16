@@ -6,7 +6,7 @@ import type { OrderStatus } from "@/lib/types";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +24,7 @@ export async function GET(
       );
     }
 
-    const customerId = params.id;
+    const { id: customerId } = await params;
 
     // Get customer details
     const { data: customerData, error: customerError } = await supabaseAdmin

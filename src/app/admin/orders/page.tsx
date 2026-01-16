@@ -574,7 +574,7 @@ export default function AdminPage() {
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-zinc-400">
-              Afișare {indexOfFirstOrder + 1}-{Math.min(indexOfLastOrder, orders.length)} din {orders.length} comenzi
+              Afișare {(currentPage - 1) * ordersPerPage + 1}-{Math.min(currentPage * ordersPerPage, totalOrders)} din {totalOrders} comenzi
             </div>
 
             <div className="flex gap-2">

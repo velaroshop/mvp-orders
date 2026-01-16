@@ -46,6 +46,7 @@ export interface Order {
   orderNumber?: number;
   orderNote?: string; // Notă pentru comanda (max 2 linii)
   holdFromStatus?: OrderStatus; // Status-ul înainte de hold (pentru UNHOLD)
+  fromPartialId?: string; // ID-ul partial order-ului din care provine
   createdAt: string;
 }
 

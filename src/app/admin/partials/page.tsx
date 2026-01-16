@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { PartialOrder, PartialOrderStatus } from "@/lib/types";
+import ConfirmPartialOrderModal, {
+  type ConfirmPartialData,
+} from "../components/ConfirmPartialOrderModal";
 
 export default function PartialsPage() {
   const [partialOrders, setPartialOrders] = useState<PartialOrder[]>([]);
@@ -9,6 +12,8 @@ export default function PartialsPage() {
   const [error, setError] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPartial, setSelectedPartial] = useState<PartialOrder | null>(null);
 
   useEffect(() => {
     fetchPartialOrders();
@@ -97,23 +102,36 @@ export default function PartialsPage() {
     return labels[status] || status.toUpperCase();
   }
 
-  async function handleConfirm(partialId: string) {
-    if (!confirm("Confirm this partial order? It will be converted to a pending order and sent to Helpship.")) {
-      return;
+  function handleConfirm(partialId: string) {
+    const partial = partialOrders.find((p) => p.id === partialId);
+    if (partial) {
+      setSelectedPartial(partial);
+      setIsModalOpen(true);
     }
+  }
+
+  async function handleModalConfirm(data: ConfirmPartialData) {
+    if (!selectedPartial) return;
 
     try {
-      setConfirmingId(partialId);
-      const response = await fetch(`/api/partial-orders/${partialId}/confirm`, {
-        method: "POST",
-      });
+      setConfirmingId(selectedPartial.id);
+      const response = await fetch(
+        `/api/partial-orders/${selectedPartial.id}/confirm`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to confirm partial order");
+        const responseData = await response.json();
+        throw new Error(responseData.error || "Failed to confirm partial order");
       }
 
-      // Refresh the list
+      // Close modal and refresh list
+      setIsModalOpen(false);
+      setSelectedPartial(null);
       await fetchPartialOrders();
     } catch (err) {
       console.error("Error confirming partial order:", err);
@@ -473,6 +491,18 @@ export default function PartialsPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmPartialOrderModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedPartial(null);
+        }}
+        onConfirm={handleModalConfirm}
+        partialOrder={selectedPartial}
+        isConfirming={confirmingId === selectedPartial?.id}
+      />
     </div>
   );
 }

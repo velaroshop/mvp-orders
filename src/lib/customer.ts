@@ -82,12 +82,25 @@ export async function updateCustomerStats({
 }): Promise<void> {
   const now = new Date().toISOString();
 
+  // First, get current values
+  const { data: customer, error: fetchError } = await supabaseAdmin
+    .from("customers")
+    .select("total_orders, total_spent")
+    .eq("id", customerId)
+    .single();
+
+  if (fetchError || !customer) {
+    console.error("Failed to fetch customer for stats update:", fetchError);
+    return;
+  }
+
+  // Update with incremented values
   const { error } = await supabaseAdmin
     .from("customers")
     .update({
       last_order_date: now,
-      total_orders: supabaseAdmin.raw('total_orders + 1'),
-      total_spent: supabaseAdmin.raw(`total_spent + ${orderTotal}`),
+      total_orders: (customer.total_orders || 0) + 1,
+      total_spent: parseFloat(customer.total_spent?.toString() || "0") + orderTotal,
       updated_at: now,
     })
     .eq("id", customerId);

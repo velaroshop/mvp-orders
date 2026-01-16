@@ -175,10 +175,11 @@ export async function POST(
       );
     }
 
-    // Update partial order - mark as converted BUT keep status as "pending" so it remains visible
+    // Update partial order - mark as accepted and converted
     const { error: updateError } = await supabaseAdmin
       .from("partial_orders")
       .update({
+        status: "accepted",
         converted_to_order_id: order.id,
         converted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

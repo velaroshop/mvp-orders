@@ -71,23 +71,10 @@ export async function GET(
       .gte("created_at", cutoffDate.toISOString())
       .order("created_at", { ascending: false });
 
-    // Check for other partial orders with same phone (excluding current one)
-    const { data: partials, error: partialsError } = await supabaseAdmin
-      .from("partial_orders")
-      .select("id, created_at, status")
-      .eq("organization_id", activeOrganizationId)
-      .eq("phone", phone)
-      .neq("id", id)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
     return NextResponse.json({
       hasOrders: (orders?.length || 0) > 0,
-      hasPartials: (partials?.length || 0) > 0,
       ordersCount: orders?.length || 0,
-      partialsCount: partials?.length || 0,
       orders: orders || [],
-      partials: partials || [],
       duplicateCheckDays,
     });
   } catch (error) {

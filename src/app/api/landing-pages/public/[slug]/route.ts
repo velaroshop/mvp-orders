@@ -27,7 +27,7 @@ export async function GET(
       .from("landing_pages")
       .select("*, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3, price_offer_1, price_offer_2, price_offer_3")
       .eq("slug", slug)
-      .eq("status", "published")
+      // Removed status check - landing pages may have different status values
       .single();
 
     if (error || !landingPage) {

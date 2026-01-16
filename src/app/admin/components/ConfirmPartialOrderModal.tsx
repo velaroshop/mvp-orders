@@ -59,6 +59,7 @@ export default function ConfirmPartialOrderModal({
       setCity(partialOrder.city || "");
       setAddress(partialOrder.address || "");
       setSelectedOffer(partialOrder.offerCode || "offer_1");
+      setErrors({}); // Clear errors when opening modal
 
       // Fetch landing page data for quantity options
       fetchQuantityOptions(partialOrder.landingKey);
@@ -68,13 +69,16 @@ export default function ConfirmPartialOrderModal({
   async function fetchQuantityOptions(landingKey: string) {
     try {
       setIsLoadingOptions(true);
+      console.log("Fetching landing page data for:", landingKey);
       const response = await fetch(`/api/landing-pages/public/${landingKey}`);
 
       if (!response.ok) {
+        console.error("Failed to fetch landing page:", response.status, response.statusText);
         throw new Error("Failed to fetch landing page data");
       }
 
       const data = await response.json();
+      console.log("Landing page data:", data);
       const lp = data.landingPage;
 
       const options: QuantityOption[] = [];
@@ -106,12 +110,25 @@ export default function ConfirmPartialOrderModal({
         });
       }
 
+      console.log("Quantity options built:", options);
       setQuantityOptions(options);
     } catch (error) {
       console.error("Error fetching quantity options:", error);
     } finally {
       setIsLoadingOptions(false);
     }
+  }
+
+  function validatePhone(phoneValue: string): string | undefined {
+    const phoneDigits = phoneValue.replace(/\D/g, "");
+    if (!phoneDigits) {
+      return "Numărul de telefon este obligatoriu";
+    } else if (phoneDigits.length !== 10) {
+      return "Numărul de telefon trebuie să aibă 10 cifre";
+    } else if (!phoneDigits.startsWith("07")) {
+      return "Numărul de telefon trebuie să înceapă cu 07";
+    }
+    return undefined;
   }
 
   function validateForm(): boolean {
@@ -121,14 +138,9 @@ export default function ConfirmPartialOrderModal({
       newErrors.fullName = "Numele este obligatoriu";
     }
 
-    // Validate phone: 10 digits, starts with 07
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (!phoneDigits) {
-      newErrors.phone = "Numărul de telefon este obligatoriu";
-    } else if (phoneDigits.length !== 10) {
-      newErrors.phone = "Numărul de telefon trebuie să aibă 10 cifre";
-    } else if (!phoneDigits.startsWith("07")) {
-      newErrors.phone = "Numărul de telefon trebuie să înceapă cu 07";
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      newErrors.phone = phoneError;
     }
 
     if (!county.trim()) {
@@ -145,6 +157,16 @@ export default function ConfirmPartialOrderModal({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }
+
+  function handlePhoneChange(value: string) {
+    setPhone(value);
+    // Real-time validation
+    const phoneError = validatePhone(value);
+    setErrors(prev => ({
+      ...prev,
+      phone: phoneError,
+    }));
   }
 
   function handleSubmit() {
@@ -211,7 +233,7 @@ export default function ConfirmPartialOrderModal({
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
                   className={`w-full px-3 py-2 bg-zinc-800 border ${
                     errors.phone ? "border-red-500" : "border-zinc-700"
                   } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}

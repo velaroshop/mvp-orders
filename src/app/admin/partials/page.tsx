@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PartialOrder } from "@/lib/types";
+import type { PartialOrder, PartialOrderStatus } from "@/lib/types";
 
 export default function PartialsPage() {
   const [partialOrders, setPartialOrders] = useState<PartialOrder[]>([]);
@@ -78,6 +78,8 @@ export default function PartialsPage() {
         return "bg-orange-500/20 text-orange-400 border-orange-500/30";
       case "call_later":
         return "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      case "duplicate":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       default:
         return "bg-zinc-500/20 text-zinc-400 border-zinc-500/30";
     }
@@ -90,6 +92,7 @@ export default function PartialsPage() {
       refused: "REFUSED",
       unanswered: "UNANSWERED",
       call_later: "CALL LATER",
+      duplicate: "DUPLICATE",
     };
     return labels[status] || status.toUpperCase();
   }
@@ -449,6 +452,14 @@ export default function PartialsPage() {
                                 className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
                               >
                                 Partial Mark Unanswered
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleStatusChange(partial.id, "duplicate")
+                                }
+                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                              >
+                                Partial Mark Duplicate
                               </button>
                             </div>
                           )}

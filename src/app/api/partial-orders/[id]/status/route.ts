@@ -39,6 +39,7 @@ export async function PATCH(
       "refused",
       "unanswered",
       "call_later",
+      "duplicate",
     ];
 
     if (!validStatuses.includes(status)) {

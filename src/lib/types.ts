@@ -1,6 +1,6 @@
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "hold" | "sync_error";
 
-export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later";
+export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later" | "duplicate";
 
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 

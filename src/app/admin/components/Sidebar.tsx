@@ -16,6 +16,11 @@ export default function Sidebar() {
       icon: "📦",
     },
     {
+      name: "Customers",
+      href: "/admin/customers",
+      icon: "👥",
+    },
+    {
       name: "Products",
       href: "/admin/products",
       icon: "🏷️",

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { OrderStatus } from "@/lib/types";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Obține session-ul utilizatorului
     const session = await getServerSession(authOptions);
@@ -23,12 +23,34 @@ export async function GET() {
       );
     }
 
-    // Folosim supabaseAdmin pentru a bypassa RLS și filtrăm manual după organization_id
-    const { data, error } = await supabaseAdmin
+    // Get search query and pagination params from URL
+    const { searchParams } = new URL(request.url);
+    const searchQuery = searchParams.get("q") || "";
+    const limit = parseInt(searchParams.get("limit") || "100");
+    const offset = parseInt(searchParams.get("offset") || "0");
+
+    // Build query
+    let query = supabaseAdmin
       .from("orders")
-      .select("*")
-      .eq("organization_id", activeOrganizationId)
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" })
+      .eq("organization_id", activeOrganizationId);
+
+    // Add search filter if query provided
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      query = query.or(
+        `phone.ilike.%${searchQuery}%,` +
+        `full_name.ilike.%${searchQuery}%,` +
+        `county.ilike.%${searchQuery}%,` +
+        `city.ilike.%${searchQuery}%,` +
+        `address.ilike.%${searchQuery}%`
+      );
+    }
+
+    // Add ordering and pagination
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new Error(`Failed to list orders: ${error.message}`);
@@ -60,7 +82,12 @@ export async function GET() {
       createdAt: row.created_at,
     }));
 
-    return NextResponse.json({ orders });
+    return NextResponse.json({
+      orders,
+      total: count || 0,
+      limit,
+      offset
+    });
   } catch (error) {
     console.error("Error listing orders", error);
     return NextResponse.json(

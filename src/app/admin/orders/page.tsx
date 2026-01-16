@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
@@ -14,20 +14,64 @@ export default function AdminPage() {
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 25;
+  const ordersPerPage = 50;
 
-  async function fetchOrders() {
-    const response = await fetch("/api/orders/list");
-    if (!response.ok) return;
+  async function fetchOrders(query: string = "") {
+    setIsSearching(true);
+    const params = new URLSearchParams({
+      q: query,
+      limit: ordersPerPage.toString(),
+      offset: ((currentPage - 1) * ordersPerPage).toString(),
+    });
+
+    const response = await fetch(`/api/orders/list?${params}`);
+    if (!response.ok) {
+      setIsSearching(false);
+      return;
+    }
     const data = await response.json();
     setOrders(data.orders ?? []);
+    setTotalOrders(data.total ?? 0);
+    setIsSearching(false);
+  }
+
+  // Debounced search
+  const debouncedSearch = useCallback((query: string) => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page on new search
+      fetchOrders(query);
+    }, 300);
+  }, [currentPage]);
+
+  // Handle search input change
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setSearchQuery(value);
+    debouncedSearch(value);
+  }
+
+  // Clear search
+  function handleClearSearch() {
+    setSearchQuery("");
+    setCurrentPage(1);
+    fetchOrders("");
   }
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(searchQuery);
+  }, [currentPage]);
 
   // Închide dropdown-ul când se face click în afara lui
   useEffect(() => {
@@ -259,11 +303,9 @@ export default function AdminPage() {
     setOpenDropdown(null);
   }
 
-  // Calculate pagination
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  // Calculate pagination (server-side now)
+  const totalPages = Math.ceil(totalOrders / ordersPerPage);
+  const currentOrders = orders; // No slicing needed, API returns paginated data
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
@@ -273,14 +315,67 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-zinc-900">
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">
-              Comenzi – MVP
-            </h1>
-            <p className="mt-1 text-sm text-zinc-400">
-              {orders.length} total comenzi • Pagina {currentPage} din {totalPages}
-            </p>
+        <header className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-white">
+                Comenzi – MVP
+              </h1>
+              <p className="mt-1 text-sm text-zinc-400">
+                {totalOrders} total comenzi{searchQuery && ` (${orders.length} rezultate)`} • Pagina {currentPage} din {totalPages}
+              </p>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-zinc-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Caută după telefon, nume, județ, oraș, adresă..."
+              className="w-full pl-10 pr-10 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+            {isSearching && (
+              <div className="absolute inset-y-0 right-10 flex items-center pr-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
+              </div>
+            )}
           </div>
         </header>
 

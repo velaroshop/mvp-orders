@@ -91,13 +91,13 @@ export async function POST(
 
     if (selectedOffer === "offer_1") {
       quantity = landingPage.quantity_offer_1 || 1;
-      price = landingPage.price_offer_1 || 0;
+      price = landingPage.price_1 || 0;
     } else if (selectedOffer === "offer_2") {
       quantity = landingPage.quantity_offer_2 || 2;
-      price = landingPage.price_offer_2 || 0;
+      price = landingPage.price_2 || 0;
     } else if (selectedOffer === "offer_3") {
       quantity = landingPage.quantity_offer_3 || 3;
-      price = landingPage.price_offer_3 || 0;
+      price = landingPage.price_3 || 0;
     }
 
     const subtotal = price;

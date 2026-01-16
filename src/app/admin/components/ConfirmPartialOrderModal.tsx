@@ -101,30 +101,30 @@ export default function ConfirmPartialOrderModal({
 
       const options: QuantityOption[] = [];
 
-      if (lp.quantity_offer_1 && lp.price_offer_1) {
+      if (lp.quantity_offer_1 && lp.price_1) {
         options.push({
           code: "offer_1",
           quantity: lp.quantity_offer_1,
-          price: lp.price_offer_1,
-          label: `${lp.quantity_offer_1}x - ${lp.price_offer_1} RON`,
+          price: lp.price_1,
+          label: `${lp.quantity_offer_1}x - ${lp.price_1} RON`,
         });
       }
 
-      if (lp.quantity_offer_2 && lp.price_offer_2) {
+      if (lp.quantity_offer_2 && lp.price_2) {
         options.push({
           code: "offer_2",
           quantity: lp.quantity_offer_2,
-          price: lp.price_offer_2,
-          label: `${lp.quantity_offer_2}x - ${lp.price_offer_2} RON`,
+          price: lp.price_2,
+          label: `${lp.quantity_offer_2}x - ${lp.price_2} RON`,
         });
       }
 
-      if (lp.quantity_offer_3 && lp.price_offer_3) {
+      if (lp.quantity_offer_3 && lp.price_3) {
         options.push({
           code: "offer_3",
           quantity: lp.quantity_offer_3,
-          price: lp.price_offer_3,
-          label: `${lp.quantity_offer_3}x - ${lp.price_offer_3} RON`,
+          price: lp.price_3,
+          label: `${lp.quantity_offer_3}x - ${lp.price_3} RON`,
         });
       }
 

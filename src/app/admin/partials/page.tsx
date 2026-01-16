@@ -7,6 +7,8 @@ export default function PartialsPage() {
   const [partialOrders, setPartialOrders] = useState<PartialOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPartialOrders();
@@ -90,6 +92,54 @@ export default function PartialsPage() {
       call_later: "CALL LATER",
     };
     return labels[status] || status.toUpperCase();
+  }
+
+  async function handleConfirm(partialId: string) {
+    if (!confirm("Confirm this partial order? It will be converted to a pending order and sent to Helpship.")) {
+      return;
+    }
+
+    try {
+      setConfirmingId(partialId);
+      const response = await fetch(`/api/partial-orders/${partialId}/confirm`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to confirm partial order");
+      }
+
+      // Refresh the list
+      await fetchPartialOrders();
+    } catch (err) {
+      console.error("Error confirming partial order:", err);
+      alert(err instanceof Error ? err.message : "Failed to confirm partial order");
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
+  async function handleStatusChange(partialId: string, newStatus: PartialOrderStatus) {
+    try {
+      const response = await fetch(`/api/partial-orders/${partialId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update status");
+      }
+
+      // Refresh the list
+      await fetchPartialOrders();
+      setOpenDropdown(null);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert(err instanceof Error ? err.message : "Failed to update status");
+    }
   }
 
   if (isLoading) {
@@ -184,6 +234,9 @@ export default function PartialsPage() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -332,6 +385,75 @@ export default function PartialsPage() {
                       >
                         {getStatusLabel(partial.status)}
                       </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Confirm Button */}
+                        <button
+                          onClick={() => handleConfirm(partial.id)}
+                          disabled={confirmingId === partial.id}
+                          className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {confirmingId === partial.id ? "..." : "Confirm"}
+                        </button>
+
+                        {/* Actions Dropdown */}
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setOpenDropdown(
+                                openDropdown === partial.id ? null : partial.id
+                              )
+                            }
+                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                              />
+                            </svg>
+                          </button>
+
+                          {openDropdown === partial.id && (
+                            <div className="absolute right-0 mt-2 w-56 bg-zinc-800 rounded-lg shadow-lg border border-zinc-700 py-1 z-10">
+                              <button
+                                onClick={() =>
+                                  handleStatusChange(partial.id, "call_later")
+                                }
+                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                              >
+                                Partial Later
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleStatusChange(partial.id, "refused")
+                                }
+                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                              >
+                                Partial Refuse
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleStatusChange(partial.id, "unanswered")
+                                }
+                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                              >
+                                Partial Mark Unanswered
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}

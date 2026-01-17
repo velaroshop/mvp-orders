@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       partialOrders,
-      total: count || 0,
+      total: partialOrders.length,
     });
   } catch (error) {
     console.error("Error in GET /api/partial-orders/list:", error);

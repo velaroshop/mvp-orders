@@ -71,18 +71,18 @@ export default function PartialsPage() {
     }
   }
 
-  function isPartialExpired(createdAt: string): boolean {
+  function isPartialTooNew(createdAt: string): boolean {
     const created = new Date(createdAt);
     const now = new Date();
     const diffInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
-    return diffInMinutes > 10;
+    return diffInMinutes < 10;
   }
 
-  function getMinutesRemaining(createdAt: string): number {
+  function getMinutesUntilConfirmable(createdAt: string): number {
     const created = new Date(createdAt);
     const now = new Date();
     const diffInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
-    return Math.max(0, Math.floor(10 - diffInMinutes));
+    return Math.max(0, Math.ceil(10 - diffInMinutes));
   }
 
   function formatPrice(price?: number) {
@@ -424,22 +424,22 @@ export default function PartialsPage() {
                     <td className="px-4 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
                         {/* Confirm Button */}
-                        {isPartialExpired(partial.createdAt) ? (
+                        {isPartialTooNew(partial.createdAt) ? (
                           <button
                             disabled
-                            className="px-2 py-1 bg-zinc-700 text-zinc-400 text-xs font-medium rounded cursor-not-allowed"
-                            title="This partial order is older than 10 minutes and likely abandoned"
+                            className="px-2 py-1 bg-orange-900/30 text-orange-400 text-xs font-medium rounded cursor-not-allowed border border-orange-500/30"
+                            title={`Customer is likely still completing the form. Wait ${getMinutesUntilConfirmable(partial.createdAt)} more minute(s).`}
                           >
-                            ⏱️ Expired
+                            ⏳ Wait {getMinutesUntilConfirmable(partial.createdAt)}m
                           </button>
                         ) : (
                           <button
                             onClick={() => handleConfirm(partial.id)}
                             disabled={confirmingId === partial.id}
                             className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title={`${getMinutesRemaining(partial.createdAt)} minutes remaining`}
+                            title="Ready to confirm - 10 minutes have passed since creation"
                           >
-                            {confirmingId === partial.id ? "..." : `Confirm (${getMinutesRemaining(partial.createdAt)}m)`}
+                            {confirmingId === partial.id ? "..." : "Confirm"}
                           </button>
                         )}
 

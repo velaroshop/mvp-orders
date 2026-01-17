@@ -316,12 +316,6 @@ export default function PartialsPage() {
                           {formatPrice(partial.subtotal)} +{" "}
                           {formatPrice(partial.shippingCost)}
                         </div>
-                        <div className="text-xs text-zinc-500">
-                          Shipping price: {formatPrice(partial.shippingCost)}
-                        </div>
-                        <div className="text-xs text-zinc-500">
-                          Discount: 0.00 RON
-                        </div>
                       </div>
                     </td>
 
@@ -343,46 +337,40 @@ export default function PartialsPage() {
                     {/* Address */}
                     <td className="px-4 py-4">
                       <div className="text-sm max-w-xs">
-                        {partial.county || partial.city || partial.address ? (
-                          <>
-                            <div className="text-white">
-                              County:{" "}
-                              <span
-                                className={
-                                  partial.county
-                                    ? "text-white"
-                                    : "text-red-400"
-                                }
-                              >
-                                {partial.county || "?"}
-                              </span>
-                            </div>
-                            <div className="text-white">
-                              City:{" "}
-                              <span
-                                className={
-                                  partial.city ? "text-white" : "text-red-400"
-                                }
-                              >
-                                {partial.city || "?"}
-                              </span>
-                            </div>
-                            <div className="text-white">
-                              Street:{" "}
-                              <span
-                                className={
-                                  partial.address
-                                    ? "text-white"
-                                    : "text-red-400"
-                                }
-                              >
-                                {partial.address || "?"}
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-zinc-500">—</span>
-                        )}
+                        <div className="text-white">
+                          Judet:{" "}
+                          <span
+                            className={
+                              partial.county
+                                ? "text-white"
+                                : "text-red-400"
+                            }
+                          >
+                            {partial.county || "?"}
+                          </span>
+                        </div>
+                        <div className="text-white">
+                          Localitate:{" "}
+                          <span
+                            className={
+                              partial.city ? "text-white" : "text-red-400"
+                            }
+                          >
+                            {partial.city || "?"}
+                          </span>
+                        </div>
+                        <div className="text-white">
+                          Strada:{" "}
+                          <span
+                            className={
+                              partial.address
+                                ? "text-white"
+                                : "text-red-400"
+                            }
+                          >
+                            {partial.address || "?"}
+                          </span>
+                        </div>
                       </div>
                     </td>
 
@@ -402,7 +390,7 @@ export default function PartialsPage() {
                     {/* Status */}
                     <td className="px-4 py-4">
                       <span
-                        className={`inline-flex items-center rounded px-2 py-1 text-xs font-semibold border ${getStatusColor(partial.status)}`}
+                        className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold border ${getStatusColor(partial.status)}`}
                       >
                         {getStatusLabel(partial.status)}
                       </span>
@@ -410,12 +398,12 @@ export default function PartialsPage() {
 
                     {/* Actions */}
                     <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                         {/* Confirm Button */}
                         <button
                           onClick={() => handleConfirm(partial.id)}
                           disabled={confirmingId === partial.id}
-                          className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {confirmingId === partial.id ? "..." : "Confirm"}
                         </button>
@@ -428,10 +416,10 @@ export default function PartialsPage() {
                                 openDropdown === partial.id ? null : partial.id
                               )
                             }
-                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
+                            className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
                           >
                             <svg
-                              className="w-5 h-5"
+                              className="w-4 h-4"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -440,7 +428,7 @@ export default function PartialsPage() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                                d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
                               />
                             </svg>
                           </button>

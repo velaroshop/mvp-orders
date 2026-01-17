@@ -71,6 +71,20 @@ export default function PartialsPage() {
     }
   }
 
+  function isPartialExpired(createdAt: string): boolean {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
+    return diffInMinutes > 10;
+  }
+
+  function getMinutesRemaining(createdAt: string): number {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
+    return Math.max(0, Math.floor(10 - diffInMinutes));
+  }
+
   function formatPrice(price?: number) {
     if (!price) return "—";
     return `${price.toFixed(2)} RON`;
@@ -410,13 +424,24 @@ export default function PartialsPage() {
                     <td className="px-4 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
                         {/* Confirm Button */}
-                        <button
-                          onClick={() => handleConfirm(partial.id)}
-                          disabled={confirmingId === partial.id}
-                          className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {confirmingId === partial.id ? "..." : "Confirm"}
-                        </button>
+                        {isPartialExpired(partial.createdAt) ? (
+                          <button
+                            disabled
+                            className="px-2 py-1 bg-zinc-700 text-zinc-400 text-xs font-medium rounded cursor-not-allowed"
+                            title="This partial order is older than 10 minutes and likely abandoned"
+                          >
+                            ⏱️ Expired
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleConfirm(partial.id)}
+                            disabled={confirmingId === partial.id}
+                            className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title={`${getMinutesRemaining(partial.createdAt)} minutes remaining`}
+                          >
+                            {confirmingId === partial.id ? "..." : `Confirm (${getMinutesRemaining(partial.createdAt)}m)`}
+                          </button>
+                        )}
 
                         {/* Actions Dropdown */}
                         <div className="relative">

@@ -176,7 +176,7 @@ export async function POST(
     }
 
     // Update partial order - mark as accepted and converted
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedPartial, error: updateError } = await supabaseAdmin
       .from("partial_orders")
       .update({
         status: "accepted",
@@ -184,11 +184,21 @@ export async function POST(
         converted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select()
+      .single();
 
     if (updateError) {
-      console.error("Error updating partial order:", updateError);
+      console.error("❌ CRITICAL: Failed to update partial order:", updateError);
+      console.error("Partial ID:", id);
+      console.error("Order ID:", order.id);
       // Don't fail the request if this update fails, order is already created
+    } else {
+      console.log("✅ Partial order updated successfully:", {
+        partialId: id,
+        convertedToOrderId: updatedPartial?.converted_to_order_id,
+        status: updatedPartial?.status,
+      });
     }
 
     // Send order to Helpship (same logic as in /api/orders/[id]/helpship)

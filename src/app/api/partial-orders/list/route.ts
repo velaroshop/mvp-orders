@@ -52,6 +52,19 @@ export async function GET(request: Request) {
 
     console.log(`[Partials List] Total: ${data?.length || 0}, After filtering converted: ${filteredData.length}`);
 
+    // Debug: Show which ones were filtered out
+    const convertedOrders = (data || []).filter(row => row.converted_to_order_id);
+    if (convertedOrders.length > 0) {
+      console.log(`[Partials List] Filtered out ${convertedOrders.length} converted orders:`,
+        convertedOrders.map(o => ({
+          id: o.id,
+          partialNumber: o.partial_number,
+          convertedToOrderId: o.converted_to_order_id,
+          status: o.status,
+        }))
+      );
+    }
+
     // Get unique landing keys to fetch store URLs
     const landingKeys = [...new Set(filteredData?.map(row => row.landing_key).filter(Boolean))];
 

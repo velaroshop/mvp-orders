@@ -29,6 +29,11 @@ export default function PartialsPage() {
       }
 
       const data = await response.json();
+      console.log("📥 [Frontend] Received partial orders:", {
+        total: data.total,
+        count: data.partialOrders?.length || 0,
+        partialNumbers: data.partialOrders?.map((p: PartialOrder) => p.partialNumber),
+      });
       setPartialOrders(data.partialOrders || []);
     } catch (err) {
       console.error("Error fetching partial orders:", err);
@@ -115,6 +120,8 @@ export default function PartialsPage() {
 
     try {
       setConfirmingId(selectedPartial.id);
+      console.log("🔄 [Frontend] Confirming partial order:", selectedPartial.partialNumber);
+
       const response = await fetch(
         `/api/partial-orders/${selectedPartial.id}/confirm`,
         {
@@ -129,10 +136,14 @@ export default function PartialsPage() {
         throw new Error(responseData.error || "Failed to confirm partial order");
       }
 
+      const result = await response.json();
+      console.log("✅ [Frontend] Confirmed successfully, refreshing list...");
+
       // Close modal and refresh list
       setIsModalOpen(false);
       setSelectedPartial(null);
       await fetchPartialOrders();
+      console.log("🔄 [Frontend] List refreshed");
     } catch (err) {
       console.error("Error confirming partial order:", err);
       alert(err instanceof Error ? err.message : "Failed to confirm partial order");

@@ -52,6 +52,13 @@ export async function GET(request: Request) {
       );
     }
 
+    // Debug: Log how many partials were found and if any have converted_to_order_id
+    console.log(`[Partials List] Found ${data?.length || 0} partial orders (total count: ${count})`);
+    const convertedCount = data?.filter(p => p.converted_to_order_id).length || 0;
+    if (convertedCount > 0) {
+      console.warn(`[Partials List] WARNING: ${convertedCount} partial orders have converted_to_order_id but were not filtered out!`);
+    }
+
     // Get unique landing keys to fetch store URLs
     const landingKeys = [...new Set(data?.map(row => row.landing_key).filter(Boolean))];
 

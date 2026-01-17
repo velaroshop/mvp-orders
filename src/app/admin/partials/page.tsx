@@ -284,7 +284,7 @@ export default function PartialsPage() {
                           <div className="text-zinc-400">—</div>
                         )}
                         <div className="text-xs text-zinc-500 mt-1">
-                          Partial ID: {partial.id.substring(0, 8)}
+                          Partial ID: {partial.partialNumber || "—"}
                         </div>
                       </div>
                     </td>

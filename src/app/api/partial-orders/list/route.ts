@@ -39,8 +39,8 @@ export async function GET(request: Request) {
 
     // Exclude partial orders that have been converted to full orders
     // These orders should only appear in the orders list, not in partials
-    // Filter: show only records where converted_to_order_id is NULL
-    query = query.filter("converted_to_order_id", "is", null);
+    // Using .isNull() instead of .filter() for NULL check
+    query = query.isNull("converted_to_order_id");
 
     const { data, error, count } = await query;
 

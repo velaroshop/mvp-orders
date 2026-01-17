@@ -30,9 +30,9 @@ export async function GET(request: Request) {
       .from("partial_orders")
       .select(`
         *,
-        landing_pages!inner(
+        landing_pages(
           slug,
-          stores!inner(
+          stores(
             url
           )
         )

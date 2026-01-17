@@ -51,6 +51,7 @@ export async function GET(request: Request) {
     const partialOrders = (data || []).map((row) => ({
       id: row.id,
       organizationId: row.organization_id,
+      partialNumber: row.partial_number,
       landingKey: row.landing_key,
       offerCode: row.offer_code,
       phone: row.phone,

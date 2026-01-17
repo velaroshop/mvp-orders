@@ -54,6 +54,7 @@ export interface Order {
 export interface PartialOrder {
   id: string;
   organizationId: string;
+  partialNumber?: number; // Auto-incrementing number starting from 1
   landingKey: string;
   offerCode?: OfferCode;
   phone?: string;

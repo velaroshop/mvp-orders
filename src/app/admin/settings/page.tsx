@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 export default function SettingsPage() {
   const [helpshipClientId, setHelpshipClientId] = useState("");
   const [helpshipClientSecret, setHelpshipClientSecret] = useState("");
+  const [duplicateCheckDays, setDuplicateCheckDays] = useState(21);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -17,6 +18,7 @@ export default function SettingsPage() {
 
         const data = await response.json();
         setHelpshipClientId(data.settings.helpship_client_id || "");
+        setDuplicateCheckDays(data.settings.duplicate_check_days || 21);
         // Don't show the actual secret, leave it empty for security
         setHelpshipClientSecret("");
       } catch (error) {
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           helpshipClientId,
           helpshipClientSecret,
+          duplicateCheckDays,
         }),
       });
 
@@ -96,7 +99,7 @@ export default function SettingsPage() {
                   value={helpshipClientId}
                   onChange={(e) => setHelpshipClientId(e.target.value)}
                   className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-500"
-                  placeholder="velaro-trading-dev"
+                  placeholder="client_id"
                 />
               </div>
 
@@ -113,12 +116,41 @@ export default function SettingsPage() {
                   value={helpshipClientSecret}
                   onChange={(e) => setHelpshipClientSecret(e.target.value)}
                   className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-500"
-                  placeholder="••••••••••••••••"
+                  placeholder="secret"
                 />
                 <p className="text-xs text-zinc-500 mt-1">
                   OAuth2 client secret for Helpship API authentication
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Duplicate Check Settings */}
+          <div className="p-6 border-b border-zinc-200">
+            <h2 className="text-xl font-semibold text-zinc-900 mb-4">
+              Duplicate Order Detection
+            </h2>
+
+            <div>
+              <label
+                htmlFor="duplicateCheckDays"
+                className="block text-sm font-medium text-zinc-900 mb-1"
+              >
+                Check Period (Days)
+              </label>
+              <input
+                type="number"
+                id="duplicateCheckDays"
+                min="1"
+                max="365"
+                value={duplicateCheckDays}
+                onChange={(e) => setDuplicateCheckDays(parseInt(e.target.value) || 21)}
+                className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-500"
+                placeholder="21"
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                Number of days to check for duplicate orders from the same phone number when confirming partial orders
+              </p>
             </div>
           </div>
 

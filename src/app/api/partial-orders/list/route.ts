@@ -37,6 +37,10 @@ export async function GET(request: Request) {
       query = query.eq("status", status);
     }
 
+    // Exclude converted partial orders (100% completion with converted_to_order_id)
+    // These are orders that were successfully placed and should appear in the orders list instead
+    query = query.or("completion_percentage.lt.100,converted_to_order_id.is.null");
+
     const { data, error, count } = await query;
 
     if (error) {

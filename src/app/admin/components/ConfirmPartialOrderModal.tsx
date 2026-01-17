@@ -222,16 +222,28 @@ export default function ConfirmPartialOrderModal({
                     value={phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     disabled={!isPhoneEditable}
-                    className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
+                    className={`w-full pl-10 pr-10 py-2 bg-zinc-800 border ${
                       errors.phone ? "border-red-500 bg-red-500/5" : "border-zinc-700"
                     } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed`}
                     placeholder="0700000000"
                   />
-                  {!errors.phone && phone && (
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                  {phone && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        errors.phone
+                          ? "border-red-500 bg-red-500/10"
+                          : "border-emerald-500 bg-emerald-500/10"
+                      }`}>
+                        {errors.phone ? (
+                          <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

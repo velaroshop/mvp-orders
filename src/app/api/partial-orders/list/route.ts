@@ -39,8 +39,8 @@ export async function GET(request: Request) {
 
     // Exclude partial orders that have been converted to full orders
     // These orders should only appear in the orders list, not in partials
-    // Using .isNull() instead of .filter() for NULL check
-    query = query.isNull("converted_to_order_id");
+    // Using .is() with null value for NULL check (correct Supabase syntax)
+    query = query.is("converted_to_order_id", null);
 
     const { data, error, count } = await query;
 

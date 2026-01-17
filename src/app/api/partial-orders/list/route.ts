@@ -25,10 +25,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
 
-    // Build query
+    // Build query - get ALL partial orders first
     let query = supabaseAdmin
       .from("partial_orders")
-      .select("*", { count: "exact" })
+      .select("*")
       .eq("organization_id", activeOrganizationId)
       .order("created_at", { ascending: false });
 
@@ -37,12 +37,7 @@ export async function GET(request: Request) {
       query = query.eq("status", status);
     }
 
-    // Exclude partial orders that have been converted to full orders
-    // These orders should only appear in the orders list, not in partials
-    // Using .is() with null value for NULL check (correct Supabase syntax)
-    query = query.is("converted_to_order_id", null);
-
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error listing partial orders:", error);
@@ -52,15 +47,13 @@ export async function GET(request: Request) {
       );
     }
 
-    // Debug: Log how many partials were found and if any have converted_to_order_id
-    console.log(`[Partials List] Found ${data?.length || 0} partial orders (total count: ${count})`);
-    const convertedCount = data?.filter(p => p.converted_to_order_id).length || 0;
-    if (convertedCount > 0) {
-      console.warn(`[Partials List] WARNING: ${convertedCount} partial orders have converted_to_order_id but were not filtered out!`);
-    }
+    // SIMPLE FILTER: Exclude converted orders in JavaScript (much simpler!)
+    const filteredData = (data || []).filter(row => !row.converted_to_order_id);
+
+    console.log(`[Partials List] Total: ${data?.length || 0}, After filtering converted: ${filteredData.length}`);
 
     // Get unique landing keys to fetch store URLs
-    const landingKeys = [...new Set(data?.map(row => row.landing_key).filter(Boolean))];
+    const landingKeys = [...new Set(filteredData?.map(row => row.landing_key).filter(Boolean))];
 
     // Fetch landing pages with stores for all unique landing keys
     const { data: landingPagesData } = await supabaseAdmin
@@ -74,7 +67,7 @@ export async function GET(request: Request) {
     );
 
     // Map to PartialOrder type
-    const partialOrders = (data || []).map((row) => ({
+    const partialOrders = (filteredData || []).map((row) => ({
       id: row.id,
       organizationId: row.organization_id,
       partialNumber: row.partial_number,

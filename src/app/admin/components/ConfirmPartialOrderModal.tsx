@@ -33,6 +33,7 @@ export default function ConfirmPartialOrderModal({
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+  const [isPhoneEditable, setIsPhoneEditable] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{
     hasOrders: boolean;
     ordersCount: number;
@@ -187,7 +188,7 @@ export default function ConfirmPartialOrderModal({
                     className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
                       errors.fullName ? "border-red-500 bg-red-500/5" : "border-zinc-700"
                     } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                    placeholder="Heros Simona"
+                    placeholder="Nume complet"
                   />
                 </div>
                 {errors.fullName && (
@@ -199,13 +200,16 @@ export default function ConfirmPartialOrderModal({
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2 flex items-center gap-2">
                   Phone Number
-                  <button
-                    type="button"
-                    className="text-xs text-blue-400 hover:text-blue-300"
-                    title="Copy 10 digits"
-                  >
-                    📋 Copy
-                  </button>
+                  {!isPhoneEditable && (
+                    <button
+                      type="button"
+                      onClick={() => setIsPhoneEditable(true)}
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                      title="Edit phone number"
+                    >
+                      ✏️ Edit
+                    </button>
+                  )}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -217,10 +221,11 @@ export default function ConfirmPartialOrderModal({
                     type="tel"
                     value={phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
+                    disabled={!isPhoneEditable}
                     className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
                       errors.phone ? "border-red-500 bg-red-500/5" : "border-zinc-700"
-                    } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                    placeholder="0753845140"
+                    } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed`}
+                    placeholder="0700000000"
                   />
                   {!errors.phone && phone && (
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -287,7 +292,7 @@ export default function ConfirmPartialOrderModal({
                     className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
                       errors.county ? "border-red-500 bg-red-500/5" : "border-zinc-700"
                     } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                    placeholder="Botosani"
+                    placeholder="Judet"
                   />
                 </div>
                 {errors.county && (
@@ -313,7 +318,7 @@ export default function ConfirmPartialOrderModal({
                     className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
                       errors.city ? "border-red-500 bg-red-500/5" : "border-zinc-700"
                     } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                    placeholder="Catanele"
+                    placeholder="Oras"
                   />
                 </div>
                 {errors.city && (
@@ -341,7 +346,7 @@ export default function ConfirmPartialOrderModal({
                   className={`w-full pl-10 pr-3 py-2 bg-zinc-800 border ${
                     errors.address ? "border-red-500 bg-red-500/5" : "border-zinc-700"
                   } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500`}
-                  placeholder="Strada nuferilor 7S"
+                  placeholder="Strada si numar"
                 />
               </div>
               {errors.address && (

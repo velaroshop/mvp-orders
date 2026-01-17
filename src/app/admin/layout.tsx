@@ -11,7 +11,7 @@ export default function AdminLayout({
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 lg:ml-64">
+      <main className="flex-1 lg:ml-48">
         <div className="p-4 lg:p-8">
           {children}
         </div>

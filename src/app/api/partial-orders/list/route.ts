@@ -25,18 +25,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
 
-    // Build query - join with landing_pages and stores to get store URL
+    // Build query
     let query = supabaseAdmin
       .from("partial_orders")
-      .select(`
-        *,
-        landing_pages(
-          slug,
-          stores(
-            url
-          )
-        )
-      `, { count: "exact" })
+      .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId)
       .order("created_at", { ascending: false });
 
@@ -54,6 +46,20 @@ export async function GET(request: Request) {
         { status: 500 },
       );
     }
+
+    // Get unique landing keys to fetch store URLs
+    const landingKeys = [...new Set(data?.map(row => row.landing_key).filter(Boolean))];
+
+    // Fetch landing pages with stores for all unique landing keys
+    const { data: landingPagesData } = await supabaseAdmin
+      .from("landing_pages")
+      .select("slug, stores(url)")
+      .in("slug", landingKeys);
+
+    // Create a map of landing_key -> store_url
+    const storeUrlMap = new Map(
+      landingPagesData?.map(lp => [lp.slug, lp.stores?.url]) || []
+    );
 
     // Map to PartialOrder type
     const partialOrders = (data || []).map((row) => ({
@@ -85,7 +91,7 @@ export async function GET(request: Request) {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       abandonedAt: row.abandoned_at,
-      storeUrl: row.landing_pages?.stores?.url || null,
+      storeUrl: storeUrlMap.get(row.landing_key) || null,
     }));
 
     return NextResponse.json({

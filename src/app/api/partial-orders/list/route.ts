@@ -57,8 +57,8 @@ export async function GET(request: Request) {
       .in("slug", landingKeys);
 
     // Create a map of landing_key -> store_url
-    const storeUrlMap = new Map(
-      landingPagesData?.map(lp => [lp.slug, lp.stores?.url]) || []
+    const storeUrlMap = new Map<string, string | null>(
+      landingPagesData?.map(lp => [lp.slug, (lp.stores as any)?.url || null]) || []
     );
 
     // Map to PartialOrder type

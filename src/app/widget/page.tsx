@@ -22,6 +22,7 @@ interface LandingPage {
   numeral_2: string;
   numeral_3: string;
   order_button_text: string;
+  post_purchase_status: boolean;
   products?: {
     id: string;
     name: string;
@@ -954,7 +955,9 @@ function WidgetFormContent() {
                   COMANDA A FOST TRIMISĂ!
                 </p>
                 <p className="text-sm sm:text-base text-zinc-600">
-                  Așteptați câteva secunde...
+                  {landingPage?.post_purchase_status
+                    ? "Așteaptă... Îți pregătim o surpriză!"
+                    : "Așteptați câteva secunde..."}
                 </p>
 
                 {/* Loading Spinner */}

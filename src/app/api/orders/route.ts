@@ -126,6 +126,47 @@ export async function POST(request: NextRequest) {
       orderTotal: Number(total) || 0,
     });
 
+    // Step 4: Mark associated partial order as converted (if exists)
+    // Find the most recent partial order for this phone + landing page that hasn't been converted yet
+    try {
+      const { data: partialOrder } = await supabaseAdmin
+        .from("partial_orders")
+        .select("id")
+        .eq("organization_id", landingPage.organization_id)
+        .eq("phone", phone)
+        .eq("landing_key", landingKey)
+        .is("converted_to_order_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (partialOrder) {
+        const { error: updateError } = await supabaseAdmin
+          .from("partial_orders")
+          .update({
+            status: "accepted",
+            converted_to_order_id: order.id,
+            converted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", partialOrder.id);
+
+        if (updateError) {
+          console.error("❌ Failed to mark partial order as converted:", updateError);
+        } else {
+          console.log("✅ Marked partial order as converted:", {
+            partialId: partialOrder.id,
+            orderId: order.id,
+          });
+        }
+      } else {
+        console.log("ℹ️ No partial order found to convert (direct order)");
+      }
+    } catch (err) {
+      // Don't fail the order creation if partial update fails
+      console.error("Error updating partial order:", err);
+    }
+
     // Încearcă să creeze comanda în Helpship cu status ONHOLD
     // Dacă eșuează, comanda rămâne în DB dar cu status 'sync_error'
     let helpshipOrderId: string | undefined;

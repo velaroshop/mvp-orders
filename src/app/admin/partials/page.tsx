@@ -323,14 +323,13 @@ export default function PartialsPage() {
                     <td className="px-4 py-4">
                       <div className="text-sm">
                         <div className="text-blue-400">
-                          {partial.landingKey || "—"}
+                          {partial.storeUrl || "—"}
                         </div>
                         {partial.productName && (
                           <div className="text-white text-xs font-medium">
                             {partial.productName}
                           </div>
                         )}
-                        <div className="text-zinc-400 text-xs">Romania</div>
                       </div>
                     </td>
 

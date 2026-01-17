@@ -25,10 +25,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
 
-    // Build query
+    // Build query - join with landing_pages and stores to get store URL
     let query = supabaseAdmin
       .from("partial_orders")
-      .select("*", { count: "exact" })
+      .select(`
+        *,
+        landing_pages!inner(
+          slug,
+          stores!inner(
+            url
+          )
+        )
+      `, { count: "exact" })
       .eq("organization_id", activeOrganizationId)
       .order("created_at", { ascending: false });
 
@@ -77,6 +85,7 @@ export async function GET(request: Request) {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       abandonedAt: row.abandoned_at,
+      storeUrl: row.landing_pages?.stores?.url || null,
     }));
 
     return NextResponse.json({

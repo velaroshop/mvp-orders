@@ -78,5 +78,6 @@ export interface PartialOrder {
   createdAt: string;
   updatedAt: string;
   abandonedAt?: string;
+  storeUrl?: string | null; // URL of the store from which the partial order originated
 }
 

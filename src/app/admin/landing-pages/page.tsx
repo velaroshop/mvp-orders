@@ -187,69 +187,58 @@ export default function LandingPagesPage() {
   }
 
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-7xl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Landing Pages</h1>
-        <p className="text-zinc-400 mt-2">
-          Manage your landing pages and campaigns
-        </p>
-      </div>
-
-      {/* Add Landing Page Button - Centered */}
-      <div className="mb-6 flex justify-center">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Landing Pages</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            Manage your landing pages and campaigns
+          </p>
+        </div>
         <Link
           href="/admin/landing-pages/new"
-          className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium shadow-sm"
+          className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium text-sm"
         >
-          + Add New Landing Page
+          + Add Landing Page
         </Link>
-          </div>
+      </div>
 
       {/* Landing Pages List */}
       {isLoading ? (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">Loading landing pages...</p>
+        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 p-6 text-center">
+          <p className="text-zinc-400 text-sm">Loading landing pages...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
-          <p className="text-red-400">{error}</p>
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
+          <p className="text-red-400 text-sm">{error}</p>
       </div>
       ) : landingPages.length === 0 ? (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400 mb-4">No landing pages found.</p>
+        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 p-6 text-center">
+          <p className="text-zinc-400 text-sm mb-3">No landing pages found.</p>
           <Link
             href="/admin/landing-pages/new"
-            className="inline-block px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+            className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm"
           >
             Create your first landing page
           </Link>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
+        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-900 border-b border-zinc-700">
+              <thead className="bg-zinc-900/50 border-b border-zinc-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Slug
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Store
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400 uppercase">
                     Actions
                   </th>
                 </tr>
@@ -262,17 +251,15 @@ export default function LandingPagesPage() {
                       onClick={() => toggleRowExpansion(page.id)}
                       className="hover:bg-zinc-700/50 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-sm font-medium text-white">
                           {page.name}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-zinc-300">
+                        <div className="text-xs text-zinc-400 mt-0.5">
                           {page.slug}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-sm text-white">
                           {page.products?.name || "-"}
                         </div>
@@ -282,12 +269,7 @@ export default function LandingPagesPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-zinc-300">
-                          {page.stores?.url || "-"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
                             page.status === "published"
@@ -304,51 +286,46 @@ export default function LandingPagesPage() {
                             : "Draft"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-zinc-300">
-                          {formatDate(page.created_at)}
+                      <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleToggleStatus(page.id, page.status)}
+                            className={`text-xs ${
+                              page.status === "published"
+                                ? "text-amber-400 hover:text-amber-300"
+                                : "text-emerald-400 hover:text-emerald-300"
+                            }`}
+                          >
+                            {page.status === "published" ? "Draft" : "Publish"}
+                          </button>
+                          <Link
+                            href={`/admin/landing-pages/${page.id}/edit`}
+                            className="text-xs text-emerald-400 hover:text-emerald-300"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(page.id)}
+                            className="text-xs text-red-400 hover:text-red-300"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleToggleStatus(page.id, page.status)}
-                          className={`${
-                            page.status === "published"
-                              ? "text-amber-400 hover:text-amber-300"
-                              : "text-emerald-400 hover:text-emerald-300"
-                          }`}
-                        >
-                          {page.status === "published" ? "Set Draft" : "Set Active"}
-                        </button>
-                        <Link
-                          href={`/admin/landing-pages/${page.id}/edit`}
-                          className="text-emerald-400 hover:text-emerald-300"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(page.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                    </tr>
                     {/* Expanded Details Row */}
                     {expandedRows.has(page.id) && (
-                      <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700">
-                        <td colSpan={7} className="px-6 py-4">
-                          <div className="space-y-4">
+                      <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
+                        <td colSpan={4} className="px-4 py-3">
+                          <div className="space-y-3">
                             {/* Pricing Details */}
                             <div>
-                              <h4 className="text-sm font-semibold text-white mb-3">
+                              <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
                                 Detalii prețuri
                               </h4>
-                              <div className="grid grid-cols-5 gap-4">
+                              <div className="grid grid-cols-5 gap-3">
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-400 uppercase mb-1">
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
                                     Preț 1
                                   </div>
                                   <div className="text-sm text-zinc-300">
@@ -356,7 +333,7 @@ export default function LandingPagesPage() {
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-400 uppercase mb-1">
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
                                     Preț 2
                                   </div>
                                   <div className="text-sm text-zinc-300">
@@ -364,7 +341,7 @@ export default function LandingPagesPage() {
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-400 uppercase mb-1">
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
                                     Preț 3
                                   </div>
                                   <div className="text-sm text-zinc-300">
@@ -372,7 +349,7 @@ export default function LandingPagesPage() {
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-400 uppercase mb-1">
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
                                     Preț livrare
                                   </div>
                                   <div className="text-sm text-zinc-300">
@@ -380,14 +357,14 @@ export default function LandingPagesPage() {
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-400 uppercase mb-1">
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
                                     Post-purchase
                                   </div>
                                   <div className="flex items-center">
                                     {page.post_purchase_status ? (
-                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20">
+                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20">
                                         <svg
-                                          className="w-4 h-4 text-emerald-400"
+                                          className="w-3 h-3 text-emerald-400"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -401,9 +378,9 @@ export default function LandingPagesPage() {
                                         </svg>
                                       </span>
                                     ) : (
-                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-zinc-600">
+                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-zinc-600">
                                         <svg
-                                          className="w-4 h-4 text-zinc-400"
+                                          className="w-3 h-3 text-zinc-400"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -422,32 +399,65 @@ export default function LandingPagesPage() {
                               </div>
                             </div>
 
+                            {/* Presale Section */}
+                            <div className="pt-3 border-t border-zinc-700/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
+                                  Presale Upsells
+                                </h4>
+                                <button
+                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/presale`)}
+                                  className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                >
+                                  + Adaugă Presale
+                                </button>
+                              </div>
+                              <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
+                                <p className="text-xs text-zinc-400 italic">
+                                  Nu există upsells presale configurate
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Postsale Section */}
+                            <div className="pt-3 border-t border-zinc-700/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
+                                  Postsale Upsells
+                                </h4>
+                                <button
+                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/postsale`)}
+                                  className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                >
+                                  + Adaugă Postsale
+                                </button>
+                              </div>
+                              <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
+                                <p className="text-xs text-zinc-400 italic">
+                                  Nu există upsells postsale configurate
+                                </p>
+                              </div>
+                            </div>
+
                             {/* Actions */}
-                            <div className="flex items-center gap-3 pt-4 border-t border-zinc-700">
+                            <div className="flex items-center gap-2 pt-3 border-t border-zinc-700/50">
                               <Link
                                 href={getWidgetUrl(page.slug)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium"
+                                className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
                               >
                                 Vezi formular
                               </Link>
                               <button
                                 onClick={() => setEmbedModalOpen(page.id)}
-                                className="px-4 py-2 bg-zinc-600 text-white rounded-md hover:bg-zinc-700 transition-colors text-sm font-medium"
+                                className="px-3 py-1.5 bg-zinc-600 text-white rounded text-xs font-medium hover:bg-zinc-700 transition-colors"
                               >
                                 Cod embed
                               </button>
                               <button
-                                onClick={() => alert("Funcționalitatea Upsells va fi implementată în viitor")}
-                                className="px-4 py-2 bg-zinc-500 text-zinc-400 rounded-md cursor-not-allowed text-sm font-medium opacity-60"
-                                disabled
-                              >
-                                Upsells
-                              </button>
-                              <button
                                 onClick={() => toggleRowExpansion(page.id)}
-                                className="px-4 py-2 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+                                className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
                               >
                                 Ascunde detalii
                               </button>

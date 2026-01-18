@@ -224,7 +224,7 @@ export default function ConfirmOrderModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 rounded-lg shadow-xl">
         {/* Header */}
         <div className="sticky top-0 bg-zinc-900 text-white px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">ORDER CONFIRM</h2>
@@ -243,13 +243,13 @@ export default function ConfirmOrderModal({
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-lg">👤</span>
-                <h3 className="text-lg font-semibold text-zinc-900">
+                <h3 className="text-lg font-semibold text-white">
                   Personal Information
                 </h3>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Full Name
                 </label>
                 <input
@@ -258,13 +258,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="Full Name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -278,9 +278,9 @@ export default function ConfirmOrderModal({
                     }}
                     maxLength={10}
                     pattern="07[0-9]{8}"
-                    className={`w-full rounded-md border px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 pr-10 ${
+                    className={`w-full rounded-md border bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 pr-10 ${
                       formData.phone.length === 0
-                        ? 'border-zinc-300 focus:ring-emerald-500'
+                        ? 'border-zinc-700 focus:ring-emerald-500'
                         : formData.phone.length === 10 && formData.phone.startsWith('07')
                         ? 'border-emerald-500 focus:ring-emerald-500'
                         : 'border-red-500 focus:ring-red-500'
@@ -303,75 +303,77 @@ export default function ConfirmOrderModal({
                 </div>
                 <p className={`text-xs mt-1 ${
                   formData.phone.length === 0
-                    ? 'text-zinc-600'
+                    ? 'text-zinc-500'
                     : formData.phone.length === 10 && formData.phone.startsWith('07')
-                    ? 'text-emerald-600'
-                    : 'text-red-600'
+                    ? 'text-emerald-400'
+                    : 'text-red-400'
                 }`}>
                   {formData.phone.length} digits
                 </p>
               </div>
 
               {/* Shipping & Scheduling */}
-              <div className="mt-6 pt-6 border-t border-zinc-200">
-                <h3 className="text-lg font-semibold text-zinc-900 mb-4">
+              <div className="mt-6 pt-6 border-t border-zinc-700/50">
+                <h3 className="text-lg font-semibold text-white mb-4">
                   Shipping & Scheduling
                 </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-900 mb-1">
-                      Shipping Price
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.shippingPrice}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          shippingPrice: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1">
+                        Shipping Price
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.shippingPrice}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            shippingPrice: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1">
+                        Discount
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.discount}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discount: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-zinc-900 mb-1">
-                      Discount
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.discount}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          discount: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-900 mb-1">
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">
                       Scheduled Date
                     </label>
                     <input
                       type="date"
                       defaultValue={new Date().toISOString().split("T")[0]}
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Order Summary */}
-              <div className="mt-6 pt-6 border-t border-zinc-200">
+              <div className="mt-6 pt-6 border-t border-zinc-700/50">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-lg">📄</span>
-                  <h4 className="text-sm font-semibold text-zinc-900">
+                  <h4 className="text-sm font-semibold text-white">
                     Order Summary
                   </h4>
                 </div>
@@ -389,7 +391,35 @@ export default function ConfirmOrderModal({
                     </p>
                   </div>
 
-                  {/* TODO: Upsells will be listed here when available */}
+                  {/* PRE-SALE Upsells */}
+                  {order.upsells && order.upsells.filter((u: any) => u.type === 'presale').length > 0 && (
+                    <div className="pb-3 border-b border-zinc-700">
+                      <p className="text-xs text-emerald-400 font-semibold mb-2">PRE-SALE</p>
+                      <div className="space-y-1">
+                        {order.upsells.filter((u: any) => u.type === 'presale').map((upsell: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-zinc-300">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                            <span className="text-white">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* POST-SALE Upsells */}
+                  {order.upsells && order.upsells.filter((u: any) => u.type === 'postsale').length > 0 && (
+                    <div className="pb-3 border-b border-zinc-700">
+                      <p className="text-xs text-purple-400 font-semibold mb-2">POST-SALE</p>
+                      <div className="space-y-1">
+                        {order.upsells.filter((u: any) => u.type === 'postsale').map((upsell: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-zinc-300">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                            <span className="text-white">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Total */}
                   <div className="pt-2">
@@ -410,20 +440,20 @@ export default function ConfirmOrderModal({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">📍</span>
-                  <h3 className="text-lg font-semibold text-zinc-900">
+                  <h3 className="text-lg font-semibold text-white">
                     Shipping Address
                   </h3>
                 </div>
                 <button
                   type="button"
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-blue-400 hover:text-blue-300"
                 >
                   Clean & Autofill
                 </button>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   County
                 </label>
                 <input
@@ -432,13 +462,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, county: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="County"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   City
                 </label>
                 <input
@@ -447,13 +477,13 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, city: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="City"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Street
                 </label>
                 <div className="flex gap-2">
@@ -463,22 +493,22 @@ export default function ConfirmOrderModal({
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
                     }
-                    className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Street"
                   />
                   <input
                     type="text"
-                    className="w-24 rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Number"
                   />
                 </div>
-                <p className="text-xs text-zinc-600 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   Initial street: {order.address}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Post Code
                 </label>
                 <input
@@ -491,60 +521,60 @@ export default function ConfirmOrderModal({
                   }}
                   maxLength={6}
                   pattern="[0-9]{1,6}"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="@ Post code (max 6 digits)"
                 />
                 
                 {/* Recommended postal codes */}
                 <div className="mt-3">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-zinc-900">
+                    <label className="block text-xs font-medium text-zinc-300">
                       Recommended postal codes:
                     </label>
                     <button
                       type="button"
                       onClick={() => searchPostalCodes()}
                       disabled={isLoadingPostalCodes}
-                      className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoadingPostalCodes ? "Loading..." : "Reload"}
                     </button>
                   </div>
-                  
+
                   {isLoadingPostalCodes && (
                     <p className="text-xs text-zinc-500">Căutare coduri poștale...</p>
                   )}
-                  
+
                   {postalCodeError && (
-                    <p className="text-xs text-red-600">{postalCodeError}</p>
+                    <p className="text-xs text-red-400">{postalCodeError}</p>
                   )}
-                  
+
                   {!isLoadingPostalCodes && postalCodes.length > 0 && (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {postalCodes.map((result, index) => (
                         <div
                           key={`${result.postcode}-${index}`}
-                          className="p-2 border border-zinc-200 rounded-md hover:bg-zinc-50 cursor-pointer transition-colors"
+                          className="p-2 border border-zinc-700 rounded-md hover:bg-zinc-700/50 cursor-pointer transition-colors"
                           onClick={() => selectPostalCode(result.postcode)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-zinc-900">
+                              <p className="text-sm font-medium text-white">
                                 {result.postcode}
                               </p>
-                              <p className="text-xs text-zinc-600 mt-1">
+                              <p className="text-xs text-zinc-400 mt-1">
                                 {result.formatted}
                               </p>
                             </div>
                             {formData.postalCode === result.postcode && (
-                              <span className="text-emerald-600 text-xs">✓</span>
+                              <span className="text-emerald-400 text-xs">✓</span>
                             )}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                  
+
                   {!isLoadingPostalCodes && postalCodes.length === 0 && !postalCodeError && (
                     <p className="text-xs text-zinc-500">
                       Apasă "Reload" pentru a căuta coduri poștale
@@ -558,9 +588,9 @@ export default function ConfirmOrderModal({
 
                  {/* Error Message */}
                  {submitError && (
-                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                     <p className="text-sm text-red-800 font-medium">Eroare</p>
-                     <p className="text-sm text-red-700 mt-1">{submitError}</p>
+                   <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded-md">
+                     <p className="text-sm text-red-400 font-medium">Eroare</p>
+                     <p className="text-sm text-red-300 mt-1">{submitError}</p>
                    </div>
                  )}
 
@@ -569,7 +599,7 @@ export default function ConfirmOrderModal({
                    <button
                      type="button"
                      onClick={onClose}
-                     className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                     className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white"
                    >
                      Cancel
                    </button>

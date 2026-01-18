@@ -1365,7 +1365,7 @@ function WidgetFormContent() {
                       textShadow: '0 2px 20px rgba(0,0,0,0.1)'
                     }}
                   >
-                    STOP! AI CÂȘTIGAT!
+                    FELICITĂRI!
                   </h2>
                   <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-3">
                     🎉 BONUS EXCLUSIV DEBLOCAT! 🎉
@@ -1417,8 +1417,7 @@ function WidgetFormContent() {
                 {/* Urgency Messages */}
                 <div className="bg-red-50 border-2 border-red-500 rounded-xl p-3 mb-4">
                   <p className="text-center text-base sm:text-lg font-bold text-red-700">
-                    ⚠️ Această ofertă dispare în {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}!<br />
-                    <span className="text-sm">Nu o vei mai vedea NICIODATĂ!</span>
+                    ⚠️ OFERTA DISPARE ÎN {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}, DUPĂ CARE NU O VEI MAI VEDEA NICIODATĂ
                   </p>
                 </div>
 
@@ -1465,7 +1464,7 @@ function WidgetFormContent() {
                     style={{ backgroundColor: accentColor }}
                   >
                     <span className="relative z-10">
-                      {postsaleProcessing ? 'SE PROCESEAZĂ... ⏳' : 'DA! VREAU BONUSUL! 🎁'}
+                      {postsaleProcessing ? 'SE PROCESEAZĂ... ⏳' : 'DA, VREAU OFERTA!'}
                     </span>
                     {!postsaleProcessing && (
                       <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>

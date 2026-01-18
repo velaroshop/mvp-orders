@@ -211,6 +211,8 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   id="helpshipClientId"
+                  name="helpshipClientId"
+                  autoComplete="off"
                   value={helpshipClientId}
                   onChange={(e) => {
                     setHelpshipClientId(e.target.value);
@@ -237,6 +239,8 @@ export default function SettingsPage() {
                 <input
                   type="password"
                   id="helpshipClientSecret"
+                  name="helpshipClientSecret"
+                  autoComplete="new-password"
                   value={helpshipClientSecret}
                   onChange={(e) => {
                     setHelpshipClientSecret(e.target.value);

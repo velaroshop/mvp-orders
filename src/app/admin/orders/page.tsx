@@ -563,28 +563,34 @@ export default function AdminPage() {
                         <p className="text-zinc-400">
                           Items: {order.subtotal.toFixed(2)} RON ({order.productQuantity || 1}x)
                         </p>
-                        <p className="font-semibold" style={{ color: '#22c55e' }}>
-                          PRE: {(() => {
-                            const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
-                            const total = upsellsArray
-                              .filter((upsell: any) => !upsell.type || upsell.type === "presale")
-                              .reduce((sum: number, upsell: any) => {
-                                return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                              }, 0);
-                            return total.toFixed(2);
-                          })()} RON
-                        </p>
-                        <p className="font-semibold" style={{ color: '#8b5cf6' }}>
-                          POST: {(() => {
-                            const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
-                            const total = upsellsArray
-                              .filter((upsell: any) => upsell.type === "postsale")
-                              .reduce((sum: number, upsell: any) => {
-                                return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                              }, 0);
-                            return total.toFixed(2);
-                          })()} RON
-                        </p>
+                        {(() => {
+                          const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                          const preTotal = upsellsArray
+                            .filter((upsell: any) => !upsell.type || upsell.type === "presale")
+                            .reduce((sum: number, upsell: any) => {
+                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                            }, 0);
+
+                          return preTotal > 0 ? (
+                            <p className="font-semibold" style={{ color: '#22c55e' }}>
+                              PRE: {preTotal.toFixed(2)} RON
+                            </p>
+                          ) : null;
+                        })()}
+                        {(() => {
+                          const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                          const postTotal = upsellsArray
+                            .filter((upsell: any) => upsell.type === "postsale")
+                            .reduce((sum: number, upsell: any) => {
+                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                            }, 0);
+
+                          return postTotal > 0 ? (
+                            <p className="font-semibold" style={{ color: '#8b5cf6' }}>
+                              POST: {postTotal.toFixed(2)} RON
+                            </p>
+                          ) : null;
+                        })()}
                         <p className="text-zinc-400">
                           Shipping: {order.shippingCost.toFixed(2)} RON
                         </p>

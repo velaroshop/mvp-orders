@@ -70,6 +70,7 @@ function WidgetFormContent() {
   const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
   const [postsaleCountdown, setPostsaleCountdown] = useState(180);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [postsaleProcessing, setPostsaleProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [phone, setPhone] = useState("");
@@ -242,6 +243,10 @@ function WidgetFormContent() {
   }
 
   async function finalizeOrderAndRedirect() {
+    if (postsaleProcessing) return; // Prevent double click
+
+    setPostsaleProcessing(true);
+
     // If we have a created order ID, finalize it (no postsale)
     if (createdOrderId) {
       try {
@@ -1406,11 +1411,15 @@ function WidgetFormContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={async () => {
+                      if (postsaleProcessing) return; // Prevent double click
+
                       if (!createdOrderId || !postsaleUpsells[0]) {
                         console.error('Missing order ID or upsell');
                         redirectToThankYouPage();
                         return;
                       }
+
+                      setPostsaleProcessing(true);
 
                       try {
                         // Add postsale upsell to order
@@ -1432,17 +1441,29 @@ function WidgetFormContent() {
                       // Redirect regardless of success/failure
                       redirectToThankYouPage();
                     }}
-                    className="py-4 sm:py-5 px-6 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transform hover:scale-105 transition-all relative overflow-hidden"
+                    disabled={postsaleProcessing}
+                    className={`py-4 sm:py-5 px-6 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transition-all relative overflow-hidden ${
+                      postsaleProcessing
+                        ? 'opacity-60 cursor-not-allowed'
+                        : 'transform hover:scale-105'
+                    }`}
                     style={{ backgroundColor: accentColor }}
                   >
                     <span className="relative z-10">
-                      DA! VREAU BONUSUL! 🎁
+                      {postsaleProcessing ? 'SE PROCESEAZĂ... ⏳' : 'DA! VREAU BONUSUL! 🎁'}
                     </span>
-                    <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+                    {!postsaleProcessing && (
+                      <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+                    )}
                   </button>
                   <button
                     onClick={finalizeOrderAndRedirect}
-                    className="py-4 sm:py-5 px-6 rounded-2xl font-bold text-lg sm:text-xl text-zinc-600 bg-zinc-200 hover:bg-zinc-300 transition-all"
+                    disabled={postsaleProcessing}
+                    className={`py-4 sm:py-5 px-6 rounded-2xl font-bold text-lg sm:text-xl transition-all ${
+                      postsaleProcessing
+                        ? 'bg-zinc-300 text-zinc-400 cursor-not-allowed'
+                        : 'text-zinc-600 bg-zinc-200 hover:bg-zinc-300'
+                    }`}
                   >
                     Nu, mulțumesc
                   </button>

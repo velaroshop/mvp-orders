@@ -5,6 +5,8 @@ import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
 import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
+import ConfirmModal from "../components/ConfirmModal";
+import Toast from "../components/Toast";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -30,6 +32,18 @@ export default function AdminPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 50;
+
+  // Finalize Queue Modal state
+  const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
+  const [orderToFinalize, setOrderToFinalize] = useState<string | null>(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
 
   async function fetchOrders(query: string = "") {
     setIsSearching(true);
@@ -353,40 +367,57 @@ export default function AdminPage() {
     }
 
     if (action === "finalize") {
-      if (!confirm("Sigur vrei să finalizezi această comandă fără postsale? Comanda va fi sincronizată cu Helpship.")) {
-        setOpenDropdown(null);
-        return;
-      }
-
-      setConfirming(orderId);
-      try {
-        const response = await fetch(`/api/orders/${orderId}/finalize`, {
-          method: "POST",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to finalize order");
-        }
-
-        const result = await response.json();
-
-        // Reîncarcă lista de comenzi
-        await fetchOrders();
-        alert(`✅ Comanda a fost finalizată cu succes!\nStatus: pending\nHelpship Order ID: ${result.helpshipOrderId}`);
-      } catch (error) {
-        console.error("Error finalizing order:", error);
-        const errorMessage = error instanceof Error ? error.message : "Eroare la finalizarea comenzii";
-        alert(`❌ ${errorMessage}`);
-      } finally {
-        setConfirming(null);
-      }
+      // Open elegant confirmation modal
+      setOrderToFinalize(orderId);
+      setIsFinalizeModalOpen(true);
       setOpenDropdown(null);
       return;
     }
 
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
+  }
+
+  async function handleFinalizeQueue() {
+    if (!orderToFinalize) return;
+
+    setIsFinalizing(true);
+    try {
+      const response = await fetch(`/api/orders/${orderToFinalize}/finalize`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to finalize order");
+      }
+
+      const result = await response.json();
+
+      // Close modal and reload orders
+      setIsFinalizeModalOpen(false);
+      setOrderToFinalize(null);
+      await fetchOrders();
+
+      // Show success toast
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: `Order finalized successfully! ✓`,
+      });
+    } catch (error) {
+      console.error("Error finalizing order:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to finalize order";
+
+      // Show error toast
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
+    } finally {
+      setIsFinalizing(false);
+    }
   }
 
   // Calculate pagination (server-side now)
@@ -808,6 +839,31 @@ export default function AdminPage() {
                 }}
                 onConfirm={handleHoldConfirm}
                 orderId={holdOrderId || ""}
+              />
+
+              {/* Finalize Queue Modal */}
+              <ConfirmModal
+                isOpen={isFinalizeModalOpen}
+                onClose={() => {
+                  setIsFinalizeModalOpen(false);
+                  setOrderToFinalize(null);
+                }}
+                onConfirm={handleFinalizeQueue}
+                title="Finalize Queue Order"
+                message="Are you sure you want to finalize this order without postsale? The order will be synced to Helpship."
+                confirmText="Finalize"
+                cancelText="Cancel"
+                confirmButtonClass="bg-violet-600 hover:bg-violet-700"
+                isProcessing={isFinalizing}
+              />
+
+              {/* Toast Notifications */}
+              <Toast
+                isOpen={toast.isOpen}
+                onClose={() => setToast({ ...toast, isOpen: false })}
+                type={toast.type}
+                message={toast.message}
+                duration={3000}
               />
             </main>
           </div>

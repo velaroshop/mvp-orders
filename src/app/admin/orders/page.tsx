@@ -211,7 +211,9 @@ export default function AdminPage() {
   // Format order number using store's order_series (e.g., "JMR-TEST-00076", "VELARO-00123")
   function formatOrderNumber(orderNumber?: number, orderSeries?: string, orderId?: string) {
     if (orderNumber && orderSeries) {
-      return `${orderSeries}${String(orderNumber).padStart(5, "0")}`;
+      // Ensure order_series ends with a hyphen
+      const series = orderSeries.endsWith('-') ? orderSeries : `${orderSeries}-`;
+      return `${series}${String(orderNumber).padStart(5, "0")}`;
     }
     if (orderNumber) {
       // Fallback to default series if not provided

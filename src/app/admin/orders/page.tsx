@@ -517,9 +517,17 @@ export default function AdminPage() {
                           Total: {order.total.toFixed(2)} RON
                         </p>
                         <p className="text-zinc-400">
-                          Items: {order.subtotal.toFixed(2)} RON (1x)
+                          Items: {order.subtotal.toFixed(2)} RON ({order.productQuantity || 1}x)
                         </p>
-                        <p className="text-zinc-400">Pre purchase: 0,00 RON</p>
+                        <p className="font-semibold" style={{ color: '#22c55e' }}>
+                          Pre purchase: {(() => {
+                            const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                            const total = upsellsArray.reduce((sum: number, upsell: any) => {
+                              return sum + (upsell.price || 0);
+                            }, 0);
+                            return total.toFixed(2);
+                          })()} RON
+                        </p>
                         <p className="text-zinc-400">
                           Shipping: {order.shippingCost.toFixed(2)} RON
                         </p>

@@ -104,6 +104,20 @@ export async function POST(
     const shippingCost = landingPage.shipping_price || 0;
     const total = subtotal + shippingCost;
 
+    // Fetch order_series from store via landing_page
+    let orderSeries = "VLR-"; // Default fallback
+    if (landingPage.store_id) {
+      const { data: store } = await supabaseAdmin
+        .from("stores")
+        .select("order_series")
+        .eq("id", landingPage.store_id)
+        .single();
+
+      if (store?.order_series) {
+        orderSeries = store.order_series;
+      }
+    }
+
     // Create or get customer
     let customerId: string;
     const { data: existingCustomer } = await supabaseAdmin
@@ -161,6 +175,7 @@ export async function POST(
         shipping_cost: shippingCost,
         total: total,
         status: "pending",
+        order_series: orderSeries,
         from_partial_id: id, // Mark that this order comes from a partial
         source: "partial", // Mark that this order was created from a partial order
       })

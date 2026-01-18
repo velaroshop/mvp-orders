@@ -18,7 +18,7 @@ const supabase = createClient(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,7 +31,7 @@ export async function GET(
     }
 
     const organizationId = session.user.activeOrganizationId;
-    const { id } = params;
+    const { id } = await params;
 
     const { data: upsell, error } = await supabase
       .from("upsells")
@@ -66,7 +66,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -79,7 +79,7 @@ export async function PUT(
     }
 
     const organizationId = session.user.activeOrganizationId;
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Verify upsell exists and belongs to organization
@@ -227,7 +227,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -240,7 +240,7 @@ export async function DELETE(
     }
 
     const organizationId = session.user.activeOrganizationId;
-    const { id } = params;
+    const { id } = await params;
 
     // Verify upsell exists and belongs to organization
     const { data: existingUpsell } = await supabase

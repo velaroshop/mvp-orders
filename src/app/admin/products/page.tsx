@@ -192,8 +192,8 @@ export default function ProductsPage() {
     <div className="max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900">Products</h1>
-        <p className="text-zinc-600 mt-2">
+        <h1 className="text-3xl font-bold text-white">Products</h1>
+        <p className="text-zinc-400 mt-2">
           Manage your product catalog
         </p>
       </div>
@@ -210,16 +210,16 @@ export default function ProductsPage() {
 
       {/* Products List */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
-          <p className="text-zinc-600">Loading products...</p>
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
+          <p className="text-zinc-400">Loading products...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
+          <p className="text-red-300">{error}</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-8 text-center">
-          <p className="text-zinc-600 mb-4">No products found.</p>
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
+          <p className="text-zinc-400 mb-4">No products found.</p>
           <Link
             href="/admin/products/new"
             className="inline-block px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
@@ -228,52 +228,52 @@ export default function ProductsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-50 border-b border-zinc-200">
+              <thead className="bg-zinc-800 border-b border-zinc-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     SKU
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Testing Orders
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200">
+              <tbody className="divide-y divide-zinc-700">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-zinc-50">
+                  <tr key={product.id} className="hover:bg-zinc-700/50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-zinc-900">
+                      <div className="text-sm font-medium text-white">
                         {product.name}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-600">
+                      <div className="text-sm text-zinc-300">
                         {product.sku || "-"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
                           product.status === "active"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-600 text-white"
                             : product.status === "testing"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-zinc-100 text-zinc-800"
+                            ? "bg-amber-600 text-white"
+                            : "bg-zinc-600 text-white"
                         }`}
                       >
                         {product.status === "active"
@@ -287,7 +287,7 @@ export default function ProductsPage() {
                       <div className="space-y-2">
                         {(product.testing_orders_count || 0) > 0 ? (
                           <>
-                            <div className="text-sm font-medium text-blue-600">
+                            <div className="text-sm font-medium text-blue-400">
                               {product.testing_orders_count} testing {product.testing_orders_count === 1 ? "order" : "orders"}
                             </div>
                             <div className="flex gap-2">
@@ -306,12 +306,12 @@ export default function ProductsPage() {
                             </div>
                           </>
                         ) : (
-                          <div className="text-sm text-zinc-400">-</div>
+                          <div className="text-sm text-zinc-500">-</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-600">
+                      <div className="text-sm text-zinc-300">
                         {formatDate(product.created_at)}
                       </div>
                     </td>
@@ -319,13 +319,13 @@ export default function ProductsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/products/${product.id}/edit`}
-                          className="text-emerald-600 hover:text-emerald-900"
+                          className="text-emerald-400 hover:text-emerald-300"
                         >
                           Edit
                         </Link>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-400 hover:text-red-300"
                         >
                           Delete
                         </button>

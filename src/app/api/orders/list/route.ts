@@ -29,12 +29,12 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Build query with JOIN to get order_series from store
+    // Build query with LEFT JOIN to get order_series from store (optional)
     let query = supabaseAdmin
       .from("orders")
       .select(`
         *,
-        landing_pages!inner(store_id, stores!inner(order_series))
+        landing_pages(store_id, stores(order_series))
       `, { count: "exact" })
       .eq("organization_id", activeOrganizationId);
 

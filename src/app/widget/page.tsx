@@ -69,6 +69,7 @@ function WidgetFormContent() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
   const [postsaleCountdown, setPostsaleCountdown] = useState(180);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [phone, setPhone] = useState("");
@@ -480,6 +481,11 @@ function WidgetFormContent() {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || "Nu s-a putut trimite comanda.");
       }
+
+      // Get order ID from response
+      const orderData = await response.json();
+      const orderId = orderData.orderId;
+      setCreatedOrderId(orderId);
 
       // Show success popup
       setShowSuccessPopup(true);
@@ -1376,9 +1382,30 @@ function WidgetFormContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={async () => {
-                      // TODO: Add postsale upsell to order via API
-                      // For now, just redirect
-                      console.log('Accepted postsale offer:', postsaleUpsells[0]);
+                      if (!createdOrderId || !postsaleUpsells[0]) {
+                        console.error('Missing order ID or upsell');
+                        redirectToThankYouPage();
+                        return;
+                      }
+
+                      try {
+                        // Add postsale upsell to order
+                        const response = await fetch(`/api/orders/${createdOrderId}/add-postsale-upsell`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ upsellId: postsaleUpsells[0].id }),
+                        });
+
+                        if (!response.ok) {
+                          console.error('Failed to add postsale upsell');
+                        } else {
+                          console.log('Postsale upsell added successfully!');
+                        }
+                      } catch (error) {
+                        console.error('Error adding postsale upsell:', error);
+                      }
+
+                      // Redirect regardless of success/failure
                       redirectToThankYouPage();
                     }}
                     className="py-4 sm:py-5 px-6 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transform hover:scale-105 transition-all relative overflow-hidden"

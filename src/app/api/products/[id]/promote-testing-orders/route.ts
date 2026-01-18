@@ -69,7 +69,6 @@ export async function POST(
       .from("orders")
       .update({
         promoted_from_testing: true,
-        notes: `🧪 Promoted from testing mode on ${new Date().toLocaleDateString("ro-RO")}`,
         updated_at: new Date().toISOString(),
       })
       .in("id", testingOrders.map((o) => o.id));
@@ -77,7 +76,7 @@ export async function POST(
     if (updateError) {
       console.error("[Bulk Promote] Failed to update orders:", updateError);
       return NextResponse.json(
-        { error: "Failed to update orders" },
+        { error: "Failed to update orders", details: updateError.message },
         { status: 500 }
       );
     }

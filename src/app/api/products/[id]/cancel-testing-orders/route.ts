@@ -14,10 +14,10 @@ export async function POST(
 
     console.log("[Bulk Cancel] Cancelling all testing orders for product:", productId);
 
-    // Get all landing pages for this product
+    // Get all landing page slugs for this product
     const { data: landingPages, error: lpError } = await supabaseAdmin
       .from("landing_pages")
-      .select("id")
+      .select("slug")
       .eq("product_id", productId);
 
     if (lpError) {
@@ -36,14 +36,14 @@ export async function POST(
       });
     }
 
-    const landingPageIds = landingPages.map((lp) => lp.id);
+    const landingSlugs = landingPages.map((lp) => lp.slug);
 
-    // Get all testing orders for these landing pages
+    // Get all testing orders for these landing pages (using landing_key)
     const { data: testingOrders, error: ordersError } = await supabaseAdmin
       .from("orders")
       .select("id")
       .eq("status", "testing")
-      .in("landing_page_id", landingPageIds);
+      .in("landing_key", landingSlugs);
 
     if (ordersError) {
       console.error("[Bulk Cancel] Error fetching testing orders:", ordersError);

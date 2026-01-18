@@ -567,7 +567,7 @@ export default function AdminPage() {
                           PRE: {(() => {
                             const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
                             const total = upsellsArray
-                              .filter((upsell: any) => upsell.type === "presale")
+                              .filter((upsell: any) => !upsell.type || upsell.type === "presale")
                               .reduce((sum: number, upsell: any) => {
                                 return sum + ((upsell.price || 0) * (upsell.quantity || 1));
                               }, 0);

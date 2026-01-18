@@ -41,14 +41,15 @@ export async function GET() {
       .single();
 
     // Return settings or empty object if not found
+    // Don't return the actual secret value for security
+    const hasSecret = !!(data?.helpship_client_secret);
+
     return NextResponse.json({
       settings: {
-        ...(data || {
-          helpship_client_id: "",
-          helpship_client_secret: "",
-          helpship_token_url: "https://helpship-auth-develop.azurewebsites.net/connect/token",
-          helpship_api_base_url: "https://helpship-api-develop.azurewebsites.net",
-        }),
+        helpship_client_id: data?.helpship_client_id || "",
+        helpship_client_secret: hasSecret ? "configured" : "", // Indicator that secret exists
+        helpship_token_url: data?.helpship_token_url || "https://helpship-auth-develop.azurewebsites.net/connect/token",
+        helpship_api_base_url: data?.helpship_api_base_url || "https://helpship-api-develop.azurewebsites.net",
         duplicate_check_days: org?.duplicate_check_days || 21,
       },
     });

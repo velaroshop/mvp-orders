@@ -135,18 +135,41 @@ export async function POST(request: NextRequest) {
     // Step 4: Mark associated partial order as converted (if exists)
     // Find the most recent partial order for this phone + landing page that hasn't been converted yet
     try {
-      const { data: partialOrder } = await supabaseAdmin
+      // Normalize phone for comparison (remove all non-digits)
+      const normalizedPhone = phone.replace(/\D/g, "");
+
+      // Search for partial orders with matching phone number
+      // We need to handle phone variations (with/without leading 0) since partial orders
+      // might store phone differently than the final order
+      console.log("[Partial Order] Searching for partial order:", {
+        organizationId: landingPage.organization_id,
+        landingKey: landingKey,
+        phone: normalizedPhone,
+      });
+
+      // Get all unconverted partial orders for this landing page from the last hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: partialOrders } = await supabaseAdmin
         .from("partial_orders")
-        .select("id")
+        .select("id, phone, created_at")
         .eq("organization_id", landingPage.organization_id)
-        .eq("phone", phone)
         .eq("landing_key", landingKey)
         .is("converted_to_order_id", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+        .gte("created_at", oneHourAgo)
+        .order("created_at", { ascending: false });
 
-      if (partialOrder) {
+      // Find matching partial order by normalizing phone numbers
+      let matchedPartialOrder = null;
+      if (partialOrders && partialOrders.length > 0) {
+        matchedPartialOrder = partialOrders.find(po => {
+          if (!po.phone) return false;
+          const partialPhone = po.phone.replace(/\D/g, "");
+          // Match if phones are identical after removing non-digits
+          return partialPhone === normalizedPhone;
+        });
+      }
+
+      if (matchedPartialOrder) {
         const { error: updateError } = await supabaseAdmin
           .from("partial_orders")
           .update({
@@ -155,18 +178,23 @@ export async function POST(request: NextRequest) {
             converted_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("id", partialOrder.id);
+          .eq("id", matchedPartialOrder.id);
 
         if (updateError) {
           console.error("❌ Failed to mark partial order as converted:", updateError);
         } else {
           console.log("✅ Marked partial order as converted:", {
-            partialId: partialOrder.id,
+            partialId: matchedPartialOrder.id,
+            partialPhone: matchedPartialOrder.phone,
+            orderPhone: phone,
             orderId: order.id,
           });
         }
       } else {
-        console.log("ℹ️ No partial order found to convert (direct order)");
+        console.log("ℹ️ No partial order found to convert (direct order)", {
+          phone: normalizedPhone,
+          partialOrdersChecked: partialOrders?.length || 0,
+        });
       }
     } catch (err) {
       // Don't fail the order creation if partial update fails

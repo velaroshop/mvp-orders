@@ -878,30 +878,14 @@ function WidgetFormContent() {
             </div>
           </div>
 
-          {/* Presale Upsells - AGGRESSIVE SALES DESIGN */}
+          {/* Presale Upsells - COMPACT & ATTRACTIVE */}
           {presaleUpsells.length > 0 && (
-            <div className="rounded-lg shadow-xl p-5 sm:p-7" style={{
-              background: `linear-gradient(135deg, ${backgroundColor} 0%, ${backgroundColor}dd 100%)`,
-            }}>
-              {/* Eye-catching header */}
-              <div className="text-center mb-5 sm:mb-6">
-                <div className="inline-block animate-pulse mb-2">
-                  <span className="text-3xl sm:text-4xl">🔥</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black uppercase mb-2" style={{
-                  color: textOnDarkColor,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  letterSpacing: '0.5px'
-                }}>
-                  OFERTE SPECIALE LA PREȚ REDUS
-                </h2>
-                <p className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
-                  ⚡ Profită ACUM și economisești! ⚡
-                </p>
-              </div>
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-4">
+                Oferte speciale
+              </h2>
 
-              {/* Upsells grid */}
-              <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-3">
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
                   const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
@@ -911,123 +895,81 @@ function WidgetFormContent() {
                       key={upsell.id}
                       type="button"
                       onClick={() => toggleUpsell(upsell.id)}
-                      className={`relative p-5 sm:p-6 rounded-xl transition-all duration-300 text-left ${
-                        isSelected
-                          ? "shadow-2xl scale-[1.03] sm:scale-[1.05]"
-                          : "shadow-lg hover:shadow-xl hover:scale-[1.01]"
-                      }`}
+                      className="relative w-full p-3 sm:p-4 rounded-lg text-left transition-all duration-300"
                       style={{
-                        background: isSelected
-                          ? `linear-gradient(135deg, ${accentColor}25 0%, ${accentColor}15 100%)`
-                          : 'white',
+                        background: isSelected ? '#fff' : '#fff',
                         border: isSelected
-                          ? `3px solid ${accentColor}`
-                          : '3px solid #e5e7eb',
-                        transform: isSelected ? 'translateY(-4px)' : 'translateY(0)',
+                          ? `2px solid ${accentColor}`
+                          : '2px dashed #d1d5db',
+                        boxShadow: isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                        animation: !isSelected ? 'borderPulse 2s ease-in-out infinite' : 'none',
                       }}
                     >
-                      {/* Discount badge - VERY VISIBLE */}
+                      <style jsx>{`
+                        @keyframes borderPulse {
+                          0%, 100% { opacity: 0.6; }
+                          50% { opacity: 1; }
+                        }
+                      `}</style>
+
+                      {/* Discount badge - compact */}
                       {discount > 0 && (
-                        <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4">
-                          <div className="relative">
-                            <div className="bg-red-600 text-white text-base sm:text-lg font-black px-4 py-2 sm:px-5 sm:py-3 rounded-full shadow-lg animate-pulse">
-                              -{discount}%
-                            </div>
-                            <div className="absolute inset-0 bg-red-600 rounded-full animate-ping opacity-30"></div>
+                        <div className="absolute -top-2 -right-2">
+                          <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                            -{discount}%
                           </div>
                         </div>
                       )}
 
-                      {/* Checkmark - Large and visible */}
-                      <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                        <div
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-3 flex items-center justify-center transition-all ${
-                            isSelected ? 'border-0 scale-110' : 'border-zinc-400 bg-white'
-                          }`}
-                          style={isSelected ? { backgroundColor: accentColor } : {}}
-                        >
-                          {isSelected && (
-                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
+                      <div className="flex items-start gap-3">
+                        {/* Checkbox */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected ? 'border-0' : 'border-zinc-300'
+                            }`}
+                            style={isSelected ? { backgroundColor: accentColor } : {}}
+                          >
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Content - BOLD and CLEAR */}
-                      <div className="pt-6 sm:pt-2 pl-12 sm:pl-14">
-                        {/* Title - BIG */}
-                        <h3 className="text-xl sm:text-2xl font-black text-zinc-900 mb-3 leading-tight uppercase">
-                          ADAUGĂ "{upsell.title}"
-                        </h3>
-
-                        {/* Price section - MASSIVE AND COLORFUL */}
-                        <div className="flex flex-col gap-2 mb-3">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-base sm:text-lg font-bold text-zinc-900">
-                              pentru doar
-                            </span>
-                            <span
-                              className="text-3xl sm:text-4xl font-black animate-pulse"
-                              style={{
-                                color: accentColor,
-                                textShadow: `0 2px 8px ${accentColor}40`
-                              }}
-                            >
-                              {upsell.price.toFixed(2)} RON
-                            </span>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h3 className="font-bold text-base text-zinc-900 leading-tight">
+                              Adaugă <span className="font-black">{upsell.title}</span> pentru doar{' '}
+                              <span
+                                className="font-black text-lg"
+                                style={{ color: accentColor }}
+                              >
+                                {upsell.price.toFixed(2)} Lei
+                              </span>
+                            </h3>
+                            {upsell.media_url && (
+                              <img
+                                src={upsell.media_url}
+                                alt={upsell.title}
+                                className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
+                              />
+                            )}
                           </div>
 
                           {upsell.srp > upsell.price && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-base sm:text-lg font-bold text-zinc-600">
-                                redus de la
+                            <p className="text-sm text-zinc-600 mb-1">
+                              (Redus de la{' '}
+                              <span className="line-through text-zinc-400">
+                                {upsell.srp.toFixed(2)} Lei
                               </span>
-                              <span className="text-xl sm:text-2xl font-bold text-zinc-400 line-through">
-                                {upsell.srp.toFixed(2)} RON
-                              </span>
-                              <span className="text-base sm:text-lg font-black text-red-600">
-                                ECONOMISEȘTI {(upsell.srp - upsell.price).toFixed(2)} RON!
-                              </span>
-                            </div>
+                              )
+                            </p>
                           )}
                         </div>
-
-                        {/* Product info */}
-                        {upsell.product?.name && (
-                          <div className="bg-zinc-100 rounded-lg px-3 py-2 inline-block mb-2">
-                            <span className="text-sm sm:text-base font-semibold text-zinc-700">
-                              📦 {upsell.product.name} × {upsell.quantity}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Selected indicator */}
-                        {isSelected && (
-                          <div className="mt-3 inline-block">
-                            <div
-                              className="px-4 py-2 rounded-full text-base sm:text-lg font-black uppercase"
-                              style={{
-                                backgroundColor: accentColor,
-                                color: 'white',
-                              }}
-                            >
-                              ✓ ADĂUGAT LA COMANDĂ
-                            </div>
-                          </div>
-                        )}
                       </div>
-
-                      {/* Image - Mobile visible on bottom */}
-                      {upsell.media_url && (
-                        <div className="mt-4 sm:absolute sm:bottom-4 sm:right-4 sm:mt-0">
-                          <img
-                            src={upsell.media_url}
-                            alt={upsell.title}
-                            className="w-full h-32 sm:w-24 sm:h-24 object-cover rounded-lg shadow-md"
-                          />
-                        </div>
-                      )}
                     </button>
                   );
                 })}

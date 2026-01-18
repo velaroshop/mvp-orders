@@ -1,4 +1,4 @@
--- Migration 008: Add queue_expires_at timestamp for postsale decision window
+-- Migration 024: Add queue_expires_at timestamp for postsale decision window
 -- Date: 2026-01-18
 -- Description: Add absolute timestamp to track when queue status expires (3 minutes from order creation)
 

@@ -4,9 +4,15 @@ import { HelpshipClient } from "@/lib/helpship";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { findOrCreateCustomer, updateCustomerStats } from "@/lib/customer";
+import { cleanupExpiredQueueOrders } from "@/lib/queue-cleanup";
 import type { OfferCode } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
+  // Fire-and-forget: cleanup expired queue orders in background
+  cleanupExpiredQueueOrders().catch((err) =>
+    console.error("[Cleanup] Background cleanup failed:", err)
+  );
+
   try {
     const body = await request.json();
 

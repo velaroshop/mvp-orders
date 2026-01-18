@@ -1,4 +1,4 @@
--- Migration 007: Add "queue" status to orders table
+-- Migration 023: Add "queue" status to orders table
 -- Date: 2026-01-18
 -- Description: Add "queue" status for orders awaiting postsale decision
 

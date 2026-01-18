@@ -566,34 +566,19 @@ export default function AdminPage() {
                         {(() => {
                           const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
 
-                          // Separate upsells by type
-                          const presaleUpsells = upsellsArray.filter((upsell: any) =>
-                            !upsell.type || upsell.type === "presale"
-                          );
-                          const postsaleUpsells = upsellsArray.filter((upsell: any) =>
-                            upsell.type === "postsale"
-                          );
+                          // Calculate PRE total (presale or no type - defaults to presale)
+                          const preTotal = upsellsArray
+                            .filter((upsell: any) => !upsell.type || upsell.type === "presale")
+                            .reduce((sum: number, upsell: any) => {
+                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                            }, 0);
 
-                          // Calculate totals
-                          const preTotal = presaleUpsells.reduce((sum: number, upsell: any) => {
-                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                          }, 0);
-
-                          const postTotal = postsaleUpsells.reduce((sum: number, upsell: any) => {
-                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                          }, 0);
-
-                          // Debug: Log to console for orders with upsells
-                          if (upsellsArray.length > 0) {
-                            console.log(`Order ${order.id}:`, {
-                              totalUpsells: upsellsArray.length,
-                              presaleCount: presaleUpsells.length,
-                              postsaleCount: postsaleUpsells.length,
-                              preTotal,
-                              postTotal,
-                              upsells: upsellsArray.map((u: any) => ({ type: u.type, price: u.price, qty: u.quantity }))
-                            });
-                          }
+                          // Calculate POST total (explicitly postsale only)
+                          const postTotal = upsellsArray
+                            .filter((upsell: any) => upsell.type === "postsale")
+                            .reduce((sum: number, upsell: any) => {
+                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                            }, 0);
 
                           return (
                             <>

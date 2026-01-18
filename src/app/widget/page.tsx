@@ -881,9 +881,23 @@ function WidgetFormContent() {
           {/* Presale Upsells - COMPACT & ATTRACTIVE */}
           {presaleUpsells.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-4">
-                Oferte speciale
-              </h2>
+              {/* Scarcity Header */}
+              <div className="mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-1 flex items-center gap-2">
+                  <span className="text-xl sm:text-2xl">⚡</span>
+                  Doar câteva bucăți rămase la acest preț!
+                </h2>
+                <p className="text-sm text-zinc-600">
+                  Adaugă la comandă și economisești
+                </p>
+              </div>
+
+              <style jsx>{`
+                @keyframes marchingAnts {
+                  0% { stroke-dashoffset: 0; }
+                  100% { stroke-dashoffset: 20; }
+                }
+              `}</style>
 
               <div className="space-y-3">
                 {presaleUpsells.map((upsell) => {
@@ -899,29 +913,44 @@ function WidgetFormContent() {
                       style={{
                         background: isSelected ? '#fff' : '#fff',
                         border: isSelected
-                          ? `2px solid ${accentColor}`
-                          : '2px dashed #d1d5db',
-                        boxShadow: isSelected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-                        animation: !isSelected ? 'borderPulse 2s ease-in-out infinite' : 'none',
+                          ? `3px solid ${accentColor}`
+                          : 'none',
+                        boxShadow: isSelected ? '0 4px 12px -1px rgba(0, 0, 0, 0.15)' : 'none',
                       }}
                     >
-                      <style jsx>{`
-                        @keyframes borderPulse {
-                          0%, 100% { opacity: 0.6; }
-                          50% { opacity: 1; }
-                        }
-                      `}</style>
+                      {/* SVG Marching Ants Border for non-selected */}
+                      {!isSelected && (
+                        <svg
+                          className="absolute inset-0 w-full h-full pointer-events-none"
+                          style={{ borderRadius: '0.5rem' }}
+                        >
+                          <rect
+                            x="1.5"
+                            y="1.5"
+                            width="calc(100% - 3px)"
+                            height="calc(100% - 3px)"
+                            fill="none"
+                            stroke="#d1d5db"
+                            strokeWidth="2"
+                            strokeDasharray="8 4"
+                            rx="8"
+                            style={{
+                              animation: 'marchingAnts 1s linear infinite',
+                            }}
+                          />
+                        </svg>
+                      )}
 
                       {/* Discount badge - compact */}
                       {discount > 0 && (
-                        <div className="absolute -top-2 -right-2">
+                        <div className="absolute -top-2 -right-2 z-10">
                           <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                             -{discount}%
                           </div>
                         </div>
                       )}
 
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 relative z-10">
                         {/* Checkbox */}
                         <div className="flex-shrink-0 mt-0.5">
                           <div
@@ -951,11 +980,19 @@ function WidgetFormContent() {
                               </span>
                             </h3>
                             {upsell.media_url && (
-                              <img
-                                src={upsell.media_url}
-                                alt={upsell.title}
-                                className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
-                              />
+                              <div
+                                className="flex-shrink-0 rounded-lg overflow-hidden"
+                                style={{
+                                  border: `2px solid ${accentColor}`,
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                }}
+                              >
+                                <img
+                                  src={upsell.media_url}
+                                  alt={upsell.title}
+                                  className="w-20 h-20 object-cover"
+                                />
+                              </div>
                             )}
                           </div>
 

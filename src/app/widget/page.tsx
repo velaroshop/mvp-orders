@@ -25,6 +25,7 @@ interface LandingPage {
   id: string;
   name: string;
   slug: string;
+  thank_you_path?: string;
   srp: number;
   price_1: number;
   price_2: number;
@@ -283,7 +284,7 @@ function WidgetFormContent() {
   function redirectToThankYouPage() {
     setShowPostsaleOffer(false);
     if (landingPage?.stores?.url) {
-      const thankYouSlug = landingPage.stores.thank_you_slug || "multumim";
+      const thankYouSlug = landingPage.thank_you_path || "thank-you";
       let storeUrl = landingPage.stores.url;
       if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
         storeUrl = `https://${storeUrl}`;
@@ -548,7 +549,7 @@ function WidgetFormContent() {
       // Wait 3 seconds then redirect to thank you page (if no postsale)
       setTimeout(() => {
         if (landingPage.stores?.url) {
-          const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
+          const thankYouSlug = landingPage.thank_you_path || "thank-you"; // Use landing page value or default fallback
 
           // Ensure URL has protocol
           let storeUrl = landingPage.stores.url;

@@ -565,31 +565,50 @@ export default function AdminPage() {
                         </p>
                         {(() => {
                           const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
-                          const preTotal = upsellsArray
-                            .filter((upsell: any) => !upsell.type || upsell.type === "presale")
-                            .reduce((sum: number, upsell: any) => {
-                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                            }, 0);
 
-                          return preTotal > 0 ? (
-                            <p className="font-semibold" style={{ color: '#22c55e' }}>
-                              PRE: {preTotal.toFixed(2)} RON
-                            </p>
-                          ) : null;
-                        })()}
-                        {(() => {
-                          const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
-                          const postTotal = upsellsArray
-                            .filter((upsell: any) => upsell.type === "postsale")
-                            .reduce((sum: number, upsell: any) => {
-                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                            }, 0);
+                          // Separate upsells by type
+                          const presaleUpsells = upsellsArray.filter((upsell: any) =>
+                            !upsell.type || upsell.type === "presale"
+                          );
+                          const postsaleUpsells = upsellsArray.filter((upsell: any) =>
+                            upsell.type === "postsale"
+                          );
 
-                          return postTotal > 0 ? (
-                            <p className="font-semibold" style={{ color: '#8b5cf6' }}>
-                              POST: {postTotal.toFixed(2)} RON
-                            </p>
-                          ) : null;
+                          // Calculate totals
+                          const preTotal = presaleUpsells.reduce((sum: number, upsell: any) => {
+                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                          }, 0);
+
+                          const postTotal = postsaleUpsells.reduce((sum: number, upsell: any) => {
+                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                          }, 0);
+
+                          // Debug: Log to console for orders with upsells
+                          if (upsellsArray.length > 0) {
+                            console.log(`Order ${order.id}:`, {
+                              totalUpsells: upsellsArray.length,
+                              presaleCount: presaleUpsells.length,
+                              postsaleCount: postsaleUpsells.length,
+                              preTotal,
+                              postTotal,
+                              upsells: upsellsArray.map((u: any) => ({ type: u.type, price: u.price, qty: u.quantity }))
+                            });
+                          }
+
+                          return (
+                            <>
+                              {preTotal > 0 && (
+                                <p className="font-semibold" style={{ color: '#22c55e' }}>
+                                  PRE: {preTotal.toFixed(2)} RON
+                                </p>
+                              )}
+                              {postTotal > 0 && (
+                                <p className="font-semibold" style={{ color: '#8b5cf6' }}>
+                                  POST: {postTotal.toFixed(2)} RON
+                                </p>
+                              )}
+                            </>
+                          );
                         })()}
                         <p className="text-zinc-400">
                           Shipping: {order.shippingCost.toFixed(2)} RON

@@ -187,16 +187,16 @@ function WidgetFormContent() {
 
   async function fetchPresaleUpsells(landingPageId: string) {
     try {
-      const response = await fetch(`/api/upsells?landing_page_id=${landingPageId}&type=presale`);
+      const response = await fetch(`/api/upsells/public/${landingPageId}?type=presale`);
 
       if (!response.ok) {
-        console.error("Failed to fetch presale upsells");
+        console.error("Failed to fetch presale upsells", response.status);
         return;
       }
 
       const data = await response.json();
-      const activeUpsells = (data.upsells || []).filter((u: Upsell) => u.active);
-      setPresaleUpsells(activeUpsells);
+      // Public endpoint already filters by active, so no need to filter again
+      setPresaleUpsells(data.upsells || []);
     } catch (err) {
       console.error("Error fetching presale upsells:", err);
     }

@@ -582,37 +582,44 @@ export default function AdminPage() {
 
                     {/* Status */}
                     <td className="px-3 py-2">
-                      <span
-                        className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                          order.status === "queue"
-                            ? "bg-violet-600 text-white"
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                            order.status === "queue"
+                              ? "bg-violet-600 text-white"
+                              : order.status === "testing"
+                              ? "bg-blue-600 text-white"
+                              : order.status === "confirmed"
+                              ? "bg-emerald-600 text-white"
+                              : order.status === "cancelled"
+                              ? "bg-red-600 text-white"
+                              : order.status === "hold"
+                              ? "bg-orange-600 text-white"
+                              : order.status === "sync_error"
+                              ? "bg-rose-600 text-white"
+                              : "bg-amber-500 text-white"
+                          }`}
+                        >
+                          {order.status === "queue"
+                            ? "Queue"
                             : order.status === "testing"
-                            ? "bg-blue-600 text-white"
-                            : order.status === "confirmed"
-                            ? "bg-emerald-600 text-white"
+                            ? "🧪 Testing"
+                            : order.status === "pending"
+                            ? "Pending"
                             : order.status === "cancelled"
-                            ? "bg-red-600 text-white"
+                            ? "Cancelled"
                             : order.status === "hold"
-                            ? "bg-orange-600 text-white"
+                            ? "Hold"
                             : order.status === "sync_error"
-                            ? "bg-rose-600 text-white"
-                            : "bg-amber-500 text-white"
-                        }`}
-                      >
-                        {order.status === "queue"
-                          ? "Queue"
-                          : order.status === "testing"
-                          ? "🧪 Testing"
-                          : order.status === "pending"
-                          ? "Pending"
-                          : order.status === "cancelled"
-                          ? "Cancelled"
-                          : order.status === "hold"
-                          ? "Hold"
-                          : order.status === "sync_error"
-                          ? "Sync Error"
-                          : "Confirmed"}
-                      </span>
+                            ? "Sync Error"
+                            : "Confirmed"}
+                        </span>
+                        {order.promotedFromTesting && (
+                          <span className="text-[10px] text-blue-400 font-medium">
+                            🧪 From Testing
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Customer */}

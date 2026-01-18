@@ -50,6 +50,7 @@ export interface Order {
   fromPartialId?: string; // ID-ul partial order-ului din care provine
   source?: string; // Sursa comenzii: "direct" sau "partial"
   queueExpiresAt?: string; // Timestamp when queue expires (3 minutes from creation)
+  promotedFromTesting?: boolean; // Flag to indicate order was promoted from testing status
   createdAt: string;
 }
 

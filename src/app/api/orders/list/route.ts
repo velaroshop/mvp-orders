@@ -81,6 +81,7 @@ export async function GET(request: Request) {
         orderNumber: row.order_number ?? undefined,
         orderSeries: row.order_series ?? undefined,
         orderNote: row.order_note ?? undefined,
+        promotedFromTesting: row.promoted_from_testing ?? undefined,
         createdAt: row.created_at,
       };
     });

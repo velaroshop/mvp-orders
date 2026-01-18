@@ -195,6 +195,7 @@ class HelpshipClient {
         quantity: number;
         price: number;
         productSku?: string | null;
+        productName?: string;
       }>;
     },
   ): Promise<{ orderId: string; rawResponse?: any }> {
@@ -277,7 +278,7 @@ class HelpshipClient {
         },
         // Add upsells as separate products
         ...(orderData.upsells || []).map(upsell => ({
-          name: upsell.title,
+          name: upsell.productName || upsell.title, // Use product name from products table, fallback to upsell title
           quantity: upsell.quantity,
           price: upsell.price,
           vatPercentage: 0,

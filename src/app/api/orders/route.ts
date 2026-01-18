@@ -178,6 +178,31 @@ export async function POST(request: NextRequest) {
       const credentials = await getHelpshipCredentials(landingPage.organization_id);
       const helpshipClient = new HelpshipClient(credentials);
 
+      // Fetch product details for each upsell to get the product name from products table
+      const upsellsWithProductNames = await Promise.all(
+        upsells.map(async (upsell: any) => {
+          if (!upsell.productSku) {
+            return {
+              ...upsell,
+              productName: upsell.title, // Fallback to upsell title if no SKU
+            };
+          }
+
+          // Fetch product by SKU
+          const { data: product } = await supabaseAdmin
+            .from("products")
+            .select("name, sku")
+            .eq("sku", upsell.productSku)
+            .eq("organization_id", landingPage.organization_id)
+            .single();
+
+          return {
+            ...upsell,
+            productName: product?.name || upsell.title, // Use product name or fallback to upsell title
+          };
+        })
+      );
+
       const helpshipResult = await helpshipClient.createOrder({
         orderId: order.id, // ID-ul nostru intern (externalId în Helpship)
         orderNumber: order.orderNumber || 0, // Numărul comenzii pentru ORDER NAME
@@ -194,7 +219,7 @@ export async function POST(request: NextRequest) {
         subtotal: Number(subtotal) || 0,
         shippingCost: Number(shippingCost) || 0,
         total: Number(total) || 0,
-        upsells,
+        upsells: upsellsWithProductNames,
       });
 
       console.log("[Helpship] Order created successfully:", helpshipResult);

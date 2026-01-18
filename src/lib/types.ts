@@ -44,6 +44,7 @@ export interface Order {
   status: OrderStatus;
   helpshipOrderId?: string;
   orderNumber?: number;
+  orderSeries?: string; // Order series from store (e.g., "JMR-TEST-", "VELARO-")
   orderNote?: string; // Notă pentru comanda (max 2 linii)
   holdFromStatus?: OrderStatus; // Status-ul înainte de hold (pentru UNHOLD)
   fromPartialId?: string; // ID-ul partial order-ului din care provine

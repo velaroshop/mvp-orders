@@ -208,10 +208,14 @@ export default function AdminPage() {
     }
   }
 
-  // Format order number (JMR-TEST-XXXXX)
-  function formatOrderNumber(orderNumber?: number, orderId?: string) {
+  // Format order number using store's order_series (e.g., "JMR-TEST-00076", "VELARO-00123")
+  function formatOrderNumber(orderNumber?: number, orderSeries?: string, orderId?: string) {
+    if (orderNumber && orderSeries) {
+      return `${orderSeries}${String(orderNumber).padStart(5, "0")}`;
+    }
     if (orderNumber) {
-      return `JMR-TEST-${String(orderNumber).padStart(5, "0")}`;
+      // Fallback to default series if not provided
+      return `VLR-${String(orderNumber).padStart(5, "0")}`;
     }
     return orderId ? orderId.substring(0, 8) : "-";
   }
@@ -499,7 +503,7 @@ export default function AdminPage() {
                     {/* Order ID */}
                     <td className="px-3 py-2">
                       <span className="font-medium text-white">
-                        {formatOrderNumber(order.orderNumber, order.id)}
+                        {formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
                       </span>
                     </td>
 

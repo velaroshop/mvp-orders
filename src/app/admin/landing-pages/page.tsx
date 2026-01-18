@@ -289,22 +289,6 @@ export default function LandingPagesPage() {
                       <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
-                            onClick={() => handleToggleStatus(page.id, page.status)}
-                            className={`text-xs ${
-                              page.status === "published"
-                                ? "text-amber-400 hover:text-amber-300"
-                                : "text-emerald-400 hover:text-emerald-300"
-                            }`}
-                          >
-                            {page.status === "published" ? "Draft" : "Publish"}
-                          </button>
-                          <Link
-                            href={`/admin/landing-pages/${page.id}/edit`}
-                            className="text-xs text-emerald-400 hover:text-emerald-300"
-                          >
-                            Edit
-                          </Link>
-                          <button
                             onClick={() => handleDelete(page.id)}
                             className="text-xs text-red-400 hover:text-red-300"
                           >

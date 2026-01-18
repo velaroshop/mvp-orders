@@ -36,6 +36,8 @@ export default function LandingPagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [embedModalOpen, setEmbedModalOpen] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchLandingPages();
@@ -68,13 +70,12 @@ export default function LandingPagesPage() {
     }
   }
 
-  async function handleDelete(landingPageId: string) {
-    if (!confirm("Are you sure you want to delete this landing page?")) {
-      return;
-    }
+  async function handleDelete() {
+    if (!deleteModalOpen) return;
 
     try {
-      const response = await fetch(`/api/landing-pages/${landingPageId}`, {
+      setIsDeleting(true);
+      const response = await fetch(`/api/landing-pages/${deleteModalOpen}`, {
         method: "DELETE",
       });
 
@@ -82,11 +83,14 @@ export default function LandingPagesPage() {
         throw new Error("Failed to delete landing page");
       }
 
-      // Refresh the list
+      // Close modal and refresh the list
+      setDeleteModalOpen(null);
       fetchLandingPages();
     } catch (err) {
       console.error("Error deleting landing page:", err);
       alert(err instanceof Error ? err.message : "Failed to delete landing page");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -287,13 +291,8 @@ export default function LandingPagesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleDelete(page.id)}
-                            className="text-xs text-red-400 hover:text-red-300"
-                          >
-                            Delete
-                          </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Actions moved to expanded details */}
                         </div>
                       </td>
                     </tr>
@@ -424,27 +423,43 @@ export default function LandingPagesPage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2 pt-3 border-t border-zinc-700/50">
-                              <Link
-                                href={getWidgetUrl(page.slug)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
-                              >
-                                Vezi formular
-                              </Link>
-                              <button
-                                onClick={() => setEmbedModalOpen(page.id)}
-                                className="px-3 py-1.5 bg-zinc-600 text-white rounded text-xs font-medium hover:bg-zinc-700 transition-colors"
-                              >
-                                Cod embed
-                              </button>
-                              <button
-                                onClick={() => toggleRowExpansion(page.id)}
-                                className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
-                              >
-                                Ascunde detalii
-                              </button>
+                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={getWidgetUrl(page.slug)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                >
+                                  Vezi formular
+                                </Link>
+                                <button
+                                  onClick={() => setEmbedModalOpen(page.id)}
+                                  className="px-3 py-1.5 bg-zinc-600 text-white rounded text-xs font-medium hover:bg-zinc-700 transition-colors"
+                                >
+                                  Cod embed
+                                </button>
+                                <button
+                                  onClick={() => toggleRowExpansion(page.id)}
+                                  className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
+                                >
+                                  Ascunde detalii
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={`/admin/landing-pages/${page.id}/edit`}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition-colors"
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  onClick={() => setDeleteModalOpen(page.id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -511,6 +526,59 @@ export default function LandingPagesPage() {
                   className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 transition-colors text-sm font-medium"
                 >
                   Închide
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-zinc-800 rounded-lg shadow-xl max-w-md w-full mx-4 border border-zinc-700">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Confirmă ștergerea
+                </h3>
+                <button
+                  onClick={() => setDeleteModalOpen(null)}
+                  className="text-zinc-400 hover:text-zinc-300 transition-colors"
+                  disabled={isDeleting}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-zinc-300 mb-6">
+                Ești sigur că vrei să ștergi acest landing page? Această acțiune nu poate fi anulată.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteModalOpen(null)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  Anulează
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {isDeleting ? "Se șterge..." : "Șterge"}
                 </button>
               </div>
             </div>

@@ -63,6 +63,8 @@ export default function EditLandingPagePage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [storeSearch, setStoreSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [showStoreDropdown, setShowStoreDropdown] = useState(false);
 
   useEffect(() => {
     if (landingPageId) {
@@ -295,12 +297,21 @@ export default function EditLandingPagePage() {
                   <input
                     type="text"
                     value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    onFocus={() => setProductSearch("")}
+                    onChange={(e) => {
+                      setProductSearch(e.target.value);
+                      setShowProductDropdown(true);
+                    }}
+                    onFocus={() => {
+                      setProductSearch("");
+                      setShowProductDropdown(true);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowProductDropdown(false), 200);
+                    }}
                     placeholder="Search for product..."
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {productSearch && filteredProducts.length > 0 && (
+                  {showProductDropdown && productSearch && filteredProducts.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
                       {filteredProducts.map((product) => (
                         <button
@@ -309,6 +320,7 @@ export default function EditLandingPagePage() {
                           onClick={() => {
                             setFormData({ ...formData, product_id: product.id });
                             setProductSearch("");
+                            setShowProductDropdown(false);
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
                         >
@@ -347,12 +359,21 @@ export default function EditLandingPagePage() {
                   <input
                     type="text"
                     value={storeSearch}
-                    onChange={(e) => setStoreSearch(e.target.value)}
-                    onFocus={() => setStoreSearch("")}
+                    onChange={(e) => {
+                      setStoreSearch(e.target.value);
+                      setShowStoreDropdown(true);
+                    }}
+                    onFocus={() => {
+                      setStoreSearch("");
+                      setShowStoreDropdown(true);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowStoreDropdown(false), 200);
+                    }}
                     placeholder="Search for store..."
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {storeSearch && filteredStores.length > 0 && (
+                  {showStoreDropdown && storeSearch && filteredStores.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
                       {filteredStores.map((store) => (
                         <button
@@ -361,8 +382,9 @@ export default function EditLandingPagePage() {
                           onClick={() => {
                             setFormData({ ...formData, store_id: store.id });
                             setStoreSearch("");
+                            setShowStoreDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-900/50 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
                         >
                           {store.url}
                         </button>

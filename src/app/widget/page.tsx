@@ -6,6 +6,21 @@ import type { OfferCode } from "@/lib/types";
 
 export const dynamic = 'force-dynamic';
 
+interface Upsell {
+  id: string;
+  title: string;
+  description?: string;
+  quantity: number;
+  price: number;
+  srp: number;
+  media_url?: string;
+  active: boolean;
+  product?: {
+    name: string;
+    sku?: string;
+  };
+}
+
 interface LandingPage {
   id: string;
   name: string;
@@ -45,6 +60,8 @@ function WidgetFormContent() {
   const slug = searchParams.get("slug");
 
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
+  const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
+  const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -114,7 +131,7 @@ function WidgetFormContent() {
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, [loading, success, landingPage, selectedOffer, phone, fullName, county, city, address]);
+  }, [loading, success, landingPage, selectedOffer, selectedUpsells, phone, fullName, county, city, address]);
 
   // Auto-save partial order with debouncing
   useEffect(() => {
@@ -142,19 +159,24 @@ function WidgetFormContent() {
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [phone, fullName, county, city, address, selectedOffer, landingPage, success]);
+  }, [phone, fullName, county, city, address, selectedOffer, selectedUpsells, landingPage, success]);
 
   async function fetchLandingPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/landing-pages/public/${slug}`);
-      
+
       if (!response.ok) {
         throw new Error("Landing page not found");
       }
 
       const data = await response.json();
       setLandingPage(data.landingPage);
+
+      // Fetch presale upsells for this landing page
+      if (data.landingPage?.id) {
+        fetchPresaleUpsells(data.landingPage.id);
+      }
     } catch (err) {
       console.error("Error fetching landing page:", err);
       setError(err instanceof Error ? err.message : "Failed to load form");
@@ -163,12 +185,56 @@ function WidgetFormContent() {
     }
   }
 
+  async function fetchPresaleUpsells(landingPageId: string) {
+    try {
+      const response = await fetch(`/api/upsells?landing_page_id=${landingPageId}&type=presale`);
+
+      if (!response.ok) {
+        console.error("Failed to fetch presale upsells");
+        return;
+      }
+
+      const data = await response.json();
+      const activeUpsells = (data.upsells || []).filter((u: Upsell) => u.active);
+      setPresaleUpsells(activeUpsells);
+    } catch (err) {
+      console.error("Error fetching presale upsells:", err);
+    }
+  }
+
+  function toggleUpsell(upsellId: string) {
+    setSelectedUpsells(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(upsellId)) {
+        newSet.delete(upsellId);
+      } else {
+        newSet.add(upsellId);
+      }
+      return newSet;
+    });
+  }
+
+  function getUpsellsTotal() {
+    return presaleUpsells
+      .filter(upsell => selectedUpsells.has(upsell.id))
+      .reduce((total, upsell) => total + upsell.price, 0);
+  }
+
 
   // Save partial order (auto-save as user fills form)
   async function savePartialOrder(lastField?: string) {
     if (!landingPage || !landingPage.stores?.organization_id) return;
 
     try {
+      const selectedUpsellsData = presaleUpsells
+        .filter(upsell => selectedUpsells.has(upsell.id))
+        .map(upsell => ({
+          upsellId: upsell.id,
+          title: upsell.title,
+          quantity: upsell.quantity,
+          price: upsell.price,
+        }));
+
       const payload = {
         partialOrderId,
         organizationId: landingPage.stores.organization_id,
@@ -182,6 +248,7 @@ function WidgetFormContent() {
         productName: landingPage.products?.name,
         productSku: landingPage.products?.sku,
         productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
+        upsells: selectedUpsellsData,
         subtotal: getCurrentPrice(),
         shippingCost: landingPage.shipping_price,
         total: getTotalPrice(),
@@ -235,7 +302,7 @@ function WidgetFormContent() {
   }
 
   function getTotalPrice() {
-    return getCurrentPrice() + (landingPage?.shipping_price || 0);
+    return getCurrentPrice() + (landingPage?.shipping_price || 0) + getUpsellsTotal();
   }
 
   function calculateDiscount() {
@@ -318,6 +385,16 @@ function WidgetFormContent() {
     setError(null);
     setErrors({});
 
+    // Prepare selected upsells data
+    const selectedUpsellsData = presaleUpsells
+      .filter(upsell => selectedUpsells.has(upsell.id))
+      .map(upsell => ({
+        upsellId: upsell.id,
+        title: upsell.title,
+        quantity: upsell.quantity,
+        price: upsell.price,
+      }));
+
     const payload = {
       landingKey: landingPage.slug,
       offerCode: selectedOffer,
@@ -326,7 +403,7 @@ function WidgetFormContent() {
       county: county.trim(),
       city: city.trim(),
       address: address.trim(),
-      upsells: [],
+      upsells: selectedUpsellsData,
       subtotal: getCurrentPrice(),
       shippingCost: landingPage.shipping_price,
       total: getTotalPrice(),
@@ -801,6 +878,116 @@ function WidgetFormContent() {
             </div>
           </div>
 
+          {/* Presale Upsells */}
+          {presaleUpsells.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2">
+                Oferte speciale
+              </h2>
+              <p className="text-sm text-zinc-600 mb-4">
+                Adaugă la comandă și economisești!
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                {presaleUpsells.map((upsell) => {
+                  const isSelected = selectedUpsells.has(upsell.id);
+                  const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
+
+                  return (
+                    <button
+                      key={upsell.id}
+                      type="button"
+                      onClick={() => toggleUpsell(upsell.id)}
+                      className={`relative p-4 border-2 rounded-lg transition-all duration-200 text-left ${
+                        isSelected
+                          ? "border-2 shadow-md scale-[1.02]"
+                          : "border-zinc-200 hover:border-zinc-300 hover:shadow-sm"
+                      }`}
+                      style={isSelected ? {
+                        borderColor: accentColor,
+                        backgroundColor: `${accentColor}08`
+                      } : {}}
+                    >
+                      {discount > 0 && (
+                        <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                          -{discount}%
+                        </div>
+                      )}
+
+                      <div className="flex gap-3">
+                        {/* Checkbox */}
+                        <div className="flex-shrink-0 mt-1">
+                          <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center transition-all ${
+                            isSelected ? "border-0" : "border-zinc-300"
+                          }`}
+                          style={isSelected ? { backgroundColor: accentColor } : {}}
+                          >
+                            {isSelected && (
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-base sm:text-lg text-zinc-900 mb-1">
+                            {upsell.title}
+                          </h3>
+                          {upsell.description && (
+                            <p className="text-sm text-zinc-600 mb-2 line-clamp-2">
+                              {upsell.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs text-zinc-500">
+                              Cantitate: {upsell.quantity}
+                            </span>
+                            {upsell.product?.name && (
+                              <span className="text-xs text-zinc-500">
+                                • {upsell.product.name}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            {upsell.srp > upsell.price && (
+                              <span className="text-sm text-zinc-400 line-through">
+                                {upsell.srp.toFixed(2)} Lei
+                              </span>
+                            )}
+                            <span className="text-lg sm:text-xl font-bold" style={{ color: isSelected ? accentColor : "#18181b" }}>
+                              {upsell.price.toFixed(2)} Lei
+                            </span>
+                            {isSelected && (
+                              <span className="text-xs font-medium px-2 py-1 rounded-full" style={{
+                                backgroundColor: `${accentColor}20`,
+                                color: accentColor
+                              }}>
+                                ✓ Adăugat
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Image (if available) */}
+                        {upsell.media_url && (
+                          <div className="flex-shrink-0 hidden sm:block">
+                            <img
+                              src={upsell.media_url}
+                              alt={upsell.title}
+                              className="w-20 h-20 object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Delivery Method */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 sm:p-4 border border-zinc-200 rounded-lg">
@@ -827,10 +1014,12 @@ function WidgetFormContent() {
                 <span className="break-words pr-2">• Livrare Standard - Curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                <span className="break-words pr-2">• Oferte speciale</span>
-                <span className="whitespace-nowrap">0.00 Lei</span>
-              </div>
+              {getUpsellsTotal() > 0 && (
+                <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                  <span className="break-words pr-2">• Oferte speciale ({selectedUpsells.size})</span>
+                  <span className="whitespace-nowrap">{getUpsellsTotal().toFixed(2)} Lei</span>
+                </div>
+              )}
             </div>
             <div className="pt-3 sm:pt-4 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
               <div className="flex justify-between items-center flex-wrap gap-2">

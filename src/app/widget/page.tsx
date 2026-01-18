@@ -785,92 +785,103 @@ function WidgetFormContent() {
             </div>
           </div>
 
-          {/* Quantity Selection */}
+          {/* Quantity Selection - COMPACT */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-3">
               Selectați cantitatea
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_1")}
-                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
-                  selectedOffer === "offer_1"
-                    ? ""
-                    : "border-zinc-200 hover:border-zinc-300"
-                }`}
+                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
                   borderColor: accentColor,
-                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
-                } : {}}
+                  backgroundColor: `${accentColor}08`
+                } : {
+                  borderColor: '#e5e7eb'
+                }}
               >
-                <div className="text-xs font-bold text-white uppercase mb-2 px-2 py-1 rounded inline-block" style={{ backgroundColor: backgroundColor, opacity: 0.7 }}>
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: backgroundColor }}
+                >
                   {landingPage.offer_heading_1}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+
+                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_1}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_1" && (
-                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}
               </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_2")}
-                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
-                  selectedOffer === "offer_2"
-                    ? ""
-                    : "border-zinc-200 hover:border-zinc-300"
-                }`}
+                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
                   borderColor: accentColor,
-                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
-                } : {}}
+                  backgroundColor: `${accentColor}08`
+                } : {
+                  borderColor: '#e5e7eb'
+                }}
               >
-                <div className="text-sm font-bold text-white uppercase mb-2 px-3 py-1.5 rounded inline-block" style={{ backgroundColor: backgroundColor, opacity: 0.8 }}>
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: backgroundColor }}
+                >
                   {landingPage.offer_heading_2}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+
+                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_2}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_2" && (
-                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}
               </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_3")}
-                className={`p-2.5 sm:p-3 border-2 rounded-lg transition-all ${
-                  selectedOffer === "offer_3"
-                    ? ""
-                    : "border-zinc-200 hover:border-zinc-300"
-                }`}
+                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
                   borderColor: accentColor,
-                  backgroundColor: `${accentColor}15` // 15 = ~8% opacity
-                } : {}}
+                  backgroundColor: `${accentColor}08`
+                } : {
+                  borderColor: '#e5e7eb'
+                }}
               >
-                <div className="text-base font-bold text-white uppercase mb-2 px-4 py-2 rounded inline-block" style={{ backgroundColor: backgroundColor }}>
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: backgroundColor }}
+                >
                   {landingPage.offer_heading_3}
                 </div>
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+
+                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_3}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_3" && (
-                  <div className="mt-2 text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
                     ✓ Selectat
                   </div>
                 )}

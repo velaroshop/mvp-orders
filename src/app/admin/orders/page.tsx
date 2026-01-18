@@ -346,6 +346,39 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "finalize") {
+      if (!confirm("Sigur vrei să finalizezi această comandă fără postsale? Comanda va fi sincronizată cu Helpship.")) {
+        setOpenDropdown(null);
+        return;
+      }
+
+      setConfirming(orderId);
+      try {
+        const response = await fetch(`/api/orders/${orderId}/finalize`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to finalize order");
+        }
+
+        const result = await response.json();
+
+        // Reîncarcă lista de comenzi
+        await fetchOrders();
+        alert(`✅ Comanda a fost finalizată cu succes!\nStatus: pending\nHelpship Order ID: ${result.helpshipOrderId}`);
+      } catch (error) {
+        console.error("Error finalizing order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la finalizarea comenzii";
+        alert(`❌ ${errorMessage}`);
+      } finally {
+        setConfirming(null);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }
@@ -610,6 +643,14 @@ export default function AdminPage() {
                                 >
                                   Order Note
                                 </button>
+                                {order.status === "queue" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "finalize")}
+                                    className="w-full text-left px-3 py-2 text-xs text-violet-400 hover:bg-violet-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    ⚡ Finalize Queue
+                                  </button>
+                                )}
                                 {order.status === "sync_error" && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "resync")}

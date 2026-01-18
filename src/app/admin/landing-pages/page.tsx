@@ -73,6 +73,8 @@ export default function LandingPagesPage() {
   const [editUpsellModal, setEditUpsellModal] = useState<Upsell | null>(null);
   const [isEditingUpsell, setIsEditingUpsell] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [deleteUpsellModal, setDeleteUpsellModal] = useState<Upsell | null>(null);
+  const [isDeletingUpsell, setIsDeletingUpsell] = useState(false);
 
   useEffect(() => {
     fetchLandingPages();
@@ -232,6 +234,29 @@ export default function LandingPagesPage() {
     setEditUpsellModal({ ...upsell });
     if (products.length === 0) {
       fetchProducts();
+    }
+  }
+
+  async function handleDeleteUpsell() {
+    if (!deleteUpsellModal) return;
+
+    try {
+      setIsDeletingUpsell(true);
+      const response = await fetch(`/api/upsells/${deleteUpsellModal.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete upsell");
+      }
+
+      setDeleteUpsellModal(null);
+      fetchAllUpsells();
+    } catch (err) {
+      console.error("Error deleting upsell:", err);
+      alert(err instanceof Error ? err.message : "Failed to delete upsell");
+    } finally {
+      setIsDeletingUpsell(false);
     }
   }
 
@@ -597,12 +622,24 @@ export default function LandingPagesPage() {
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
                                   Postsale Upsells
                                 </h4>
-                                <button
-                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
-                                  className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
-                                >
-                                  + Adaugă Postsale
-                                </button>
+                                {(() => {
+                                  const postsaleUpsells = (upsellsByLandingPage[page.id] || []).filter(u => u.type === "postsale");
+                                  const hasPostsale = postsaleUpsells.length > 0;
+                                  return (
+                                    <button
+                                      onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
+                                      disabled={hasPostsale}
+                                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                        hasPostsale
+                                          ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                                          : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                      }`}
+                                      title={hasPostsale ? "Poți avea doar un singur postsale upsell" : "Adaugă postsale upsell"}
+                                    >
+                                      + Adaugă Postsale
+                                    </button>
+                                  );
+                                })()}
                               </div>
                               <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
                                 {(() => {
@@ -639,18 +676,32 @@ export default function LandingPagesPage() {
                                               </p>
                                             </div>
                                           </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openEditUpsellModal(upsell);
-                                            }}
-                                            className="ml-2 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
-                                            title="Editează upsell"
-                                          >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                          </button>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openEditUpsellModal(upsell);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                                              title="Editează upsell"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                              </svg>
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteUpsellModal(upsell);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
+                                              title="Șterge upsell"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                              </svg>
+                                            </button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -1003,6 +1054,52 @@ export default function LandingPagesPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Upsell Confirmation Modal */}
+      {deleteUpsellModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-700 max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Confirmă ștergerea
+                </h3>
+                <button
+                  onClick={() => setDeleteUpsellModal(null)}
+                  className="text-zinc-400 hover:text-zinc-300 transition-colors"
+                  disabled={isDeletingUpsell}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-zinc-300 mb-2">
+                Ești sigur că vrei să ștergi upsell-ul <strong className="text-white">{deleteUpsellModal.title}</strong>?
+              </p>
+              <p className="text-sm text-zinc-400 mb-6">
+                Această acțiune nu poate fi anulată.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteUpsellModal(null)}
+                  disabled={isDeletingUpsell}
+                  className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  Anulează
+                </button>
+                <button
+                  onClick={handleDeleteUpsell}
+                  disabled={isDeletingUpsell}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {isDeletingUpsell ? "Se șterge..." : "Șterge"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

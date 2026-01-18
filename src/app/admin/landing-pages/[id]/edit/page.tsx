@@ -65,12 +65,15 @@ export default function EditLandingPagePage() {
   const [storeSearch, setStoreSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+  const [postsaleUpsells, setPostsaleUpsells] = useState<any[]>([]);
+  const [isLoadingUpsells, setIsLoadingUpsells] = useState(true);
 
   useEffect(() => {
     if (landingPageId) {
       fetchProducts();
       fetchStores();
       fetchLandingPage();
+      fetchUpsells();
     }
   }, [landingPageId]);
 
@@ -134,6 +137,32 @@ export default function EditLandingPagePage() {
       });
     } finally {
       setIsLoadingPage(false);
+    }
+  }
+
+  async function fetchUpsells() {
+    try {
+      setIsLoadingUpsells(true);
+      const response = await fetch("/api/upsells");
+
+      if (!response.ok) {
+        console.error("Failed to fetch upsells");
+        return;
+      }
+
+      const data = await response.json();
+      const allUpsells = data.upsells || [];
+
+      // Filter postsale upsells for this landing page
+      const postsale = allUpsells.filter(
+        (u: any) => u.landing_page_id === landingPageId && u.type === "postsale"
+      );
+
+      setPostsaleUpsells(postsale);
+    } catch (err) {
+      console.error("Error fetching upsells:", err);
+    } finally {
+      setIsLoadingUpsells(false);
     }
   }
 
@@ -739,16 +768,23 @@ export default function EditLandingPagePage() {
                 <input
                   type="checkbox"
                   id="postPurchaseStatus"
-                  checked={formData.post_purchase_status}
+                  checked={formData.post_purchase_status && postsaleUpsells.length > 0}
                   onChange={(e) => setFormData({ ...formData, post_purchase_status: e.target.checked })}
-                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded"
+                  disabled={postsaleUpsells.length === 0}
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <label htmlFor="postPurchaseStatus" className="ml-2">
                   <span className="block text-xs font-medium text-zinc-300">
                     Post Purchase Status
                   </span>
                   <span className="block text-xs text-zinc-500">
-                    This is required in order to enable the post-purchase offers (inactive for now)
+                    {postsaleUpsells.length === 0 ? (
+                      <span className="text-amber-400">
+                        ⚠️ Trebuie să existe un postsale upsell pentru a activa această opțiune
+                      </span>
+                    ) : (
+                      "Activează pentru a permite comenzile să intre în queue și să arate oferta postsale"
+                    )}
                   </span>
                 </label>
               </div>

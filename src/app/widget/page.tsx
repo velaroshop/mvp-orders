@@ -68,7 +68,7 @@ function WidgetFormContent() {
   const [success, setSuccess] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
-  const [postsaleCountdown, setPostsaleCountdown] = useState(60);
+  const [postsaleCountdown, setPostsaleCountdown] = useState(180);
   const [error, setError] = useState<string | null>(null);
 
   const [phone, setPhone] = useState("");
@@ -490,7 +490,7 @@ function WidgetFormContent() {
         // Wait 2 seconds to show success, then show postsale offer
         setTimeout(() => {
           setShowSuccessPopup(false);
-          setPostsaleCountdown(60); // Reset countdown
+          setPostsaleCountdown(180); // Reset countdown to 3 minutes
           setShowPostsaleOffer(true);
         }, 2000);
         return; // Don't redirect yet
@@ -1279,35 +1279,35 @@ function WidgetFormContent() {
           {/* Post-Sale Offer Popup */}
           {showPostsaleOffer && postsaleUpsells.length > 0 && (
             <div
-              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto"
               style={{ animation: 'fadeIn 0.4s ease-out' }}
             >
               <div
-                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full relative overflow-hidden"
-                style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-hidden my-auto"
+                style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', maxHeight: '90vh' }}
               >
                 {/* Animated background elements */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl opacity-20 animate-pulse" style={{ background: accentColor }}></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr rounded-full blur-3xl opacity-15 animate-pulse" style={{ background: primaryColor, animationDelay: '1s' }}></div>
 
                 {/* Scarcity Badge with Countdown */}
-                <div className="relative mb-6 text-center">
+                <div className="relative mb-4 text-center">
                   <div
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-bold text-lg sm:text-xl shadow-lg animate-pulse"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-bold text-sm sm:text-base shadow-lg animate-pulse"
                     style={{ backgroundColor: '#dc2626' }}
                   >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                     </svg>
-                    OFERTĂ EXPIRĂ ÎN {postsaleCountdown} SECUNDE!
+                    OFERTĂ EXPIRĂ ÎN {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}!
                   </div>
                 </div>
 
                 {/* Main Title - Eye-catching */}
-                <div className="relative text-center mb-6">
-                  <div className="text-5xl sm:text-6xl mb-2">🎁</div>
+                <div className="relative text-center mb-4">
+                  <div className="text-4xl sm:text-5xl mb-2">🎁</div>
                   <h2
-                    className="text-3xl sm:text-5xl font-black mb-3 leading-tight"
+                    className="text-2xl sm:text-4xl font-black mb-2 leading-tight"
                     style={{
                       background: `linear-gradient(135deg, ${accentColor} 0%, ${primaryColor} 100%)`,
                       WebkitBackgroundClip: 'text',
@@ -1317,21 +1317,22 @@ function WidgetFormContent() {
                   >
                     STOP! AI CÂȘTIGAT!
                   </h2>
-                  <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-2">
+                  <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-3">
                     🎉 BONUS EXCLUSIV DEBLOCAT! 🎉
                   </p>
                   {postsaleUpsells[0] && (
-                    <div className="mt-4 inline-block">
-                      <div className="text-zinc-600 text-lg mb-2 line-through">
+                    <div className="mt-2 inline-block">
+                      <div className="text-zinc-600 text-base mb-2 line-through">
                         Preț normal: <span className="font-bold">{postsaleUpsells[0].srp.toFixed(2)} LEI</span>
                       </div>
                       <div
-                        className="text-5xl sm:text-6xl font-black mb-2 animate-bounce"
-                        style={{ color: '#dc2626' }}
+                        className="inline-block border-4 border-red-600 bg-red-50 rounded-xl px-4 py-2 mb-2"
                       >
-                        -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}% REDUCERE!
+                        <div className="text-3xl sm:text-4xl font-black" style={{ color: '#dc2626' }}>
+                          -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}% REDUCERE!
+                        </div>
                       </div>
-                      <div className="text-3xl sm:text-4xl font-black" style={{ color: accentColor }}>
+                      <div className="text-2xl sm:text-3xl font-black mt-2" style={{ color: accentColor }}>
                         DOAR {postsaleUpsells[0].price.toFixed(2)} LEI!
                       </div>
                     </div>
@@ -1340,51 +1341,47 @@ function WidgetFormContent() {
 
                 {/* Product Display */}
                 {postsaleUpsells[0] && (
-                  <div className="relative bg-white rounded-2xl p-6 mb-6 shadow-xl border-4 border-dashed" style={{ borderColor: accentColor }}>
-                    <div className="flex items-center gap-4">
+                  <div className="relative bg-white rounded-2xl p-4 mb-4 shadow-xl border-4 border-dashed" style={{ borderColor: accentColor }}>
+                    <div className="flex items-center gap-3">
                       {postsaleUpsells[0].media_url && (
                         <img
                           src={postsaleUpsells[0].media_url}
                           alt={postsaleUpsells[0].title}
-                          className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl shadow-lg"
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl shadow-lg flex-shrink-0"
                         />
                       )}
-                      <div className="flex-1">
-                        <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-xl font-bold text-zinc-900 mb-1">
                           {postsaleUpsells[0].title}
                         </h3>
                         {postsaleUpsells[0].description && (
-                          <p className="text-base sm:text-lg text-zinc-600 mb-3">
+                          <p className="text-sm sm:text-base text-zinc-600">
                             {postsaleUpsells[0].description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 text-lg font-bold" style={{ color: accentColor }}>
-                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          Cantitate: {postsaleUpsells[0].quantity}x
-                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Urgency Messages */}
-                <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4 mb-6">
-                  <p className="text-center text-lg sm:text-xl font-bold text-red-700">
-                    ⚠️ Această ofertă dispare în {postsaleCountdown} secunde!<br />
-                    <span className="text-base">Nu o vei mai vedea NICIODATĂ!</span>
+                <div className="bg-red-50 border-2 border-red-500 rounded-xl p-3 mb-4">
+                  <p className="text-center text-base sm:text-lg font-bold text-red-700">
+                    ⚠️ Această ofertă dispare în {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}!<br />
+                    <span className="text-sm">Nu o vei mai vedea NICIODATĂ!</span>
                   </p>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => {
-                      // Accept postsale offer logic here
-                      console.log('Accepted postsale offer');
+                    onClick={async () => {
+                      // TODO: Add postsale upsell to order via API
+                      // For now, just redirect
+                      console.log('Accepted postsale offer:', postsaleUpsells[0]);
+                      redirectToThankYouPage();
                     }}
-                    className="py-6 px-8 rounded-2xl font-black text-2xl sm:text-3xl text-white shadow-2xl transform hover:scale-105 transition-all relative overflow-hidden"
+                    className="py-4 sm:py-5 px-6 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transform hover:scale-105 transition-all relative overflow-hidden"
                     style={{ backgroundColor: accentColor }}
                   >
                     <span className="relative z-10">
@@ -1394,7 +1391,7 @@ function WidgetFormContent() {
                   </button>
                   <button
                     onClick={redirectToThankYouPage}
-                    className="py-6 px-8 rounded-2xl font-bold text-xl text-zinc-600 bg-zinc-200 hover:bg-zinc-300 transition-all"
+                    className="py-4 sm:py-5 px-6 rounded-2xl font-bold text-lg sm:text-xl text-zinc-600 bg-zinc-200 hover:bg-zinc-300 transition-all"
                   >
                     Nu, mulțumesc
                   </button>

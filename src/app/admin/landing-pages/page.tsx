@@ -4,6 +4,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface Upsell {
+  id: string;
+  title: string;
+  type: "presale" | "postsale";
+  quantity: number;
+  price: number;
+  srp: number;
+  active: boolean;
+  display_order: number;
+  product?: {
+    name: string;
+    sku?: string;
+  };
+}
+
 interface LandingPage {
   id: string;
   name: string;
@@ -32,6 +47,7 @@ interface LandingPage {
 export default function LandingPagesPage() {
   const router = useRouter();
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
+  const [upsellsByLandingPage, setUpsellsByLandingPage] = useState<Record<string, Upsell[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -47,26 +63,67 @@ export default function LandingPagesPage() {
     try {
       setIsLoading(true);
       const response = await fetch("/api/landing-pages");
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch landing pages");
       }
 
       const data = await response.json();
-      
+
       if (!response.ok) {
-        const errorMsg = data.details 
-          ? `${data.error}: ${data.details}` 
+        const errorMsg = data.details
+          ? `${data.error}: ${data.details}`
           : data.error || "Failed to fetch landing pages";
         throw new Error(errorMsg);
       }
-      
+
       setLandingPages(data.landingPages || []);
+
+      // Fetch upsells for all landing pages
+      fetchAllUpsells();
     } catch (err) {
       console.error("Error fetching landing pages:", err);
       setError(err instanceof Error ? err.message : "Failed to load landing pages");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function fetchAllUpsells() {
+    try {
+      const response = await fetch("/api/upsells");
+
+      if (!response.ok) {
+        console.error("Failed to fetch upsells");
+        return;
+      }
+
+      const data = await response.json();
+      const upsells: Upsell[] = data.upsells || [];
+
+      // Group upsells by landing page ID
+      const grouped: Record<string, Upsell[]> = {};
+      upsells.forEach((upsell: any) => {
+        const landingPageId = upsell.landing_page_id;
+        if (!grouped[landingPageId]) {
+          grouped[landingPageId] = [];
+        }
+        grouped[landingPageId].push({
+          id: upsell.id,
+          title: upsell.title,
+          type: upsell.type,
+          quantity: upsell.quantity,
+          price: upsell.price,
+          srp: upsell.srp,
+          active: upsell.active,
+          display_order: upsell.display_order,
+          product: upsell.product,
+        });
+      });
+
+      setUpsellsByLandingPage(grouped);
+    } catch (err) {
+      console.error("Error fetching upsells:", err);
     }
   }
 
@@ -389,16 +446,52 @@ export default function LandingPagesPage() {
                                   Presale Upsells
                                 </h4>
                                 <button
-                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/presale`)}
+                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=presale`)}
                                   className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
                                 >
                                   + Adaugă Presale
                                 </button>
                               </div>
                               <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
-                                <p className="text-xs text-zinc-400 italic">
-                                  Nu există upsells presale configurate
-                                </p>
+                                {(() => {
+                                  const presaleUpsells = (upsellsByLandingPage[page.id] || []).filter(u => u.type === "presale");
+                                  if (presaleUpsells.length === 0) {
+                                    return (
+                                      <p className="text-xs text-zinc-400 italic">
+                                        Nu există upsells presale configurate
+                                      </p>
+                                    );
+                                  }
+                                  return (
+                                    <div className="space-y-2">
+                                      {presaleUpsells.map((upsell) => (
+                                        <div key={upsell.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                              <p className="text-sm font-medium text-white">{upsell.title}</p>
+                                              {!upsell.active && (
+                                                <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-[10px] rounded uppercase">
+                                                  Inactiv
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                              <p className="text-xs text-zinc-400">
+                                                {upsell.product?.name} {upsell.product?.sku && `(${upsell.product.sku})`}
+                                              </p>
+                                              <p className="text-xs text-zinc-400">
+                                                Cant: {upsell.quantity}
+                                              </p>
+                                              <p className="text-xs text-emerald-400 font-medium">
+                                                {formatPrice(upsell.price)} RON
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
 
@@ -409,16 +502,52 @@ export default function LandingPagesPage() {
                                   Postsale Upsells
                                 </h4>
                                 <button
-                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/postsale`)}
+                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
                                   className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
                                 >
                                   + Adaugă Postsale
                                 </button>
                               </div>
                               <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
-                                <p className="text-xs text-zinc-400 italic">
-                                  Nu există upsells postsale configurate
-                                </p>
+                                {(() => {
+                                  const postsaleUpsells = (upsellsByLandingPage[page.id] || []).filter(u => u.type === "postsale");
+                                  if (postsaleUpsells.length === 0) {
+                                    return (
+                                      <p className="text-xs text-zinc-400 italic">
+                                        Nu există upsells postsale configurate
+                                      </p>
+                                    );
+                                  }
+                                  return (
+                                    <div className="space-y-2">
+                                      {postsaleUpsells.map((upsell) => (
+                                        <div key={upsell.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                              <p className="text-sm font-medium text-white">{upsell.title}</p>
+                                              {!upsell.active && (
+                                                <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-[10px] rounded uppercase">
+                                                  Inactiv
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                              <p className="text-xs text-zinc-400">
+                                                {upsell.product?.name} {upsell.product?.sku && `(${upsell.product.sku})`}
+                                              </p>
+                                              <p className="text-xs text-zinc-400">
+                                                Cant: {upsell.quantity}
+                                              </p>
+                                              <p className="text-xs text-emerald-400 font-medium">
+                                                {formatPrice(upsell.price)} RON
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
 

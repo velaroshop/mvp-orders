@@ -969,42 +969,33 @@ function WidgetFormContent() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 className="font-bold text-base text-zinc-900 leading-tight">
-                              Adaugă <span className="font-black">{upsell.title}</span> pentru doar{' '}
-                              <span
-                                className="font-black text-lg"
-                                style={{ color: accentColor }}
-                              >
-                                {upsell.price.toFixed(2)} Lei
-                              </span>
-                            </h3>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="text-base text-zinc-900 leading-tight">
+                                Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
+                                <span
+                                  className="font-bold text-lg"
+                                  style={{ color: accentColor }}
+                                >
+                                  {upsell.price.toFixed(2)} Lei
+                                </span>
+                                {upsell.srp > upsell.price && (
+                                  <span className="text-sm text-zinc-500">
+                                    {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
+                                  </span>
+                                )}
+                              </h3>
+                            </div>
                             {upsell.media_url && (
-                              <div
-                                className="flex-shrink-0 rounded-lg overflow-hidden"
-                                style={{
-                                  border: `2px solid ${accentColor}`,
-                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                }}
-                              >
+                              <div className="flex-shrink-0">
                                 <img
                                   src={upsell.media_url}
                                   alt={upsell.title}
-                                  className="w-20 h-20 object-cover"
+                                  className="w-20 h-20 object-cover rounded-lg"
                                 />
                               </div>
                             )}
                           </div>
-
-                          {upsell.srp > upsell.price && (
-                            <p className="text-sm text-zinc-600 mb-1">
-                              (Redus de la{' '}
-                              <span className="line-through text-zinc-400">
-                                {upsell.srp.toFixed(2)} Lei
-                              </span>
-                              )
-                            </p>
-                          )}
                         </div>
                       </div>
                     </button>

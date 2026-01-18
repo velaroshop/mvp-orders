@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log(`📦 API returning ${upsells?.length || 0} upsells for org ${organizationId}`);
     return NextResponse.json({ upsells: upsells || [] });
   } catch (error) {
     console.error("Error in GET /api/upsells:", error);

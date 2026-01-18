@@ -94,12 +94,14 @@ export default function LandingPagesPage() {
       const response = await fetch("/api/upsells");
 
       if (!response.ok) {
-        console.error("Failed to fetch upsells");
+        console.error("Failed to fetch upsells", response.status);
         return;
       }
 
       const data = await response.json();
       const upsells: Upsell[] = data.upsells || [];
+
+      console.log("📦 Fetched upsells:", upsells);
 
       // Group upsells by landing page ID
       const grouped: Record<string, Upsell[]> = {};
@@ -121,6 +123,7 @@ export default function LandingPagesPage() {
         });
       });
 
+      console.log("📊 Grouped upsells:", grouped);
       setUpsellsByLandingPage(grouped);
     } catch (err) {
       console.error("Error fetching upsells:", err);

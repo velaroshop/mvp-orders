@@ -61,11 +61,14 @@ function WidgetFormContent() {
 
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
+  const [postsaleUpsells, setPostsaleUpsells] = useState<Upsell[]>([]);
   const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
+  const [postsaleCountdown, setPostsaleCountdown] = useState(60);
   const [error, setError] = useState<string | null>(null);
 
   const [phone, setPhone] = useState("");
@@ -96,6 +99,25 @@ function WidgetFormContent() {
       setLoading(false);
     }
   }, [slug]);
+
+  // Countdown timer for postsale offer
+  useEffect(() => {
+    if (!showPostsaleOffer) return;
+
+    const interval = setInterval(() => {
+      setPostsaleCountdown((prev) => {
+        if (prev <= 1) {
+          // Time's up! Redirect to thank you page
+          clearInterval(interval);
+          redirectToThankYouPage();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showPostsaleOffer]);
 
   // Send height to parent window if in iframe
   useEffect(() => {
@@ -199,6 +221,40 @@ function WidgetFormContent() {
       setPresaleUpsells(data.upsells || []);
     } catch (err) {
       console.error("Error fetching presale upsells:", err);
+    }
+  }
+
+  async function fetchPostsaleUpsells(landingPageId: string) {
+    try {
+      const response = await fetch(`/api/upsells/public/${landingPageId}?type=postsale`);
+
+      if (!response.ok) {
+        console.error("Failed to fetch postsale upsells", response.status);
+        return;
+      }
+
+      const data = await response.json();
+      setPostsaleUpsells(data.upsells || []);
+    } catch (err) {
+      console.error("Error fetching postsale upsells:", err);
+    }
+  }
+
+  function redirectToThankYouPage() {
+    setShowPostsaleOffer(false);
+    if (landingPage?.stores?.url) {
+      const thankYouSlug = landingPage.stores.thank_you_slug || "multumim";
+      let storeUrl = landingPage.stores.url;
+      if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+        storeUrl = `https://${storeUrl}`;
+      }
+      storeUrl = storeUrl.replace(/\/$/, '');
+      const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+      if (window.parent && window.parent !== window) {
+        window.parent.location.href = thankYouUrl;
+      } else {
+        window.location.href = thankYouUrl;
+      }
     }
   }
 
@@ -428,7 +484,19 @@ function WidgetFormContent() {
       // Show success popup
       setShowSuccessPopup(true);
 
-      // Wait 3 seconds then redirect to thank you page
+      // Check if postsale is active and fetch postsale upsells
+      if (landingPage.post_purchase_status && landingPage.id) {
+        await fetchPostsaleUpsells(landingPage.id);
+        // Wait 2 seconds to show success, then show postsale offer
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+          setPostsaleCountdown(60); // Reset countdown
+          setShowPostsaleOffer(true);
+        }, 2000);
+        return; // Don't redirect yet
+      }
+
+      // Wait 3 seconds then redirect to thank you page (if no postsale)
       setTimeout(() => {
         if (landingPage.stores?.url) {
           const thankYouSlug = landingPage.stores.thank_you_slug || "multumim"; // Use DB value or default fallback
@@ -1126,6 +1194,24 @@ function WidgetFormContent() {
                 transform: scale(1);
               }
             }
+            @keyframes scaleIn {
+              from {
+                opacity: 0;
+                transform: scale(0.8);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            @keyframes marchingAnts {
+              0% {
+                stroke-dashoffset: 0;
+              }
+              100% {
+                stroke-dashoffset: 12;
+              }
+            }
           `}} />
 
           {/* Success Popup */}
@@ -1186,6 +1272,138 @@ function WidgetFormContent() {
                     style={{ borderColor: accentColor }}
                   ></div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Post-Sale Offer Popup */}
+          {showPostsaleOffer && postsaleUpsells.length > 0 && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+              style={{ animation: 'fadeIn 0.4s ease-out' }}
+            >
+              <div
+                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full relative overflow-hidden"
+                style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+              >
+                {/* Animated background elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl opacity-20 animate-pulse" style={{ background: accentColor }}></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr rounded-full blur-3xl opacity-15 animate-pulse" style={{ background: primaryColor, animationDelay: '1s' }}></div>
+
+                {/* Scarcity Badge with Countdown */}
+                <div className="relative mb-6 text-center">
+                  <div
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-bold text-lg sm:text-xl shadow-lg animate-pulse"
+                    style={{ backgroundColor: '#dc2626' }}
+                  >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    OFERTĂ EXPIRĂ ÎN {postsaleCountdown} SECUNDE!
+                  </div>
+                </div>
+
+                {/* Main Title - Eye-catching */}
+                <div className="relative text-center mb-6">
+                  <div className="text-5xl sm:text-6xl mb-2">🎁</div>
+                  <h2
+                    className="text-3xl sm:text-5xl font-black mb-3 leading-tight"
+                    style={{
+                      background: `linear-gradient(135deg, ${accentColor} 0%, ${primaryColor} 100%)`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      textShadow: '0 2px 20px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    STOP! AI CÂȘTIGAT!
+                  </h2>
+                  <p className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-2">
+                    🎉 BONUS EXCLUSIV DEBLOCAT! 🎉
+                  </p>
+                  {postsaleUpsells[0] && (
+                    <div className="mt-4 inline-block">
+                      <div className="text-zinc-600 text-lg mb-2 line-through">
+                        Preț normal: <span className="font-bold">{postsaleUpsells[0].srp.toFixed(2)} LEI</span>
+                      </div>
+                      <div
+                        className="text-5xl sm:text-6xl font-black mb-2 animate-bounce"
+                        style={{ color: '#dc2626' }}
+                      >
+                        -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}% REDUCERE!
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black" style={{ color: accentColor }}>
+                        DOAR {postsaleUpsells[0].price.toFixed(2)} LEI!
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Display */}
+                {postsaleUpsells[0] && (
+                  <div className="relative bg-white rounded-2xl p-6 mb-6 shadow-xl border-4 border-dashed" style={{ borderColor: accentColor }}>
+                    <div className="flex items-center gap-4">
+                      {postsaleUpsells[0].media_url && (
+                        <img
+                          src={postsaleUpsells[0].media_url}
+                          alt={postsaleUpsells[0].title}
+                          className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl shadow-lg"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-2">
+                          {postsaleUpsells[0].title}
+                        </h3>
+                        {postsaleUpsells[0].description && (
+                          <p className="text-base sm:text-lg text-zinc-600 mb-3">
+                            {postsaleUpsells[0].description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 text-lg font-bold" style={{ color: accentColor }}>
+                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Cantitate: {postsaleUpsells[0].quantity}x
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Urgency Messages */}
+                <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4 mb-6">
+                  <p className="text-center text-lg sm:text-xl font-bold text-red-700">
+                    ⚠️ Această ofertă dispare în {postsaleCountdown} secunde!<br />
+                    <span className="text-base">Nu o vei mai vedea NICIODATĂ!</span>
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => {
+                      // Accept postsale offer logic here
+                      console.log('Accepted postsale offer');
+                    }}
+                    className="py-6 px-8 rounded-2xl font-black text-2xl sm:text-3xl text-white shadow-2xl transform hover:scale-105 transition-all relative overflow-hidden"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    <span className="relative z-10">
+                      DA! VREAU BONUSUL! 🎁
+                    </span>
+                    <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+                  </button>
+                  <button
+                    onClick={redirectToThankYouPage}
+                    className="py-6 px-8 rounded-2xl font-bold text-xl text-zinc-600 bg-zinc-200 hover:bg-zinc-300 transition-all"
+                  >
+                    Nu, mulțumesc
+                  </button>
+                </div>
+
+                {/* Trust Badge */}
+                <p className="text-center text-sm text-zinc-500 mt-4">
+                  ✓ Ofertă verificată și garantată
+                </p>
               </div>
             </div>
           )}

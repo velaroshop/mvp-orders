@@ -167,102 +167,16 @@ export async function POST(request: NextRequest) {
       console.error("Error updating partial order:", err);
     }
 
-    // Încearcă să creeze comanda în Helpship cu status ONHOLD
-    // Dacă eșuează, comanda rămâne în DB dar cu status 'sync_error'
-    let helpshipOrderId: string | undefined;
-    let helpshipError: any = null;
-    try {
-      console.log("[Helpship] Attempting to create order...");
-
-      // Obține credențialele Helpship pentru organizație
-      const credentials = await getHelpshipCredentials(landingPage.organization_id);
-      const helpshipClient = new HelpshipClient(credentials);
-
-      // Fetch product details for each upsell to get the product name from products table
-      const upsellsWithProductNames = await Promise.all(
-        upsells.map(async (upsell: any) => {
-          if (!upsell.productSku) {
-            return {
-              ...upsell,
-              productName: upsell.title, // Fallback to upsell title if no SKU
-            };
-          }
-
-          // Fetch product by SKU
-          const { data: product } = await supabaseAdmin
-            .from("products")
-            .select("name, sku")
-            .eq("sku", upsell.productSku)
-            .eq("organization_id", landingPage.organization_id)
-            .single();
-
-          return {
-            ...upsell,
-            productName: product?.name || upsell.title, // Use product name or fallback to upsell title
-          };
-        })
-      );
-
-      const helpshipResult = await helpshipClient.createOrder({
-        orderId: order.id, // ID-ul nostru intern (externalId în Helpship)
-        orderNumber: order.orderNumber || 0, // Numărul comenzii pentru ORDER NAME
-        orderSeries: orderSeries, // Order series din store
-        customerName: fullName,
-        customerPhone: phone,
-        county,
-        city,
-        address,
-        offerCode,
-        productSku, // SKU-ul produsului (același pentru toate ofertele)
-        productName, // Numele produsului din baza noastră
-        productQuantity, // Cantitatea din oferta selectată
-        subtotal: Number(subtotal) || 0,
-        shippingCost: Number(shippingCost) || 0,
-        total: Number(total) || 0,
-        upsells: upsellsWithProductNames,
-      });
-
-      console.log("[Helpship] Order created successfully:", helpshipResult);
-      helpshipOrderId = helpshipResult.orderId;
-
-      // Actualizează comanda cu helpshipOrderId
-      if (helpshipOrderId) {
-        const { error: updateError } = await supabaseAdmin
-          .from("orders")
-          .update({ helpship_order_id: helpshipOrderId })
-          .eq("id", order.id);
-
-        if (updateError) {
-          console.error("[Helpship] Failed to update order with helpshipOrderId:", updateError);
-        } else {
-          console.log("[Helpship] Order updated with helpshipOrderId:", helpshipOrderId);
-        }
-      }
-    } catch (err) {
-      // Loghează eroarea detaliată și setează status la 'sync_error'
-      helpshipError = err;
-      console.error("[Helpship] Failed to create order in Helpship:", {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-      });
-
-      // Actualizează comanda cu status 'sync_error'
-      const { error: statusUpdateError } = await supabaseAdmin
-        .from("orders")
-        .update({ status: "sync_error" })
-        .eq("id", order.id);
-
-      if (statusUpdateError) {
-        console.error("[Helpship] Failed to update order status to sync_error:", statusUpdateError);
-      } else {
-        console.log("[Helpship] Order status updated to sync_error");
-      }
-    }
+    // Order created with status "queue" - will be synced to Helpship after postsale decision
+    // Helpship sync is handled by:
+    // - /api/orders/[id]/finalize (if user declines postsale or timeout)
+    // - /api/orders/[id]/add-postsale-upsell (if user accepts postsale)
+    console.log("[Order] Created with status 'queue', awaiting postsale decision");
 
     return NextResponse.json(
       {
         orderId: order.id,
-        helpshipOrderId: helpshipOrderId || null,
+        status: "queue",
       },
       { status: 201 },
     );

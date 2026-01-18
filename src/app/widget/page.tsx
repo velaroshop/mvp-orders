@@ -108,9 +108,9 @@ function WidgetFormContent() {
     const interval = setInterval(() => {
       setPostsaleCountdown((prev) => {
         if (prev <= 1) {
-          // Time's up! Redirect to thank you page
+          // Time's up! Finalize order without postsale and redirect
           clearInterval(interval);
-          redirectToThankYouPage();
+          finalizeOrderAndRedirect();
           return 0;
         }
         return prev - 1;
@@ -239,6 +239,30 @@ function WidgetFormContent() {
     } catch (err) {
       console.error("Error fetching postsale upsells:", err);
     }
+  }
+
+  async function finalizeOrderAndRedirect() {
+    // If we have a created order ID, finalize it (no postsale)
+    if (createdOrderId) {
+      try {
+        console.log('[Finalize] Finalizing order without postsale:', createdOrderId);
+        const response = await fetch(`/api/orders/${createdOrderId}/finalize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          console.error('[Finalize] Failed to finalize order');
+        } else {
+          console.log('[Finalize] Order finalized successfully');
+        }
+      } catch (error) {
+        console.error('[Finalize] Error finalizing order:', error);
+      }
+    }
+
+    // Redirect to thank you page
+    redirectToThankYouPage();
   }
 
   function redirectToThankYouPage() {
@@ -1417,7 +1441,7 @@ function WidgetFormContent() {
                     <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
                   </button>
                   <button
-                    onClick={redirectToThankYouPage}
+                    onClick={finalizeOrderAndRedirect}
                     className="py-4 sm:py-5 px-6 rounded-2xl font-bold text-lg sm:text-xl text-zinc-600 bg-zinc-200 hover:bg-zinc-300 transition-all"
                   >
                     Nu, mulțumesc

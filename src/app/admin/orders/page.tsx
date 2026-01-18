@@ -467,7 +467,9 @@ export default function AdminPage() {
                     <td className="px-3 py-2">
                       <span
                         className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                          order.status === "confirmed"
+                          order.status === "queue"
+                            ? "bg-violet-600 text-white"
+                            : order.status === "confirmed"
                             ? "bg-emerald-600 text-white"
                             : order.status === "cancelled"
                             ? "bg-red-600 text-white"
@@ -478,7 +480,9 @@ export default function AdminPage() {
                             : "bg-amber-500 text-white"
                         }`}
                       >
-                        {order.status === "pending"
+                        {order.status === "queue"
+                          ? "Queue"
+                          : order.status === "pending"
                           ? "Pending"
                           : order.status === "cancelled"
                           ? "Cancelled"
@@ -543,17 +547,19 @@ export default function AdminPage() {
                     {/* Actions */}
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-2">
-                        {/* CONFIRM Button - Always visible, disabled if confirmed */}
+                        {/* CONFIRM Button - Always visible, disabled if queue or confirmed */}
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}
-                          disabled={order.status === "confirmed" || confirming === order.id}
+                          disabled={order.status === "queue" || order.status === "confirmed" || confirming === order.id}
                           className={`rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all ${
-                            order.status === "confirmed"
+                            order.status === "queue"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "confirmed"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
                           }`}
                         >
-                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : "CONFIRM"}
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : "CONFIRM"}
                         </button>
 
                         {/* Actions Dropdown */}
@@ -569,7 +575,7 @@ export default function AdminPage() {
                               <div className="py-1">
                                 <button
                                   onClick={() => handleActionClick(order.id, "confirm")}
-                                  disabled={confirming === order.id}
+                                  disabled={order.status === "queue" || confirming === order.id}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {confirming === order.id ? "Order Confirm..." : "Order Confirm"}

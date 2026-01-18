@@ -38,7 +38,7 @@ export async function createOrder(input: {
       subtotal: input.subtotal,
       shipping_cost: input.shippingCost,
       total: input.total,
-      status: "pending",
+      status: "queue",
       product_name: input.productName,
       product_sku: input.productSku,
       product_quantity: input.productQuantity,

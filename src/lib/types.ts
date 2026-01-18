@@ -48,6 +48,7 @@ export interface Order {
   holdFromStatus?: OrderStatus; // Status-ul înainte de hold (pentru UNHOLD)
   fromPartialId?: string; // ID-ul partial order-ului din care provine
   source?: string; // Sursa comenzii: "direct" sau "partial"
+  queueExpiresAt?: string; // Timestamp when queue expires (3 minutes from creation)
   createdAt: string;
 }
 

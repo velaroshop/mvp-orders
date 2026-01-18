@@ -25,7 +25,7 @@ export async function POST(
     // Get the order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, organization_id, upsells, helpship_order_id, total")
+      .select("id, organization_id, upsells, helpship_order_id, total, status, queue_expires_at")
       .eq("id", orderId)
       .single();
 
@@ -34,6 +34,37 @@ export async function POST(
         { error: "Order not found" },
         { status: 404 }
       );
+    }
+
+    // Check if order is in queue status
+    if (order.status !== "queue") {
+      return NextResponse.json(
+        { error: "Order is not in queue status" },
+        { status: 400 }
+      );
+    }
+
+    // Check if queue has expired
+    if (order.queue_expires_at) {
+      const expiresAt = new Date(order.queue_expires_at);
+      const now = new Date();
+
+      if (now >= expiresAt) {
+        console.log("[Postsale] Queue expired:", {
+          orderId,
+          expiresAt: expiresAt.toISOString(),
+          now: now.toISOString(),
+          expired: true,
+        });
+
+        return NextResponse.json(
+          {
+            error: "Postsale offer has expired",
+            message: "The time window for accepting postsale offer has passed",
+          },
+          { status: 410 } // 410 Gone
+        );
+      }
     }
 
     // Get the upsell details with product info

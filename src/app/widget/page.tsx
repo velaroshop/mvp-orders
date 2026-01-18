@@ -69,6 +69,7 @@ function WidgetFormContent() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
   const [postsaleCountdown, setPostsaleCountdown] = useState(180);
+  const [queueExpiresAt, setQueueExpiresAt] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [postsaleProcessing, setPostsaleProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,24 +103,33 @@ function WidgetFormContent() {
     }
   }, [slug]);
 
-  // Countdown timer for postsale offer
+  // Countdown timer for postsale offer - based on absolute timestamp
   useEffect(() => {
-    if (!showPostsaleOffer) return;
+    if (!showPostsaleOffer || !queueExpiresAt) return;
+
+    const calculateTimeRemaining = () => {
+      const expiresAt = new Date(queueExpiresAt).getTime();
+      const now = Date.now();
+      const remaining = Math.floor((expiresAt - now) / 1000);
+      return Math.max(0, remaining);
+    };
+
+    // Set initial countdown
+    setPostsaleCountdown(calculateTimeRemaining());
 
     const interval = setInterval(() => {
-      setPostsaleCountdown((prev) => {
-        if (prev <= 1) {
-          // Time's up! Finalize order without postsale and redirect
-          clearInterval(interval);
-          finalizeOrderAndRedirect();
-          return 0;
-        }
-        return prev - 1;
-      });
+      const remaining = calculateTimeRemaining();
+      setPostsaleCountdown(remaining);
+
+      if (remaining <= 0) {
+        // Time's up! Finalize order without postsale and redirect
+        clearInterval(interval);
+        finalizeOrderAndRedirect();
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [showPostsaleOffer]);
+  }, [showPostsaleOffer, queueExpiresAt]);
 
   // Send height to parent window if in iframe
   useEffect(() => {
@@ -511,10 +521,12 @@ function WidgetFormContent() {
         throw new Error(data.error || "Nu s-a putut trimite comanda.");
       }
 
-      // Get order ID from response
+      // Get order ID and queue expiration from response
       const orderData = await response.json();
       const orderId = orderData.orderId;
+      const queueExpires = orderData.queueExpiresAt;
       setCreatedOrderId(orderId);
+      setQueueExpiresAt(queueExpires);
 
       // Show success popup
       setShowSuccessPopup(true);

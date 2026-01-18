@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
       {
         orderId: order.id,
         status: "queue",
+        queueExpiresAt: order.queueExpiresAt,
       },
       { status: 201 },
     );

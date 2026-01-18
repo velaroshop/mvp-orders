@@ -3,7 +3,7 @@
 
 -- Update status constraint to include 'testing'
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
-ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'confirmed', 'cancelled', 'queue', 'sync_error', 'testing'));
+ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'confirmed', 'cancelled', 'queue', 'hold', 'sync_error', 'testing'));
 
 -- Add comment
-COMMENT ON CONSTRAINT orders_status_check ON orders IS 'Order status: pending (synced to Helpship), confirmed, cancelled, queue (waiting for postsale), sync_error (failed to sync), testing (product in testing mode - not synced to Helpship)';
+COMMENT ON CONSTRAINT orders_status_check ON orders IS 'Order status: pending (synced to Helpship), confirmed, cancelled, queue (waiting for postsale), hold (on hold in Helpship), sync_error (failed to sync), testing (product in testing mode - not synced to Helpship)';

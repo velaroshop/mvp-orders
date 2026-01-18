@@ -37,8 +37,8 @@ export async function GET(
       .from("upsells")
       .select(`
         *,
-        product:products(id, name, sku),
-        landing_page:landing_pages(id, slug, title)
+        product:products!product_id(id, name, sku),
+        landing_page:landing_pages!landing_page_id(id, slug, name)
       `)
       .eq("id", id)
       .eq("organization_id", organizationId)

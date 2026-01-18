@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
       .from("upsells")
       .select(`
         *,
-        product:products(id, name, sku),
-        landing_page:landing_pages(id, slug, title)
+        product:products!product_id(id, name, sku),
+        landing_page:landing_pages!landing_page_id(id, slug, name)
       `)
       .eq("organization_id", organizationId)
       .order("display_order", { ascending: true });

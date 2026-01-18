@@ -29,13 +29,10 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Build query with LEFT JOIN to get order_series from store (optional)
+    // Build query
     let query = supabaseAdmin
       .from("orders")
-      .select(`
-        *,
-        landing_pages(store_id, stores(order_series))
-      `, { count: "exact" })
+      .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId);
 
     // Add search filter if query provided
@@ -81,7 +78,6 @@ export async function GET(request: Request) {
       status: row.status as OrderStatus,
       helpshipOrderId: row.helpship_order_id ?? undefined,
       orderNumber: row.order_number ?? undefined,
-      orderSeries: (row as any).landing_pages?.stores?.order_series ?? undefined,
       orderNote: row.order_note ?? undefined,
       createdAt: row.created_at,
     }));

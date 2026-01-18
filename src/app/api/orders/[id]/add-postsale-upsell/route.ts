@@ -25,7 +25,7 @@ export async function POST(
     // Get the order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, organization_id, upsells, helpship_order_id")
+      .select("id, organization_id, upsells, helpship_order_id, total")
       .eq("id", orderId)
       .single();
 
@@ -84,11 +84,24 @@ export async function POST(
 
     const updatedUpsells = [...currentUpsells, newUpsell];
 
-    // Update order in database with new upsell
+    // Calculate new total including postsale upsell (price * quantity)
+    const postsaleTotal = Number(upsell.price) * Number(upsell.quantity);
+    const newTotal = Number(order.total) + postsaleTotal;
+
+    console.log("[Postsale] Updating order total:", {
+      oldTotal: Number(order.total),
+      postsalePrice: Number(upsell.price),
+      postsaleQuantity: Number(upsell.quantity),
+      postsaleTotal: postsaleTotal,
+      newTotal: newTotal,
+    });
+
+    // Update order in database with new upsell and updated total
     const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         upsells: updatedUpsells,
+        total: newTotal,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);

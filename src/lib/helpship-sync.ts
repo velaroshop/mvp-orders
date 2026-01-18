@@ -78,6 +78,22 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       })
     );
 
+    // Calculate actual total including all upsells (presale + postsale)
+    // Each upsell has price and quantity, so total = price * quantity
+    const upsellsTotal = upsellsWithProductNames.reduce(
+      (sum, upsell) => sum + (Number(upsell.price) || 0) * (Number(upsell.quantity) || 1),
+      0
+    );
+    const actualTotal = Number(order.subtotal) + Number(order.shipping_cost) + upsellsTotal;
+
+    console.log("[Helpship Sync] Total calculation:", {
+      subtotal: Number(order.subtotal),
+      shippingCost: Number(order.shipping_cost),
+      upsellsTotal: upsellsTotal,
+      calculatedTotal: actualTotal,
+      originalTotal: Number(order.total),
+    });
+
     // Get Helpship credentials and create client
     const credentials = await getHelpshipCredentials(landingPage.organization_id);
     const helpshipClient = new HelpshipClient(credentials);
@@ -98,7 +114,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       productQuantity: order.product_quantity || 1,
       subtotal: Number(order.subtotal) || 0,
       shippingCost: Number(order.shipping_cost) || 0,
-      total: Number(order.total) || 0,
+      total: actualTotal, // Use calculated total including all upsells
       upsells: upsellsWithProductNames,
     });
 

@@ -63,11 +63,12 @@ export async function POST(
 
     console.log(`[Bulk Cancel] Found ${testingOrders.length} testing orders to cancel`);
 
-    // Update all testing orders to cancelled status
+    // Update all testing orders to cancelled status and mark as promoted from testing
     const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         status: "cancelled",
+        promoted_from_testing: true,
         updated_at: new Date().toISOString(),
       })
       .in("id", testingOrders.map((o) => o.id));

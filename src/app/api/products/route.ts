@@ -46,7 +46,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ products: products || [] });
+    // For each product, get count of testing orders
+    const productsWithCounts = await Promise.all(
+      (products || []).map(async (product) => {
+        // Get testing orders count via landing_pages
+        const { count } = await supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "testing")
+          .in(
+            "landing_page_id",
+            supabase
+              .from("landing_pages")
+              .select("id")
+              .eq("product_id", product.id)
+          );
+
+        return {
+          ...product,
+          testing_orders_count: count || 0,
+        };
+      })
+    );
+
+    return NextResponse.json({ products: productsWithCounts });
   } catch (error) {
     console.error("Error in GET /api/products:", error);
     return NextResponse.json(

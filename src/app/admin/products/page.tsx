@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ConfirmModal from "../components/ConfirmModal";
+import Toast from "../components/Toast";
 
 interface Product {
   id: string;
@@ -11,6 +13,7 @@ interface Product {
   status: "active" | "testing" | "inactive";
   created_at: string;
   updated_at: string;
+  testing_orders_count?: number;
 }
 
 export default function ProductsPage() {
@@ -18,6 +21,31 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Bulk action state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    action: (() => Promise<void>) | null;
+    isProcessing: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    action: null,
+    isProcessing: false,
+  });
+
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    type: "success" | "error" | "info";
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    message: "",
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -69,6 +97,94 @@ export default function ProductsPage() {
       year: "numeric",
       month: "short",
       day: "numeric",
+    });
+  }
+
+  async function handlePromoteBulk(productId: string, count: number) {
+    setConfirmModal({
+      isOpen: true,
+      title: "Promote Testing Orders",
+      message: `Are you sure you want to promote ${count} testing ${count === 1 ? "order" : "orders"} to real orders? They will be synced to Helpship.`,
+      action: async () => {
+        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        try {
+          const response = await fetch(`/api/products/${productId}/promote-testing-orders`, {
+            method: "POST",
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to promote orders");
+          }
+
+          const result = await response.json();
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "success",
+            message: `Successfully promoted ${result.count} testing ${result.count === 1 ? "order" : "orders"}! ✓`,
+          });
+
+          // Refresh products list
+          await fetchProducts();
+        } catch (error) {
+          console.error("Error promoting orders:", error);
+          const errorMessage = error instanceof Error ? error.message : "Failed to promote orders";
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "error",
+            message: errorMessage,
+          });
+        }
+      },
+      isProcessing: false,
+    });
+  }
+
+  async function handleCancelBulk(productId: string, count: number) {
+    setConfirmModal({
+      isOpen: true,
+      title: "Cancel Testing Orders",
+      message: `Are you sure you want to cancel ${count} testing ${count === 1 ? "order" : "orders"}? This action cannot be undone.`,
+      action: async () => {
+        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        try {
+          const response = await fetch(`/api/products/${productId}/cancel-testing-orders`, {
+            method: "POST",
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to cancel orders");
+          }
+
+          const result = await response.json();
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "success",
+            message: `Successfully cancelled ${result.count} testing ${result.count === 1 ? "order" : "orders"}! ✓`,
+          });
+
+          // Refresh products list
+          await fetchProducts();
+        } catch (error) {
+          console.error("Error cancelling orders:", error);
+          const errorMessage = error instanceof Error ? error.message : "Failed to cancel orders";
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "error",
+            message: errorMessage,
+          });
+        }
+      },
+      isProcessing: false,
     });
   }
 
@@ -127,6 +243,9 @@ export default function ProductsPage() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
+                    Testing Orders
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-700 uppercase tracking-wider">
                     Created
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-zinc-700 uppercase tracking-wider">
@@ -165,6 +284,33 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-2">
+                        {(product.testing_orders_count || 0) > 0 ? (
+                          <>
+                            <div className="text-sm font-medium text-blue-600">
+                              {product.testing_orders_count} testing {product.testing_orders_count === 1 ? "order" : "orders"}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handlePromoteBulk(product.id, product.testing_orders_count || 0)}
+                                className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+                              >
+                                🚀 Promote All
+                              </button>
+                              <button
+                                onClick={() => handleCancelBulk(product.id, product.testing_orders_count || 0)}
+                                className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                              >
+                                ✕ Cancel All
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-sm text-zinc-400">-</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-zinc-600">
                         {formatDate(product.created_at)}
                       </div>
@@ -192,6 +338,26 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false })}
+        onConfirm={() => confirmModal.action && confirmModal.action()}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Confirm"
+        cancelText="Cancel"
+        isProcessing={confirmModal.isProcessing}
+      />
+
+      {/* Toast */}
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+        type={toast.type}
+        message={toast.message}
+      />
     </div>
   );
 }

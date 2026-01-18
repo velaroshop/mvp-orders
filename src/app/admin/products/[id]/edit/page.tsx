@@ -180,15 +180,16 @@ export default function EditProductPage() {
                 </label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" })}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" | "inactive" })}
                   className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900"
                   required
                 >
                   <option value="active">Active</option>
                   <option value="testing">Testing</option>
+                  <option value="inactive">Inactive</option>
                 </select>
                 <p className="text-xs text-zinc-700 mt-1">
-                  Active: Product is live and available. Testing: Product is in testing phase.
+                  Active: Product is live and available. Testing: Product is in testing phase. Inactive: Product is disabled.
                 </p>
               </div>
             </div>

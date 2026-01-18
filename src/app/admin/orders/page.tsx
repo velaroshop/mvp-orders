@@ -374,6 +374,12 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "promote") {
+      handlePromoteTestingOrder(orderId);
+      setOpenDropdown(null);
+      return;
+    }
+
     // Pentru restul acțiunilor, nu facem nimic momentan
     setOpenDropdown(null);
   }
@@ -417,6 +423,40 @@ export default function AdminPage() {
       });
     } finally {
       setIsFinalizing(false);
+    }
+  }
+
+  async function handlePromoteTestingOrder(orderId: string) {
+    if (!confirm("Are you sure you want to promote this testing order to a real order? It will be synced to Helpship.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/promote`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to promote order");
+      }
+
+      await fetchOrders();
+
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Testing order promoted to real order successfully! ✓",
+      });
+    } catch (error) {
+      console.error("Error promoting order:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to promote order";
+
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     }
   }
 
@@ -679,13 +719,16 @@ export default function AdminPage() {
                           {openDropdown === order.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10">
                               <div className="py-1">
-                                <button
-                                  onClick={() => handleActionClick(order.id, "confirm")}
-                                  disabled={order.status === "queue" || confirming === order.id}
-                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
-                                </button>
+                                {/* Hide Order Confirm for testing orders */}
+                                {order.status !== "testing" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "confirm")}
+                                    disabled={order.status === "queue" || confirming === order.id}
+                                    className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleActionClick(order.id, "cancel")}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
@@ -722,6 +765,14 @@ export default function AdminPage() {
                                     className="w-full text-left px-3 py-2 text-xs text-violet-400 hover:bg-violet-900/30 font-medium border-t border-zinc-600"
                                   >
                                     ⚡ Finalize Queue
+                                  </button>
+                                )}
+                                {order.status === "testing" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "promote")}
+                                    className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    🚀 Make Real Order
                                   </button>
                                 )}
                                 {order.status === "sync_error" && (

@@ -26,10 +26,10 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       return { success: false, error: "Order not found" };
     }
 
-    // Get landing page details for organization_id and store_id
+    // Get landing page details for organization_id
     const { data: landingPage, error: landingError } = await supabaseAdmin
       .from("landing_pages")
-      .select("organization_id, store_id")
+      .select("organization_id")
       .eq("slug", order.landing_key)
       .single();
 
@@ -38,19 +38,8 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       return { success: false, error: "Landing page not found" };
     }
 
-    // Get order series from store
-    let orderSeries = "VLR"; // Default fallback
-    if (landingPage.store_id) {
-      const { data: store } = await supabaseAdmin
-        .from("stores")
-        .select("order_series")
-        .eq("id", landingPage.store_id)
-        .single();
-
-      if (store?.order_series) {
-        orderSeries = store.order_series;
-      }
-    }
+    // Use order_series from order (snapshot saved at creation time)
+    const orderSeries = order.order_series || "VLR"; // Default fallback
 
     // Fetch product names for upsells based on SKU
     const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];

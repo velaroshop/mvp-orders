@@ -24,6 +24,26 @@ export async function createOrder(input: {
   // Calculate queue expiration time (3 minutes from now)
   const queueExpiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString();
 
+  // Fetch order_series from store via landing_page
+  let orderSeries = "VLR-"; // Default fallback
+  const { data: landingPage } = await supabaseAdmin
+    .from("landing_pages")
+    .select("store_id")
+    .eq("slug", input.landingKey)
+    .single();
+
+  if (landingPage?.store_id) {
+    const { data: store } = await supabaseAdmin
+      .from("stores")
+      .select("order_series")
+      .eq("id", landingPage.store_id)
+      .single();
+
+    if (store?.order_series) {
+      orderSeries = store.order_series;
+    }
+  }
+
   // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
   const { data, error } = await supabaseAdmin
     .from("orders")
@@ -46,6 +66,7 @@ export async function createOrder(input: {
       product_name: input.productName,
       product_sku: input.productSku,
       product_quantity: input.productQuantity,
+      order_series: orderSeries,
     })
     .select()
     .single();
@@ -76,6 +97,7 @@ export async function createOrder(input: {
     status: data.status as OrderStatus,
     helpshipOrderId: data.helpship_order_id ?? undefined,
     orderNumber: data.order_number ?? undefined,
+    orderSeries: data.order_series ?? undefined,
     orderNote: data.order_note ?? undefined,
     queueExpiresAt: data.queue_expires_at ?? undefined,
     createdAt: data.created_at,
@@ -114,6 +136,7 @@ export async function listOrders(): Promise<Order[]> {
     status: row.status as OrderStatus,
     helpshipOrderId: row.helpship_order_id ?? undefined,
     orderNumber: row.order_number ?? undefined,
+    orderSeries: row.order_series ?? undefined,
     orderNote: row.order_note ?? undefined,
     queueExpiresAt: row.queue_expires_at ?? undefined,
     createdAt: row.created_at,

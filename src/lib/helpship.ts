@@ -189,7 +189,13 @@ class HelpshipClient {
       subtotal: number;
       shippingCost: number;
       total: number;
-      upsells?: string[];
+      upsells?: Array<{
+        upsellId: string;
+        title: string;
+        quantity: number;
+        price: number;
+        productSku?: string | null;
+      }>;
     },
   ): Promise<{ orderId: string; rawResponse?: any }> {
     // Separăm numele în firstName și lastName
@@ -258,6 +264,7 @@ class HelpshipClient {
       customerNote: null,
       shopOwnerNote: null,
       orderLines: [
+        // Main product
         {
           name: orderData.productName || orderData.productSku || "Product", // Numele produsului din baza noastră sau SKU ca fallback
           quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
@@ -268,6 +275,14 @@ class HelpshipClient {
           externalSku: orderData.productSku || undefined, // SKU-ul produsului (același pentru toate ofertele)
           // accountId, variantName, vatName, externalId - opționale
         },
+        // Add upsells as separate products
+        ...(orderData.upsells || []).map(upsell => ({
+          name: upsell.title,
+          quantity: upsell.quantity,
+          price: upsell.price,
+          vatPercentage: 0,
+          externalSku: upsell.productSku || undefined,
+        })),
       ],
       packagingType: "Envelope", // Sau alt tip conform documentației
       // deliveryServiceId - opțional, probabil trebuie obținut din API

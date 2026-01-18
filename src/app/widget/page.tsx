@@ -233,6 +233,7 @@ function WidgetFormContent() {
           title: upsell.title,
           quantity: upsell.quantity,
           price: upsell.price,
+          productSku: upsell.product?.sku || null,
         }));
 
       const payload = {
@@ -393,6 +394,7 @@ function WidgetFormContent() {
         title: upsell.title,
         quantity: upsell.quantity,
         price: upsell.price,
+        productSku: upsell.product?.sku || null,
       }));
 
     const payload = {

@@ -49,18 +49,27 @@ export async function GET(request: NextRequest) {
     // For each product, get count of testing orders
     const productsWithCounts = await Promise.all(
       (products || []).map(async (product) => {
-        // Get testing orders count via landing_pages
+        // First, get all landing page IDs for this product
+        const { data: landingPages } = await supabase
+          .from("landing_pages")
+          .select("id")
+          .eq("product_id", product.id);
+
+        if (!landingPages || landingPages.length === 0) {
+          return {
+            ...product,
+            testing_orders_count: 0,
+          };
+        }
+
+        const landingPageIds = landingPages.map((lp) => lp.id);
+
+        // Then count testing orders for those landing pages
         const { count } = await supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
           .eq("status", "testing")
-          .in(
-            "landing_page_id",
-            supabase
-              .from("landing_pages")
-              .select("id")
-              .eq("product_id", product.id)
-          );
+          .in("landing_page_id", landingPageIds);
 
         return {
           ...product,

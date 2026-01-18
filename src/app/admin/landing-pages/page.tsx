@@ -7,16 +7,32 @@ import Link from "next/link";
 interface Upsell {
   id: string;
   title: string;
+  description?: string;
   type: "presale" | "postsale";
   quantity: number;
   price: number;
   srp: number;
   active: boolean;
   display_order: number;
+  media_url?: string;
+  product_id: string;
+  landing_page_id: string;
   product?: {
+    id: string;
     name: string;
     sku?: string;
   };
+  landing_page?: {
+    id: string;
+    slug: string;
+    name?: string;
+  };
+}
+
+interface Product {
+  id: string;
+  name: string;
+  sku?: string;
 }
 
 interface LandingPage {
@@ -54,6 +70,9 @@ export default function LandingPagesPage() {
   const [embedModalOpen, setEmbedModalOpen] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editUpsellModal, setEditUpsellModal] = useState<Upsell | null>(null);
+  const [isEditingUpsell, setIsEditingUpsell] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     fetchLandingPages();
@@ -113,13 +132,18 @@ export default function LandingPagesPage() {
         grouped[landingPageId].push({
           id: upsell.id,
           title: upsell.title,
+          description: upsell.description,
           type: upsell.type,
           quantity: upsell.quantity,
           price: upsell.price,
           srp: upsell.srp,
           active: upsell.active,
           display_order: upsell.display_order,
+          media_url: upsell.media_url,
+          product_id: upsell.product_id,
+          landing_page_id: upsell.landing_page_id,
           product: upsell.product,
+          landing_page: upsell.landing_page,
         });
       });
 
@@ -151,6 +175,63 @@ export default function LandingPagesPage() {
       alert(err instanceof Error ? err.message : "Failed to delete landing page");
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function fetchProducts() {
+    try {
+      const response = await fetch("/api/products");
+      if (!response.ok) {
+        console.error("Failed to fetch products");
+        return;
+      }
+      const data = await response.json();
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    }
+  }
+
+  async function handleUpdateUpsell(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editUpsellModal) return;
+
+    try {
+      setIsEditingUpsell(true);
+      const response = await fetch(`/api/upsells/${editUpsellModal.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editUpsellModal.title,
+          description: editUpsellModal.description,
+          product_id: editUpsellModal.product_id,
+          quantity: editUpsellModal.quantity,
+          srp: editUpsellModal.srp,
+          price: editUpsellModal.price,
+          media_url: editUpsellModal.media_url,
+          active: editUpsellModal.active,
+          display_order: editUpsellModal.display_order,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update upsell");
+      }
+
+      setEditUpsellModal(null);
+      fetchAllUpsells();
+    } catch (err) {
+      console.error("Error updating upsell:", err);
+      alert(err instanceof Error ? err.message : "Failed to update upsell");
+    } finally {
+      setIsEditingUpsell(false);
+    }
+  }
+
+  function openEditUpsellModal(upsell: Upsell) {
+    setEditUpsellModal({ ...upsell });
+    if (products.length === 0) {
+      fetchProducts();
     }
   }
 
@@ -490,6 +571,18 @@ export default function LandingPagesPage() {
                                               </p>
                                             </div>
                                           </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openEditUpsellModal(upsell);
+                                            }}
+                                            className="ml-2 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                                            title="Editează upsell"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
                                         </div>
                                       ))}
                                     </div>
@@ -546,6 +639,18 @@ export default function LandingPagesPage() {
                                               </p>
                                             </div>
                                           </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openEditUpsellModal(upsell);
+                                            }}
+                                            className="ml-2 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                                            title="Editează upsell"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
                                         </div>
                                       ))}
                                     </div>
@@ -714,6 +819,190 @@ export default function LandingPagesPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Upsell Modal */}
+      {editUpsellModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleUpdateUpsell}>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-white">
+                    Editează Upsell
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setEditUpsellModal(null)}
+                    className="text-zinc-400 hover:text-zinc-300 transition-colors"
+                    disabled={isEditingUpsell}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Product */}
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Produs *
+                    </label>
+                    <select
+                      value={editUpsellModal.product_id}
+                      onChange={(e) => setEditUpsellModal({ ...editUpsellModal, product_id: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    >
+                      <option value="">Selectează produs</option>
+                      {products.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} {product.sku && `(${product.sku})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      Titlu *
+                    </label>
+                    <input
+                      type="text"
+                      value={editUpsellModal.title}
+                      onChange={(e) => setEditUpsellModal({ ...editUpsellModal, title: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Description - only for postsale */}
+                  {editUpsellModal.type === "postsale" && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Descriere
+                      </label>
+                      <textarea
+                        value={editUpsellModal.description || ""}
+                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, description: e.target.value })}
+                        rows={3}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
+
+                  {/* Quantity, SRP, Price */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Cantitate *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={editUpsellModal.quantity}
+                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, quantity: parseInt(e.target.value) })}
+                        required
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        SRP (RON) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editUpsellModal.srp}
+                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, srp: parseFloat(e.target.value) })}
+                        required
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Preț (RON) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editUpsellModal.price}
+                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, price: parseFloat(e.target.value) })}
+                        required
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Media URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
+                      URL Media
+                    </label>
+                    <input
+                      type="url"
+                      value={editUpsellModal.media_url || ""}
+                      onChange={(e) => setEditUpsellModal({ ...editUpsellModal, media_url: e.target.value })}
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Display Order and Active */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Ordine afișare
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editUpsellModal.display_order}
+                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, display_order: parseInt(e.target.value) })}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">
+                        Status
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer mt-2">
+                        <input
+                          type="checkbox"
+                          checked={editUpsellModal.active}
+                          onChange={(e) => setEditUpsellModal({ ...editUpsellModal, active: e.target.checked })}
+                          className="w-4 h-4 bg-zinc-800 border-zinc-700 rounded focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm text-zinc-300">Activ</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditUpsellModal(null)}
+                    disabled={isEditingUpsell}
+                    className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    Anulează
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isEditingUpsell}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    {isEditingUpsell ? "Se salvează..." : "Salvează"}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -16,7 +16,7 @@ export async function POST(
 
     console.log("[Finalize] Finalizing order without postsale:", orderId);
 
-    // Verify order exists and is in queue status
+    // Verify order exists and is in queue or testing status
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .select("id, status")
@@ -29,6 +29,17 @@ export async function POST(
         { error: "Order not found" },
         { status: 404 }
       );
+    }
+
+    // Testing orders: just mark as finalized, don't sync to Helpship
+    if (order.status === "testing") {
+      console.log("[Finalize] Testing order - skipping Helpship sync");
+      return NextResponse.json({
+        success: true,
+        orderId: orderId,
+        message: "Testing order marked as finalized (not synced to Helpship)",
+        isTesting: true,
+      });
     }
 
     if (order.status !== "queue") {

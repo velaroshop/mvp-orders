@@ -546,6 +546,8 @@ export default function AdminPage() {
                         className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
                           order.status === "queue"
                             ? "bg-violet-600 text-white"
+                            : order.status === "testing"
+                            ? "bg-blue-600 text-white"
                             : order.status === "confirmed"
                             ? "bg-emerald-600 text-white"
                             : order.status === "cancelled"
@@ -559,6 +561,8 @@ export default function AdminPage() {
                       >
                         {order.status === "queue"
                           ? "Queue"
+                          : order.status === "testing"
+                          ? "🧪 Testing"
                           : order.status === "pending"
                           ? "Pending"
                           : order.status === "cancelled"
@@ -647,19 +651,21 @@ export default function AdminPage() {
                     {/* Actions */}
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-2">
-                        {/* CONFIRM Button - Always visible, disabled if queue or confirmed */}
+                        {/* CONFIRM Button - Always visible, disabled if queue, testing or confirmed */}
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}
-                          disabled={order.status === "queue" || order.status === "confirmed" || confirming === order.id}
+                          disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || confirming === order.id}
                           className={`rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all ${
                             order.status === "queue"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "testing"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "confirmed"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
                           }`}
                         >
-                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : "CONFIRM"}
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : "CONFIRM"}
                         </button>
 
                         {/* Actions Dropdown */}

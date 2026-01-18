@@ -28,7 +28,7 @@ export async function createOrder(input: {
   let orderSeries = "VLR-"; // Default fallback
   const { data: landingPage } = await supabaseAdmin
     .from("landing_pages")
-    .select("store_id")
+    .select("store_id, product_id")
     .eq("slug", input.landingKey)
     .single();
 
@@ -43,6 +43,25 @@ export async function createOrder(input: {
       orderSeries = store.order_series;
     }
   }
+
+  // Check if product is in testing mode
+  let isProductTesting = false;
+  if (landingPage?.product_id) {
+    const { data: product } = await supabaseAdmin
+      .from("products")
+      .select("status")
+      .eq("id", landingPage.product_id)
+      .single();
+
+    if (product?.status === "testing") {
+      isProductTesting = true;
+    }
+  }
+
+  // Determine initial order status:
+  // - "testing" if product is in testing mode (won't sync to Helpship)
+  // - "queue" if product is active (will wait for postsale, then sync to Helpship)
+  const initialStatus: OrderStatus = isProductTesting ? "testing" : "queue";
 
   // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
   const { data, error } = await supabaseAdmin
@@ -61,8 +80,8 @@ export async function createOrder(input: {
       subtotal: input.subtotal,
       shipping_cost: input.shippingCost,
       total: input.total,
-      status: "queue",
-      queue_expires_at: queueExpiresAt,
+      status: initialStatus,
+      queue_expires_at: initialStatus === "queue" ? queueExpiresAt : null, // Only set expiration for queue orders
       product_name: input.productName,
       product_sku: input.productSku,
       product_quantity: input.productQuantity,

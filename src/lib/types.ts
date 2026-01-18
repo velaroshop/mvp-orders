@@ -1,4 +1,4 @@
-export type OrderStatus = "queue" | "pending" | "confirmed" | "cancelled" | "hold" | "sync_error";
+export type OrderStatus = "queue" | "pending" | "confirmed" | "cancelled" | "hold" | "sync_error" | "testing";
 
 export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later" | "duplicate";
 

@@ -111,6 +111,7 @@ export async function POST(
       price: upsell.price,
       productSku: upsell.product?.sku || null,
       productName: productName,
+      type: "postsale",
     };
 
     const updatedUpsells = [...currentUpsells, newUpsell];

@@ -405,6 +405,13 @@ export default function AdminPage() {
                 {totalOrders} total comenzi{searchQuery && ` (${orders.length} rezultate)`} • Pagina {currentPage} din {totalPages}
               </p>
             </div>
+            <button
+              onClick={() => fetchOrders(searchQuery)}
+              disabled={isSearching}
+              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSearching ? "Se încarcă..." : "REFRESH"}
+            </button>
           </div>
 
           {/* Search Bar */}
@@ -557,11 +564,24 @@ export default function AdminPage() {
                           Items: {order.subtotal.toFixed(2)} RON ({order.productQuantity || 1}x)
                         </p>
                         <p className="font-semibold" style={{ color: '#22c55e' }}>
-                          Pre purchase: {(() => {
+                          PRE: {(() => {
                             const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
-                            const total = upsellsArray.reduce((sum: number, upsell: any) => {
-                              return sum + (upsell.price || 0);
-                            }, 0);
+                            const total = upsellsArray
+                              .filter((upsell: any) => upsell.type === "presale")
+                              .reduce((sum: number, upsell: any) => {
+                                return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                              }, 0);
+                            return total.toFixed(2);
+                          })()} RON
+                        </p>
+                        <p className="font-semibold" style={{ color: '#8b5cf6' }}>
+                          POST: {(() => {
+                            const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                            const total = upsellsArray
+                              .filter((upsell: any) => upsell.type === "postsale")
+                              .reduce((sum: number, upsell: any) => {
+                                return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                              }, 0);
                             return total.toFixed(2);
                           })()} RON
                         </p>

@@ -330,6 +330,7 @@ function WidgetFormContent() {
           quantity: upsell.quantity,
           price: upsell.price,
           productSku: upsell.product?.sku || null,
+          type: "presale",
         }));
 
       const payload = {
@@ -491,6 +492,7 @@ function WidgetFormContent() {
         quantity: upsell.quantity,
         price: upsell.price,
         productSku: upsell.product?.sku || null,
+        type: "presale",
       }));
 
     const payload = {

@@ -687,22 +687,22 @@ function WidgetFormContent() {
           </div>
 
           {/* Trust Signals - Compact Single Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.85 }}>
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.85 }}>
+            <div className="flex items-center gap-1.5">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
               <span className="font-medium">Livrare 1-3 zile</span>
             </div>
             <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <span className="font-medium">Plată la livrare</span>
             </div>
             <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
               <span className="font-medium">2.847 clienți mulțumiți</span>
             </div>
@@ -717,8 +717,8 @@ function WidgetFormContent() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Număr Telefon*
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                  Număr Telefon
                 </label>
                 <input
                   type="tel"
@@ -731,9 +731,9 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Necesar pentru a intră în legătură cu curierul"
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
-                    errors.phone 
-                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    errors.phone
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
                   style={errors.phone ? {} : { 
@@ -755,8 +755,8 @@ function WidgetFormContent() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Nume și Prenume*
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                  Nume și Prenume
                 </label>
                 <input
                   type="text"
@@ -769,9 +769,9 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Introduceți numele dvs. complet"
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
-                    errors.fullName 
-                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    errors.fullName
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
                   style={errors.fullName ? {} : { 
@@ -794,8 +794,8 @@ function WidgetFormContent() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Județ*
+                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                    Județ
                   </label>
                   <input
                     type="text"
@@ -808,9 +808,9 @@ function WidgetFormContent() {
                       }
                     }}
                     placeholder="Introduceți județul"
-                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
-                      errors.county 
-                        ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                      errors.county
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
                     }`}
                     style={errors.county ? {} : { 
@@ -832,8 +832,8 @@ function WidgetFormContent() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-zinc-900 mb-1">
-                    Localitate, comună sau sat*
+                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                    Localitate, comună sau sat
                   </label>
                   <input
                     type="text"
@@ -846,9 +846,9 @@ function WidgetFormContent() {
                       }
                     }}
                     placeholder="Introduceți localitatea / comuna / satul"
-                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
-                      errors.city 
-                        ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                      errors.city
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
                     }`}
                     style={errors.city ? {} : { 
@@ -871,8 +871,8 @@ function WidgetFormContent() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
-                  Stradă, număr, bloc, scară, ap.*
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                  Stradă, număr, bloc, scară, ap.
                 </label>
                 <input
                   type="text"
@@ -885,9 +885,9 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Introduceți adresa"
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 text-base text-zinc-900 placeholder:text-zinc-500 ${
-                    errors.address 
-                      ? 'border-red-500 bg-red-50 focus:ring-red-500' 
+                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    errors.address
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
                   style={errors.address ? {} : { 
@@ -913,7 +913,7 @@ function WidgetFormContent() {
 
           {/* Quantity Selection - COMPACT */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-3">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
               Selectați cantitatea
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -936,10 +936,10 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_1}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_1}
                 </div>
-                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_1" && (
@@ -968,10 +968,10 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_2}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_2}
                 </div>
-                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_2" && (
@@ -1000,10 +1000,10 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_3}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
                   {landingPage.numeral_3}
                 </div>
-                <div className="text-base sm:text-lg font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_3" && (
@@ -1020,11 +1020,11 @@ function WidgetFormContent() {
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
               {/* Scarcity Header */}
               <div className="mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-1 flex items-center gap-2">
-                  <span className="text-xl sm:text-2xl">⚡</span>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 mb-1.5 flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl">⚡</span>
                   Doar câteva bucăți rămase la acest preț!
                 </h2>
-                <p className="text-sm text-zinc-600">
+                <p className="text-base sm:text-lg text-zinc-600">
                   Adaugă la comandă și economisești
                 </p>
               </div>
@@ -1108,16 +1108,16 @@ function WidgetFormContent() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <h3 className="text-base text-zinc-900 leading-tight">
+                              <h3 className="text-base sm:text-lg text-zinc-900 leading-tight">
                                 Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
                                 <span
-                                  className="font-bold text-lg"
+                                  className="font-bold text-lg sm:text-xl"
                                   style={{ color: accentColor }}
                                 >
                                   {upsell.price.toFixed(2)} Lei
                                 </span>
                                 {upsell.srp > upsell.price && (
-                                  <span className="text-sm text-zinc-500">
+                                  <span className="text-sm sm:text-base text-zinc-500">
                                     {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
                                   </span>
                                 )}
@@ -1146,9 +1146,9 @@ function WidgetFormContent() {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 sm:p-4 border border-zinc-200 rounded-lg">
               <div>
-                <div className="font-medium text-sm sm:text-base text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
+                <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
               </div>
-              <div className="text-base sm:text-lg font-bold text-zinc-900">
+              <div className="text-lg sm:text-xl font-bold text-zinc-900">
                 {landingPage.shipping_price.toFixed(2)} Lei
               </div>
             </div>
@@ -1156,20 +1156,20 @@ function WidgetFormContent() {
 
           {/* Order Summary */}
           <div className="rounded-lg shadow-lg p-4 sm:p-6" style={{ backgroundColor }}>
-            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4" style={{ color: textOnDarkColor }}>
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
             <div className="space-y-2 mb-3 sm:mb-4">
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+              <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+              <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Livrare Standard - Curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
               {getUpsellsTotal() > 0 && (
-                <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                   <span className="break-words pr-2">• Oferte speciale ({selectedUpsells.size})</span>
                   <span className="whitespace-nowrap">{getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
@@ -1177,8 +1177,8 @@ function WidgetFormContent() {
             </div>
             <div className="pt-3 sm:pt-4 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-base sm:text-lg font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
-                <span className="text-xl sm:text-2xl font-bold" style={{ color: accentColor }}>
+                <span className="text-lg sm:text-xl font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: accentColor }}>
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>
@@ -1188,7 +1188,7 @@ function WidgetFormContent() {
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">{error}</p>
+              <p className="text-red-800 text-base sm:text-lg">{error}</p>
             </div>
           )}
 
@@ -1197,7 +1197,7 @@ function WidgetFormContent() {
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-base sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-lg sm:text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
               style={{
@@ -1227,7 +1227,7 @@ function WidgetFormContent() {
             >
               {submitting ? "Se procesează..." : landingPage.order_button_text}
             </button>
-            <p className="text-center text-xs sm:text-sm text-zinc-600 italic">
+            <p className="text-center text-sm sm:text-base text-zinc-600 italic">
               cu reducere aplicată
             </p>
           </div>

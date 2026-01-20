@@ -306,12 +306,13 @@ export default function NewLandingPagePage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="Name"
+                  maxLength={30}
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Enter a descriptive name for this landing page.
+                  Enter a descriptive name for this landing page (max 30 characters).
                 </p>
               </div>
 
@@ -324,12 +325,13 @@ export default function NewLandingPagePage() {
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
-                  className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="Slug"
+                  maxLength={30}
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Enter a name for the final part of the landing page link. e.g: "product" will become www.yourstore.com/product
+                  Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
                 </p>
               </div>
 
@@ -342,12 +344,13 @@ export default function NewLandingPagePage() {
                   type="text"
                   value={formData.thankYouPath}
                   onChange={(e) => setFormData({ ...formData, thankYouPath: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="thank-you"
+                  maxLength={30}
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you
+                  Example: Thank You path "thank-you" means the Thank You page URL is: https://yourstorename.com/thank-you (max 30 characters)
                 </p>
               </div>
             </div>
@@ -370,8 +373,9 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.offerHeading1}
                     onChange={(e) => setFormData({ ...formData, offerHeading1: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Ieftin"
+                    maxLength={15}
                     required
                   />
                 </div>
@@ -383,8 +387,9 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.offerHeading2}
                     onChange={(e) => setFormData({ ...formData, offerHeading2: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Avantajos"
+                    maxLength={15}
                     required
                   />
                 </div>
@@ -396,12 +401,16 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.offerHeading3}
                     onChange={(e) => setFormData({ ...formData, offerHeading3: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Super ofertă"
+                    maxLength={15}
                     required
                   />
                 </div>
               </div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Max 15 characters each
+              </p>
 
               {/* Numerals */}
               <div className="grid grid-cols-3 gap-4">
@@ -413,8 +422,9 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.numeral1}
                     onChange={(e) => setFormData({ ...formData, numeral1: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="1 bucată"
+                    maxLength={15}
                     required
                   />
                 </div>
@@ -426,8 +436,9 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.numeral2}
                     onChange={(e) => setFormData({ ...formData, numeral2: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Două bucăți"
+                    maxLength={15}
                     required
                   />
                 </div>
@@ -439,12 +450,16 @@ export default function NewLandingPagePage() {
                     type="text"
                     value={formData.numeral3}
                     onChange={(e) => setFormData({ ...formData, numeral3: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Trei bucăți"
+                    maxLength={15}
                     required
                   />
                 </div>
               </div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Max 15 characters each
+              </p>
 
               {/* Order Button Text */}
               <div>
@@ -455,10 +470,14 @@ export default function NewLandingPagePage() {
                   type="text"
                   value={formData.orderButtonText}
                   onChange={(e) => setFormData({ ...formData, orderButtonText: e.target.value })}
-                  className="w-full max-w-md px-3 text-sm py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="Plasează comanda!"
+                  maxLength={30}
                   required
                 />
+                <p className="text-xs text-zinc-500 mt-1">
+                  Max 30 characters
+                </p>
               </div>
             </div>
           </div>
@@ -478,14 +497,16 @@ export default function NewLandingPagePage() {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
+                  max="999"
                   value={formData.srp}
                   onChange={(e) => setFormData({ ...formData, srp: e.target.value })}
-                  className="w-full max-w-md px-3 text-sm py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="0.00"
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  This will be the price the customers will see as the normal, undiscounted one. (The one that will be striked out like this.)
+                  This will be the price the customers will see as the normal, undiscounted one (max 999).
                 </p>
               </div>
 
@@ -498,14 +519,16 @@ export default function NewLandingPagePage() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
+                    max="999"
                     value={formData.price1}
                     onChange={(e) => setFormData({ ...formData, price1: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    The price for purchasing one piece.
+                    One piece (max 999)
                   </p>
                 </div>
                 <div>
@@ -515,14 +538,16 @@ export default function NewLandingPagePage() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
+                    max="999"
                     value={formData.price2}
                     onChange={(e) => setFormData({ ...formData, price2: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    The price for purchasing two pieces.
+                    Two pieces (max 999)
                   </p>
                 </div>
                 <div>
@@ -532,14 +557,16 @@ export default function NewLandingPagePage() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
+                    max="999"
                     value={formData.price3}
                     onChange={(e) => setFormData({ ...formData, price3: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    The price for purchasing three pieces.
+                    Three pieces (max 999)
                   </p>
                 </div>
               </div>
@@ -552,14 +579,16 @@ export default function NewLandingPagePage() {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
+                  max="99"
                   value={formData.shippingPrice}
                   onChange={(e) => setFormData({ ...formData, shippingPrice: e.target.value })}
-                  className="w-full max-w-md px-3 text-sm py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="0.00"
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  The price the customer will pay for shipping. (not the internal shipping price)
+                  The price the customer will pay for shipping (max 99).
                 </p>
               </div>
 

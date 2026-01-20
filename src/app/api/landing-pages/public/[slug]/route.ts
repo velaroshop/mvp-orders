@@ -51,7 +51,7 @@ export async function GET(
     if (productId) {
       const { data: product } = await supabase
         .from("products")
-        .select("id, name, sku")
+        .select("id, name, sku, status")
         .eq("id", productId)
         .single();
       productData = product;

@@ -8,6 +8,7 @@ interface Product {
   id: string;
   name: string;
   sku?: string;
+  status?: string;
 }
 
 interface Store {
@@ -288,10 +289,14 @@ export default function EditLandingPagePage() {
     );
   }
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    (p.sku && p.sku.toLowerCase().includes(productSearch.toLowerCase()))
-  );
+  const filteredProducts = products.filter(p => {
+    // Filter out inactive products
+    if (p.status === "inactive") return false;
+
+    // Filter by search
+    return p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      (p.sku && p.sku.toLowerCase().includes(productSearch.toLowerCase()));
+  });
 
   const filteredStores = stores.filter(s =>
     s.url.toLowerCase().includes(storeSearch.toLowerCase())

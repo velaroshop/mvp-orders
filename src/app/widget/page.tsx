@@ -1123,7 +1123,7 @@ function WidgetFormContent() {
 
                       {/* Discount badge - compact */}
                       {discount > 0 && (
-                        <div className="absolute -top-2 -right-2 z-10">
+                        <div className="absolute -top-2 -right-2 z-20">
                           <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                             REDUCERE -{discount}%
                           </div>

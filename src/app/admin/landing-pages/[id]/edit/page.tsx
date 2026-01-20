@@ -336,7 +336,6 @@ export default function EditLandingPagePage() {
                       setShowProductDropdown(true);
                     }}
                     onFocus={() => {
-                      setProductSearch("");
                       setShowProductDropdown(true);
                     }}
                     onBlur={() => {
@@ -345,18 +344,18 @@ export default function EditLandingPagePage() {
                     placeholder="Search for product..."
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {showProductDropdown && productSearch && filteredProducts.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {showProductDropdown && filteredProducts.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
                       {filteredProducts.map((product) => (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, product_id: product.id });
-                            setProductSearch("");
+                            setProductSearch(product.name);
                             setShowProductDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
                           <div className="font-medium">{product.name}</div>
                           {product.sku && (
@@ -364,6 +363,11 @@ export default function EditLandingPagePage() {
                           )}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {showProductDropdown && filteredProducts.length === 0 && productSearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
+                      <p className="text-xs text-zinc-400 italic">No products found</p>
                     </div>
                   )}
                 </div>
@@ -398,7 +402,6 @@ export default function EditLandingPagePage() {
                       setShowStoreDropdown(true);
                     }}
                     onFocus={() => {
-                      setStoreSearch("");
                       setShowStoreDropdown(true);
                     }}
                     onBlur={() => {
@@ -407,27 +410,32 @@ export default function EditLandingPagePage() {
                     placeholder="Search for store..."
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {showStoreDropdown && storeSearch && filteredStores.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {showStoreDropdown && filteredStores.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
                       {filteredStores.map((store) => (
                         <button
                           key={store.id}
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, store_id: store.id });
-                            setStoreSearch("");
+                            setStoreSearch(store.url);
                             setShowStoreDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
                           {store.url}
                         </button>
                       ))}
                     </div>
                   )}
+                  {showStoreDropdown && filteredStores.length === 0 && storeSearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
+                      <p className="text-xs text-zinc-400 italic">No stores found</p>
+                    </div>
+                  )}
                 </div>
                 {formData.store_id && (
-                  <div className="mt-2 p-2 bg-zinc-900/50 rounded-md">
+                  <div className="mt-2 p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
                     <p className="text-sm text-white font-medium">
                       {stores.find(s => s.id === formData.store_id)?.url || "Loading..."}
                     </p>

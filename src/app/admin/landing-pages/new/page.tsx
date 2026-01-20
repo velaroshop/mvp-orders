@@ -56,6 +56,8 @@ export default function NewLandingPagePage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [storeSearch, setStoreSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [showStoreDropdown, setShowStoreDropdown] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -180,22 +182,31 @@ export default function NewLandingPagePage() {
                   <input
                     type="text"
                     value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    onFocus={() => setProductSearch("")}
+                    onChange={(e) => {
+                      setProductSearch(e.target.value);
+                      setShowProductDropdown(true);
+                    }}
+                    onFocus={() => {
+                      setShowProductDropdown(true);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowProductDropdown(false), 200);
+                    }}
                     placeholder="Search for product..."
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {productSearch && filteredProducts.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {showProductDropdown && filteredProducts.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
                       {filteredProducts.map((product) => (
                         <button
                           key={product.id}
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, productId: product.id });
-                            setProductSearch("");
+                            setProductSearch(product.name);
+                            setShowProductDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-900/50 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
                           <div className="font-medium">{product.name}</div>
                           {product.sku && (
@@ -205,11 +216,23 @@ export default function NewLandingPagePage() {
                       ))}
                     </div>
                   )}
+                  {showProductDropdown && filteredProducts.length === 0 && productSearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
+                      <p className="text-xs text-zinc-400 italic">No products found</p>
+                    </div>
+                  )}
                 </div>
                 {formData.productId && (
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Selected: {products.find(p => p.id === formData.productId)?.name}
-                  </p>
+                  <div className="mt-2 p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
+                    <p className="text-sm text-white font-medium">
+                      {products.find(p => p.id === formData.productId)?.name}
+                    </p>
+                    {products.find(p => p.id === formData.productId)?.sku && (
+                      <p className="text-xs text-zinc-400 mt-1">
+                        SKU: {products.find(p => p.id === formData.productId)?.sku}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <p className="text-xs text-zinc-500 mt-1">
                   Select the product associated with this landing page.
@@ -225,31 +248,45 @@ export default function NewLandingPagePage() {
                   <input
                     type="text"
                     value={storeSearch}
-                    onChange={(e) => setStoreSearch(e.target.value)}
-                    onFocus={() => setStoreSearch("")}
+                    onChange={(e) => {
+                      setStoreSearch(e.target.value);
+                      setShowStoreDropdown(true);
+                    }}
+                    onFocus={() => {
+                      setShowStoreDropdown(true);
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowStoreDropdown(false), 200);
+                    }}
                     placeholder="Search for store..."
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   />
-                  {storeSearch && filteredStores.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {showStoreDropdown && filteredStores.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
                       {filteredStores.map((store) => (
                         <button
                           key={store.id}
                           type="button"
                           onClick={() => {
                             setFormData({ ...formData, storeId: store.id });
-                            setStoreSearch("");
+                            setStoreSearch(store.url);
+                            setShowStoreDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-900/50 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
                           {store.url}
                         </button>
                       ))}
                     </div>
                   )}
+                  {showStoreDropdown && filteredStores.length === 0 && storeSearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
+                      <p className="text-xs text-zinc-400 italic">No stores found</p>
+                    </div>
+                  )}
                 </div>
                 {formData.storeId && (
-                  <div className="mt-2 p-2 bg-zinc-900/50 rounded-md">
+                  <div className="mt-2 p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
                     <p className="text-sm text-white font-medium">
                       {stores.find(s => s.id === formData.storeId)?.url}
                     </p>

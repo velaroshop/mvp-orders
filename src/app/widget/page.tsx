@@ -76,7 +76,6 @@ function WidgetFormContent() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [postsaleProcessing, setPostsaleProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasValidPostsale, setHasValidPostsale] = useState<boolean>(false);
 
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
@@ -214,11 +213,6 @@ function WidgetFormContent() {
       // Fetch presale upsells for this landing page
       if (data.landingPage?.id) {
         fetchPresaleUpsells(data.landingPage.id);
-
-        // Check if postsale is enabled and has valid products
-        if (data.landingPage.post_purchase_status) {
-          await checkValidPostsale(data.landingPage.id);
-        }
       }
     } catch (err) {
       console.error("Error fetching landing page:", err);
@@ -242,30 +236,6 @@ function WidgetFormContent() {
       setPresaleUpsells(data.upsells || []);
     } catch (err) {
       console.error("Error fetching presale upsells:", err);
-    }
-  }
-
-  async function checkValidPostsale(landingPageId: string) {
-    try {
-      const response = await fetch(`/api/upsells/public/${landingPageId}?type=postsale`);
-
-      if (!response.ok) {
-        console.error("Failed to check postsale upsells", response.status);
-        setHasValidPostsale(false);
-        return;
-      }
-
-      const data = await response.json();
-      const upsells = data.upsells || [];
-
-      // API already filters to only "active" products
-      // Set to true only if we have at least one valid postsale upsell
-      setHasValidPostsale(upsells.length > 0);
-
-      console.log(`[Postsale Check] Found ${upsells.length} upsells with active products`);
-    } catch (err) {
-      console.error("Error checking postsale upsells:", err);
-      setHasValidPostsale(false);
     }
   }
 
@@ -569,16 +539,17 @@ function WidgetFormContent() {
       // Show success popup
       setShowSuccessPopup(true);
 
-      // Check if postsale is active AND has valid active products
-      if (landingPage.post_purchase_status && hasValidPostsale && landingPage.id) {
+      // Check if postsale is active
+      if (landingPage.post_purchase_status && landingPage.id) {
+        // Always fetch postsale upsells to get real-time product status
         const fetchedPostsaleUpsells = await fetchPostsaleUpsells(landingPage.id);
 
-        // Double-check that we actually have postsale upsells after fetching
-        // (product status may have changed between initial check and order placement)
+        // Check if we actually have valid postsale upsells
+        // (products may have become inactive since page load)
         if (fetchedPostsaleUpsells.length === 0) {
-          console.log("[Postsale] No valid upsells found after fetch, redirecting to thank you page");
+          console.log("[Postsale] No valid upsells found, redirecting to thank you page");
 
-          // Wait 3 seconds then redirect to thank you page
+          // No valid postsale products - redirect to thank you page
           setTimeout(() => {
             if (landingPage.stores?.url) {
               const thankYouSlug = landingPage.thank_you_path || "thank-you";

@@ -55,70 +55,75 @@ export default function NewProductPage() {
     <div className="max-w-4xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900">Create Product</h1>
-        <p className="text-zinc-600 mt-2">
+        <h1 className="text-3xl font-bold text-white">Create Product</h1>
+        <p className="text-zinc-400 mt-2">
           Add a new product to your catalog
         </p>
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border border-zinc-200">
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
         <form onSubmit={handleSubmit}>
           {/* Product Details */}
-          <div className="p-6 border-b border-zinc-200">
-            <h2 className="text-xl font-semibold text-zinc-900 mb-4">
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-xl font-semibold text-white mb-4">
               Product Details
             </h2>
 
             <div className="space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
                   placeholder="Enter product name"
+                  maxLength={100}
                   required
                 />
+                <p className="text-xs text-zinc-400 mt-1">
+                  Maximum 100 characters
+                </p>
               </div>
 
               {/* SKU */}
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   SKU *
                 </label>
                 <input
                   type="text"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700 uppercase"
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 uppercase"
                   placeholder="XXX-123"
+                  maxLength={50}
                   required
                 />
-                <p className="text-xs text-zinc-700 mt-1">
-                  Stock Keeping Unit - unique identifier for this product (automatically converted to uppercase)
+                <p className="text-xs text-zinc-400 mt-1">
+                  Stock Keeping Unit - unique identifier (automatically converted to uppercase, max 50 characters)
                 </p>
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-zinc-900 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Status *
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900"
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
                   required
                 >
                   <option value="active">Active</option>
                   <option value="testing">Testing</option>
                 </select>
-                <p className="text-xs text-zinc-700 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   Active: Product is live and available. Testing: Product is in testing phase.
                 </p>
               </div>
@@ -127,12 +132,12 @@ export default function NewProductPage() {
 
           {/* Message */}
           {message && (
-            <div className="p-6 border-b border-zinc-200">
+            <div className="p-6 border-b border-zinc-700">
               <div
                 className={`p-3 rounded-md ${
                   message.type === "success"
-                    ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-                    : "bg-red-50 border border-red-200 text-red-800"
+                    ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
+                    : "bg-red-900/30 border border-red-700 text-red-300"
                 }`}
               >
                 {message.text}
@@ -141,11 +146,11 @@ export default function NewProductPage() {
           )}
 
           {/* Action Buttons */}
-          <div className="p-6 bg-zinc-50 flex justify-between">
+          <div className="p-6 bg-zinc-900/50 flex justify-between">
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-2 border border-zinc-300 text-zinc-700 rounded-md hover:bg-zinc-100 transition-colors"
+              className="px-6 py-2 border border-zinc-600 text-zinc-300 rounded-md hover:bg-zinc-700 transition-colors"
             >
               Cancel
             </button>

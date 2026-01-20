@@ -119,9 +119,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!name.trim() || name.trim().length > 100) {
+      return NextResponse.json(
+        { error: "Name must be between 1 and 100 characters" },
+        { status: 400 }
+      );
+    }
+
     if (!sku || !sku.trim()) {
       return NextResponse.json(
         { error: "SKU is required" },
+        { status: 400 }
+      );
+    }
+
+    if (sku.trim().length > 50) {
+      return NextResponse.json(
+        { error: "SKU must not exceed 50 characters" },
         { status: 400 }
       );
     }

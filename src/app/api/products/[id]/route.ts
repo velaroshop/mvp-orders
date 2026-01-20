@@ -73,13 +73,16 @@ export async function PUT(
       );
     }
 
+    // Normalize SKU to uppercase if provided
+    const normalizedSku = body.sku !== undefined ? body.sku.trim().toUpperCase() : undefined;
+
     // Check if SKU already exists for another product in this organization (if SKU is being changed)
-    if (body.sku !== undefined) {
+    if (normalizedSku !== undefined) {
       const { data: existingProductWithSku } = await supabase
         .from("products")
         .select("id")
         .eq("organization_id", organizationId)
-        .eq("sku", body.sku.trim())
+        .eq("sku", normalizedSku)
         .neq("id", productId)
         .single();
 
@@ -94,7 +97,7 @@ export async function PUT(
     // Update the product
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.sku !== undefined) updateData.sku = body.sku.trim();
+    if (normalizedSku !== undefined) updateData.sku = normalizedSku;
     if (body.status !== undefined) updateData.status = body.status;
 
     const { data: product, error } = await supabase

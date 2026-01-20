@@ -94,13 +94,13 @@ export default function NewProductPage() {
                 <input
                   type="text"
                   value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+                  className="w-full max-w-md px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700 uppercase"
                   placeholder="XXX-123"
                   required
                 />
                 <p className="text-xs text-zinc-700 mt-1">
-                  Stock Keeping Unit - unique identifier for this product
+                  Stock Keeping Unit - unique identifier for this product (automatically converted to uppercase)
                 </p>
               </div>
 

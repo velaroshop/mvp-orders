@@ -134,12 +134,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Normalize SKU to uppercase
+    const normalizedSku = sku.trim().toUpperCase();
+
     // Check if SKU already exists for this organization
     const { data: existingProduct } = await supabase
       .from("products")
       .select("id")
       .eq("organization_id", organizationId)
-      .eq("sku", sku.trim())
+      .eq("sku", normalizedSku)
       .single();
 
     if (existingProduct) {
@@ -155,7 +158,7 @@ export async function POST(request: NextRequest) {
       .insert({
         organization_id: organizationId,
         name,
-        sku: sku.trim(),
+        sku: normalizedSku,
         status,
       })
       .select()

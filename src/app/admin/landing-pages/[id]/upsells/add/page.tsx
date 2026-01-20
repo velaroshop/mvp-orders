@@ -240,62 +240,22 @@ export default function AddUpsellPage() {
             </h2>
 
             <div className="space-y-3">
-              {/* Landing Page */}
+              {/* Landing Page - Read-only display */}
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Landing Page *
+                  Landing Page
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={landingPageSearch}
-                    onChange={(e) => {
-                      setLandingPageSearch(e.target.value);
-                      setShowLandingPageDropdown(true);
-                    }}
-                    onFocus={() => {
-                      setLandingPageSearch("");
-                      setShowLandingPageDropdown(true);
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => setShowLandingPageDropdown(false), 200);
-                    }}
-                    placeholder="Search for landing page..."
-                    className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm ${
-                      errors.landing_page_id ? "border-red-500 bg-red-950/20" : "border-zinc-700"
-                    }`}
-                  />
-                  {showLandingPageDropdown && landingPageSearch && filteredLandingPages.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {filteredLandingPages.map((lp) => (
-                        <button
-                          key={lp.id}
-                          type="button"
-                          onClick={() => {
-                            setFormData({ ...formData, landing_page_id: lp.id });
-                            setLandingPageSearch(lp.name || lp.slug);
-                            setShowLandingPageDropdown(false);
-                            setErrors({ ...errors, landing_page_id: "" });
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
-                        >
-                          <div className="font-medium">{lp.name || lp.slug}</div>
-                          <div className="text-xs text-zinc-400">/{lp.slug}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {formData.landing_page_id && selectedLandingPage && (
-                  <div className="mt-2 p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
-                    <p className="text-sm text-white font-medium">
+                {selectedLandingPage ? (
+                  <div className="p-3 bg-emerald-600/10 border border-emerald-600/30 rounded-md">
+                    <p className="text-sm text-emerald-400 font-medium">
                       {selectedLandingPage.name || selectedLandingPage.slug}
                     </p>
-                    <p className="text-xs text-zinc-400 mt-1">/{selectedLandingPage.slug}</p>
+                    <p className="text-xs text-emerald-500/70 mt-1">/{selectedLandingPage.slug}</p>
                   </div>
-                )}
-                {errors.landing_page_id && (
-                  <p className="text-xs text-red-400 mt-1">{errors.landing_page_id}</p>
+                ) : (
+                  <div className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-md">
+                    <p className="text-sm text-zinc-400 italic">Loading landing page...</p>
+                  </div>
                 )}
               </div>
 

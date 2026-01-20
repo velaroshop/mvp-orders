@@ -656,9 +656,8 @@ function WidgetFormContent() {
       <div className="max-w-4xl mx-auto">
         {/* Price Header - COMPACT & EYE-CATCHING */}
         <div className="rounded-lg shadow-lg p-3 sm:p-4 mb-4 sm:mb-6" style={{ backgroundColor }}>
-          {/* Single Line Price Display with Gradient Discount Badge */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-3">
-            {/* Discount Badge - Gradient - 30% larger */}
+          {/* Discount Badge - Gradient - 30% larger - Separate row on desktop */}
+          <div className="flex items-center justify-center mb-3">
             <span
               className="px-4 py-2 text-white rounded-md text-lg sm:text-xl font-black whitespace-nowrap shadow-lg animate-pulse"
               style={{
@@ -668,17 +667,17 @@ function WidgetFormContent() {
             >
               ⚡ REDUCERE {discount}% ⚡
             </span>
+          </div>
 
-            {/* Prices - 30% larger */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-xl sm:text-2xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
-                {landingPage.srp.toFixed(2)} Lei
-              </span>
-              <span className="text-2xl sm:text-3xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
-              <span className="text-3xl sm:text-4xl font-black" style={{ color: textOnDarkColor }}>
-                {landingPage.price_1.toFixed(2)} LEI
-              </span>
-            </div>
+          {/* Prices - 30% larger */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3">
+            <span className="text-xl sm:text-2xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+              {landingPage.srp.toFixed(2)} Lei
+            </span>
+            <span className="text-2xl sm:text-3xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+            <span className="text-3xl sm:text-4xl font-black" style={{ color: textOnDarkColor }}>
+              {landingPage.price_1.toFixed(2)} LEI
+            </span>
           </div>
 
           {/* Trust Signals - Multiple Rows */}
@@ -1144,11 +1143,11 @@ function WidgetFormContent() {
 
           {/* Delivery Method */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 sm:p-4 border border-zinc-200 rounded-lg">
-              <div>
+            <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border border-zinc-200 rounded-lg">
+              <div className="flex-1">
                 <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
               </div>
-              <div className="text-lg sm:text-xl font-bold text-zinc-900">
+              <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
                 {landingPage.shipping_price.toFixed(2)} Lei
               </div>
             </div>

@@ -1121,15 +1121,6 @@ function WidgetFormContent() {
                         </svg>
                       )}
 
-                      {/* Discount badge - compact */}
-                      {discount > 0 && (
-                        <div className="absolute -top-2 -right-2 z-10">
-                          <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
-                            -{discount}%
-                          </div>
-                        </div>
-                      )}
-
                       <div className="flex items-start gap-3 relative z-10">
                         {/* Checkbox */}
                         <div className="flex-shrink-0 mt-0.5">
@@ -1167,12 +1158,20 @@ function WidgetFormContent() {
                               </h3>
                             </div>
                             {upsell.media_url && (
-                              <div className="flex-shrink-0">
+                              <div className="flex-shrink-0 relative">
                                 <img
                                   src={upsell.media_url}
                                   alt={upsell.title}
                                   className="w-20 h-20 object-cover rounded-lg"
                                 />
+                                {/* Discount badge over image */}
+                                {discount > 0 && (
+                                  <div className="absolute -top-1 -right-1 z-10">
+                                    <div className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg">
+                                      REDUCERE -{discount}%
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

@@ -152,11 +152,11 @@ export default function EditProductPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
                   placeholder="Enter product name"
-                  maxLength={100}
+                  maxLength={50}
                   required
                 />
                 <p className="text-xs text-zinc-400 mt-1">
-                  Maximum 100 characters
+                  Maximum 50 characters
                 </p>
               </div>
 
@@ -171,11 +171,11 @@ export default function EditProductPage() {
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
                   className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 uppercase"
                   placeholder="XXX-123"
-                  maxLength={50}
+                  maxLength={10}
                   required
                 />
                 <p className="text-xs text-zinc-400 mt-1">
-                  Stock Keeping Unit - unique identifier (automatically converted to uppercase, max 50 characters)
+                  Stock Keeping Unit - unique identifier (automatically converted to uppercase, max 10 characters)
                 </p>
               </div>
 

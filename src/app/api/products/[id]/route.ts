@@ -58,9 +58,9 @@ export async function PUT(
     }
 
     // Validate required fields
-    if (body.name !== undefined && (!body.name.trim() || body.name.trim().length > 100)) {
+    if (body.name !== undefined && (!body.name.trim() || body.name.trim().length > 50)) {
       return NextResponse.json(
-        { error: "Name must be between 1 and 100 characters" },
+        { error: "Name must be between 1 and 50 characters" },
         { status: 400 }
       );
     }
@@ -72,9 +72,9 @@ export async function PUT(
       );
     }
 
-    if (body.sku !== undefined && body.sku.trim().length > 50) {
+    if (body.sku !== undefined && body.sku.trim().length > 10) {
       return NextResponse.json(
-        { error: "SKU must not exceed 50 characters" },
+        { error: "SKU must not exceed 10 characters" },
         { status: 400 }
       );
     }

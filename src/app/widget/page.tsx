@@ -560,7 +560,19 @@ function WidgetFormContent() {
         return; // Don't redirect yet
       }
 
-      // No postsale or no valid products - redirect to thank you page
+      // No postsale or no valid products - finalize order immediately and redirect
+      // Finalize the order (sync to Helpship) since there's no postsale
+      try {
+        await fetch(`/api/orders/${orderId}/finalize`, {
+          method: "POST",
+        });
+        console.log("[Order] Finalized immediately (no postsale)");
+      } catch (err) {
+        console.error("[Order] Failed to finalize:", err);
+        // Continue with redirect even if finalization fails - cleanup will handle it
+      }
+
+      // Redirect to thank you page
       setTimeout(() => {
         if (landingPage.stores?.url) {
           const thankYouSlug = landingPage.thank_you_path || "thank-you";

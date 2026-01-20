@@ -656,16 +656,11 @@ function WidgetFormContent() {
       <div className="max-w-4xl mx-auto">
         {/* Price Header - COMPACT & EYE-CATCHING */}
         <div className="rounded-lg shadow-lg p-3 sm:p-4 mb-4 sm:mb-6" style={{ backgroundColor }}>
-          {/* Product Name */}
-          <h1 className="text-lg sm:text-xl font-bold mb-3 text-center" style={{ color: textOnDarkColor }}>
-            {landingPage.products?.name || landingPage.name}
-          </h1>
-
           {/* Single Line Price Display with Gradient Discount Badge */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-3">
-            {/* Discount Badge - Gradient */}
+            {/* Discount Badge - Gradient - 30% larger */}
             <span
-              className="px-3 py-1.5 text-white rounded-md text-sm sm:text-base font-black whitespace-nowrap shadow-lg animate-pulse"
+              className="px-4 py-2 text-white rounded-md text-lg sm:text-xl font-black whitespace-nowrap shadow-lg animate-pulse"
               style={{
                 background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
@@ -674,19 +669,19 @@ function WidgetFormContent() {
               ⚡ REDUCERE {discount}% ⚡
             </span>
 
-            {/* Prices */}
+            {/* Prices - 30% larger */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-base sm:text-lg font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+              <span className="text-xl sm:text-2xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
                 {landingPage.srp.toFixed(2)} Lei
               </span>
-              <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
-              <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
+              <span className="text-2xl sm:text-3xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+              <span className="text-3xl sm:text-4xl font-black" style={{ color: textOnDarkColor }}>
                 {landingPage.price_1.toFixed(2)} LEI
               </span>
             </div>
           </div>
 
-          {/* Trust Signals - Two Rows */}
+          {/* Trust Signals - Multiple Rows */}
           <div className="space-y-2">
             {/* First Row: Delivery & Payment */}
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.85 }}>
@@ -705,9 +700,13 @@ function WidgetFormContent() {
               </div>
             </div>
 
-            {/* Second Row: Social Proof */}
-            <div className="flex items-center justify-center gap-2 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="text-yellow-400 text-base">⭐⭐⭐⭐⭐</span>
+            {/* Second Row: Stars */}
+            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-xl sm:text-2xl">⭐⭐⭐⭐⭐</span>
+            </div>
+
+            {/* Third Row: Social Proof Text */}
+            <div className="flex items-center justify-center text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.9 }}>
               <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
             </div>
           </div>

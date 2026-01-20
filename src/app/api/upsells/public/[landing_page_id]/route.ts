@@ -56,10 +56,16 @@ export async function GET(
       );
     }
 
-    // Filter out upsells with inactive products
+    // Filter upsells based on product status and upsell type
     const activeUpsells = (upsells || []).filter(upsell => {
       const productStatus = upsell.product?.status;
-      return productStatus === "active" || productStatus === "testing";
+      // For postsale, only allow "active" products
+      // For presale, allow both "active" and "testing"
+      if (type === "postsale") {
+        return productStatus === "active";
+      } else {
+        return productStatus === "active" || productStatus === "testing";
+      }
     });
 
     console.log(`[API] Found ${upsells?.length || 0} active ${type} upsells, ${activeUpsells.length} with available products`);

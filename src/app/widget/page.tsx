@@ -75,6 +75,7 @@ function WidgetFormContent() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [postsaleProcessing, setPostsaleProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasValidPostsale, setHasValidPostsale] = useState<boolean>(false);
 
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
@@ -212,6 +213,11 @@ function WidgetFormContent() {
       // Fetch presale upsells for this landing page
       if (data.landingPage?.id) {
         fetchPresaleUpsells(data.landingPage.id);
+
+        // Check if postsale is enabled and has valid products
+        if (data.landingPage.post_purchase_status) {
+          await checkValidPostsale(data.landingPage.id);
+        }
       }
     } catch (err) {
       console.error("Error fetching landing page:", err);
@@ -235,6 +241,34 @@ function WidgetFormContent() {
       setPresaleUpsells(data.upsells || []);
     } catch (err) {
       console.error("Error fetching presale upsells:", err);
+    }
+  }
+
+  async function checkValidPostsale(landingPageId: string) {
+    try {
+      const response = await fetch(`/api/upsells/public/${landingPageId}?type=postsale`);
+
+      if (!response.ok) {
+        console.error("Failed to check postsale upsells", response.status);
+        setHasValidPostsale(false);
+        return;
+      }
+
+      const data = await response.json();
+      const upsells = data.upsells || [];
+
+      // Filter to only include upsells with "active" products (not testing)
+      const activeUpsells = upsells.filter((upsell: Upsell) =>
+        upsell.product?.status === "active"
+      );
+
+      // Set to true only if we have at least one valid postsale upsell
+      setHasValidPostsale(activeUpsells.length > 0);
+
+      console.log(`[Postsale Check] Found ${upsells.length} total upsells, ${activeUpsells.length} with active products`);
+    } catch (err) {
+      console.error("Error checking postsale upsells:", err);
+      setHasValidPostsale(false);
     }
   }
 
@@ -535,8 +569,8 @@ function WidgetFormContent() {
       // Show success popup
       setShowSuccessPopup(true);
 
-      // Check if postsale is active and fetch postsale upsells
-      if (landingPage.post_purchase_status && landingPage.id) {
+      // Check if postsale is active AND has valid active products
+      if (landingPage.post_purchase_status && hasValidPostsale && landingPage.id) {
         await fetchPostsaleUpsells(landingPage.id);
         // Wait 2 seconds to show success, then show postsale offer
         setTimeout(() => {

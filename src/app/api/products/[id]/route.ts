@@ -66,9 +66,9 @@ export async function PUT(
     }
 
     // Validate status if provided
-    if (body.status && body.status !== "active" && body.status !== "testing") {
+    if (body.status && body.status !== "active" && body.status !== "testing" && body.status !== "inactive") {
       return NextResponse.json(
-        { error: "Status must be 'active' or 'testing'" },
+        { error: "Status must be 'active', 'testing', or 'inactive'" },
         { status: 400 }
       );
     }

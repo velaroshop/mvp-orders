@@ -127,9 +127,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate status
-    if (status !== "active" && status !== "testing") {
+    if (status !== "active" && status !== "testing" && status !== "inactive") {
       return NextResponse.json(
-        { error: "Status must be 'active' or 'testing'" },
+        { error: "Status must be 'active', 'testing', or 'inactive'" },
         { status: 400 }
       );
     }

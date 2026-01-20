@@ -23,10 +23,6 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  // Delete modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   // Bulk action state
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -83,38 +79,6 @@ export default function ProductsPage() {
       newExpanded.add(productId);
     }
     setExpandedRows(newExpanded);
-  }
-
-  async function handleDelete(productId: string) {
-    try {
-      setIsDeleting(true);
-      const response = await fetch(`/api/products/${productId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete product");
-      }
-
-      setDeleteModalOpen(null);
-      setToast({
-        isOpen: true,
-        type: "success",
-        message: "Product deleted successfully! ✓",
-      });
-
-      // Refresh the list
-      fetchProducts();
-    } catch (err) {
-      console.error("Error deleting product:", err);
-      setToast({
-        isOpen: true,
-        type: "error",
-        message: err instanceof Error ? err.message : "Failed to delete product",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
   }
 
   function formatDate(dateString: string) {
@@ -439,32 +403,6 @@ export default function ProductsPage() {
                                 )}
                               </div>
                             </div>
-
-                            {/* Danger Zone */}
-                            <div className="pt-3 border-t border-zinc-700/50">
-                              <h4 className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
-                                Danger Zone
-                              </h4>
-                              <div className="bg-red-900/10 rounded border border-red-700/30 p-3">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-sm font-medium text-white">Delete Product</p>
-                                    <p className="text-xs text-zinc-400 mt-0.5">
-                                      This action cannot be undone. This will permanently delete the product.
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeleteModalOpen(product.id);
-                                    }}
-                                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium text-sm"
-                                  >
-                                    🗑️ Delete Product
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </td>
                       </tr>
@@ -476,18 +414,6 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
-
-      {/* Delete Confirm Modal */}
-      <ConfirmModal
-        isOpen={deleteModalOpen !== null}
-        onClose={() => setDeleteModalOpen(null)}
-        onConfirm={() => deleteModalOpen && handleDelete(deleteModalOpen)}
-        title="Delete Product"
-        message="Are you sure you want to delete this product? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isProcessing={isDeleting}
-      />
 
       {/* Bulk Actions Confirm Modal */}
       <ConfirmModal

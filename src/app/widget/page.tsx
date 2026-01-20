@@ -618,8 +618,8 @@ function WidgetFormContent() {
     return null;
   }
 
-  // Check if product is archived or inactive
-  if (landingPage.products?.status === "archived" || landingPage.products?.status === "inactive") {
+  // Check if product is inactive
+  if (landingPage.products?.status === "inactive") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 sm:p-8 text-center">

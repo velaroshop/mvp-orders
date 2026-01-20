@@ -584,9 +584,9 @@ export default function LandingPagesPage() {
                                                   Inactiv
                                                 </span>
                                               )}
-                                              {upsell.product?.status && (upsell.product.status === "inactive" || upsell.product.status === "archived") && (
+                                              {upsell.product?.status === "inactive" && (
                                                 <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
-                                                  ⚠️ Produs {upsell.product.status === "inactive" ? "Inactiv" : "Arhivat"}
+                                                  ⚠️ Produs Inactiv
                                                 </span>
                                               )}
                                             </div>
@@ -669,9 +669,9 @@ export default function LandingPagesPage() {
                                                   Inactiv
                                                 </span>
                                               )}
-                                              {upsell.product?.status && (upsell.product.status === "inactive" || upsell.product.status === "archived") && (
+                                              {upsell.product?.status === "inactive" && (
                                                 <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
-                                                  ⚠️ Produs {upsell.product.status === "inactive" ? "Inactiv" : "Arhivat"}
+                                                  ⚠️ Produs Inactiv
                                                 </span>
                                               )}
                                             </div>

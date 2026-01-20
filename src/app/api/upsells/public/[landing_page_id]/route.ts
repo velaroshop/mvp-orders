@@ -56,7 +56,7 @@ export async function GET(
       );
     }
 
-    // Filter out upsells with inactive or archived products
+    // Filter out upsells with inactive products
     const activeUpsells = (upsells || []).filter(upsell => {
       const productStatus = upsell.product?.status;
       return productStatus === "active" || productStatus === "testing";

@@ -57,9 +57,9 @@ export async function GET(request: NextRequest) {
     if (productIds.length > 0) {
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, sku")
+        .select("id, name, sku, status")
         .in("id", productIds);
-      
+
       if (products) {
         products.forEach((p: any) => productsMap.set(p.id, p));
       }

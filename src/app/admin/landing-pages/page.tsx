@@ -52,6 +52,7 @@ interface LandingPage {
     id: string;
     name: string;
     sku?: string;
+    status?: string;
   };
   stores?: {
     id: string;
@@ -441,21 +442,28 @@ export default function LandingPagesPage() {
                         )}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            page.status === "published"
-                              ? "bg-emerald-500/20 text-emerald-400"
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              page.status === "published"
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : page.status === "archived"
+                                ? "bg-zinc-500/20 text-zinc-400"
+                                : "bg-amber-500/20 text-amber-400"
+                            }`}
+                          >
+                            {page.status === "published"
+                              ? "Published"
                               : page.status === "archived"
-                              ? "bg-zinc-500/20 text-zinc-400"
-                              : "bg-amber-500/20 text-amber-400"
-                          }`}
-                        >
-                          {page.status === "published"
-                            ? "Published"
-                            : page.status === "archived"
-                            ? "Archived"
-                            : "Draft"}
-                        </span>
+                              ? "Archived"
+                              : "Draft"}
+                          </span>
+                          {page.products?.status === "inactive" && (
+                            <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
+                              ⚠️ Produs Inactiv
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">

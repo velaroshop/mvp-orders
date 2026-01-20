@@ -686,25 +686,29 @@ function WidgetFormContent() {
             </div>
           </div>
 
-          {/* Trust Signals - Compact Single Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.85 }}>
-            <div className="flex items-center gap-1.5">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              <span className="font-medium">Livrare 1-3 zile</span>
+          {/* Trust Signals - Two Rows */}
+          <div className="space-y-2">
+            {/* First Row: Delivery & Payment */}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.85 }}>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                </svg>
+                <span className="font-semibold">Livrare 1-3 zile</span>
+              </div>
+              <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="font-semibold">Plată la livrare</span>
+              </div>
             </div>
-            <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
-            <div className="flex items-center gap-1.5">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="font-medium">Plată la livrare</span>
-            </div>
-            <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
-              <span className="font-medium">2.847 clienți mulțumiți</span>
+
+            {/* Second Row: Social Proof */}
+            <div className="flex items-center justify-center gap-2 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-base">⭐⭐⭐⭐⭐</span>
+              <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
             </div>
           </div>
         </div>
@@ -730,7 +734,7 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, phone: undefined }));
                     }
                   }}
-                  placeholder="Necesar pentru a intră în legătură cu curierul"
+                  placeholder="Introduceți aici numărul de telefon"
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.phone
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -768,7 +772,7 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, fullName: undefined }));
                     }
                   }}
-                  placeholder="Introduceți numele dvs. complet"
+                  placeholder="Introduceți aici numele complet"
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.fullName
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -807,7 +811,7 @@ function WidgetFormContent() {
                         setErrors((prev) => ({ ...prev, county: undefined }));
                       }
                     }}
-                    placeholder="Introduceți județul"
+                    placeholder="Introduceți aici județul"
                     className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.county
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -845,7 +849,7 @@ function WidgetFormContent() {
                         setErrors((prev) => ({ ...prev, city: undefined }));
                       }
                     }}
-                    placeholder="Introduceți localitatea / comuna / satul"
+                    placeholder="Introduceți aici localitatea / comuna / satul"
                     className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.city
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -884,7 +888,7 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, address: undefined }));
                     }
                   }}
-                  placeholder="Introduceți adresa"
+                  placeholder="Introduceți aici adresa completă"
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.address
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -1020,13 +1024,10 @@ function WidgetFormContent() {
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
               {/* Scarcity Header */}
               <div className="mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 mb-1.5 flex items-center gap-2">
-                  <span className="text-2xl sm:text-3xl">⚡</span>
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center gap-2">
+                  <span className="text-xl sm:text-2xl">⚡</span>
                   Doar câteva bucăți rămase la acest preț!
                 </h2>
-                <p className="text-base sm:text-lg text-zinc-600">
-                  Adaugă la comandă și economisești
-                </p>
               </div>
 
               <style jsx>{`

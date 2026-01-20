@@ -180,6 +180,32 @@ export async function DELETE(
       );
     }
 
+    // Check if product is used in any landing pages
+    const { count: landingPagesCount } = await supabase
+      .from("landing_pages")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    if (landingPagesCount && landingPagesCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete product: it is currently used in one or more landing pages" },
+        { status: 400 }
+      );
+    }
+
+    // Check if product is used in any upsells
+    const { count: upsellsCount } = await supabase
+      .from("upsells")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    if (upsellsCount && upsellsCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete product: it is currently used in one or more upsells" },
+        { status: 400 }
+      );
+    }
+
     // Delete the product
     const { error } = await supabase
       .from("products")

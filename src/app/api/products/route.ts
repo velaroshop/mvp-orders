@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For each product, get count of testing orders
+    // For each product, get count of testing orders and check if in use
     const productsWithCounts = await Promise.all(
       (products || []).map(async (product) => {
         // First, get all landing page slugs for this product
@@ -56,9 +56,16 @@ export async function GET(request: NextRequest) {
           .eq("product_id", product.id);
 
         if (!landingPages || landingPages.length === 0) {
+          // Check if product is used in any upsells
+          const { count: upsellCount } = await supabase
+            .from("upsells")
+            .select("id", { count: "exact", head: true })
+            .eq("product_id", product.id);
+
           return {
             ...product,
             testing_orders_count: 0,
+            is_in_use: (upsellCount || 0) > 0,
           };
         }
 
@@ -71,9 +78,16 @@ export async function GET(request: NextRequest) {
           .eq("status", "testing")
           .in("landing_key", landingSlugs);
 
+        // Check if product is used in any upsells
+        const { count: upsellCount } = await supabase
+          .from("upsells")
+          .select("id", { count: "exact", head: true })
+          .eq("product_id", product.id);
+
         return {
           ...product,
           testing_orders_count: count || 0,
+          is_in_use: landingPages.length > 0 || (upsellCount || 0) > 0,
         };
       })
     );

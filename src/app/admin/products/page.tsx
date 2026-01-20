@@ -14,6 +14,7 @@ interface Product {
   created_at: string;
   updated_at: string;
   testing_orders_count?: number;
+  is_in_use?: boolean;
 }
 
 export default function ProductsPage() {
@@ -164,6 +165,48 @@ export default function ProductsPage() {
         } catch (error) {
           console.error("Error cancelling orders:", error);
           const errorMessage = error instanceof Error ? error.message : "Failed to cancel orders";
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "error",
+            message: errorMessage,
+          });
+        }
+      },
+      isProcessing: false,
+    });
+  }
+
+  async function handleDeleteProduct(productId: string, productName: string) {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Product",
+      message: `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
+      action: async () => {
+        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        try {
+          const response = await fetch(`/api/products/${productId}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to delete product");
+          }
+
+          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
+          setToast({
+            isOpen: true,
+            type: "success",
+            message: `Product "${productName}" deleted successfully! ✓`,
+          });
+
+          // Refresh products list
+          await fetchProducts();
+        } catch (error) {
+          console.error("Error deleting product:", error);
+          const errorMessage = error instanceof Error ? error.message : "Failed to delete product";
 
           setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
           setToast({
@@ -403,6 +446,34 @@ export default function ProductsPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Delete Product Section - Only show if product is not in use */}
+                            {!product.is_in_use && (
+                              <div className="pt-3 border-t border-zinc-700/50">
+                                <h4 className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
+                                  Danger Zone
+                                </h4>
+                                <div className="bg-red-900/10 rounded border border-red-700/30 p-3">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-xs text-zinc-300 font-medium">Delete this product</p>
+                                      <p className="text-xs text-zinc-400 mt-0.5">
+                                        This product is not used in any landing pages or upsells
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteProduct(product.id, product.name);
+                                      }}
+                                      className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
+                                    >
+                                      Delete Product
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

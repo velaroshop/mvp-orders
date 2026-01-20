@@ -193,8 +193,8 @@ export default function AddUpsellPage() {
   }
 
   const filteredProducts = products.filter(p => {
-    // Filter out inactive products
-    if (p.status === "inactive") return false;
+    // Only show active products
+    if (p.status !== "active") return false;
 
     // Filter by search
     return p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -331,7 +331,6 @@ export default function AddUpsellPage() {
                       setShowProductDropdown(true);
                     }}
                     onFocus={() => {
-                      setProductSearch("");
                       setShowProductDropdown(true);
                     }}
                     onBlur={() => {
@@ -342,8 +341,8 @@ export default function AddUpsellPage() {
                       errors.product_id ? "border-red-500 bg-red-950/20" : "border-zinc-700"
                     }`}
                   />
-                  {showProductDropdown && productSearch && filteredProducts.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {showProductDropdown && filteredProducts.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
                       {filteredProducts.map((product) => (
                         <button
                           key={product.id}
@@ -354,7 +353,7 @@ export default function AddUpsellPage() {
                             setShowProductDropdown(false);
                             setErrors({ ...errors, product_id: "" });
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white"
+                          className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
                           <div className="font-medium">{product.name}</div>
                           {product.sku && (
@@ -362,6 +361,11 @@ export default function AddUpsellPage() {
                           )}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {showProductDropdown && filteredProducts.length === 0 && productSearch && (
+                    <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
+                      <p className="text-xs text-zinc-400 italic">No active products found</p>
                     </div>
                   )}
                 </div>

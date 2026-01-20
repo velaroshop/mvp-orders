@@ -21,6 +21,7 @@ interface Upsell {
     id: string;
     name: string;
     sku?: string;
+    status?: string;
   };
   landing_page?: {
     id: string;
@@ -583,6 +584,11 @@ export default function LandingPagesPage() {
                                                   Inactiv
                                                 </span>
                                               )}
+                                              {upsell.product?.status && (upsell.product.status === "inactive" || upsell.product.status === "archived") && (
+                                                <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
+                                                  ⚠️ Produs {upsell.product.status === "inactive" ? "Inactiv" : "Arhivat"}
+                                                </span>
+                                              )}
                                             </div>
                                             <div className="flex items-center gap-3 mt-1">
                                               <p className="text-xs text-zinc-400">
@@ -661,6 +667,11 @@ export default function LandingPagesPage() {
                                               {!upsell.active && (
                                                 <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-[10px] rounded uppercase">
                                                   Inactiv
+                                                </span>
+                                              )}
+                                              {upsell.product?.status && (upsell.product.status === "inactive" || upsell.product.status === "archived") && (
+                                                <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
+                                                  ⚠️ Produs {upsell.product.status === "inactive" ? "Inactiv" : "Arhivat"}
                                                 </span>
                                               )}
                                             </div>

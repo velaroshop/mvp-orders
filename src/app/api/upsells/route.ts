@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       .from("upsells")
       .select(`
         *,
-        product:products!product_id(id, name, sku),
+        product:products!product_id(id, name, sku, status),
         landing_page:landing_pages!landing_page_id(id, slug, name)
       `)
       .eq("organization_id", organizationId)

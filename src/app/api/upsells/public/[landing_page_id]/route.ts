@@ -40,7 +40,7 @@ export async function GET(
       .from("upsells")
       .select(`
         *,
-        product:products!product_id(id, name, sku),
+        product:products!product_id(id, name, sku, status),
         landing_page:landing_pages!landing_page_id(id, slug, name)
       `)
       .eq("landing_page_id", landing_page_id)
@@ -56,8 +56,14 @@ export async function GET(
       );
     }
 
-    console.log(`[API] Found ${upsells?.length || 0} active ${type} upsells`);
-    return NextResponse.json({ upsells: upsells || [] });
+    // Filter out upsells with inactive or archived products
+    const activeUpsells = (upsells || []).filter(upsell => {
+      const productStatus = upsell.product?.status;
+      return productStatus === "active" || productStatus === "testing";
+    });
+
+    console.log(`[API] Found ${upsells?.length || 0} active ${type} upsells, ${activeUpsells.length} with available products`);
+    return NextResponse.json({ upsells: activeUpsells });
   } catch (error) {
     console.error("Error in GET /api/upsells/public/[landing_page_id]:", error);
     return NextResponse.json(

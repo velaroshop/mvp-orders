@@ -18,6 +18,7 @@ interface Upsell {
   product?: {
     name: string;
     sku?: string;
+    status?: string;
   };
 }
 
@@ -268,19 +269,22 @@ function WidgetFormContent() {
     }
   }
 
-  async function fetchPostsaleUpsells(landingPageId: string) {
+  async function fetchPostsaleUpsells(landingPageId: string): Promise<Upsell[]> {
     try {
       const response = await fetch(`/api/upsells/public/${landingPageId}?type=postsale`);
 
       if (!response.ok) {
         console.error("Failed to fetch postsale upsells", response.status);
-        return;
+        return [];
       }
 
       const data = await response.json();
-      setPostsaleUpsells(data.upsells || []);
+      const upsells = data.upsells || [];
+      setPostsaleUpsells(upsells);
+      return upsells;
     } catch (err) {
       console.error("Error fetching postsale upsells:", err);
+      return [];
     }
   }
 
@@ -567,8 +571,35 @@ function WidgetFormContent() {
 
       // Check if postsale is active AND has valid active products
       if (landingPage.post_purchase_status && hasValidPostsale && landingPage.id) {
-        await fetchPostsaleUpsells(landingPage.id);
-        // Wait 2 seconds to show success, then show postsale offer
+        const fetchedPostsaleUpsells = await fetchPostsaleUpsells(landingPage.id);
+
+        // Double-check that we actually have postsale upsells after fetching
+        // (product status may have changed between initial check and order placement)
+        if (fetchedPostsaleUpsells.length === 0) {
+          console.log("[Postsale] No valid upsells found after fetch, redirecting to thank you page");
+
+          // Wait 3 seconds then redirect to thank you page
+          setTimeout(() => {
+            if (landingPage.stores?.url) {
+              const thankYouSlug = landingPage.thank_you_path || "thank-you";
+              let storeUrl = landingPage.stores.url;
+              if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+                storeUrl = `https://${storeUrl}`;
+              }
+              storeUrl = storeUrl.replace(/\/$/, '');
+              const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+
+              if (window.parent && window.parent !== window) {
+                window.parent.location.href = thankYouUrl;
+              } else {
+                window.location.href = thankYouUrl;
+              }
+            }
+          }, 3000);
+          return;
+        }
+
+        // We have valid postsale upsells, show the offer after 2 seconds
         setTimeout(() => {
           setShowSuccessPopup(false);
           setPostsaleCountdown(180); // Reset countdown to 3 minutes

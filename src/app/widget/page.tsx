@@ -257,15 +257,11 @@ function WidgetFormContent() {
       const data = await response.json();
       const upsells = data.upsells || [];
 
-      // Filter to only include upsells with "active" products (not testing)
-      const activeUpsells = upsells.filter((upsell: Upsell) =>
-        upsell.product?.status === "active"
-      );
-
+      // API already filters to only "active" products
       // Set to true only if we have at least one valid postsale upsell
-      setHasValidPostsale(activeUpsells.length > 0);
+      setHasValidPostsale(upsells.length > 0);
 
-      console.log(`[Postsale Check] Found ${upsells.length} total upsells, ${activeUpsells.length} with active products`);
+      console.log(`[Postsale Check] Found ${upsells.length} upsells with active products`);
     } catch (err) {
       console.error("Error checking postsale upsells:", err);
       setHasValidPostsale(false);

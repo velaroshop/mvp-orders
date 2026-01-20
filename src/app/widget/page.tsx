@@ -76,6 +76,7 @@ function WidgetFormContent() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [postsaleProcessing, setPostsaleProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [willShowPostsale, setWillShowPostsale] = useState(false);
 
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
@@ -536,40 +537,20 @@ function WidgetFormContent() {
       setCreatedOrderId(orderId);
       setQueueExpiresAt(queueExpires);
 
-      // Show success popup
-      setShowSuccessPopup(true);
-
-      // Check if postsale is active
+      // Check if postsale is active and fetch to determine what message to show
+      let hasValidPostsale = false;
       if (landingPage.post_purchase_status && landingPage.id) {
         // Always fetch postsale upsells to get real-time product status
         const fetchedPostsaleUpsells = await fetchPostsaleUpsells(landingPage.id);
+        hasValidPostsale = fetchedPostsaleUpsells.length > 0;
+        setWillShowPostsale(hasValidPostsale);
+      }
 
-        // Check if we actually have valid postsale upsells
-        // (products may have become inactive since page load)
-        if (fetchedPostsaleUpsells.length === 0) {
-          console.log("[Postsale] No valid upsells found, redirecting to thank you page");
+      // Show success popup with appropriate message
+      setShowSuccessPopup(true);
 
-          // No valid postsale products - redirect to thank you page
-          setTimeout(() => {
-            if (landingPage.stores?.url) {
-              const thankYouSlug = landingPage.thank_you_path || "thank-you";
-              let storeUrl = landingPage.stores.url;
-              if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
-                storeUrl = `https://${storeUrl}`;
-              }
-              storeUrl = storeUrl.replace(/\/$/, '');
-              const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
-
-              if (window.parent && window.parent !== window) {
-                window.parent.location.href = thankYouUrl;
-              } else {
-                window.location.href = thankYouUrl;
-              }
-            }
-          }, 3000);
-          return;
-        }
-
+      // Handle postsale flow
+      if (landingPage.post_purchase_status && landingPage.id && hasValidPostsale) {
         // We have valid postsale upsells, show the offer after 2 seconds
         setTimeout(() => {
           setShowSuccessPopup(false);
@@ -579,23 +560,17 @@ function WidgetFormContent() {
         return; // Don't redirect yet
       }
 
-      // Wait 3 seconds then redirect to thank you page (if no postsale)
+      // No postsale or no valid products - redirect to thank you page
       setTimeout(() => {
         if (landingPage.stores?.url) {
-          const thankYouSlug = landingPage.thank_you_path || "thank-you"; // Use landing page value or default fallback
-
-          // Ensure URL has protocol
+          const thankYouSlug = landingPage.thank_you_path || "thank-you";
           let storeUrl = landingPage.stores.url;
           if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
             storeUrl = `https://${storeUrl}`;
           }
-
-          // Remove trailing slash from store URL if present
           storeUrl = storeUrl.replace(/\/$/, '');
-
           const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
 
-          // If in iframe, redirect parent window
           if (window.parent && window.parent !== window) {
             window.parent.location.href = thankYouUrl;
           } else {
@@ -1372,7 +1347,7 @@ function WidgetFormContent() {
                   COMANDA A FOST TRIMISĂ!
                 </p>
                 <p className="text-sm sm:text-base text-zinc-600">
-                  {landingPage?.post_purchase_status
+                  {willShowPostsale
                     ? "Așteaptă... Îți pregătim o surpriză!"
                     : "Așteptați câteva secunde..."}
                 </p>

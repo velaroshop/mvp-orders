@@ -714,6 +714,11 @@ export default function EditLandingPagePage() {
                   max="999"
                   value={formData.srp}
                   onChange={(e) => setFormData({ ...formData, srp: parseFloat(e.target.value) || 0 })}
+                  onKeyPress={(e) => {
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="0.00"
                   required
@@ -736,6 +741,11 @@ export default function EditLandingPagePage() {
                     max="999"
                     value={formData.price_1}
                     onChange={(e) => setFormData({ ...formData, price_1: parseFloat(e.target.value) || 0 })}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
@@ -755,6 +765,11 @@ export default function EditLandingPagePage() {
                     max="999"
                     value={formData.price_2}
                     onChange={(e) => setFormData({ ...formData, price_2: parseFloat(e.target.value) || 0 })}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
@@ -774,6 +789,11 @@ export default function EditLandingPagePage() {
                     max="999"
                     value={formData.price_3}
                     onChange={(e) => setFormData({ ...formData, price_3: parseFloat(e.target.value) || 0 })}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="0.00"
                     required
@@ -796,6 +816,11 @@ export default function EditLandingPagePage() {
                   max="99"
                   value={formData.shipping_price}
                   onChange={(e) => setFormData({ ...formData, shipping_price: parseFloat(e.target.value) || 0 })}
+                  onKeyPress={(e) => {
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                   placeholder="0.00"
                   required

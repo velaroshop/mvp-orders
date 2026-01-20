@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     const {
       name,
-      sku = "",
+      sku,
       status = "active",
     } = body;
 
@@ -115,6 +115,13 @@ export async function POST(request: NextRequest) {
     if (!name) {
       return NextResponse.json(
         { error: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!sku || !sku.trim()) {
+      return NextResponse.json(
+        { error: "SKU is required" },
         { status: 400 }
       );
     }
@@ -127,21 +134,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if SKU already exists for this organization (if SKU is provided)
-    if (sku) {
-      const { data: existingProduct } = await supabase
-        .from("products")
-        .select("id")
-        .eq("organization_id", organizationId)
-        .eq("sku", sku)
-        .single();
+    // Check if SKU already exists for this organization
+    const { data: existingProduct } = await supabase
+      .from("products")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("sku", sku.trim())
+      .single();
 
-      if (existingProduct) {
-        return NextResponse.json(
-          { error: "A product with this SKU already exists" },
-          { status: 400 }
-        );
-      }
+    if (existingProduct) {
+      return NextResponse.json(
+        { error: "A product with this SKU already exists in your organization" },
+        { status: 400 }
+      );
     }
 
     // Create the product
@@ -150,7 +155,7 @@ export async function POST(request: NextRequest) {
       .insert({
         organization_id: organizationId,
         name,
-        sku: sku || null,
+        sku: sku.trim(),
         status,
       })
       .select()

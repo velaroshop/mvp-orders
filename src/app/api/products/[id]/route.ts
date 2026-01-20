@@ -57,6 +57,14 @@ export async function PUT(
       );
     }
 
+    // Validate required fields
+    if (body.sku !== undefined && (!body.sku || !body.sku.trim())) {
+      return NextResponse.json(
+        { error: "SKU is required" },
+        { status: 400 }
+      );
+    }
+
     // Validate status if provided
     if (body.status && body.status !== "active" && body.status !== "testing") {
       return NextResponse.json(
@@ -66,18 +74,18 @@ export async function PUT(
     }
 
     // Check if SKU already exists for another product in this organization (if SKU is being changed)
-    if (body.sku !== undefined && body.sku) {
+    if (body.sku !== undefined) {
       const { data: existingProductWithSku } = await supabase
         .from("products")
         .select("id")
         .eq("organization_id", organizationId)
-        .eq("sku", body.sku)
+        .eq("sku", body.sku.trim())
         .neq("id", productId)
         .single();
 
       if (existingProductWithSku) {
         return NextResponse.json(
-          { error: "A product with this SKU already exists" },
+          { error: "A product with this SKU already exists in your organization" },
           { status: 400 }
         );
       }
@@ -86,7 +94,7 @@ export async function PUT(
     // Update the product
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.sku !== undefined) updateData.sku = body.sku || null;
+    if (body.sku !== undefined) updateData.sku = body.sku.trim();
     if (body.status !== undefined) updateData.status = body.status;
 
     const { data: product, error } = await supabase

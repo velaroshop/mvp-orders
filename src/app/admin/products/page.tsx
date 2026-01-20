@@ -21,6 +21,11 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Bulk action state
   const [confirmModal, setConfirmModal] = useState<{
@@ -55,7 +60,7 @@ export default function ProductsPage() {
     try {
       setIsLoading(true);
       const response = await fetch("/api/products");
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch products");
       }
@@ -70,12 +75,19 @@ export default function ProductsPage() {
     }
   }
 
-  async function handleDelete(productId: string) {
-    if (!confirm("Are you sure you want to delete this product?")) {
-      return;
+  function toggleRowExpansion(productId: string) {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
     }
+    setExpandedRows(newExpanded);
+  }
 
+  async function handleDelete(productId: string) {
     try {
+      setIsDeleting(true);
       const response = await fetch(`/api/products/${productId}`, {
         method: "DELETE",
       });
@@ -84,11 +96,24 @@ export default function ProductsPage() {
         throw new Error("Failed to delete product");
       }
 
+      setDeleteModalOpen(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Product deleted successfully! ✓",
+      });
+
       // Refresh the list
       fetchProducts();
     } catch (err) {
       console.error("Error deleting product:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete product");
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to delete product",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -243,9 +268,6 @@ export default function ProductsPage() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Testing Orders
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Created
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
@@ -255,83 +277,199 @@ export default function ProductsPage() {
               </thead>
               <tbody className="divide-y divide-zinc-700">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-zinc-700/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">
-                        {product.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-300">
-                        {product.sku || "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                          product.status === "active"
-                            ? "bg-emerald-600 text-white"
+                  <>
+                    <tr
+                      key={product.id}
+                      onClick={() => toggleRowExpansion(product.id)}
+                      className="hover:bg-zinc-700/50 cursor-pointer"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-white">
+                            {product.name}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {product.sku || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                            product.status === "active"
+                              ? "bg-emerald-600 text-white"
+                              : product.status === "testing"
+                              ? "bg-amber-600 text-white"
+                              : "bg-zinc-600 text-white"
+                          }`}
+                        >
+                          {product.status === "active"
+                            ? "Active"
                             : product.status === "testing"
-                            ? "bg-amber-600 text-white"
-                            : "bg-zinc-600 text-white"
-                        }`}
-                      >
-                        {product.status === "active"
-                          ? "Active"
-                          : product.status === "testing"
-                          ? "Testing"
-                          : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-2">
-                        {(product.testing_orders_count || 0) > 0 ? (
-                          <>
-                            <div className="text-sm font-medium text-blue-400">
-                              {product.testing_orders_count} testing {product.testing_orders_count === 1 ? "order" : "orders"}
+                            ? "Testing"
+                            : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {formatDate(product.created_at)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/products/${product.id}/edit`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                            title="Edit product"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </Link>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleRowExpansion(product.id);
+                            }}
+                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                            title={expandedRows.has(product.id) ? "Collapse" : "Expand"}
+                          >
+                            <svg
+                              className={`w-4 h-4 transition-transform ${expandedRows.has(product.id) ? "rotate-180" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Expanded Details Row */}
+                    {expandedRows.has(product.id) && (
+                      <tr key={`${product.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
+                        <td colSpan={5} className="px-6 py-4">
+                          <div className="space-y-4">
+                            {/* Product Details */}
+                            <div>
+                              <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
+                                Product Details
+                              </h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
+                                    SKU
+                                  </div>
+                                  <div className="text-sm text-zinc-300">
+                                    {product.sku || "-"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
+                                    Status
+                                  </div>
+                                  <span
+                                    className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                                      product.status === "active"
+                                        ? "bg-emerald-600 text-white"
+                                        : product.status === "testing"
+                                        ? "bg-amber-600 text-white"
+                                        : "bg-zinc-600 text-white"
+                                    }`}
+                                  >
+                                    {product.status === "active"
+                                      ? "Active"
+                                      : product.status === "testing"
+                                      ? "Testing"
+                                      : "Inactive"}
+                                  </span>
+                                </div>
+                                <div>
+                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">
+                                    Created
+                                  </div>
+                                  <div className="text-sm text-zinc-300">
+                                    {formatDate(product.created_at)}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handlePromoteBulk(product.id, product.testing_orders_count || 0)}
-                                className="text-xs px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
-                              >
-                                🚀 Promote All
-                              </button>
-                              <button
-                                onClick={() => handleCancelBulk(product.id, product.testing_orders_count || 0)}
-                                className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                              >
-                                ✕ Cancel All
-                              </button>
+
+                            {/* Testing Orders Section */}
+                            <div className="pt-3 border-t border-zinc-700/50">
+                              <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
+                                Testing Orders
+                              </h4>
+                              <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
+                                {(product.testing_orders_count || 0) > 0 ? (
+                                  <div className="space-y-3">
+                                    <div className="text-sm font-medium text-blue-400">
+                                      {product.testing_orders_count} testing {product.testing_orders_count === 1 ? "order" : "orders"}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handlePromoteBulk(product.id, product.testing_orders_count || 0);
+                                        }}
+                                        className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors font-medium"
+                                      >
+                                        🚀 Promote All
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCancelBulk(product.id, product.testing_orders_count || 0);
+                                        }}
+                                        className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
+                                      >
+                                        ✕ Cancel All
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-zinc-400 italic">
+                                    No testing orders for this product
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </>
-                        ) : (
-                          <div className="text-sm text-zinc-500">-</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-300">
-                        {formatDate(product.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/products/${product.id}/edit`}
-                          className="text-emerald-400 hover:text-emerald-300"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+
+                            {/* Danger Zone */}
+                            <div className="pt-3 border-t border-zinc-700/50">
+                              <h4 className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
+                                Danger Zone
+                              </h4>
+                              <div className="bg-red-900/10 rounded border border-red-700/30 p-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-white">Delete Product</p>
+                                    <p className="text-xs text-zinc-400 mt-0.5">
+                                      This action cannot be undone. This will permanently delete the product.
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteModalOpen(product.id);
+                                    }}
+                                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium text-sm"
+                                  >
+                                    🗑️ Delete Product
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
@@ -339,7 +477,19 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Confirm Modal */}
+      {/* Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={deleteModalOpen !== null}
+        onClose={() => setDeleteModalOpen(null)}
+        onConfirm={() => deleteModalOpen && handleDelete(deleteModalOpen)}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isProcessing={isDeleting}
+      />
+
+      {/* Bulk Actions Confirm Modal */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false })}

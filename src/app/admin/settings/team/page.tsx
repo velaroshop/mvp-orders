@@ -168,11 +168,9 @@ export default function TeamPage() {
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <span className="text-white font-medium">
-                          {member.user?.email}
+                          {member.user?.name || member.user?.email}
                         </span>
-                        {member.user?.name && (
-                          <span className="text-sm text-zinc-400">{member.user.name}</span>
-                        )}
+                        <span className="text-sm text-zinc-400">{member.user?.email}</span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
@@ -207,19 +205,45 @@ export default function TeamPage() {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex justify-end gap-2">
-                        {member.role !== "owner" && (
-                          <button
-                            onClick={() => handleToggleActive(member.id, member.isActive)}
-                            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                              member.isActive
-                                ? "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                                : "bg-emerald-600 text-white hover:bg-emerald-700"
-                            }`}
-                          >
-                            {member.isActive ? "Deactivate" : "Activate"}
-                          </button>
-                        )}
-                        {member.role === "owner" && (
+                        {member.role !== "owner" ? (
+                          <>
+                            <button
+                              onClick={() => {/* TODO: Edit member */}}
+                              className="p-2 text-blue-400 hover:bg-blue-900/20 rounded-md transition-colors"
+                              title="Edit user"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleToggleActive(member.id, member.isActive)}
+                              className={`p-2 rounded-md transition-colors ${
+                                member.isActive
+                                  ? "text-zinc-400 hover:bg-zinc-700"
+                                  : "text-emerald-400 hover:bg-emerald-900/20"
+                              }`}
+                              title={member.isActive ? "Deactivate user" : "Activate user"}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {member.isActive ? (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                ) : (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                )}
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => {/* TODO: Delete member */}}
+                              className="p-2 text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
+                              title="Delete user"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
                           <span className="px-3 py-1 text-sm text-zinc-500 italic">Owner</span>
                         )}
                       </div>
@@ -267,6 +291,7 @@ interface AddUserModalProps {
 }
 
 function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("store_manager");
@@ -283,6 +308,7 @@ function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          name,
           email,
           password,
           role,
@@ -314,6 +340,23 @@ function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
 
           {/* Modal Body */}
           <div className="p-6 space-y-4">
+            {/* Name Field */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                placeholder="John Doe"
+                required
+                autoFocus
+              />
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
@@ -327,7 +370,6 @@ function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
                 className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
                 placeholder="user@example.com"
                 required
-                autoFocus
               />
             </div>
 

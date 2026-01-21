@@ -108,12 +108,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, password, role } = body;
+    const { name, email, password, role } = body;
 
     // Validate required fields
-    if (!email || !password || !role) {
+    if (!name || !email || !password || !role) {
       return NextResponse.json(
-        { error: "Email, password, and role are required" },
+        { error: "Name, email, password, and role are required" },
         { status: 400 }
       );
     }
@@ -164,6 +164,7 @@ export async function POST(request: Request) {
     const { data: newUser, error: userError } = await supabaseAdmin
       .from("users")
       .insert({
+        name,
         email,
         password_hash: passwordHash,
         email_verified: new Date().toISOString(), // Auto-verify created users

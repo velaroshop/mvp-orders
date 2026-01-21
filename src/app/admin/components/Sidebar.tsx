@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import UserMenu from "./UserMenu";
 import { hasRoutePermission } from "@/lib/permissions";
 import type { UserRole } from "@/lib/types";
 
@@ -161,12 +160,10 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {/* Footer with User Menu */}
-        <div className="absolute bottom-0 left-0 right-0 px-2 py-3 border-t border-zinc-800">
-          <div className="mb-2">
-            <UserMenu />
-          </div>
-          <p className="text-[10px] text-zinc-500 text-center">v1.0.0 • MVP Orders</p>
+        {/* Footer */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-zinc-800">
+          <p className="text-[10px] text-zinc-500 text-center">v1.0.0</p>
+          <p className="text-[10px] text-zinc-600 text-center mt-0.5">MVP Orders</p>
         </div>
       </aside>
     </>

@@ -425,7 +425,18 @@ export default function ConfirmOrderModal({
                   <div className="pt-2">
                     <div className="flex justify-between items-center text-white font-semibold">
                       <span>Total</span>
-                      <span className="text-lg">{order.total.toFixed(2)} RON</span>
+                      <span className="text-lg">
+                        {(() => {
+                          // Calculate total including all upsells
+                          const productSubtotal = order.subtotal || 0;
+                          const shipping = order.shippingCost || 0;
+                          const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                          }, 0) || 0;
+                          const total = productSubtotal + shipping + upsellsTotal;
+                          return `${total.toFixed(2)} RON`;
+                        })()}
+                      </span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-1">
                       including {order.shippingCost.toFixed(2)} RON shipping

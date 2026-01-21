@@ -614,7 +614,19 @@ export default function AdminPage() {
                             ? "Sync Error"
                             : "Confirmed"}
                         </span>
-                        {order.confirmerName && (
+                        {/* Show source for PENDING orders */}
+                        {order.status === "pending" && (order.fromPartialId || order.promotedFromTesting) && (
+                          <span className="text-[10px] font-medium">
+                            <span className="text-zinc-400">from </span>
+                            {order.fromPartialId ? (
+                              <span className="text-emerald-400">Partials</span>
+                            ) : (
+                              <span className="text-amber-400">Testing</span>
+                            )}
+                          </span>
+                        )}
+                        {/* Show confirmer + source for CONFIRMED orders */}
+                        {order.status === "confirmed" && order.confirmerName && (
                           <span className="text-[10px] font-medium">
                             <span className="text-zinc-400">by {order.confirmerName}</span>
                             {order.fromPartialId && (
@@ -626,7 +638,7 @@ export default function AdminPage() {
                             {order.promotedFromTesting && !order.fromPartialId && (
                               <>
                                 <span className="text-zinc-400"> from </span>
-                                <span className="text-emerald-400">Testing</span>
+                                <span className="text-amber-400">Testing</span>
                               </>
                             )}
                           </span>

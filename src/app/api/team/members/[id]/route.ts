@@ -62,6 +62,8 @@ export async function PUT(
     }
 
     // Get the member to update
+    console.log("Searching for member with id:", id, "in org:", activeOrgId);
+
     const { data: member, error: memberError } = await supabaseAdmin
       .from("organization_members")
       .select("*, user:users(*)")
@@ -69,9 +71,11 @@ export async function PUT(
       .eq("organization_id", activeOrgId)
       .single();
 
+    console.log("Member query result:", { member, memberError });
+
     if (memberError || !member) {
       return NextResponse.json(
-        { error: "Team member not found" },
+        { error: `Team member not found: ${memberError?.message || 'Unknown error'}` },
         { status: 404 }
       );
     }
@@ -178,6 +182,8 @@ export async function DELETE(
     }
 
     // Get the member to delete
+    console.log("Searching for member to delete with id:", id, "in org:", activeOrgId);
+
     const { data: member, error: memberError } = await supabaseAdmin
       .from("organization_members")
       .select("*")
@@ -185,9 +191,11 @@ export async function DELETE(
       .eq("organization_id", activeOrgId)
       .single();
 
+    console.log("Member delete query result:", { member, memberError });
+
     if (memberError || !member) {
       return NextResponse.json(
-        { error: "Team member not found" },
+        { error: `Team member not found: ${memberError?.message || 'Unknown error'}` },
         { status: 404 }
       );
     }

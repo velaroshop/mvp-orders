@@ -8,6 +8,7 @@ import {
   trackPageView,
   trackViewContent,
   trackInitiateCheckout,
+  trackPurchase,
 } from "@/lib/facebook-pixel";
 
 export const dynamic = 'force-dynamic';
@@ -367,6 +368,9 @@ function WidgetFormContent() {
           console.error('[Finalize] Failed to finalize order');
         } else {
           console.log('[Finalize] Order finalized successfully');
+
+          // Send client-side Purchase event (deduplicated with server-side CAPI)
+          await sendClientSidePurchaseEvent(createdOrderId, getTotalPrice());
         }
       } catch (error) {
         console.error('[Finalize] Error finalizing order:', error);
@@ -375,6 +379,65 @@ function WidgetFormContent() {
 
     // Redirect to thank you page
     redirectToThankYouPage();
+  }
+
+  /**
+   * Send client-side Purchase event to Meta Pixel with deduplication
+   * Uses same eventID as server-side CAPI for deduplication
+   */
+  async function sendClientSidePurchaseEvent(orderId: string, totalAmount: number) {
+    if (!landingPage?.client_side_tracking || !landingPage?.fb_pixel_id) {
+      return; // Tracking not enabled
+    }
+
+    try {
+      // Fetch order details to get accurate product info
+      const response = await fetch(`/api/orders/${orderId}`);
+      if (!response.ok) {
+        console.warn('[Purchase Tracking] Could not fetch order details');
+        return;
+      }
+
+      const orderData = await response.json();
+      const order = orderData.order;
+
+      // Build content_ids array (main product + upsells)
+      const contentIds: string[] = [];
+      if (order.product_sku) {
+        contentIds.push(order.product_sku);
+      }
+      if (order.upsells && Array.isArray(order.upsells)) {
+        order.upsells.forEach((upsell: any) => {
+          if (upsell.productSku) {
+            contentIds.push(upsell.productSku);
+          }
+        });
+      }
+
+      // Calculate total items
+      const numItems = (order.product_quantity || 1) +
+        (order.upsells?.reduce((sum: number, u: any) => sum + (u.quantity || 1), 0) || 0);
+
+      // Send Purchase event with same eventID as CAPI for deduplication
+      trackPurchase({
+        value: totalAmount,
+        currency: 'RON',
+        content_ids: contentIds.length > 0 ? contentIds : undefined,
+        content_name: order.product_name || landingPage.products?.name,
+        num_items: numItems,
+        eventID: `purchase_${orderId}`, // SAME as server-side CAPI - Meta will deduplicate
+      });
+
+      console.log('[Purchase Tracking] Client-side Purchase event sent with deduplication:', {
+        orderId,
+        eventID: `purchase_${orderId}`,
+        value: totalAmount,
+        contentIds,
+      });
+    } catch (error) {
+      console.error('[Purchase Tracking] Error sending client-side Purchase event:', error);
+      // Don't block redirect on tracking error
+    }
   }
 
   function redirectToThankYouPage() {
@@ -675,6 +738,9 @@ function WidgetFormContent() {
           method: "POST",
         });
         console.log("[Order] Finalized immediately (no postsale)");
+
+        // Send client-side Purchase event (deduplicated with server-side CAPI)
+        await sendClientSidePurchaseEvent(orderId, getTotalPrice());
       } catch (err) {
         console.error("[Order] Failed to finalize:", err);
         // Continue with redirect even if finalization fails - cleanup will handle it
@@ -1604,6 +1670,12 @@ function WidgetFormContent() {
                           console.error('Failed to add postsale upsell');
                         } else {
                           console.log('Postsale upsell added successfully!');
+
+                          // Calculate total including postsale upsell
+                          const postsaleTotal = getTotalPrice() + (postsaleUpsells[0].price * postsaleUpsells[0].quantity);
+
+                          // Send client-side Purchase event (deduplicated with server-side CAPI)
+                          await sendClientSidePurchaseEvent(createdOrderId, postsaleTotal);
                         }
                       } catch (error) {
                         console.error('Error adding postsale upsell:', error);

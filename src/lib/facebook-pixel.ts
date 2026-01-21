@@ -168,16 +168,23 @@ export function trackPurchase(params: {
   eventID?: string; // For deduplication with CAPI
 }): void {
   if (typeof window !== 'undefined' && window.fbq) {
-    console.log('[FB Pixel] Purchase', params);
+    const testMode = window.__fbTestEventCode ? '(Test Mode)' : '';
+    console.log('[FB Pixel] Purchase', params, testMode);
 
     // Extract eventID if provided (for CAPI deduplication)
     const { eventID, ...eventParams } = params;
 
-    if (eventID) {
-      // Track with eventID for deduplication
+    if (window.__fbTestEventCode) {
+      // Track with test event code
+      window.fbq('track', 'Purchase', eventParams, {
+        eventID: eventID || `purchase_${Date.now()}`,
+        test_event_code: window.__fbTestEventCode
+      });
+    } else if (eventID) {
+      // Track with eventID for deduplication (production)
       window.fbq('track', 'Purchase', eventParams, { eventID });
     } else {
-      // Track without eventID
+      // Track without eventID (fallback)
       window.fbq('track', 'Purchase', eventParams);
     }
   }

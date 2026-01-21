@@ -128,52 +128,36 @@ CREATE POLICY "Active users can manage orders"
     )
   );
 
--- Add customers table policies if not exists
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'customers' AND policyname = 'Active users can view customers'
-  ) THEN
-    CREATE POLICY "Active users can view customers"
-      ON customers FOR SELECT
-      USING (
-        organization_id IN (
-          SELECT organization_id FROM organization_members
-          WHERE user_id = auth.uid() AND is_active = true
-        )
-      );
-  END IF;
-END $$;
+-- Add customers table policies
+DROP POLICY IF EXISTS "Active users can view customers" ON customers;
+DROP POLICY IF EXISTS "Owners and Admins can manage customers" ON customers;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'customers' AND policyname = 'Owners and Admins can manage customers'
-  ) THEN
-    CREATE POLICY "Owners and Admins can manage customers"
-      ON customers FOR INSERT, UPDATE, DELETE
-      USING (
-        organization_id IN (
-          SELECT organization_id FROM organization_members
-          WHERE user_id = auth.uid() AND role IN ('owner', 'admin') AND is_active = true
-        )
-      );
-  END IF;
-END $$;
+CREATE POLICY "Active users can view customers"
+  ON customers FOR SELECT
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND is_active = true
+    )
+  );
 
--- Add partial_orders table policies if not exists
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'partial_orders' AND policyname = 'Active users can manage partial orders'
-  ) THEN
-    CREATE POLICY "Active users can manage partial orders"
-      ON partial_orders FOR ALL
-      USING (
-        organization_id IN (
-          SELECT organization_id FROM organization_members
-          WHERE user_id = auth.uid() AND is_active = true
-        )
-      );
-  END IF;
-END $$;
+CREATE POLICY "Owners and Admins can manage customers"
+  ON customers FOR INSERT, UPDATE, DELETE
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND role IN ('owner', 'admin') AND is_active = true
+    )
+  );
+
+-- Add partial_orders table policies
+DROP POLICY IF EXISTS "Active users can manage partial orders" ON partial_orders;
+
+CREATE POLICY "Active users can manage partial orders"
+  ON partial_orders FOR ALL
+  USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND is_active = true
+    )
+  );

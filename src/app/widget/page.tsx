@@ -141,22 +141,19 @@ function WidgetFormContent() {
       initFacebookPixel(landingPage.fb_pixel_id);
       trackPageView();
 
-      // Track ViewContent with product info
+      // Track ViewContent with product info (use default offer_1 price for initial tracking)
       if (landingPage.products?.name) {
-        const selectedPrice = selectedOffer === 'offer_1' ? landingPage.price_1 :
-                             selectedOffer === 'offer_2' ? landingPage.price_2 :
-                             landingPage.price_3;
-
         trackViewContent({
           content_name: landingPage.products.name,
           content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
           content_type: 'product',
-          value: selectedPrice,
+          value: landingPage.price_1, // Always use first offer price for ViewContent
           currency: 'RON',
         });
       }
     }
-  }, [landingPage, selectedOffer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landingPage]);
 
   // Extract tracking parameters from URL on mount
   useEffect(() => {

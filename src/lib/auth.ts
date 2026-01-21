@@ -118,15 +118,6 @@ export const authOptions: NextAuthOptions = {
         session.user.activeRole = token.activeRole as string; // Add active role to session
       }
 
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.organizations = token.organizations as any[];
-        session.user.activeOrganizationId = token.activeOrganizationId as string;
-      }
-
       return session;
     },
   },

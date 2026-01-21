@@ -29,10 +29,10 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Build query
+    // Build query - include confirmer user name
     let query = supabaseAdmin
       .from("orders")
-      .select("*", { count: "exact" })
+      .select("*, confirmer:users!confirmed_by(name)", { count: "exact" })
       .eq("organization_id", activeOrganizationId);
 
     // Add search filter if query provided
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     }
 
     // Map Supabase rows to Order type
-    const orders = (data || []).map((row) => {
+    const orders = (data || []).map((row: any) => {
       return {
         id: row.id,
         customerId: row.customer_id,
@@ -82,6 +82,8 @@ export async function GET(request: Request) {
         orderSeries: row.order_series ?? undefined,
         orderNote: row.order_note ?? undefined,
         promotedFromTesting: row.promoted_from_testing ?? undefined,
+        fromPartialId: row.from_partial_id ?? undefined,
+        confirmerName: row.confirmer?.name ?? undefined,
         createdAt: row.created_at,
       };
     });

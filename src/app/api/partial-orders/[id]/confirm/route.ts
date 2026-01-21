@@ -178,6 +178,7 @@ export async function POST(
         order_series: orderSeries,
         from_partial_id: id, // Mark that this order comes from a partial
         source: "partial", // Mark that this order was created from a partial order
+        confirmed_by: (session.user as any).id, // Track who confirmed this order
       })
       .select()
       .single();

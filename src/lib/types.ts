@@ -53,6 +53,7 @@ export interface Order {
   source?: string; // Sursa comenzii: "direct" sau "partial"
   queueExpiresAt?: string; // Timestamp when queue expires (3 minutes from creation)
   promotedFromTesting?: boolean; // Flag to indicate order was promoted from testing status
+  confirmerName?: string; // Name of the user who confirmed/created the order
   createdAt: string;
 }
 

@@ -614,6 +614,12 @@ export default function AdminPage() {
                             ? "Sync Error"
                             : "Confirmed"}
                         </span>
+                        {order.confirmerName && (
+                          <span className="text-[10px] text-zinc-400 font-medium">
+                            by {order.confirmerName}
+                            {order.fromPartialId && " - from Testing"}
+                          </span>
+                        )}
                         {order.promotedFromTesting && (
                           <span className="text-[10px] text-blue-400 font-medium">
                             🧪 From Testing

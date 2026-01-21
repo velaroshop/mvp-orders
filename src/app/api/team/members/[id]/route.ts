@@ -10,9 +10,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -53,7 +54,7 @@ export async function PUT(
     const { data: member, error: memberError } = await supabaseAdmin
       .from("organization_members")
       .select("*, user:users(*)")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", activeOrgId)
       .single();
 
@@ -107,7 +108,7 @@ export async function PUT(
     const { error: roleError } = await supabaseAdmin
       .from("organization_members")
       .update({ role })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (roleError) {
       console.error("Error updating role:", roleError);
@@ -132,9 +133,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -157,7 +159,7 @@ export async function DELETE(
     const { data: member, error: memberError } = await supabaseAdmin
       .from("organization_members")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", activeOrgId)
       .single();
 
@@ -188,7 +190,7 @@ export async function DELETE(
     const { error: deleteError } = await supabaseAdmin
       .from("organization_members")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (deleteError) {
       console.error("Error deleting member:", deleteError);

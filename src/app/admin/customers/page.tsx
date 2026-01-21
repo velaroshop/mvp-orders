@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Customer } from "@/lib/types";
@@ -9,18 +9,52 @@ function CustomersPageContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCustomers, setTotalCustomers] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
   const phoneFilter = searchParams.get("phone");
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const customersPerPage = 25;
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [currentPage]);
+
+  // Debounced search effect
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when searching
+      fetchCustomers();
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   async function fetchCustomers() {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/customers/list");
+      const offset = (currentPage - 1) * customersPerPage;
+      const params = new URLSearchParams({
+        limit: customersPerPage.toString(),
+        offset: offset.toString(),
+      });
+
+      if (searchQuery.trim()) {
+        params.append("q", searchQuery.trim());
+      }
+
+      const response = await fetch(`/api/customers/list?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -28,6 +62,7 @@ function CustomersPageContent() {
       }
 
       setCustomers(data.customers);
+      setTotalCustomers(data.total);
 
       // If phone filter is present, check for matching customer
       if (phoneFilter && data.customers.length > 0) {
@@ -62,6 +97,15 @@ function CustomersPageContent() {
     return price.toFixed(2);
   }
 
+  const totalPages = Math.ceil(totalCustomers / customersPerPage);
+  const startIndex = (currentPage - 1) * customersPerPage + 1;
+  const endIndex = Math.min(currentPage * customersPerPage, totalCustomers);
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
   return (
     <div className="max-w-7xl">
       {/* Header */}
@@ -76,7 +120,7 @@ function CustomersPageContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-zinc-800 rounded-lg p-6 border border-zinc-700">
           <div className="text-sm text-zinc-400 mb-1">Total Clienți</div>
-          <div className="text-3xl font-bold text-white">{customers.length}</div>
+          <div className="text-3xl font-bold text-white">{totalCustomers}</div>
         </div>
         <div className="bg-zinc-800 rounded-lg p-6 border border-zinc-700">
           <div className="text-sm text-zinc-400 mb-1">Total Comenzi</div>
@@ -89,6 +133,54 @@ function CustomersPageContent() {
           <div className="text-3xl font-bold text-white">
             {formatPrice(customers.reduce((sum, c) => sum + c.totalSpent, 0))} RON
           </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg
+              className="h-5 w-5 text-zinc-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Caută după nume sau telefon..."
+            className="block w-full pl-10 pr-10 py-3 border border-zinc-700 rounded-lg bg-zinc-800 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              <svg
+                className="h-5 w-5 text-zinc-400 hover:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -106,80 +198,148 @@ function CustomersPageContent() {
           <p className="text-zinc-400">Nu există clienți înregistrați încă.</p>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-zinc-900 border-b border-zinc-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Telefon
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Total Comenzi
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Valoare Totală
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Prima Comandă
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Ultima Comandă
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Acțiuni
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-700">
-                {customers.map((customer) => (
-                  <tr
-                    key={customer.id}
-                    className="hover:bg-zinc-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">
-                        {customer.phone}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-300">
-                        {customer.totalOrders}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-emerald-400">
-                        {formatPrice(customer.totalSpent)} RON
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-300">
-                        {customer.firstOrderDate
-                          ? formatDate(customer.firstOrderDate)
-                          : "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-zinc-300">
-                        {customer.lastOrderDate
-                          ? formatDate(customer.lastOrderDate)
-                          : "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        href={`/admin/customers/${customer.id}`}
-                        className="text-emerald-400 hover:text-emerald-300"
-                      >
-                        Vezi detalii
-                      </Link>
-                    </td>
+        <>
+          <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-zinc-900 border-b border-zinc-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Nume
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Telefon
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Total Comenzi
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Valoare Totală
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Prima Comandă
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Ultima Comandă
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Acțiuni
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-700">
+                  {customers.map((customer) => (
+                    <tr
+                      key={customer.id}
+                      className="hover:bg-zinc-700/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-white">
+                          {customer.name || "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {customer.phone}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {customer.totalOrders}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-emerald-400">
+                          {formatPrice(customer.totalSpent)} RON
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {customer.firstOrderDate
+                            ? formatDate(customer.firstOrderDate)
+                            : "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-zinc-300">
+                          {customer.lastOrderDate
+                            ? formatDate(customer.lastOrderDate)
+                            : "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          href={`/admin/customers/${customer.id}`}
+                          className="text-emerald-400 hover:text-emerald-300"
+                        >
+                          Vezi detalii
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-zinc-400">
+                Afișare {startIndex} - {endIndex} din {totalCustomers} clienți
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-zinc-700 rounded-lg text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+
+                <div className="flex gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    const showPage =
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1);
+
+                    if (!showPage && page === 2) {
+                      return <span key={page} className="px-2 text-zinc-400">...</span>;
+                    }
+                    if (!showPage && page === totalPages - 1) {
+                      return <span key={page} className="px-2 text-zinc-400">...</span>;
+                    }
+                    if (!showPage) return null;
+
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 border rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? "bg-emerald-600 border-emerald-600 text-white"
+                            : "border-zinc-700 text-white bg-zinc-800 hover:bg-zinc-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-zinc-700 rounded-lg text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Următor
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

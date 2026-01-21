@@ -10,6 +10,7 @@ export interface Customer {
   id: string;
   organizationId: string;
   phone: string;
+  name?: string; // Name from most recent order
   firstOrderDate?: string;
   lastOrderDate?: string;
   totalOrders: number;

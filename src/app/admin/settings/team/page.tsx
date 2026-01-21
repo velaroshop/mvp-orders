@@ -9,6 +9,9 @@ export default function TeamPage() {
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<OrganizationMember | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Load team members
@@ -61,6 +64,37 @@ export default function TeamPage() {
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Failed to update user status",
+      });
+    }
+  }
+
+  async function handleDeleteMember() {
+    if (!selectedMember) return;
+
+    try {
+      const response = await fetch(`/api/team/members/${selectedMember.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete user");
+      }
+
+      setMessage({
+        type: "success",
+        text: "User deleted successfully"
+      });
+
+      setShowDeleteConfirm(false);
+      setSelectedMember(null);
+
+      // Reload members
+      await loadMembers();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to delete user",
       });
     }
   }
@@ -208,7 +242,10 @@ export default function TeamPage() {
                         {member.role !== "owner" ? (
                           <>
                             <button
-                              onClick={() => {/* TODO: Edit member */}}
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setShowEditUserModal(true);
+                              }}
                               className="p-2 text-blue-400 hover:bg-blue-900/20 rounded-md transition-colors"
                               title="Edit user"
                             >
@@ -234,7 +271,10 @@ export default function TeamPage() {
                               </svg>
                             </button>
                             <button
-                              onClick={() => {/* TODO: Delete member */}}
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setShowDeleteConfirm(true);
+                              }}
                               className="p-2 text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
                               title="Delete user"
                             >
@@ -278,6 +318,38 @@ export default function TeamPage() {
           onError={(error) => {
             setMessage({ type: "error", text: error });
           }}
+        />
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUserModal && selectedMember && (
+        <EditUserModal
+          member={selectedMember}
+          onClose={() => {
+            setShowEditUserModal(false);
+            setSelectedMember(null);
+          }}
+          onSuccess={() => {
+            setShowEditUserModal(false);
+            setSelectedMember(null);
+            setMessage({ type: "success", text: "User updated successfully" });
+            loadMembers();
+          }}
+          onError={(error) => {
+            setMessage({ type: "error", text: error });
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && selectedMember && (
+        <DeleteConfirmDialog
+          member={selectedMember}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setSelectedMember(null);
+          }}
+          onConfirm={handleDeleteMember}
         />
       )}
     </div>
@@ -443,6 +515,228 @@ function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+interface EditUserModalProps {
+  member: OrganizationMember;
+  onClose: () => void;
+  onSuccess: () => void;
+  onError: (error: string) => void;
+}
+
+function EditUserModal({ member, onClose, onSuccess, onError }: EditUserModalProps) {
+  const [name, setName] = useState(member.user?.name || "");
+  const [email, setEmail] = useState(member.user?.email || "");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole>(member.role);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/team/members/${member.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password: password || undefined,
+          role,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update user");
+      }
+
+      onSuccess();
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Failed to update user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 max-w-md w-full">
+        <form onSubmit={handleSubmit}>
+          {/* Modal Header */}
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-2xl font-bold text-white">Edit User</h2>
+            <p className="text-zinc-400 text-sm mt-1">Update user information</p>
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-6 space-y-4">
+            {/* Name Field */}
+            <div>
+              <label htmlFor="edit-name" className="block text-sm font-medium text-zinc-300 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="edit-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                placeholder="John Doe"
+                required
+                autoFocus
+              />
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <label htmlFor="edit-email" className="block text-sm font-medium text-zinc-300 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="edit-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="edit-password" className="block text-sm font-medium text-zinc-300 mb-1">
+                New Password (optional)
+              </label>
+              <input
+                type="password"
+                id="edit-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                placeholder="Leave blank to keep current password"
+                minLength={8}
+              />
+              <p className="text-xs text-zinc-400 mt-1">Leave blank to keep current password</p>
+            </div>
+
+            {/* Role Select */}
+            <div>
+              <label htmlFor="edit-role" className="block text-sm font-medium text-zinc-300 mb-1">
+                Role
+              </label>
+              <select
+                id="edit-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                required
+              >
+                <option value="store_manager">Store Manager</option>
+                <option value="admin">Administrator</option>
+              </select>
+              <p className="text-xs text-zinc-400 mt-1">
+                {role === "admin"
+                  ? "Full access to all features except team management"
+                  : "Can manage orders and view customers (read-only)"}
+              </p>
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="p-6 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-zinc-700 text-white rounded-md hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="inline w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Updating...
+                </>
+              ) : (
+                "Update User"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+interface DeleteConfirmDialogProps {
+  member: OrganizationMember;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+function DeleteConfirmDialog({ member, onClose, onConfirm }: DeleteConfirmDialogProps) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 max-w-md w-full">
+        {/* Modal Header */}
+        <div className="p-6 border-b border-zinc-700">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Delete User</h2>
+              <p className="text-zinc-400 text-sm mt-1">This action cannot be undone</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6">
+          <p className="text-zinc-300">
+            Are you sure you want to delete{" "}
+            <strong className="text-white">{member.user?.name || member.user?.email}</strong>?
+          </p>
+          <p className="text-zinc-400 text-sm mt-2">
+            This user will lose access to the organization and all associated data.
+          </p>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-6 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-zinc-700 text-white rounded-md hover:bg-zinc-600 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+          >
+            Delete User
+          </button>
+        </div>
       </div>
     </div>
   );

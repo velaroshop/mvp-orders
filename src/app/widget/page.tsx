@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect, Suspense } from "react";
+import { FormEvent, useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
 import {
@@ -70,6 +70,9 @@ function WidgetFormContent() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug");
 
+  // Ref to track if pixel has been initialized
+  const pixelInitialized = useRef(false);
+
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
   const [postsaleUpsells, setPostsaleUpsells] = useState<Upsell[]>([]);
@@ -129,10 +132,12 @@ function WidgetFormContent() {
     }
   }, [slug]);
 
-  // Initialize Facebook Pixel when landing page is loaded
+  // Initialize Facebook Pixel when landing page is loaded (only once)
   useEffect(() => {
-    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id && !pixelInitialized.current) {
       console.log('[Widget] Initializing Facebook Pixel:', landingPage.fb_pixel_id);
+      pixelInitialized.current = true;
+
       initFacebookPixel(landingPage.fb_pixel_id);
       trackPageView();
 
@@ -151,7 +156,7 @@ function WidgetFormContent() {
         });
       }
     }
-  }, [landingPage]);
+  }, [landingPage, selectedOffer]);
 
   // Extract tracking parameters from URL on mount
   useEffect(() => {

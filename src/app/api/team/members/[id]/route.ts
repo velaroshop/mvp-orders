@@ -24,7 +24,9 @@ export async function PUT(
     const activeOrgId = (session.user as any).activeOrganizationId;
     const activeRole = (session.user as any).activeRole;
 
+    console.log("Edit user - Full session user:", JSON.stringify(session.user, null, 2));
     console.log("Edit user - Session data:", { userId, activeOrgId, activeRole });
+    console.log("Edit user - Member ID to update:", id);
 
     // Verify user is owner in this organization
     const { data: userMember, error: userMemberError } = await supabaseAdmin

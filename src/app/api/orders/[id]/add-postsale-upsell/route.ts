@@ -180,12 +180,19 @@ export async function POST(
       if (fullOrder?.landing_key) {
         const { data: landingPage } = await supabaseAdmin
           .from("landing_pages")
-          .select("fb_pixel_id, fb_conversion_token, meta_test_mode, meta_test_event_code")
+          .select("fb_pixel_id, fb_conversion_token, organization_id")
           .eq("slug", fullOrder.landing_key)
           .single();
 
         // Only send if landing page has Meta tracking configured
         if (landingPage?.fb_pixel_id && landingPage?.fb_conversion_token) {
+          // Get test mode settings from organization settings
+          const { data: settings } = await supabaseAdmin
+            .from("settings")
+            .select("meta_test_mode, meta_test_event_code")
+            .eq("organization_id", landingPage.organization_id)
+            .single();
+
           console.log("[Postsale] Sending Meta Purchase event for order:", orderId);
 
           await sendMetaPurchaseEvent({
@@ -193,7 +200,7 @@ export async function POST(
             pixelId: landingPage.fb_pixel_id,
             accessToken: landingPage.fb_conversion_token,
             eventSourceUrl: fullOrder.event_source_url || 'https://mvp-orders.vercel.app/widget',
-            testEventCode: landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined,
+            testEventCode: settings?.meta_test_mode ? settings.meta_test_event_code : undefined,
           });
         }
       }

@@ -51,6 +51,8 @@ export async function GET() {
         helpship_token_url: data?.helpship_token_url || "https://helpship-auth-develop.azurewebsites.net/connect/token",
         helpship_api_base_url: data?.helpship_api_base_url || "https://helpship-api-develop.azurewebsites.net",
         duplicate_check_days: org?.duplicate_check_days || 21,
+        meta_test_mode: data?.meta_test_mode || false,
+        meta_test_event_code: data?.meta_test_event_code || "",
       },
     });
   } catch (error) {

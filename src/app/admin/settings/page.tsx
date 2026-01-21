@@ -7,11 +7,15 @@ export default function SettingsPage() {
   const [helpshipClientSecret, setHelpshipClientSecret] = useState("");
   const [hasExistingSecret, setHasExistingSecret] = useState(false);
   const [duplicateCheckDays, setDuplicateCheckDays] = useState(21);
+  const [metaTestMode, setMetaTestMode] = useState(false);
+  const [metaTestEventCode, setMetaTestEventCode] = useState("");
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
+  const [isSavingMetaTest, setIsSavingMetaTest] = useState(false);
   const [isValidatingCredentials, setIsValidatingCredentials] = useState(false);
   const [credentialsMessage, setCredentialsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [generalMessage, setGeneralMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [metaTestMessage, setMetaTestMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationStatus, setValidationStatus] = useState<"valid" | "invalid" | null>(null);
 
   useEffect(() => {
@@ -24,6 +28,8 @@ export default function SettingsPage() {
         const data = await response.json();
         setHelpshipClientId(data.settings.helpship_client_id || "");
         setDuplicateCheckDays(data.settings.duplicate_check_days || 21);
+        setMetaTestMode(data.settings.meta_test_mode || false);
+        setMetaTestEventCode(data.settings.meta_test_event_code || "");
         // Check if secret exists but don't show it
         setHasExistingSecret(!!data.settings.helpship_client_secret);
         setHelpshipClientSecret("");
@@ -179,6 +185,39 @@ export default function SettingsPage() {
       });
     } finally {
       setIsSavingGeneral(false);
+    }
+  }
+
+  async function handleSaveMetaTest(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSavingMetaTest(true);
+    setMetaTestMessage(null);
+
+    try {
+      const response = await fetch("/api/settings/meta-test", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          metaTestMode,
+          metaTestEventCode,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save Meta test settings");
+      }
+
+      setMetaTestMessage({ type: "success", text: "Meta test settings saved successfully!" });
+    } catch (error) {
+      setMetaTestMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to save Meta test settings"
+      });
+    } finally {
+      setIsSavingMetaTest(false);
     }
   }
 
@@ -401,6 +440,90 @@ export default function SettingsPage() {
               className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isSavingGeneral ? "Saving..." : "Save General Settings"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Meta Test Mode Section */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6">
+        <form onSubmit={handleSaveMetaTest}>
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Meta Conversion Tracking Test Mode
+            </h2>
+
+            <div className="space-y-6">
+              {/* Test Mode Toggle */}
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="metaTestMode"
+                  checked={metaTestMode}
+                  onChange={(e) => setMetaTestMode(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded"
+                />
+                <label htmlFor="metaTestMode" className="ml-3">
+                  <span className="block text-sm font-medium text-white">
+                    Enable Meta Test Mode
+                  </span>
+                  <span className="block text-sm text-zinc-400 mt-1">
+                    When enabled, all Meta Conversion API events will be sent in test mode. This allows you to validate events in Meta Events Manager before going live.
+                  </span>
+                </label>
+              </div>
+
+              {/* Test Event Code */}
+              {metaTestMode && (
+                <div>
+                  <label htmlFor="metaTestEventCode" className="block text-sm font-medium text-white mb-2">
+                    Test Event Code
+                  </label>
+                  <input
+                    type="text"
+                    id="metaTestEventCode"
+                    value={metaTestEventCode}
+                    onChange={(e) => setMetaTestEventCode(e.target.value)}
+                    placeholder="TEST12345"
+                    className="w-full max-w-md px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                  <p className="text-sm text-zinc-400 mt-2">
+                    Enter the test event code from Meta Events Manager → Test Events. This code allows you to see events in the Test Events tool.
+                  </p>
+                </div>
+              )}
+
+              <div className="p-4 bg-blue-900/20 border border-blue-700 rounded-md">
+                <p className="text-sm text-blue-300">
+                  <strong>Note:</strong> Test mode applies globally to all landing pages. Make sure to disable it once you've validated your tracking setup.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta Test Message */}
+          {metaTestMessage && (
+            <div className="p-6 border-b border-zinc-700">
+              <div
+                className={`p-3 rounded-md ${
+                  metaTestMessage.type === "success"
+                    ? "bg-emerald-900/20 text-emerald-300 border border-emerald-700"
+                    : "bg-red-900/20 text-red-300 border border-red-700"
+                }`}
+              >
+                {metaTestMessage.text}
+              </div>
+            </div>
+          )}
+
+          {/* Save Button */}
+          <div className="p-6 bg-zinc-800/50 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSavingMetaTest}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              {isSavingMetaTest ? "Saving..." : "Save Meta Test Settings"}
             </button>
           </div>
         </form>

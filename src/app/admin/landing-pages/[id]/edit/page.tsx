@@ -45,7 +45,6 @@ interface LandingPage {
   fb_conversion_token?: string;
   client_side_tracking: boolean;
   server_side_tracking: boolean;
-  custom_event_name?: string;
 }
 
 export default function EditLandingPagePage() {
@@ -207,7 +206,6 @@ export default function EditLandingPagePage() {
           fbConversionToken: formData.fb_conversion_token || "",
           clientSideTracking: formData.client_side_tracking,
           serverSideTracking: formData.server_side_tracking,
-          customEventName: formData.custom_event_name || "",
         }),
       });
 
@@ -937,23 +935,6 @@ export default function EditLandingPagePage() {
                 </label>
               </div>
 
-              {/* Custom Event Name */}
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Custom Event Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.custom_event_name || ""}
-                  onChange={(e) => setFormData({ ...formData, custom_event_name: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Custom Event Name (Optional)"
-                />
-                <p className="text-xs text-zinc-500 mt-1">
-                  The value entered in Custom Event Name will be added to the name of the events sent to Meta.
-                  For example, if the Custom Event Name is MyProduct, then the events will be sent as PurchaseMyProduct.
-                </p>
-              </div>
             </div>
           </div>
 

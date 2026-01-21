@@ -137,7 +137,6 @@ export async function POST(request: NextRequest) {
       fbConversionToken,
       clientSideTracking = false,
       serverSideTracking = false,
-      customEventName,
     } = body;
 
     // Validate required fields
@@ -261,7 +260,6 @@ export async function POST(request: NextRequest) {
     if (fbConversionToken !== undefined) insertData.fb_conversion_token = fbConversionToken || null;
     if (clientSideTracking !== undefined) insertData.client_side_tracking = clientSideTracking;
     if (serverSideTracking !== undefined) insertData.server_side_tracking = serverSideTracking;
-    if (customEventName !== undefined) insertData.custom_event_name = customEventName || null;
 
     const { data: landingPage, error } = await supabase
       .from("landing_pages")

@@ -70,9 +70,6 @@ function WidgetFormContent() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug");
 
-  // Ref to track if pixel has been initialized
-  const pixelInitialized = useRef(false);
-
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
   const [postsaleUpsells, setPostsaleUpsells] = useState<Upsell[]>([]);
@@ -134,14 +131,9 @@ function WidgetFormContent() {
 
   // Initialize Facebook Pixel when landing page is loaded (only once)
   useEffect(() => {
-    console.log('[Widget] useEffect CALLED - pixelInitialized.current:', pixelInitialized.current,
-                'tracking enabled:', landingPage?.client_side_tracking,
-                'has pixel ID:', !!landingPage?.fb_pixel_id);
-
-    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id && !pixelInitialized.current) {
-      console.log('[Widget] ✅ CONDITIONS MET - Initializing Facebook Pixel:', landingPage.fb_pixel_id);
-      pixelInitialized.current = true;
-
+    // Only initialize if tracking is enabled, pixel ID exists, and not already initialized
+    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+      // initFacebookPixel already has window.__fbPixelInitialized check inside it
       initFacebookPixel(landingPage.fb_pixel_id);
       trackPageView();
 
@@ -155,8 +147,6 @@ function WidgetFormContent() {
           currency: 'RON',
         });
       }
-    } else {
-      console.log('[Widget] ❌ CONDITIONS NOT MET - Skipping pixel initialization');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landingPage]);

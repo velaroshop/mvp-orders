@@ -24,8 +24,19 @@ export async function PUT(
     const activeOrgId = (session.user as any).activeOrganizationId;
     const activeRole = (session.user as any).activeRole;
 
-    // Only owners can edit team members
-    if (activeRole !== "owner") {
+    console.log("Edit user - Session data:", { userId, activeOrgId, activeRole });
+
+    // Verify user is owner in this organization
+    const { data: userMember, error: userMemberError } = await supabaseAdmin
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("organization_id", activeOrgId)
+      .single();
+
+    console.log("Edit user - User member:", userMember, userMemberError);
+
+    if (userMemberError || !userMember || userMember.role !== "owner") {
       return NextResponse.json(
         { error: "Only owners can edit team members" },
         { status: 403 }
@@ -147,8 +158,19 @@ export async function DELETE(
     const activeOrgId = (session.user as any).activeOrganizationId;
     const activeRole = (session.user as any).activeRole;
 
-    // Only owners can delete team members
-    if (activeRole !== "owner") {
+    console.log("Delete user - Session data:", { userId, activeOrgId, activeRole });
+
+    // Verify user is owner in this organization
+    const { data: userMember, error: userMemberError } = await supabaseAdmin
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("organization_id", activeOrgId)
+      .single();
+
+    console.log("Delete user - User member:", userMember, userMemberError);
+
+    if (userMemberError || !userMember || userMember.role !== "owner") {
       return NextResponse.json(
         { error: "Only owners can delete team members" },
         { status: 403 }

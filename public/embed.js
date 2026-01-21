@@ -121,8 +121,8 @@
 
     const data = event.data;
 
-    // Handle height adjustment
-    if (data.type === 'resize' && data.height) {
+    // Handle height adjustment (support both 'resize' and 'velaro-widget-height' for backward compatibility)
+    if ((data.type === 'resize' || data.type === 'velaro-widget-height') && data.height) {
       // Find the iframe that sent this message
       iframes.forEach(iframe => {
         if (event.source === iframe.contentWindow) {

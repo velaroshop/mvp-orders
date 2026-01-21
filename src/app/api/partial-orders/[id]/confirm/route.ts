@@ -100,7 +100,17 @@ export async function POST(
       price = landingPage.price_3 || 0;
     }
 
-    const subtotal = price;
+    // Calculate upsells total
+    let upsellsTotal = 0;
+    if (partialOrder.upsells && Array.isArray(partialOrder.upsells)) {
+      upsellsTotal = partialOrder.upsells.reduce((sum: number, upsell: any) => {
+        const upsellPrice = upsell.price || 0;
+        const upsellQuantity = upsell.quantity || 1;
+        return sum + (upsellPrice * upsellQuantity);
+      }, 0);
+    }
+
+    const subtotal = price + upsellsTotal;
     const shippingCost = landingPage.shipping_price || 0;
     const total = subtotal + shippingCost;
 

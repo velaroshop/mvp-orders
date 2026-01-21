@@ -422,6 +422,52 @@ export default function ConfirmPartialOrderModal({
                   ))}
                 </div>
               )}
+
+              {/* Order Summary */}
+              <div className="bg-zinc-800/50 rounded-md p-4 mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">Product Subtotal</span>
+                  <span className="text-white font-medium">
+                    {partialOrder?.subtotal !== undefined ? `${partialOrder.subtotal.toFixed(2)} RON` : "—"}
+                  </span>
+                </div>
+
+                {partialOrder?.upsells && partialOrder.upsells.length > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Upsells</span>
+                    <span className="text-white font-medium">
+                      {(() => {
+                        const upsellsTotal = partialOrder.upsells.reduce((sum: number, upsell: any) => {
+                          return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                        }, 0);
+                        return `${upsellsTotal.toFixed(2)} RON`;
+                      })()}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">Shipping</span>
+                  <span className="text-white font-medium">
+                    {partialOrder?.shippingCost !== undefined ? `${partialOrder.shippingCost.toFixed(2)} RON` : "—"}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-700 flex justify-between">
+                  <span className="text-white font-semibold">Total</span>
+                  <span className="text-emerald-400 font-bold text-lg">
+                    {(() => {
+                      const productSubtotal = partialOrder?.subtotal || 0;
+                      const shipping = partialOrder?.shippingCost || 0;
+                      const upsellsTotal = partialOrder?.upsells?.reduce((sum: number, upsell: any) => {
+                        return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                      }, 0) || 0;
+                      const total = productSubtotal + shipping + upsellsTotal;
+                      return `${total.toFixed(2)} RON`;
+                    })()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

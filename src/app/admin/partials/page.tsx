@@ -341,6 +341,11 @@ export default function PartialsPage() {
                           {formatPrice(partial.subtotal)} +{" "}
                           {formatPrice(partial.shippingCost)}
                         </div>
+                        {partial.upsells && partial.upsells.length > 0 && (
+                          <div className="text-emerald-400 text-xs font-medium mt-1">
+                            + {partial.upsells.length} Pre-sale offer{partial.upsells.length > 1 ? 's' : ''}
+                          </div>
+                        )}
                       </div>
                     </td>
 

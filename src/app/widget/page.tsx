@@ -134,8 +134,12 @@ function WidgetFormContent() {
 
   // Initialize Facebook Pixel when landing page is loaded (only once)
   useEffect(() => {
+    console.log('[Widget] useEffect CALLED - pixelInitialized.current:', pixelInitialized.current,
+                'tracking enabled:', landingPage?.client_side_tracking,
+                'has pixel ID:', !!landingPage?.fb_pixel_id);
+
     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id && !pixelInitialized.current) {
-      console.log('[Widget] Initializing Facebook Pixel:', landingPage.fb_pixel_id);
+      console.log('[Widget] ✅ CONDITIONS MET - Initializing Facebook Pixel:', landingPage.fb_pixel_id);
       pixelInitialized.current = true;
 
       initFacebookPixel(landingPage.fb_pixel_id);
@@ -151,6 +155,8 @@ function WidgetFormContent() {
           currency: 'RON',
         });
       }
+    } else {
+      console.log('[Widget] ❌ CONDITIONS NOT MET - Skipping pixel initialization');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landingPage]);

@@ -68,7 +68,7 @@ export async function PUT(
 
     const { data: member, error: memberError } = await supabaseAdmin
       .from("organization_members")
-      .select("*, user:users(*)")
+      .select("*, user:users!user_id(*)")
       .eq("id", id)
       .eq("organization_id", activeOrgId)
       .single();

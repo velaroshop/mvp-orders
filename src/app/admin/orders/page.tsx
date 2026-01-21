@@ -617,7 +617,13 @@ export default function AdminPage() {
                         {order.confirmerName && (
                           <span className="text-[10px] font-medium">
                             <span className="text-zinc-400">by {order.confirmerName}</span>
-                            {(order.fromPartialId || order.promotedFromTesting) && (
+                            {order.fromPartialId && (
+                              <>
+                                <span className="text-zinc-400"> from </span>
+                                <span className="text-emerald-400">Partials</span>
+                              </>
+                            )}
+                            {order.promotedFromTesting && !order.fromPartialId && (
                               <>
                                 <span className="text-zinc-400"> from </span>
                                 <span className="text-emerald-400">Testing</span>

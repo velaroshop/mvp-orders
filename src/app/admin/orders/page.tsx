@@ -670,7 +670,16 @@ export default function AdminPage() {
                     <td className="px-3 py-2">
                       <div className="space-y-0.5">
                         <p className="font-semibold text-white">
-                          Total: {order.total.toFixed(2)} RON
+                          Total: {(() => {
+                            // Calculate total dynamically including all upsells
+                            const productSubtotal = order.subtotal || 0;
+                            const shipping = order.shippingCost || 0;
+                            const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                            }, 0) || 0;
+                            const total = productSubtotal + shipping + upsellsTotal;
+                            return total.toFixed(2);
+                          })()} RON
                         </p>
                         <p className="text-zinc-400">
                           Items: {order.subtotal.toFixed(2)} RON ({order.productQuantity || 1}x)

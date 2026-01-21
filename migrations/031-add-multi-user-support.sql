@@ -142,8 +142,14 @@ CREATE POLICY "Active users can view customers"
   );
 
 CREATE POLICY "Owners and Admins can manage customers"
-  ON customers FOR INSERT, UPDATE, DELETE
+  ON customers
   USING (
+    organization_id IN (
+      SELECT organization_id FROM organization_members
+      WHERE user_id = auth.uid() AND role IN ('owner', 'admin') AND is_active = true
+    )
+  )
+  WITH CHECK (
     organization_id IN (
       SELECT organization_id FROM organization_members
       WHERE user_id = auth.uid() AND role IN ('owner', 'admin') AND is_active = true

@@ -3,6 +3,12 @@
 import { FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
+import {
+  initFacebookPixel,
+  trackPageView,
+  trackViewContent,
+  trackInitiateCheckout,
+} from "@/lib/facebook-pixel";
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +46,8 @@ interface LandingPage {
   numeral_3: string;
   order_button_text: string;
   post_purchase_status: boolean;
+  fb_pixel_id?: string;
+  client_side_tracking?: boolean;
   products?: {
     id: string;
     name: string;
@@ -120,6 +128,30 @@ function WidgetFormContent() {
       setLoading(false);
     }
   }, [slug]);
+
+  // Initialize Facebook Pixel when landing page is loaded
+  useEffect(() => {
+    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+      console.log('[Widget] Initializing Facebook Pixel:', landingPage.fb_pixel_id);
+      initFacebookPixel(landingPage.fb_pixel_id);
+      trackPageView();
+
+      // Track ViewContent with product info
+      if (landingPage.products?.name) {
+        const selectedPrice = selectedOffer === 'offer_1' ? landingPage.price_1 :
+                             selectedOffer === 'offer_2' ? landingPage.price_2 :
+                             landingPage.price_3;
+
+        trackViewContent({
+          content_name: landingPage.products.name,
+          content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
+          content_type: 'product',
+          value: selectedPrice,
+          currency: 'RON',
+        });
+      }
+    }
+  }, [landingPage]);
 
   // Extract tracking parameters from URL on mount
   useEffect(() => {
@@ -545,6 +577,21 @@ function WidgetFormContent() {
     setSubmitting(true);
     setError(null);
     setErrors({});
+
+    // Track InitiateCheckout event
+    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+      const selectedPrice = selectedOffer === 'offer_1' ? landingPage.price_1 :
+                           selectedOffer === 'offer_2' ? landingPage.price_2 :
+                           landingPage.price_3;
+
+      trackInitiateCheckout({
+        content_ids: landingPage.products?.sku ? [landingPage.products.sku] : undefined,
+        content_name: landingPage.products?.name,
+        num_items: 1 + selectedUpsells.size,
+        value: getTotalPrice(),
+        currency: 'RON',
+      });
+    }
 
     // Prepare selected upsells data
     const selectedUpsellsData = presaleUpsells

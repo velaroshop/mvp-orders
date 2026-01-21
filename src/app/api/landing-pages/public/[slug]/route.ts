@@ -66,11 +66,29 @@ export async function GET(
       storeData = store;
     }
 
+    // Fetch test mode settings from organization settings
+    let metaTestMode = false;
+    let metaTestEventCode = null;
+    if (storeData?.organization_id) {
+      const { data: settings } = await supabase
+        .from("settings")
+        .select("meta_test_mode, meta_test_event_code")
+        .eq("organization_id", storeData.organization_id)
+        .single();
+
+      if (settings) {
+        metaTestMode = settings.meta_test_mode || false;
+        metaTestEventCode = settings.meta_test_event_code || null;
+      }
+    }
+
     return NextResponse.json({
       landingPage: {
         ...landingPage,
         products: productData,
         stores: storeData,
+        meta_test_mode: metaTestMode,
+        meta_test_event_code: metaTestEventCode,
       },
     });
   } catch (error) {

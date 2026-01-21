@@ -48,6 +48,8 @@ interface LandingPage {
   post_purchase_status: boolean;
   fb_pixel_id?: string;
   client_side_tracking?: boolean;
+  meta_test_mode?: boolean;
+  meta_test_event_code?: string;
   products?: {
     id: string;
     name: string;
@@ -134,7 +136,9 @@ function WidgetFormContent() {
     // Only initialize if tracking is enabled, pixel ID exists, and not already initialized
     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
       // initFacebookPixel already has window.__fbPixelInitialized check inside it
-      initFacebookPixel(landingPage.fb_pixel_id);
+      // Pass test event code if test mode is enabled
+      const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
+      initFacebookPixel(landingPage.fb_pixel_id, testEventCode);
       trackPageView();
 
       // Track ViewContent with product info (use default offer_1 price for initial tracking)

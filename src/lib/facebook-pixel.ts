@@ -8,6 +8,7 @@ declare global {
     fbq: any;
     _fbq: any;
     __fbPixelInitialized?: boolean;
+    __fbTestEventCode?: string; // Store test event code globally
   }
 }
 
@@ -18,8 +19,10 @@ export interface FBPixelConfig {
 
 /**
  * Initialize Facebook Pixel
+ * @param pixelId - Facebook Pixel ID
+ * @param testEventCode - Optional test event code for Meta Test Events
  */
-export function initFacebookPixel(pixelId: string): void {
+export function initFacebookPixel(pixelId: string, testEventCode?: string): void {
   if (typeof window === 'undefined' || !pixelId) {
     console.log('[FB Pixel] Skipping - window undefined or no pixel ID');
     return;
@@ -38,6 +41,12 @@ export function initFacebookPixel(pixelId: string): void {
 
   // Mark as initialized immediately to prevent race conditions
   window.__fbPixelInitialized = true;
+
+  // Store test event code if provided
+  if (testEventCode) {
+    window.__fbTestEventCode = testEventCode;
+    console.log('[FB Pixel] ✅ Test mode enabled with code:', testEventCode);
+  }
 
   console.log('[FB Pixel] ✅ Initializing pixel:', pixelId, 'Flag set to:', window.__fbPixelInitialized);
 
@@ -86,8 +95,13 @@ export function initFacebookPixel(pixelId: string): void {
  */
 export function trackPageView(): void {
   if (typeof window !== 'undefined' && window.fbq) {
-    console.log('[FB Pixel] PageView');
-    window.fbq('track', 'PageView');
+    console.log('[FB Pixel] PageView', window.__fbTestEventCode ? '(Test Mode)' : '');
+
+    if (window.__fbTestEventCode) {
+      window.fbq('track', 'PageView', {}, { eventID: `pv_${Date.now()}`, test_event_code: window.__fbTestEventCode });
+    } else {
+      window.fbq('track', 'PageView');
+    }
   }
 }
 
@@ -103,8 +117,16 @@ export function trackViewContent(params?: {
   currency?: string;
 }): void {
   if (typeof window !== 'undefined' && window.fbq) {
-    console.log('[FB Pixel] ViewContent', params);
-    window.fbq('track', 'ViewContent', params || {});
+    console.log('[FB Pixel] ViewContent', params, window.__fbTestEventCode ? '(Test Mode)' : '');
+
+    if (window.__fbTestEventCode) {
+      window.fbq('track', 'ViewContent', params || {}, {
+        eventID: `vc_${Date.now()}`,
+        test_event_code: window.__fbTestEventCode
+      });
+    } else {
+      window.fbq('track', 'ViewContent', params || {});
+    }
   }
 }
 
@@ -120,8 +142,16 @@ export function trackInitiateCheckout(params?: {
   currency?: string;
 }): void {
   if (typeof window !== 'undefined' && window.fbq) {
-    console.log('[FB Pixel] InitiateCheckout', params);
-    window.fbq('track', 'InitiateCheckout', params || {});
+    console.log('[FB Pixel] InitiateCheckout', params, window.__fbTestEventCode ? '(Test Mode)' : '');
+
+    if (window.__fbTestEventCode) {
+      window.fbq('track', 'InitiateCheckout', params || {}, {
+        eventID: `ic_${Date.now()}`,
+        test_event_code: window.__fbTestEventCode
+      });
+    } else {
+      window.fbq('track', 'InitiateCheckout', params || {});
+    }
   }
 }
 

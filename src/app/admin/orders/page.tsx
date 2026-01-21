@@ -663,7 +663,23 @@ export default function AdminPage() {
 
                     {/* Order Source */}
                     <td className="px-3 py-2">
-                      <span className="text-zinc-300">{order.landingKey}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-zinc-300 font-medium uppercase">
+                          {order.landingKey}
+                        </span>
+                        <span className="text-zinc-400 text-[10px]">
+                          {(() => {
+                            const sources = [];
+                            if (order.promotedFromTesting) sources.push("Testing");
+                            if (order.source === "partial" || order.fromPartialId) sources.push("Partial");
+
+                            if (sources.length > 0) {
+                              return sources.join(" + ");
+                            }
+                            return "Organic";
+                          })()}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Price */}

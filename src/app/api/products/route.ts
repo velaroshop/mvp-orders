@@ -17,6 +17,7 @@ const supabase = createClient(
 
 /**
  * GET /api/products - List all products for the current user's organization
+ * OPTIMIZED: Fixed N+1 query problem by batching all queries
  */
 export async function GET(request: NextRequest) {
   try {
@@ -46,51 +47,75 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For each product, get count of testing orders and check if in use
-    const productsWithCounts = await Promise.all(
-      (products || []).map(async (product) => {
-        // First, get all landing page slugs for this product
-        const { data: landingPages } = await supabase
-          .from("landing_pages")
-          .select("slug")
-          .eq("product_id", product.id);
+    if (!products || products.length === 0) {
+      return NextResponse.json({ products: [] });
+    }
 
-        if (!landingPages || landingPages.length === 0) {
-          // Check if product is used in any upsells
-          const { count: upsellCount } = await supabase
-            .from("upsells")
-            .select("id", { count: "exact", head: true })
-            .eq("product_id", product.id);
+    const productIds = products.map(p => p.id);
 
-          return {
-            ...product,
-            testing_orders_count: 0,
-            is_in_use: (upsellCount || 0) > 0,
-          };
-        }
+    // BATCH QUERY 1: Get all landing pages for all products at once
+    const { data: allLandingPages } = await supabase
+      .from("landing_pages")
+      .select("product_id, slug")
+      .in("product_id", productIds);
 
-        const landingSlugs = landingPages.map((lp) => lp.slug);
+    // BATCH QUERY 2: Get all upsells for all products at once
+    const { data: allUpsells } = await supabase
+      .from("upsells")
+      .select("product_id")
+      .in("product_id", productIds);
 
-        // Then count testing orders for those landing pages (using landing_key)
-        const { count } = await supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "testing")
-          .in("landing_key", landingSlugs);
+    // Create maps for efficient lookup
+    const landingPagesByProduct = new Map<string, string[]>();
+    allLandingPages?.forEach(lp => {
+      if (!landingPagesByProduct.has(lp.product_id)) {
+        landingPagesByProduct.set(lp.product_id, []);
+      }
+      landingPagesByProduct.get(lp.product_id)!.push(lp.slug);
+    });
 
-        // Check if product is used in any upsells
-        const { count: upsellCount } = await supabase
-          .from("upsells")
-          .select("id", { count: "exact", head: true })
-          .eq("product_id", product.id);
+    const upsellCountByProduct = new Map<string, number>();
+    allUpsells?.forEach(u => {
+      upsellCountByProduct.set(u.product_id, (upsellCountByProduct.get(u.product_id) || 0) + 1);
+    });
 
-        return {
-          ...product,
-          testing_orders_count: count || 0,
-          is_in_use: landingPages.length > 0 || (upsellCount || 0) > 0,
-        };
-      })
-    );
+    // BATCH QUERY 3: Get all testing orders for all landing slugs at once
+    const allLandingSlugs = [...new Set(allLandingPages?.map(lp => lp.slug) || [])];
+    let testingOrdersBySlug = new Map<string, number>();
+
+    if (allLandingSlugs.length > 0) {
+      const { data: testingOrders } = await supabase
+        .from("orders")
+        .select("landing_key")
+        .eq("status", "testing")
+        .in("landing_key", allLandingSlugs);
+
+      testingOrders?.forEach(order => {
+        testingOrdersBySlug.set(
+          order.landing_key,
+          (testingOrdersBySlug.get(order.landing_key) || 0) + 1
+        );
+      });
+    }
+
+    // Combine data for each product (no more N+1 queries!)
+    const productsWithCounts = products.map(product => {
+      const productLandingSlugs = landingPagesByProduct.get(product.id) || [];
+      const upsellCount = upsellCountByProduct.get(product.id) || 0;
+
+      // Count testing orders across all landing pages for this product
+      const testingOrdersCount = productLandingSlugs.reduce((sum, slug) => {
+        return sum + (testingOrdersBySlug.get(slug) || 0);
+      }, 0);
+
+      return {
+        ...product,
+        testing_orders_count: testingOrdersCount,
+        is_in_use: productLandingSlugs.length > 0 || upsellCount > 0,
+      };
+    });
+
+    console.log(`[Products API] Returned ${productsWithCounts.length} products with 3 batch queries instead of ${products.length * 3} individual queries`);
 
     return NextResponse.json({ products: productsWithCounts });
   } catch (error) {

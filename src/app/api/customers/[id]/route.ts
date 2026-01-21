@@ -26,6 +26,11 @@ export async function GET(
 
     const { id: customerId } = await params;
 
+    // Get pagination params
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
+
     // Get customer details
     const { data: customerData, error: customerError } = await supabaseAdmin
       .from("customers")
@@ -41,13 +46,14 @@ export async function GET(
       );
     }
 
-    // Get customer's orders
-    const { data: ordersData, error: ordersError } = await supabaseAdmin
+    // Get customer's orders WITH PAGINATION
+    const { data: ordersData, error: ordersError, count } = await supabaseAdmin
       .from("orders")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("customer_id", customerId)
       .eq("organization_id", activeOrganizationId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (ordersError) {
       throw new Error(`Failed to fetch orders: ${ordersError.message}`);
@@ -92,7 +98,13 @@ export async function GET(
       createdAt: row.created_at,
     }));
 
-    return NextResponse.json({ customer, orders });
+    return NextResponse.json({
+      customer,
+      orders,
+      total: count || 0,
+      limit,
+      offset,
+    });
   } catch (error) {
     console.error("Error fetching customer details", error);
     return NextResponse.json(

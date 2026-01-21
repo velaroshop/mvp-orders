@@ -15,14 +15,25 @@ export default function PartialsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPartial, setSelectedPartial] = useState<PartialOrder | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const partialsPerPage = 50;
+
   useEffect(() => {
     fetchPartialOrders();
-  }, []);
+  }, [currentPage]);
 
   async function fetchPartialOrders() {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/partial-orders/list");
+      const offset = (currentPage - 1) * partialsPerPage;
+      const params = new URLSearchParams({
+        limit: partialsPerPage.toString(),
+        offset: offset.toString(),
+      });
+
+      const response = await fetch(`/api/partial-orders/list?${params}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch partial orders");
@@ -32,9 +43,11 @@ export default function PartialsPage() {
       console.log("📥 [Frontend] Received partial orders:", {
         total: data.total,
         count: data.partialOrders?.length || 0,
+        page: currentPage,
         partialNumbers: data.partialOrders?.map((p: PartialOrder) => p.partialNumber),
       });
       setPartialOrders(data.partialOrders || []);
+      setTotalCount(data.total || 0);
     } catch (err) {
       console.error("Error fetching partial orders:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -517,6 +530,39 @@ export default function PartialsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalCount > partialsPerPage && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-700">
+              <div className="text-sm text-zinc-400">
+                Showing {(currentPage - 1) * partialsPerPage + 1} to{" "}
+                {Math.min(currentPage * partialsPerPage, totalCount)} of {totalCount} partial orders
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-zinc-700 text-white rounded hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1 text-sm text-zinc-300">
+                  Page {currentPage} of {Math.ceil(totalCount / partialsPerPage)}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) =>
+                      Math.min(Math.ceil(totalCount / partialsPerPage), p + 1)
+                    )
+                  }
+                  disabled={currentPage >= Math.ceil(totalCount / partialsPerPage)}
+                  className="px-3 py-1 bg-zinc-700 text-white rounded hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -21,23 +21,27 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get query params
+    // Get query params for pagination
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Build query - get ALL partial orders first
+    // Build base query - filter non-converted orders in DATABASE, not JavaScript
     let query = supabaseAdmin
       .from("partial_orders")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId)
-      .order("created_at", { ascending: false });
+      .is("converted_to_order_id", null) // CRITICAL: Filter in DB, not JS
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1); // CRITICAL: Pagination in DB
 
     // Filter by status if provided
     if (status) {
       query = query.eq("status", status);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error) {
       console.error("Error listing partial orders:", error);
@@ -47,28 +51,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // SIMPLE FILTER: Exclude converted orders in JavaScript (much simpler!)
-    const filteredData = (data || []).filter(row => !row.converted_to_order_id);
+    console.log(`[Partials List] Returned ${data?.length || 0} records (offset: ${offset}, limit: ${limit}, total: ${count})`);
 
-    console.log(`[Partials List] Total: ${data?.length || 0}, After filtering converted: ${filteredData.length}`);
+    // Get unique landing keys to fetch store URLs (only for current page)
+    const landingKeys = [...new Set(data?.map(row => row.landing_key).filter(Boolean))];
 
-    // Debug: Show which ones were filtered out
-    const convertedOrders = (data || []).filter(row => row.converted_to_order_id);
-    if (convertedOrders.length > 0) {
-      console.log(`[Partials List] Filtered out ${convertedOrders.length} converted orders:`,
-        convertedOrders.map(o => ({
-          id: o.id,
-          partialNumber: o.partial_number,
-          convertedToOrderId: o.converted_to_order_id,
-          status: o.status,
-        }))
-      );
-    }
-
-    // Get unique landing keys to fetch store URLs
-    const landingKeys = [...new Set(filteredData?.map(row => row.landing_key).filter(Boolean))];
-
-    // Fetch landing pages with stores for all unique landing keys
+    // Fetch landing pages with stores for current page only
     const { data: landingPagesData } = await supabaseAdmin
       .from("landing_pages")
       .select("slug, stores(url)")
@@ -80,7 +68,7 @@ export async function GET(request: Request) {
     );
 
     // Map to PartialOrder type
-    const partialOrders = (filteredData || []).map((row) => ({
+    const partialOrders = (data || []).map((row) => ({
       id: row.id,
       organizationId: row.organization_id,
       partialNumber: row.partial_number,
@@ -114,7 +102,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       partialOrders,
-      total: partialOrders.length,
+      total: count || 0,
+      limit,
+      offset,
     });
   } catch (error) {
     console.error("Error in GET /api/partial-orders/list:", error);

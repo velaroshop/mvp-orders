@@ -31,12 +31,18 @@ export async function GET(request: NextRequest) {
 
     const organizationId = session.user.activeOrganizationId;
 
-    // Fetch landing pages
-    const { data: landingPages, error } = await supabase
+    // Get pagination params
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get("limit") || "100", 10); // Default 100 landing pages
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
+
+    // Fetch landing pages WITH PAGINATION
+    const { data: landingPages, error, count } = await supabase
       .from("landing_pages")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("Error fetching landing pages:", error);
@@ -83,7 +89,12 @@ export async function GET(request: NextRequest) {
       stores: lp.store_id ? storesMap.get(lp.store_id) : null,
     }));
 
-    return NextResponse.json({ landingPages: landingPagesWithRelations });
+    return NextResponse.json({
+      landingPages: landingPagesWithRelations,
+      total: count || 0,
+      limit,
+      offset,
+    });
   } catch (error) {
     console.error("Error in GET /api/landing-pages:", error);
     return NextResponse.json(

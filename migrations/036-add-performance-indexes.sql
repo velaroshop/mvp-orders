@@ -48,14 +48,9 @@ ON customers(organization_id, created_at DESC);
 
 -- Index for phone number lookups (duplicate checking, search)
 -- Used by: customer search, duplicate detection
+-- Note: idx_customers_org_phone already exists from migration 014, but we ensure it exists
 CREATE INDEX IF NOT EXISTS idx_customers_org_phone
 ON customers(organization_id, phone);
-
--- Partial index for duplicate customer checks (only non-deleted)
--- Improves performance for active customer lookups
-CREATE INDEX IF NOT EXISTS idx_customers_org_phone_active
-ON customers(organization_id, phone)
-WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- PARTIAL ORDERS TABLE INDEXES

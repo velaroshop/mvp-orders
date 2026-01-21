@@ -84,13 +84,15 @@ export const authOptions: NextAuthOptions = {
           .select(`
             organization_id,
             role,
+            is_active,
             organizations (
               id,
               name,
               slug
             )
           `)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .eq("is_active", true); // Only get active memberships
 
         if (memberships && memberships.length > 0) {
           token.organizations = memberships.map((m: any) => ({
@@ -102,7 +104,18 @@ export const authOptions: NextAuthOptions = {
 
           // Set the first organization as the active one by default
           token.activeOrganizationId = memberships[0].organization_id;
+          token.activeRole = memberships[0].role; // Add active role to token
         }
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.organizations = token.organizations as any[];
+        session.user.activeOrganizationId = token.activeOrganizationId as string;
+        session.user.activeRole = token.activeRole as string; // Add active role to session
       }
 
       return token;

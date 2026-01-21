@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { getRoleDisplayName, getRoleBadgeColor } from "@/lib/permissions";
+import type { UserRole } from "@/lib/types";
 
 export default function UserMenu() {
   const { data: session } = useSession();
@@ -26,26 +28,32 @@ export default function UserMenu() {
 
   if (!session?.user) return null;
 
+  const userRole = (session.user as any)?.activeRole as UserRole;
+
   return (
     <div className="relative" ref={menuRef}>
       {/* User Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-zinc-100 transition-colors"
+        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-zinc-800 transition-colors w-full"
       >
-        <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-medium">
+        <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-medium shrink-0">
           {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase()}
         </div>
-        <div className="text-left hidden md:block">
-          <div className="text-sm font-medium text-zinc-900">
+        <div className="text-left flex-1 min-w-0">
+          <div className="text-sm font-medium text-white truncate">
             {session.user.name || "User"}
           </div>
-          <div className="text-xs text-zinc-500">
-            {activeOrganization?.name || "No organization"}
-          </div>
+          {userRole && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${getRoleBadgeColor(userRole)}`}>
+                {getRoleDisplayName(userRole)}
+              </span>
+            </div>
+          )}
         </div>
         <svg
-          className="w-4 h-4 text-zinc-500"
+          className="w-4 h-4 text-zinc-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -77,9 +85,13 @@ export default function UserMenu() {
               <div className="text-sm font-medium text-zinc-900">
                 {activeOrganization.name}
               </div>
-              <div className="text-xs text-zinc-500">
-                Role: {activeOrganization.role}
-              </div>
+              {userRole && (
+                <div className="mt-1.5">
+                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getRoleBadgeColor(userRole)}`}>
+                    {getRoleDisplayName(userRole)}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

@@ -4,6 +4,8 @@ export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswere
 
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 
+export type UserRole = "owner" | "admin" | "store_manager";
+
 export interface Customer {
   id: string;
   organizationId: string;
@@ -82,5 +84,26 @@ export interface PartialOrder {
   updatedAt: string;
   abandonedAt?: string;
   storeUrl?: string | null; // URL of the store from which the partial order originated
+}
+
+export interface OrganizationMember {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: UserRole;
+  createdBy?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+  creator?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
 }
 

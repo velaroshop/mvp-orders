@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import UserMenu from "./UserMenu";
+import { hasRoutePermission } from "@/lib/permissions";
+import type { UserRole } from "@/lib/types";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { data: session } = useSession();
 
-  const menuItems = [
+  const allMenuItems = [
     {
       name: "Orders",
       href: "/admin/orders",
@@ -56,6 +60,17 @@ export default function Sidebar() {
       icon: "⚙️",
     },
   ];
+
+  // Filter menu items based on user role
+  const menuItems = useMemo(() => {
+    const userRole = (session?.user as any)?.activeRole as UserRole;
+
+    if (!userRole) {
+      return allMenuItems; // Show all if role not loaded yet
+    }
+
+    return allMenuItems.filter((item) => hasRoutePermission(item.href, userRole));
+  }, [session]);
 
   const isActive = (href: string) => pathname.startsWith(href);
 

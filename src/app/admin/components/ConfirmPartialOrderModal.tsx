@@ -388,6 +388,11 @@ export default function ConfirmPartialOrderModal({
                         SKU: {partialOrder.productSku}
                       </div>
                     )}
+                    {partialOrder?.subtotal !== undefined && (
+                      <div className="text-emerald-400 text-sm mt-1 font-medium">
+                        {partialOrder.subtotal.toFixed(2)} RON
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

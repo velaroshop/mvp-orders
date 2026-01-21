@@ -20,18 +20,26 @@ export interface FBPixelConfig {
  * Initialize Facebook Pixel
  */
 export function initFacebookPixel(pixelId: string): void {
-  if (typeof window === 'undefined' || !pixelId) return;
+  if (typeof window === 'undefined' || !pixelId) {
+    console.log('[FB Pixel] Skipping - window undefined or no pixel ID');
+    return;
+  }
 
   // Check if already initialized using a custom flag
   if (window.__fbPixelInitialized) {
-    console.log('[FB Pixel] Already initialized, skipping');
+    console.log('[FB Pixel] ⚠️ Already initialized, skipping. Flag:', window.__fbPixelInitialized);
     return;
+  }
+
+  // Check if fbq already exists from another source
+  if (window.fbq && typeof window.fbq === 'function') {
+    console.warn('[FB Pixel] ⚠️ WARNING: fbq function already exists! Pixel may have been loaded elsewhere.');
   }
 
   // Mark as initialized immediately to prevent race conditions
   window.__fbPixelInitialized = true;
 
-  console.log('[FB Pixel] Initializing pixel:', pixelId);
+  console.log('[FB Pixel] ✅ Initializing pixel:', pixelId, 'Flag set to:', window.__fbPixelInitialized);
 
   // Facebook Pixel base code
   const fbq: any = function() {

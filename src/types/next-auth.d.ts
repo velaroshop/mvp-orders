@@ -15,6 +15,7 @@ declare module "next-auth" {
         role: string;
       }>;
       activeOrganizationId?: string;
+      activeRole?: string;
     };
   }
 
@@ -36,5 +37,6 @@ declare module "next-auth/jwt" {
       role: string;
     }>;
     activeOrganizationId?: string;
+    activeRole?: string;
   }
 }

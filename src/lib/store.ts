@@ -20,6 +20,9 @@ export async function createOrder(input: {
   productName?: string | null;
   productSku?: string | null;
   productQuantity?: number;
+  // Meta tracking fields
+  trackingData?: Record<string, any>;
+  eventSourceUrl?: string;
 }): Promise<Order> {
   // Calculate queue expiration time (3 minutes from now)
   const queueExpiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString();
@@ -63,6 +66,23 @@ export async function createOrder(input: {
   // - "queue" if product is active (will wait for postsale, then sync to Helpship)
   const initialStatus: OrderStatus = isProductTesting ? "testing" : "queue";
 
+  // Extract tracking fields
+  const tracking = input.trackingData || {};
+  const fbclid = tracking.fbclid || null;
+  const fbc = tracking.fbc || null;
+  const gclid = tracking.gclid || null;
+  const ttclid = tracking.ttclid || null;
+  const utmCampaign = tracking.utm_campaign || null;
+  const landingUrl = tracking.landing_url || null;
+
+  // Build additional tracking data JSONB (exclude fields that have their own columns)
+  const additionalTrackingData: Record<string, any> = {};
+  Object.keys(tracking).forEach(key => {
+    if (!['fbclid', 'fbc', 'gclid', 'ttclid', 'utm_campaign', 'landing_url'].includes(key)) {
+      additionalTrackingData[key] = tracking[key];
+    }
+  });
+
   // Folosim supabaseAdmin pentru a bypassa RLS când creăm comenzi din formularul public
   const { data, error } = await supabaseAdmin
     .from("orders")
@@ -86,6 +106,17 @@ export async function createOrder(input: {
       product_sku: input.productSku,
       product_quantity: input.productQuantity,
       order_series: orderSeries,
+      // Meta tracking fields
+      fbclid: fbclid,
+      fbc: fbc,
+      gclid: gclid,
+      ttclid: ttclid,
+      utm_campaign: utmCampaign,
+      tracking_data: Object.keys(additionalTrackingData).length > 0 ? additionalTrackingData : null,
+      landing_url: landingUrl,
+      event_source_url: input.eventSourceUrl || null,
+      meta_purchase_status: 'pending',
+      meta_purchase_event_id: null,
     })
     .select()
     .single();

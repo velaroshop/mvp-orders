@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       subtotal,
       shippingCost,
       total,
+      tracking,
+      eventSourceUrl,
     } = body;
 
     if (
@@ -124,6 +126,8 @@ export async function POST(request: NextRequest) {
       productName,
       productSku,
       productQuantity,
+      trackingData: tracking,
+      eventSourceUrl,
     });
 
     // Step 3: Update customer stats

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncOrderToHelpship } from "@/lib/helpship-sync";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendMetaPurchaseEvent } from "@/lib/meta-tracking";
 
 /**
  * POST /api/orders/[id]/finalize - Finalize order without postsale
@@ -65,6 +66,42 @@ export async function POST(
         },
         { status: 500 }
       );
+    }
+
+    // Send Meta CAPI Purchase event (if landing page has Meta tracking configured)
+    try {
+      const { data: fullOrder } = await supabaseAdmin
+        .from("orders")
+        .select(`
+          landing_key,
+          event_source_url
+        `)
+        .eq("id", orderId)
+        .single();
+
+      if (fullOrder?.landing_key) {
+        const { data: landingPage } = await supabaseAdmin
+          .from("landing_pages")
+          .select("fb_pixel_id, fb_conversion_token, meta_test_mode, meta_test_event_code")
+          .eq("slug", fullOrder.landing_key)
+          .single();
+
+        // Only send if landing page has Meta tracking configured
+        if (landingPage?.fb_pixel_id && landingPage?.fb_conversion_token) {
+          console.log("[Finalize] Sending Meta Purchase event for order:", orderId);
+
+          await sendMetaPurchaseEvent({
+            orderId,
+            pixelId: landingPage.fb_pixel_id,
+            accessToken: landingPage.fb_conversion_token,
+            eventSourceUrl: fullOrder.event_source_url || 'https://mvp-orders.vercel.app/widget',
+            testEventCode: landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined,
+          });
+        }
+      }
+    } catch (metaError) {
+      // Don't fail the request if Meta tracking fails
+      console.error("[Finalize] Meta CAPI error (non-fatal):", metaError);
     }
 
     return NextResponse.json({

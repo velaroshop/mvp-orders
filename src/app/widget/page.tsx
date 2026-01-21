@@ -89,6 +89,20 @@ function WidgetFormContent() {
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
   const [lastSaveTimeout, setLastSaveTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
+  // Meta tracking data from URL params
+  const [trackingData, setTrackingData] = useState<{
+    fbclid?: string;
+    fbp?: string;
+    gclid?: string;
+    ttclid?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+    landing_url?: string;
+  }>({});
+
   // Error states for validation
   const [errors, setErrors] = useState<{
     phone?: string;
@@ -106,6 +120,48 @@ function WidgetFormContent() {
       setLoading(false);
     }
   }, [slug]);
+
+  // Extract tracking parameters from URL on mount
+  useEffect(() => {
+    const tracking: typeof trackingData = {};
+
+    // Facebook tracking
+    const fbclid = searchParams.get('fbclid');
+    if (fbclid) tracking.fbclid = fbclid;
+
+    const fbp = searchParams.get('fbp');
+    if (fbp) tracking.fbp = fbp;
+
+    // UTM parameters
+    const utmSource = searchParams.get('utm_source');
+    if (utmSource) tracking.utm_source = utmSource;
+
+    const utmMedium = searchParams.get('utm_medium');
+    if (utmMedium) tracking.utm_medium = utmMedium;
+
+    const utmCampaign = searchParams.get('utm_campaign');
+    if (utmCampaign) tracking.utm_campaign = utmCampaign;
+
+    const utmTerm = searchParams.get('utm_term');
+    if (utmTerm) tracking.utm_term = utmTerm;
+
+    const utmContent = searchParams.get('utm_content');
+    if (utmContent) tracking.utm_content = utmContent;
+
+    // Google Ads tracking
+    const gclid = searchParams.get('gclid');
+    if (gclid) tracking.gclid = gclid;
+
+    // TikTok tracking
+    const ttclid = searchParams.get('ttclid');
+    if (ttclid) tracking.ttclid = ttclid;
+
+    // Landing page URL
+    const landingUrl = searchParams.get('landing_url');
+    if (landingUrl) tracking.landing_url = landingUrl;
+
+    setTrackingData(tracking);
+  }, [searchParams]);
 
   // Countdown timer for postsale offer - based on absolute timestamp
   useEffect(() => {
@@ -514,6 +570,9 @@ function WidgetFormContent() {
       subtotal: getCurrentPrice(),
       shippingCost: landingPage.shipping_price,
       total: getTotalPrice(),
+      // Meta tracking data
+      tracking: trackingData,
+      eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
     };
 
     try {

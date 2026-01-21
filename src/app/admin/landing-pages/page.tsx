@@ -320,36 +320,12 @@ export default function LandingPagesPage() {
   }
 
   function getEmbedCode(slug: string) {
-    const widgetUrl = getWidgetUrl(slug);
-    const iframeId = `velaro-widget-${slug}`;
-    return `<iframe id="${iframeId}" src="${widgetUrl}" width="100%" style="border: none; display: block; min-height: 600px;" scrolling="no"></iframe>
-<script>
-  (function() {
-    var iframe = document.getElementById('${iframeId}');
-    if (!iframe) return;
-    
-    function adjustHeight(event) {
-      if (event.data && event.data.type === 'velaro-widget-height' && event.data.height) {
-        iframe.style.height = event.data.height + 'px';
-      }
-    }
-    
-    window.addEventListener('message', adjustHeight);
-    
-    // Initial height adjustment after iframe loads
-    iframe.onload = function() {
-      setTimeout(function() {
-        if (iframe.contentWindow) {
-          try {
-            iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
-          } catch (e) {
-            console.debug('Could not request height from iframe');
-          }
-        }
-      }, 500);
-    };
-  })();
-</script>`;
+    if (typeof window === "undefined") return "";
+    const origin = window.location.origin;
+    const containerId = `velaro-widget-${slug}`;
+    return `<!-- Velaro Widget Embed with Tracking -->
+<script src="${origin}/embed.js"></script>
+<div id="${containerId}"></div>`;
   }
 
   function copyToClipboard(text: string) {

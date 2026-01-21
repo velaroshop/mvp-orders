@@ -6,6 +6,22 @@ export type OfferCode = "offer_1" | "offer_2" | "offer_3";
 
 export type UserRole = "owner" | "admin" | "store_manager";
 
+export type MetaPurchaseStatus = "pending" | "sent" | "failed";
+
+export type MetaEventName = "Purchase" | "InitiateCheckout" | "ViewContent" | "PageView";
+
+export interface TrackingData {
+  fbp?: string; // Facebook browser ID cookie (_fbp)
+  fbc?: string; // Facebook click ID cookie (_fbc)
+  utm_source?: string;
+  utm_medium?: string;
+  utm_term?: string;
+  utm_content?: string;
+  clientIpAddress?: string;
+  clientUserAgent?: string;
+  [key: string]: any; // Allow additional tracking params
+}
+
 export interface Customer {
   id: string;
   organizationId: string;
@@ -55,6 +71,19 @@ export interface Order {
   queueExpiresAt?: string; // Timestamp when queue expires (3 minutes from creation)
   promotedFromTesting?: boolean; // Flag to indicate order was promoted from testing status
   confirmerName?: string; // Name of the user who confirmed/created the order
+  // Meta Tracking fields
+  fbclid?: string; // Facebook click ID from URL
+  fbc?: string; // Facebook click cookie
+  gclid?: string; // Google click ID
+  ttclid?: string; // TikTok click ID
+  utmCampaign?: string; // UTM campaign parameter
+  trackingData?: TrackingData; // Additional tracking data (JSONB)
+  landingUrl?: string; // Original landing page URL
+  eventSourceUrl?: string; // Widget iframe URL (event_source_url for CAPI)
+  metaPurchaseStatus?: MetaPurchaseStatus; // CAPI delivery status
+  metaPurchaseEventId?: string; // Event ID for deduplication
+  metaPurchaseSentAt?: string; // Timestamp when Purchase event was sent
+  metaPurchaseLastError?: string; // Last error message if failed
   createdAt: string;
 }
 
@@ -107,5 +136,19 @@ export interface OrganizationMember {
     email: string;
     name?: string;
   };
+}
+
+export interface MetaEventsOutbox {
+  id: string;
+  orderId: string;
+  eventName: MetaEventName;
+  payload: Record<string, any>; // JSONB payload for CAPI
+  attempts: number;
+  status: MetaPurchaseStatus;
+  lastAttemptAt?: string;
+  nextRetryAt?: string;
+  lastError?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 

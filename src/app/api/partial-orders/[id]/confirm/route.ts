@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { syncOrderToHelpship } from "@/lib/helpship-sync";
 import type { OfferCode } from "@/lib/types";
 
 export async function POST(
@@ -227,25 +228,19 @@ export async function POST(
       });
     }
 
-    // Send order to Helpship (same logic as in /api/orders/[id]/helpship)
-    try {
-      const helpshipResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/orders/${order.id}/helpship`,
-        {
-          method: "POST",
-          headers: {
-            Cookie: request.headers.get("Cookie") || "",
-          },
-        }
-      );
+    // Sync order to Helpship (will update status to 'pending' on success)
+    console.log("[Partial Confirm] Syncing order to Helpship:", order.id);
+    const syncResult = await syncOrderToHelpship(order.id);
 
-      if (!helpshipResponse.ok) {
-        console.error("Failed to send order to Helpship");
-        // Don't fail the request, order is created but Helpship sync failed
-      }
-    } catch (helpshipError) {
-      console.error("Error sending to Helpship:", helpshipError);
-      // Don't fail the request
+    if (!syncResult.success) {
+      console.error("[Partial Confirm] Failed to sync to Helpship:", syncResult.error);
+      // Don't fail the request, order is created but Helpship sync failed
+      // User can manually retry sync later
+    } else {
+      console.log("[Partial Confirm] ✓ Order synced to Helpship successfully:", {
+        orderId: order.id,
+        helpshipOrderId: syncResult.helpshipOrderId,
+      });
     }
 
     return NextResponse.json({

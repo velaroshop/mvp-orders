@@ -370,24 +370,53 @@ export default function ConfirmPartialOrderModal({
           {/* Products */}
           <div>
             <h3 className="text-sm font-medium text-zinc-400 mb-4">Products</h3>
-            <div className="bg-zinc-800 rounded-md p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="text-white font-medium">
-                    {partialOrder?.productName || "—"}
-                    {partialOrder?.productQuantity && (
-                      <span className="ml-2 text-zinc-400">
-                        × {partialOrder.productQuantity}
-                      </span>
+            <div className="space-y-3">
+              {/* Main Product */}
+              <div className="bg-zinc-800 rounded-md p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="text-white font-medium">
+                      {partialOrder?.productName || "—"}
+                      {partialOrder?.productQuantity && (
+                        <span className="ml-2 text-zinc-400">
+                          × {partialOrder.productQuantity}
+                        </span>
+                      )}
+                    </div>
+                    {partialOrder?.productSku && (
+                      <div className="text-orange-400 text-sm mt-1">
+                        SKU: {partialOrder.productSku}
+                      </div>
                     )}
                   </div>
-                  {partialOrder?.productSku && (
-                    <div className="text-orange-400 text-sm mt-1">
-                      SKU: {partialOrder.productSku}
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Pre-sale Upsells */}
+              {partialOrder?.upsells && partialOrder.upsells.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-zinc-500 px-1">
+                    Pre-sale Offers ({partialOrder.upsells.length})
+                  </div>
+                  {partialOrder.upsells.map((upsell: any, index: number) => (
+                    <div key={index} className="bg-zinc-800 rounded-md p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="text-white font-medium">
+                            {upsell.title || "—"}
+                            <span className="ml-2 text-zinc-400">
+                              × {upsell.quantity || 1}
+                            </span>
+                          </div>
+                          <div className="text-emerald-400 text-sm mt-1 font-medium">
+                            {upsell.price ? `${upsell.price.toFixed(2)} RON` : "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

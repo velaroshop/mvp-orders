@@ -617,17 +617,12 @@ export default function AdminPage() {
                         {order.confirmerName && (
                           <span className="text-[10px] font-medium">
                             <span className="text-zinc-400">by {order.confirmerName}</span>
-                            {order.fromPartialId && (
+                            {(order.fromPartialId || order.promotedFromTesting) && (
                               <>
                                 <span className="text-zinc-400"> from </span>
                                 <span className="text-emerald-400">Testing</span>
                               </>
                             )}
-                          </span>
-                        )}
-                        {order.promotedFromTesting && (
-                          <span className="text-[10px] text-blue-400 font-medium">
-                            🧪 From Testing
                           </span>
                         )}
                       </div>

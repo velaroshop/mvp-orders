@@ -55,6 +55,11 @@ export default function Sidebar() {
       icon: "🔍",
     },
     {
+      name: "Team",
+      href: "/admin/settings/team",
+      icon: "👨‍💼",
+    },
+    {
       name: "Settings",
       href: "/admin/settings",
       icon: "⚙️",

@@ -7,6 +7,7 @@ declare global {
   interface Window {
     fbq: any;
     _fbq: any;
+    __fbPixelInitialized?: boolean;
   }
 }
 
@@ -21,11 +22,14 @@ export interface FBPixelConfig {
 export function initFacebookPixel(pixelId: string): void {
   if (typeof window === 'undefined' || !pixelId) return;
 
-  // Check if already initialized
-  if (window.fbq) {
-    console.log('[FB Pixel] Already initialized');
+  // Check if already initialized using a custom flag
+  if (window.__fbPixelInitialized) {
+    console.log('[FB Pixel] Already initialized, skipping');
     return;
   }
+
+  // Mark as initialized immediately to prevent race conditions
+  window.__fbPixelInitialized = true;
 
   console.log('[FB Pixel] Initializing pixel:', pixelId);
 

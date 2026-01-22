@@ -12,6 +12,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Add CORS headers to allow requests from any origin (since this is embedded on customer sites)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
   try {
     const { id: orderId } = await params;
 
@@ -28,7 +35,7 @@ export async function POST(
       console.error("[Finalize] Order not found:", orderError);
       return NextResponse.json(
         { error: "Order not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -40,7 +47,7 @@ export async function POST(
         orderId: orderId,
         message: "Testing order marked as finalized (not synced to Helpship)",
         isTesting: true,
-      });
+      }, { headers });
     }
 
     if (order.status !== "queue") {
@@ -51,7 +58,7 @@ export async function POST(
           message: "Order already finalized",
           status: order.status,
         },
-        { status: 200 }
+        { status: 200, headers }
       );
     }
 
@@ -64,7 +71,7 @@ export async function POST(
           error: "Failed to sync order to Helpship",
           details: syncResult.error,
         },
-        { status: 500 }
+        { status: 500, headers }
       );
     }
 
@@ -116,12 +123,24 @@ export async function POST(
       orderId: orderId,
       helpshipOrderId: syncResult.helpshipOrderId,
       message: "Order finalized and synced to Helpship",
-    });
+    }, { headers });
   } catch (error) {
     console.error("[Finalize] Error finalizing order:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }

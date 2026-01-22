@@ -11,6 +11,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Add CORS headers to allow requests from any origin (since this is embedded on customer sites)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
   try {
     const { id: orderId } = await params;
     const body = await request.json();
@@ -19,7 +26,7 @@ export async function POST(
     if (!upsellId) {
       return NextResponse.json(
         { error: "Missing upsell ID" },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -33,7 +40,7 @@ export async function POST(
     if (orderError || !order) {
       return NextResponse.json(
         { error: "Order not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -41,7 +48,7 @@ export async function POST(
     if (order.status !== "queue") {
       return NextResponse.json(
         { error: "Order is not in queue status" },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -63,7 +70,7 @@ export async function POST(
             error: "Postsale offer has expired",
             message: "The time window for accepting postsale offer has passed",
           },
-          { status: 410 } // 410 Gone
+          { status: 410, headers } // 410 Gone
         );
       }
     }
@@ -84,7 +91,7 @@ export async function POST(
     if (upsellError || !upsell) {
       return NextResponse.json(
         { error: "Postsale upsell not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -143,7 +150,7 @@ export async function POST(
       console.error("[Postsale] Failed to update order:", updateError);
       return NextResponse.json(
         { error: "Failed to update order" },
-        { status: 500 }
+        { status: 500, headers }
       );
     }
 
@@ -160,7 +167,7 @@ export async function POST(
           error: "Failed to sync order to Helpship",
           details: syncResult.error,
         },
-        { status: 500 }
+        { status: 500, headers }
       );
     }
 
@@ -214,12 +221,24 @@ export async function POST(
       orderId: orderId,
       upsell: newUpsell,
       helpshipOrderId: syncResult.helpshipOrderId,
-    });
+    }, { headers });
   } catch (error) {
     console.error("Error adding postsale upsell:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }

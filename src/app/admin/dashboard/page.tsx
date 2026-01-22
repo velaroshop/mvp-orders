@@ -17,6 +17,13 @@ interface UpsellSplit {
   totalRevenue: number;
 }
 
+interface ProductStockAnalysis {
+  name: string;
+  totalSold: number;
+  dailyAverage: number;
+  daysInPeriod: number;
+}
+
 interface DashboardStats {
   totalRevenue: number;
   avgOrderValue: number;
@@ -26,6 +33,7 @@ interface DashboardStats {
   ordersByStatus: Record<string, number>;
   revenueByProduct: ProductRevenue[];
   upsellsSplit: UpsellSplit[];
+  productStockAnalysis: ProductStockAnalysis[];
 }
 
 interface LandingPage {
@@ -45,6 +53,7 @@ export default function DashboardPage() {
     ordersByStatus: {},
     revenueByProduct: [],
     upsellsSplit: [],
+    productStockAnalysis: [],
   });
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [showAllUpsells, setShowAllUpsells] = useState(false);
@@ -569,18 +578,64 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Card 3 */}
+        {/* Products Stock Analysis Card */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Conversion Rate</h3>
-            <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
-              <span className="text-xl">📈</span>
+            <h3 className="text-lg font-semibold text-white">Products Stock Analysis</h3>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-zinc-400">Loading...</p>
             </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Info about period */}
+              {stats.productStockAnalysis.length > 0 && (
+                <div className="bg-zinc-900/50 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-zinc-400">
+                    Analysis period: <span className="font-semibold text-white">{stats.productStockAnalysis[0].daysInPeriod} days</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Product list */}
+              <div className="space-y-4">
+                {stats.productStockAnalysis.map((product, index) => (
+                  <div key={product.name} className="border-b border-zinc-700 pb-4 last:border-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="text-sm font-semibold text-white truncate max-w-[60%]">
+                        {product.name}
+                      </h4>
+                      <div className="text-right">
+                        <p className="text-xs text-zinc-400">Total Sold</p>
+                        <p className="text-lg font-bold text-emerald-500">{product.totalSold}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <div className="bg-zinc-900/50 rounded p-2">
+                        <p className="text-xs text-zinc-400 mb-1">Daily Average</p>
+                        <p className="text-sm font-semibold text-white">
+                          {product.dailyAverage.toFixed(2)} units/day
+                        </p>
+                      </div>
+                      <div className="bg-zinc-900/50 rounded p-2">
+                        <p className="text-xs text-zinc-400 mb-1">Weekly Estimate</p>
+                        <p className="text-sm font-semibold text-white">
+                          {(product.dailyAverage * 7).toFixed(0)} units
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Show message if no products */}
+                {stats.productStockAnalysis.length === 0 && (
+                  <p className="text-sm text-zinc-400 text-center py-4">No products sold in this period</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Card 4 */}

@@ -118,6 +118,29 @@ export async function GET(request: NextRequest) {
       .map(([name, revenue]) => ({ name, revenue }))
       .sort((a, b) => b.revenue - a.revenue);
 
+    // Calculate product sales analysis (units sold per product)
+    const productSales: Record<string, number> = {};
+    filteredOrders.forEach((order: any) => {
+      const productName = order.product_name || "Unknown Product";
+      const quantity = order.product_quantity || 1;
+      productSales[productName] = (productSales[productName] || 0) + quantity;
+    });
+
+    // Calculate days in period for daily average
+    const startDateObj = new Date(startDateTime);
+    const endDateObj = new Date(endDateTime);
+    const daysInPeriod = Math.max(1, Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    // Convert to array with daily average
+    const productStockAnalysis = Object.entries(productSales)
+      .map(([name, totalSold]) => ({
+        name,
+        totalSold,
+        dailyAverage: totalSold / daysInPeriod,
+        daysInPeriod,
+      }))
+      .sort((a, b) => b.totalSold - a.totalSold);
+
     // Calculate upsells split by product and type
     const upsellsByProduct: Record<string, {
       presale: number;
@@ -176,6 +199,7 @@ export async function GET(request: NextRequest) {
       ordersByStatus: statusCounts,
       revenueByProduct,
       upsellsSplit,
+      productStockAnalysis,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stats:", error);

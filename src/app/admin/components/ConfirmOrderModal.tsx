@@ -26,8 +26,6 @@ export default function ConfirmOrderModal({
     address: "",
     streetNumber: "",
     postalCode: "",
-    shippingPrice: 0,
-    discount: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [postalCodes, setPostalCodes] = useState<PostalCodeResult[]>([]);
@@ -104,8 +102,6 @@ export default function ConfirmOrderModal({
             address: currentOrder.address || "",
             streetNumber: "",
             postalCode: currentOrder.postalCode || "",
-            shippingPrice: currentOrder.shippingCost || 0,
-            discount: 0,
           };
           setFormData(initialData);
           
@@ -138,8 +134,6 @@ export default function ConfirmOrderModal({
               address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
               streetNumber: "",
               postalCode: postalCode,
-              shippingPrice: currentOrder.shippingCost || 0,
-              discount: 0,
             };
             setFormData(initialData);
             
@@ -157,8 +151,6 @@ export default function ConfirmOrderModal({
               address: currentOrder.address || "",
               streetNumber: "",
               postalCode: currentOrder.postalCode || "",
-              shippingPrice: currentOrder.shippingCost || 0,
-              discount: 0,
             };
             setFormData(initialData);
             
@@ -177,8 +169,6 @@ export default function ConfirmOrderModal({
             address: currentOrder.address || "",
             streetNumber: "",
             postalCode: currentOrder.postalCode || "",
-            shippingPrice: currentOrder.shippingCost || 0,
-            discount: 0,
           };
           setFormData(initialData);
           
@@ -209,7 +199,6 @@ export default function ConfirmOrderModal({
         address: formData.address,
         streetNumber: formData.streetNumber,
         postalCode: formData.postalCode,
-        shippingCost: formData.shippingPrice,
       };
 
       await onConfirm(updatedOrder);

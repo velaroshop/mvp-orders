@@ -24,8 +24,6 @@ export async function POST(
       address,
       streetNumber,
       postalCode,
-      shippingPrice,
-      discount,
     } = body;
 
     // Validare cod poștal: maxim 6 cifre
@@ -94,7 +92,6 @@ export async function POST(
           customerName: fullName || order.fullName,
           customerPhone: phone || order.phone,
           postalCode: postalCode,
-          shippingPrice: shippingPrice !== undefined ? shippingPrice : undefined,
           shippingAddress: {
             county: county || order.county,
             city: city || order.city,
@@ -124,7 +121,6 @@ export async function POST(
     if (city) updateData.city = city;
     if (address) updateData.address = address;
     if (postalCode) updateData.postal_code = postalCode;
-    if (shippingPrice !== undefined) updateData.shipping_cost = shippingPrice;
 
     // Actualizează status-ul și datele în DB
     const { error: updateError } = await supabaseAdmin

@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  // Add CORS headers to allow requests from any origin (since this is embedded on customer sites)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("order");
@@ -11,7 +18,7 @@ export async function GET(request: Request) {
     if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -28,7 +35,7 @@ export async function GET(request: Request) {
       console.error("[Thank You Verify] Error fetching order:", orderError);
       return NextResponse.json(
         { error: "Order not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -56,7 +63,7 @@ export async function GET(request: Request) {
       console.error("[Thank You Verify] Error fetching landing page:", landingError);
       return NextResponse.json(
         { error: "Landing page not found" },
-        { status: 404 }
+        { status: 404, headers }
       );
     }
 
@@ -69,7 +76,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
-      });
+      }, { headers });
     }
 
     // Fetch available postsale upsells for this landing page
@@ -104,7 +111,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
-      });
+      }, { headers });
     }
 
     // If no valid postsale upsells, return simple confirmation
@@ -114,7 +121,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
-      });
+      }, { headers });
     }
 
     // Format upsells for response
@@ -144,12 +151,24 @@ export async function GET(request: Request) {
         accent: store.accent_color,
         textOnDark: store.text_on_dark_color,
       },
-    });
+    }, { headers });
   } catch (error) {
     console.error("Error verifying order for thank you page:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }

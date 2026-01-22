@@ -308,60 +308,20 @@ export default function ConfirmOrderModal({
                 </p>
               </div>
 
-              {/* Shipping & Scheduling */}
+              {/* Scheduling */}
               <div className="mt-3 pt-3 border-t border-zinc-700/50">
                 <h3 className="text-sm font-semibold text-white mb-2">
-                  Shipping & Scheduling
+                  Scheduling
                 </h3>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                        Shipping Price
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.shippingPrice}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            shippingPrice: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                        Discount
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.discount}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            discount: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                      Scheduled Date
-                    </label>
-                    <input
-                      type="date"
-                      defaultValue={new Date().toISOString().split("T")[0]}
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                    Scheduled Date
+                  </label>
+                  <input
+                    type="date"
+                    defaultValue={new Date().toISOString().split("T")[0]}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
               </div>
             </div>

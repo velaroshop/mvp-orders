@@ -14,6 +14,11 @@ export default function Sidebar() {
 
   const allMenuItems = [
     {
+      name: "Dashboard",
+      href: "/admin/dashboard",
+      icon: "📊",
+    },
+    {
       name: "Orders",
       href: "/admin/orders",
       icon: "📦",

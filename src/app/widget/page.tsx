@@ -226,6 +226,22 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
+  // Block body scroll when postsale offer is shown
+  useEffect(() => {
+    if (showPostsaleOffer) {
+      // Save current overflow style
+      const originalOverflow = document.body.style.overflow;
+
+      // Block scroll
+      document.body.style.overflow = 'hidden';
+
+      // Restore scroll on cleanup
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showPostsaleOffer]);
+
   // Helper function to scroll parent to widget
   const scrollParentToWidget = () => {
     try {

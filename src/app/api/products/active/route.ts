@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       .from("products")
       .select("id, name")
       .eq("organization_id", organizationId)
-      .eq("active", true)
+      .eq("status", "active")
       .order("name", { ascending: true });
 
     if (error) {

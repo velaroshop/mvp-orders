@@ -60,6 +60,7 @@ export interface Order {
   upsells: string[];
   subtotal: number;
   shippingCost: number;
+  discount?: number; // Discount amount
   total: number;
   status: OrderStatus;
   helpshipOrderId?: string;

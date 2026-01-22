@@ -188,6 +188,7 @@ class HelpshipClient {
       productQuantity?: number; // Cantitatea produsului din oferta selectată
       subtotal: number;
       shippingCost: number;
+      discount?: number; // Discount amount
       total: number;
       upsells?: Array<{
         upsellId: string;
@@ -232,7 +233,7 @@ class HelpshipClient {
       externalId: orderData.orderId,
       name: orderName, // Format: JMR-TEST-00001, JMR-TEST-00002, etc.
       totalPrice: orderData.total,
-      discountPrice: 0, // TODO: calculați dacă există discount
+      discountPrice: orderData.discount || 0,
       shippingPrice: orderData.shippingCost,
       shippingVatPercentage: 0, // TODO: adăugați TVA dacă e necesar
       currency: "RON",
@@ -623,6 +624,8 @@ class HelpshipClient {
       customerName?: string;
       customerPhone?: string;
       postalCode?: string;
+      discount?: number;
+      shippingPrice?: number;
       shippingAddress?: {
         county?: string;
         city?: string;
@@ -761,11 +764,44 @@ class HelpshipClient {
     // Folosim doar endpoint-uri specifice:
     // - /api/order/{id}/updateAddress pentru adresă (deja făcut mai sus)
     // - /api/Order/{id}/unhold sau /hold pentru status (se face mai jos)
-    
-    // Dacă avem paymentStatus de actualizat, nu putem face update direct
-    // (ar necesita permisiuni de administrator)
+    // - Testăm PUT /api/Order/{id} pentru pricing fields (discount, shipping)
+
+    // Încercăm să actualizăm pricing fields (discount, shippingPrice)
+    if (updates.discount !== undefined || updates.shippingPrice !== undefined) {
+      try {
+        const pricingPayload: any = {};
+
+        if (updates.discount !== undefined) {
+          pricingPayload.discountPrice = updates.discount;
+        }
+
+        if (updates.shippingPrice !== undefined) {
+          pricingPayload.shippingPrice = updates.shippingPrice;
+        }
+
+        console.log(`[Helpship] Attempting to update pricing fields:`, pricingPayload);
+
+        const pricingResponse = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+          method: "PUT",
+          body: JSON.stringify(pricingPayload),
+        });
+
+        if (pricingResponse.ok) {
+          console.log(`[Helpship] ✓ Pricing fields updated successfully`);
+        } else {
+          const errorText = await pricingResponse.text();
+          console.warn(`[Helpship] Failed to update pricing fields (${pricingResponse.status}):`, errorText.substring(0, 200));
+          console.warn(`[Helpship] Pricing fields will need to be updated manually in Helpship admin panel`);
+        }
+      } catch (err) {
+        console.warn("[Helpship] Failed to update pricing fields:", err instanceof Error ? err.message : String(err));
+        console.warn("[Helpship] Pricing fields will need to be updated manually in Helpship admin panel");
+      }
+    }
+
+    // PaymentStatus - nu poate fi actualizat fără permisiuni admin
     if (updates.paymentStatus) {
-      console.log(`[Helpship] Note: paymentStatus update requested (${updates.paymentStatus}), but cannot update via general endpoint (requires admin permissions)`);
+      console.log(`[Helpship] Note: paymentStatus update requested (${updates.paymentStatus}), but cannot update via API (requires admin permissions)`);
     }
 
     // După update-ul datelor, setăm status-ul dacă e necesar

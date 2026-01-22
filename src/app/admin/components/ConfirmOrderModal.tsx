@@ -210,6 +210,7 @@ export default function ConfirmOrderModal({
         streetNumber: formData.streetNumber,
         postalCode: formData.postalCode,
         shippingCost: formData.shippingPrice,
+        discount: formData.discount,
       };
 
       await onConfirm(updatedOrder);

@@ -101,10 +101,19 @@ export default function DashboardPage() {
       params.set("endDate", end || endDate);
       params.set("landingPage", landingPage || selectedLandingPage);
 
+      console.log("Fetching dashboard stats with params:", {
+        startDate: start || startDate,
+        endDate: end || endDate,
+        landingPage: landingPage || selectedLandingPage,
+      });
+
       const response = await fetch(`/api/dashboard/stats?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
+        console.log("Dashboard stats received:", data);
         setStats(data);
+      } else {
+        console.error("Failed to fetch stats:", response.status, await response.text());
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -116,6 +125,7 @@ export default function DashboardPage() {
   // Auto-apply quick filters
   useEffect(() => {
     const { start, end } = getDateRange(quickFilter);
+    console.log("Quick filter changed:", quickFilter, "Date range:", { start, end });
     setStartDate(start);
     setEndDate(end);
     fetchStats(start, end, selectedLandingPage);

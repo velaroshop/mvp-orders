@@ -30,11 +30,6 @@ export default function ConfirmScheduledOrderModal({
     await onConfirm();
   };
 
-  // Debug logging
-  console.log('[ConfirmScheduledOrderModal] order:', order);
-  console.log('[ConfirmScheduledOrderModal] scheduledDate:', order.scheduledDate);
-  console.log('[ConfirmScheduledOrderModal] scheduledDate type:', typeof order.scheduledDate);
-
   const scheduledDateFormatted = order.scheduledDate
     ? (() => {
         // Parse YYYY-MM-DD format correctly (add time to avoid timezone issues)
@@ -43,25 +38,17 @@ export default function ConfirmScheduledOrderModal({
           : `${order.scheduledDate}T12:00:00`;
         const date = new Date(dateStr);
 
-        console.log('[ConfirmScheduledOrderModal] dateStr:', dateStr);
-        console.log('[ConfirmScheduledOrderModal] parsed date:', date);
-        console.log('[ConfirmScheduledOrderModal] isValid:', !isNaN(date.getTime()));
-
         // Check if date is valid
         if (isNaN(date.getTime())) {
           return order.scheduledDate; // Fallback to raw string
         }
 
-        const formatted = date.toLocaleDateString("ro-RO", {
+        return date.toLocaleDateString("ro-RO", {
           weekday: "long",
           year: "numeric",
           month: "long",
           day: "numeric",
         });
-
-        console.log('[ConfirmScheduledOrderModal] formatted:', formatted);
-
-        return formatted;
       })()
     : "N/A";
 

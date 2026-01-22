@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     // Get search query and pagination params from URL
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get("q") || "";
+    const statusesParam = searchParams.get("statuses") || "";
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -34,6 +35,14 @@ export async function GET(request: Request) {
       .from("orders")
       .select("*, confirmer:users!confirmed_by(name)", { count: "exact" })
       .eq("organization_id", activeOrganizationId);
+
+    // Add status filter if statuses provided
+    if (statusesParam.trim()) {
+      const statuses = statusesParam.split(",").map(s => s.trim()).filter(Boolean);
+      if (statuses.length > 0) {
+        query = query.in("status", statuses);
+      }
+    }
 
     // Add search filter if query provided
     if (searchQuery.trim()) {

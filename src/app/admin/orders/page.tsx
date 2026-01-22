@@ -29,6 +29,10 @@ export default function AdminPage() {
   const [totalOrders, setTotalOrders] = useState(0);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Status filter state
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 25;
@@ -52,6 +56,11 @@ export default function AdminPage() {
       limit: ordersPerPage.toString(),
       offset: ((currentPage - 1) * ordersPerPage).toString(),
     });
+
+    // Add status filters if any are selected
+    if (selectedStatuses.length > 0) {
+      params.append("statuses", selectedStatuses.join(","));
+    }
 
     const response = await fetch(`/api/orders/list?${params}`);
     if (!response.ok) {
@@ -90,9 +99,27 @@ export default function AdminPage() {
     fetchOrders("");
   }
 
+  // Toggle status filter
+  function toggleStatus(status: string) {
+    setSelectedStatuses((prev) => {
+      if (prev.includes(status)) {
+        return prev.filter((s) => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+    setCurrentPage(1); // Reset to first page when filter changes
+  }
+
+  // Clear all status filters
+  function clearStatusFilters() {
+    setSelectedStatuses([]);
+    setCurrentPage(1);
+  }
+
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage]);
+  }, [currentPage, selectedStatuses]);
 
   // Închide dropdown-ul când se face click în afara lui
   useEffect(() => {
@@ -110,6 +137,23 @@ export default function AdminPage() {
       };
     }
   }, [openDropdown]);
+
+  // Close status dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".status-filter-dropdown")) {
+        setIsStatusDropdownOpen(false);
+      }
+    }
+
+    if (isStatusDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isStatusDropdownOpen]);
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
@@ -491,34 +535,66 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <svg
-                className="w-5 h-5 text-zinc-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+          {/* Search and Filter Bar */}
+          <div className="flex gap-3">
+            {/* Search Bar */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-zinc-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Caută după telefon, nume, județ, oraș, adresă..."
+                className="w-full pl-10 pr-10 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+              {isSearching && (
+                <div className="absolute inset-y-0 right-10 flex items-center pr-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
+                </div>
+              )}
             </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Caută după telefon, nume, județ, oraș, adresă..."
-              className="w-full pl-10 pr-10 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            />
-            {searchQuery && (
+
+            {/* Status Filter Dropdown */}
+            <div className="relative status-filter-dropdown">
               <button
-                onClick={handleClearSearch}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-white"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
+                  selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -530,16 +606,60 @@ export default function AdminPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
+                Status
+                {selectedStatuses.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                    {selectedStatuses.length}
+                  </span>
+                )}
               </button>
-            )}
-            {isSearching && (
-              <div className="absolute inset-y-0 right-10 flex items-center pr-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
-              </div>
-            )}
+
+              {isStatusDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-white">Filtrează după status</span>
+                      {selectedStatuses.length > 0 && (
+                        <button
+                          onClick={clearStatusFilters}
+                          className="text-xs text-emerald-500 hover:text-emerald-400"
+                        >
+                          Șterge toate
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { value: "queue", label: "Queue", color: "bg-violet-600" },
+                        { value: "testing", label: "Testing", color: "bg-blue-600" },
+                        { value: "pending", label: "Pending", color: "bg-yellow-600" },
+                        { value: "confirmed", label: "Confirmed", color: "bg-emerald-600" },
+                        { value: "hold", label: "Hold", color: "bg-orange-600" },
+                        { value: "cancelled", label: "Cancelled", color: "bg-red-600" },
+                        { value: "sync_error", label: "Sync Error", color: "bg-rose-600" },
+                      ].map((status) => (
+                        <label
+                          key={status.value}
+                          className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(status.value)}
+                            onChange={() => toggleStatus(status.value)}
+                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
+                          <span className="text-sm text-white">{status.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

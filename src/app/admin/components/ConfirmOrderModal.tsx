@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Order } from "@/lib/types";
 import type { PostalCodeResult } from "@/lib/postal-code/types";
+import { sanitizeStreet } from "@/lib/sanitizeStreet";
 
 interface ConfirmOrderModalProps {
   order: Order | null;
@@ -381,6 +382,10 @@ export default function ConfirmOrderModal({
                 </div>
                 <button
                   type="button"
+                  onClick={() => {
+                    const sanitized = sanitizeStreet(formData.address);
+                    setFormData({ ...formData, address: sanitized });
+                  }}
                   className="text-xs text-blue-400 hover:text-blue-300"
                 >
                   Clean & Autofill

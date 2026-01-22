@@ -1,0 +1,409 @@
+/**
+ * Street Address Sanitizer
+ *
+ * Normalizes Romanian street addresses with common abbreviations and typos
+ * into a standard format: "<Tip> <Nume> nr. <Număr> [<Detalii>]"
+ */
+
+// ============================================================================
+// TYPE MAPPINGS
+// ============================================================================
+
+/**
+ * Maps all common abbreviations to their standard full forms
+ * Keys are lowercase for case-insensitive matching
+ */
+const STREET_TYPE_MAP: Record<string, string> = {
+  // Strada
+  'str': 'Strada',
+  'str.': 'Strada',
+  'strada': 'Strada',
+  'strad': 'Strada',
+  'strad.': 'Strada',
+  'strd': 'Strada',
+  'strd.': 'Strada',
+
+  // Bulevardul
+  'bd': 'Bulevardul',
+  'bd.': 'Bulevardul',
+  'bld': 'Bulevardul',
+  'bld.': 'Bulevardul',
+  'bul': 'Bulevardul',
+  'bul.': 'Bulevardul',
+  'blv': 'Bulevardul',
+  'blv.': 'Bulevardul',
+  'bulevard': 'Bulevardul',
+  'bulevardul': 'Bulevardul',
+
+  // Aleea
+  'al': 'Aleea',
+  'al.': 'Aleea',
+  'alee': 'Aleea',
+  'aleea': 'Aleea',
+
+  // Șoseaua (with and without diacritics)
+  'sos': 'Șoseaua',
+  'sos.': 'Șoseaua',
+  'șos': 'Șoseaua',
+  'șos.': 'Șoseaua',
+  'soseaua': 'Șoseaua',
+  'șoseaua': 'Șoseaua',
+
+  // Calea
+  'cal': 'Calea',
+  'cal.': 'Calea',
+  'calea': 'Calea',
+
+  // Piața
+  'piata': 'Piața',
+  'piața': 'Piața',
+  'p-ta': 'Piața',
+  'p-ta.': 'Piața',
+  'pi.': 'Piața',
+
+  // Intrarea
+  'intr': 'Intrarea',
+  'intr.': 'Intrarea',
+  'intrarea': 'Intrarea',
+
+  // Prelungirea
+  'prel': 'Prelungirea',
+  'prel.': 'Prelungirea',
+  'prelungirea': 'Prelungirea',
+
+  // Drumul
+  'dr': 'Drumul',
+  'dr.': 'Drumul',
+  'drumul': 'Drumul',
+};
+
+/**
+ * Small words that should remain lowercase in title case
+ * (unless they're the first word)
+ */
+const LOWERCASE_WORDS = new Set([
+  'de', 'din', 'și', 'si', 'la', 'cu', 'pe', 'a', 'al', 'ale', 'ai', 'în', 'in'
+]);
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Normalizes whitespace: replaces multiple spaces/tabs with single space
+ */
+function normalizeWhitespace(str: string): string {
+  return str.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Removes common separators and replaces them with spaces
+ * Handles: commas, semicolons, slashes, multiple dots (but preserves "nr.")
+ */
+function removeSeparators(str: string): string {
+  // Replace separators with space
+  let result = str.replace(/[,;/]+/g, ' ');
+
+  // Remove multiple dots but preserve "nr."
+  result = result.replace(/\.{2,}/g, ' ');
+
+  return result;
+}
+
+/**
+ * Applies title case to a word, respecting lowercase word list
+ */
+function toTitleCase(word: string, isFirst: boolean = false): string {
+  const lower = word.toLowerCase();
+
+  // If it's a small word and not the first word, keep it lowercase
+  if (!isFirst && LOWERCASE_WORDS.has(lower)) {
+    return lower;
+  }
+
+  // Otherwise capitalize first letter
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+/**
+ * Applies intelligent title case to street name
+ */
+function titleCaseStreetName(name: string): string {
+  const words = name.split(' ');
+  return words.map((word, index) => toTitleCase(word, index === 0)).join(' ');
+}
+
+// ============================================================================
+// MAIN SANITIZATION FUNCTION
+// ============================================================================
+
+export function sanitizeStreet(raw: string): string {
+  // Step 1: Basic cleanup
+  let cleaned = raw.trim();
+  if (!cleaned) return '';
+
+  // Step 2: Normalize whitespace and remove separators
+  cleaned = normalizeWhitespace(cleaned);
+  cleaned = removeSeparators(cleaned);
+  cleaned = normalizeWhitespace(cleaned); // Again after separator removal
+
+  // Step 3: Tokenize
+  const tokens = cleaned.split(' ');
+  if (tokens.length === 0) return raw.trim();
+
+  // Step 4: Detect street type (prefix)
+  let streetType = '';
+  let startIndex = 0;
+
+  const firstToken = tokens[0].toLowerCase();
+  if (STREET_TYPE_MAP[firstToken]) {
+    streetType = STREET_TYPE_MAP[firstToken];
+    startIndex = 1;
+  }
+
+  // Step 5: Find number marker and split tokens
+  let streetNameTokens: string[] = [];
+  let numberToken = '';
+  let detailsTokens: string[] = [];
+  let foundNumber = false;
+
+  for (let i = startIndex; i < tokens.length; i++) {
+    const token = tokens[i];
+    const lowerToken = token.toLowerCase().replace(/\./g, '');
+
+    // Check if this is a number marker
+    if (['nr', 'numar', 'număr', 'numărul', 'no', 'n'].includes(lowerToken)) {
+      foundNumber = true;
+
+      // Next token should be the actual number
+      if (i + 1 < tokens.length) {
+        numberToken = tokens[i + 1];
+        i++; // Skip the number token
+
+        // Collect remaining tokens as details
+        detailsTokens = tokens.slice(i + 1);
+        break;
+      }
+    } else if (foundNumber) {
+      // We already found number, rest are details
+      detailsTokens.push(token);
+    } else {
+      // Still part of street name
+      streetNameTokens.push(token);
+    }
+  }
+
+  // Step 6: If no explicit number marker found, check if last token is a number
+  if (!foundNumber && streetNameTokens.length > 0) {
+    const lastToken = streetNameTokens[streetNameTokens.length - 1];
+    // Check if it's a number (digits, optionally with letter: 8, 12A, 12-14)
+    if (/^\d+[A-Za-z]?$/.test(lastToken) || /^\d+-\d+$/.test(lastToken)) {
+      numberToken = lastToken;
+      streetNameTokens.pop();
+    }
+  }
+
+  // Step 7: Normalize number format (12A, 12-14, etc.)
+  if (numberToken) {
+    // Remove spaces around dash: "12 - 14" -> "12-14"
+    numberToken = numberToken.replace(/\s*-\s*/g, '-');
+    // Uppercase any letter: "12a" -> "12A"
+    numberToken = numberToken.replace(/([0-9])([a-z])$/i, (_, num, letter) => num + letter.toUpperCase());
+  }
+
+  // Step 8: Parse details (bl, sc, et, ap)
+  const details = parseDetails(detailsTokens);
+
+  // Step 9: Build output
+  const parts: string[] = [];
+
+  // Add street type if found
+  if (streetType) {
+    parts.push(streetType);
+  }
+
+  // Add street name with title case
+  if (streetNameTokens.length > 0) {
+    const streetName = titleCaseStreetName(streetNameTokens.join(' '));
+    parts.push(streetName);
+  }
+
+  // Add number
+  if (numberToken) {
+    parts.push('nr. ' + numberToken);
+  }
+
+  // Add details
+  if (details) {
+    parts.push(details);
+  }
+
+  const result = parts.join(' ');
+
+  // If result is empty, return original trimmed
+  return result || raw.trim();
+}
+
+/**
+ * Parses detail tokens (bl, sc, et, ap) into normalized format
+ */
+function parseDetails(tokens: string[]): string {
+  const details: { type: string; value: string }[] = [];
+
+  let i = 0;
+  while (i < tokens.length) {
+    const token = tokens[i].toLowerCase().replace(/\./g, '');
+
+    let detailType = '';
+    let detailValue = '';
+
+    // Match detail type
+    if (['bl', 'bloc'].includes(token)) {
+      detailType = 'bl.';
+      // Next token is the value
+      if (i + 1 < tokens.length) {
+        detailValue = tokens[i + 1].toUpperCase(); // Uppercase for blocks
+        i++;
+      }
+    } else if (['sc', 'scara'].includes(token)) {
+      detailType = 'sc.';
+      if (i + 1 < tokens.length) {
+        detailValue = tokens[i + 1].toUpperCase();
+        i++;
+      }
+    } else if (['et', 'etaj'].includes(token)) {
+      detailType = 'et.';
+      if (i + 1 < tokens.length) {
+        detailValue = tokens[i + 1];
+        i++;
+      }
+    } else if (['ap', 'apartament'].includes(token)) {
+      detailType = 'ap.';
+      if (i + 1 < tokens.length) {
+        detailValue = tokens[i + 1];
+        i++;
+      }
+    } else if (['interfon'].includes(token)) {
+      detailType = 'interfon';
+      if (i + 1 < tokens.length) {
+        detailValue = tokens[i + 1];
+        i++;
+      }
+    }
+
+    if (detailType && detailValue) {
+      details.push({ type: detailType, value: detailValue });
+    }
+
+    i++;
+  }
+
+  // Build details string in standard order: bl -> sc -> et -> ap -> interfon
+  const order = ['bl.', 'sc.', 'et.', 'ap.', 'interfon'];
+  const sorted = details.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+
+  return sorted.map(d => `${d.type} ${d.value}`).join(' ');
+}
+
+// ============================================================================
+// TESTS
+// ============================================================================
+
+interface TestCase {
+  input: string;
+  expected: string;
+  description?: string;
+}
+
+const TEST_CASES: TestCase[] = [
+  // Basic street type normalization
+  { input: 'str florilor 8', expected: 'Strada Florilor nr. 8', description: 'Basic str -> Strada' },
+  { input: 'str. florilor 8', expected: 'Strada Florilor nr. 8', description: 'str. with dot' },
+  { input: 'strada florilor 8', expected: 'Strada Florilor nr. 8', description: 'Full strada' },
+
+  // Boulevard variations
+  { input: 'bd mihai viteazu 12', expected: 'Bulevardul Mihai Viteazu nr. 12', description: 'Boulevard bd' },
+  { input: 'blv unirii 5', expected: 'Bulevardul Unirii nr. 5', description: 'Boulevard blv' },
+  { input: 'bulevardul republicii 20', expected: 'Bulevardul Republicii nr. 20', description: 'Full bulevardul' },
+
+  // Șoseaua (with/without diacritics)
+  { input: 'sos kiseleff 10', expected: 'Șoseaua Kiseleff nr. 10', description: 'Șoseaua sos' },
+  { input: 'șos pantelimon 15', expected: 'Șoseaua Pantelimon nr. 15', description: 'Șoseaua with diacritic' },
+
+  // Other street types
+  { input: 'al teiului 3', expected: 'Aleea Teiului nr. 3', description: 'Aleea' },
+  { input: 'cal victoriei 100', expected: 'Calea Victoriei nr. 100', description: 'Calea' },
+  { input: 'piata unirii 1', expected: 'Piața Unirii nr. 1', description: 'Piața' },
+  { input: 'intr salciilor 7', expected: 'Intrarea Salciilor nr. 7', description: 'Intrarea' },
+
+  // Number variations
+  { input: 'str florilor nr 8', expected: 'Strada Florilor nr. 8', description: 'Explicit nr' },
+  { input: 'str florilor nr. 8', expected: 'Strada Florilor nr. 8', description: 'Explicit nr.' },
+  { input: 'str florilor nr8', expected: 'Strada Florilor nr. 8', description: 'nr8 stuck together' },
+  { input: 'str florilor numar 8', expected: 'Strada Florilor nr. 8', description: 'numar instead of nr' },
+  { input: 'str florilor 12a', expected: 'Strada Florilor nr. 12A', description: 'Number with letter' },
+  { input: 'str florilor 12 a', expected: 'Strada Florilor nr. 12A', description: 'Number with spaced letter' },
+  { input: 'str florilor 12-14', expected: 'Strada Florilor nr. 12-14', description: 'Number range' },
+
+  // Details (bl, sc, et, ap)
+  { input: 'str florilor 8 bl a', expected: 'Strada Florilor nr. 8 bl. A', description: 'With bloc' },
+  { input: 'str florilor 8 bloc a sc 2', expected: 'Strada Florilor nr. 8 bl. A sc. 2', description: 'Bloc and scara' },
+  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expected: 'Strada Florilor nr. 8 bl. A sc. 2 et. 3 ap. 10', description: 'Full details' },
+
+  // Title case with prepositions
+  { input: 'str unirea din 1918 nr 5', expected: 'Strada Unirea din 1918 nr. 5', description: 'Preposition "din" lowercase' },
+  { input: 'bd carol i 10', expected: 'Bulevardul Carol I nr. 10', description: 'Roman numeral uppercase' },
+
+  // Messy input with multiple separators
+  { input: 'str,, florilor,  8', expected: 'Strada Florilor nr. 8', description: 'Multiple commas' },
+  { input: 'str. florilor / 8', expected: 'Strada Florilor nr. 8', description: 'Slash separator' },
+  { input: 'str   florilor   8', expected: 'Strada Florilor nr. 8', description: 'Multiple spaces' },
+
+  // No street type
+  { input: 'florilor 8', expected: 'Florilor nr. 8', description: 'No street type prefix' },
+  { input: 'mihai viteazu 12', expected: 'Mihai Viteazu nr. 12', description: 'No type, multi-word name' },
+
+  // No number
+  { input: 'str florilor', expected: 'Strada Florilor', description: 'No number at all' },
+
+  // Edge cases
+  { input: '', expected: '', description: 'Empty string' },
+  { input: '   ', expected: '', description: 'Only whitespace' },
+  { input: 'str', expected: 'Strada', description: 'Only street type' },
+];
+
+/**
+ * Runs all test cases and logs results
+ */
+export function runTests(): void {
+  console.log('🧪 Running Street Sanitizer Tests...\n');
+
+  let passed = 0;
+  let failed = 0;
+
+  TEST_CASES.forEach((test, index) => {
+    const result = sanitizeStreet(test.input);
+    const isPass = result === test.expected;
+
+    if (isPass) {
+      passed++;
+      console.log(`✅ Test ${index + 1}: PASS`);
+    } else {
+      failed++;
+      console.log(`❌ Test ${index + 1}: FAIL`);
+      console.log(`   Description: ${test.description || 'N/A'}`);
+      console.log(`   Input:    "${test.input}"`);
+      console.log(`   Expected: "${test.expected}"`);
+      console.log(`   Got:      "${result}"`);
+    }
+  });
+
+  console.log(`\n📊 Results: ${passed} passed, ${failed} failed (${TEST_CASES.length} total)`);
+
+  if (failed === 0) {
+    console.log('🎉 All tests passed!');
+  }
+}
+
+// Uncomment to run tests in Node.js
+// runTests();

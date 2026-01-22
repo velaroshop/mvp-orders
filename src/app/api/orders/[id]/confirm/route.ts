@@ -22,6 +22,7 @@ export async function POST(
       county,
       city,
       address,
+      streetNumber,
       postalCode,
       shippingPrice,
       discount,
@@ -97,6 +98,7 @@ export async function POST(
             county: county || order.county,
             city: city || order.city,
             address: address || order.address,
+            addressLine2: streetNumber || undefined,
             zip: postalCode,
           },
         });

@@ -627,6 +627,7 @@ class HelpshipClient {
         county?: string;
         city?: string;
         address?: string;
+        addressLine2?: string;
         zip?: string;
       };
       // Alte câmpuri care pot fi actualizate
@@ -693,7 +694,7 @@ class HelpshipClient {
             firstName: firstName || currentAddress.firstName || null,
             lastName: lastName || currentAddress.lastName || null,
             addressLine1: updates.shippingAddress?.address || currentAddress.addressLine1 || "",
-            addressLine2: currentAddress.addressLine2 || null,
+            addressLine2: updates.shippingAddress?.addressLine2 || currentAddress.addressLine2 || null,
             street: street,
             number: number || currentAddress.number || null,
             zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,

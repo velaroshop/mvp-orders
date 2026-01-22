@@ -207,6 +207,7 @@ export default function ConfirmOrderModal({
         county: formData.county,
         city: formData.city,
         address: formData.address,
+        streetNumber: formData.streetNumber,
         postalCode: formData.postalCode,
         shippingCost: formData.shippingPrice,
       };

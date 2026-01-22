@@ -18,7 +18,6 @@ export interface ConfirmPartialData {
   city: string;
   address: string;
   selectedOffer: OfferCode;
-  scheduledDate?: string;
 }
 
 export default function ConfirmPartialOrderModal({
@@ -34,7 +33,6 @@ export default function ConfirmPartialOrderModal({
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
-  const [scheduledDate, setScheduledDate] = useState("");
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{
     hasOrders: boolean;
@@ -147,7 +145,6 @@ export default function ConfirmPartialOrderModal({
       city: city.trim(),
       address: address.trim(),
       selectedOffer,
-      scheduledDate: scheduledDate || undefined,
     });
   }
 
@@ -369,40 +366,6 @@ export default function ConfirmPartialOrderModal({
               {errors.address && (
                 <p className="mt-0.5 text-xs text-red-400">{errors.address}</p>
               )}
-            </div>
-          </div>
-
-          {/* Scheduling */}
-          <div>
-            <h3 className="text-xs font-medium text-zinc-400 mb-2 flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Scheduling (Optional)
-            </h3>
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                Scheduled Date
-              </label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                min={(() => {
-                  const tomorrow = new Date();
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  return tomorrow.toISOString().split('T')[0];
-                })()}
-                max={(() => {
-                  const maxDate = new Date();
-                  maxDate.setDate(maxDate.getDate() + 10);
-                  return maxDate.toISOString().split('T')[0];
-                })()}
-                className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-              <p className="text-xs text-zinc-500 mt-0.5">
-                Leave empty to confirm immediately (max 10 days ahead)
-              </p>
             </div>
           </div>
 

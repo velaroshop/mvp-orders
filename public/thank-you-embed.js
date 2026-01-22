@@ -141,8 +141,8 @@
 
         <!-- Product Image -->
         ${upsell.mediaUrl ? `
-          <div style="text-align: center; margin-bottom: 16px; overflow: hidden; border-radius: 12px;">
-            <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="width: 100%; height: 400px; object-fit: cover; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
           </div>
         ` : ''}
 

@@ -118,6 +118,37 @@ export async function GET(request: NextRequest) {
       .map(([name, revenue]) => ({ name, revenue }))
       .sort((a, b) => b.revenue - a.revenue);
 
+    // Calculate upsells split by product and type
+    const upsellsByProduct: Record<string, { presale: number; postsale: number }> = {};
+    filteredOrders.forEach((order: any) => {
+      const upsells = order.upsells || [];
+      if (Array.isArray(upsells)) {
+        upsells.forEach((upsell: any) => {
+          const productName = upsell.product_name || upsell.title || "Unknown Upsell";
+          const quantity = upsell.quantity || 1;
+          const type = upsell.type || "presale";
+
+          if (!upsellsByProduct[productName]) {
+            upsellsByProduct[productName] = { presale: 0, postsale: 0 };
+          }
+
+          if (type === "presale") {
+            upsellsByProduct[productName].presale += quantity;
+          } else if (type === "postsale") {
+            upsellsByProduct[productName].postsale += quantity;
+          }
+        });
+      }
+    });
+
+    // Convert to array format for frontend
+    const upsellsSplit = Object.entries(upsellsByProduct).map(([name, counts]) => ({
+      name,
+      presale: counts.presale,
+      postsale: counts.postsale,
+      total: counts.presale + counts.postsale,
+    })).sort((a, b) => b.total - a.total);
+
     return NextResponse.json({
       totalRevenue,
       avgOrderValue,
@@ -126,6 +157,7 @@ export async function GET(request: NextRequest) {
       upsellRate,
       ordersByStatus: statusCounts,
       revenueByProduct,
+      upsellsSplit,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stats:", error);

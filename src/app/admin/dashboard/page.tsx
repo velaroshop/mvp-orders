@@ -7,6 +7,13 @@ interface ProductRevenue {
   revenue: number;
 }
 
+interface UpsellSplit {
+  name: string;
+  presale: number;
+  postsale: number;
+  total: number;
+}
+
 interface DashboardStats {
   totalRevenue: number;
   avgOrderValue: number;
@@ -15,6 +22,7 @@ interface DashboardStats {
   upsellRate: number;
   ordersByStatus: Record<string, number>;
   revenueByProduct: ProductRevenue[];
+  upsellsSplit: UpsellSplit[];
 }
 
 interface LandingPage {
@@ -33,8 +41,11 @@ export default function DashboardPage() {
     upsellRate: 0,
     ordersByStatus: {},
     revenueByProduct: [],
+    upsellsSplit: [],
   });
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [showAllUpsells, setShowAllUpsells] = useState(false);
+  const [upsellFilter, setUpsellFilter] = useState<"all" | "pre" | "post">("all");
   const [loading, setLoading] = useState(true);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("today");
   const [startDate, setStartDate] = useState("");
@@ -416,18 +427,121 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Card 2 */}
+        {/* Upsells Split Card */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Total Orders</h3>
-            <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center">
-              <span className="text-xl">📦</span>
+            <h3 className="text-lg font-semibold text-white">Upsells Split</h3>
+
+            {/* Filter buttons */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => setUpsellFilter("pre")}
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  upsellFilter === "pre"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                Pre
+              </button>
+              <button
+                onClick={() => setUpsellFilter("post")}
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  upsellFilter === "post"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                Post
+              </button>
+              <button
+                onClick={() => setUpsellFilter("all")}
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  upsellFilter === "all"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                All
+              </button>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-zinc-400">Loading...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Upsell bars */}
+              {(showAllUpsells ? stats.upsellsSplit : stats.upsellsSplit.slice(0, 6)).map((upsell, index) => {
+                // Calculate count based on filter
+                let count = 0;
+                if (upsellFilter === "all") {
+                  count = upsell.total;
+                } else if (upsellFilter === "pre") {
+                  count = upsell.presale;
+                } else if (upsellFilter === "post") {
+                  count = upsell.postsale;
+                }
+
+                // Skip if count is 0
+                if (count === 0) return null;
+
+                // Calculate max for percentage
+                const maxCount = stats.upsellsSplit.reduce((max, u) => {
+                  const c = upsellFilter === "all" ? u.total : upsellFilter === "pre" ? u.presale : u.postsale;
+                  return Math.max(max, c);
+                }, 1);
+                const widthPercentage = (count / maxCount) * 100;
+
+                // Color palette for bars
+                const colors = [
+                  'bg-blue-500',
+                  'bg-purple-500',
+                  'bg-emerald-500',
+                  'bg-orange-500',
+                  'bg-cyan-500',
+                  'bg-pink-500',
+                  'bg-yellow-500',
+                  'bg-red-500',
+                  'bg-indigo-500',
+                  'bg-teal-500',
+                ];
+                const barColor = colors[index % colors.length];
+
+                return (
+                  <div key={upsell.name} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white truncate max-w-[60%]">{upsell.name}</span>
+                      <span className="text-white font-semibold">{count} units</span>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2">
+                      <div
+                        className={`${barColor} h-2 rounded-full transition-all duration-500`}
+                        style={{ width: `${widthPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              }).filter(Boolean)}
+
+              {/* Show All / Show Less link */}
+              {stats.upsellsSplit.length > 6 && (
+                <button
+                  onClick={() => setShowAllUpsells(!showAllUpsells)}
+                  className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors mt-2"
+                >
+                  {showAllUpsells ? 'Show less' : `Show all (${stats.upsellsSplit.length} upsells)`}
+                </button>
+              )}
+
+              {/* Show message if no upsells */}
+              {stats.upsellsSplit.length === 0 && (
+                <p className="text-sm text-zinc-400 text-center py-4">No upsells found</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Card 3 */}

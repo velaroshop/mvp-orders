@@ -669,14 +669,31 @@ export default function AdminPage() {
                         </span>
                         <span className="text-zinc-400 text-[10px]">
                           {(() => {
-                            const sources = [];
-                            if (order.promotedFromTesting) sources.push("Testing");
-                            if (order.source === "partial" || order.fromPartialId) sources.push("Partial");
+                            // Determine traffic source
+                            let trafficSource = "Organic";
 
-                            if (sources.length > 0) {
-                              return sources.join(" + ");
+                            // Check for paid traffic sources (priority order)
+                            if (order.fbclid || order.trackingData?.utm_source === 'facebook') {
+                              trafficSource = "Facebook";
+                            } else if (order.gclid || order.trackingData?.utm_source === 'google') {
+                              trafficSource = "Google";
+                            } else if (order.ttclid || order.trackingData?.utm_source === 'tiktok') {
+                              trafficSource = "TikTok";
+                            } else if (order.trackingData?.utm_source) {
+                              // Other UTM sources (capitalize first letter)
+                              trafficSource = order.trackingData.utm_source.charAt(0).toUpperCase() +
+                                            order.trackingData.utm_source.slice(1);
                             }
-                            return "Organic";
+
+                            // Add order type modifiers
+                            const modifiers = [];
+                            if (order.promotedFromTesting) modifiers.push("Testing");
+                            if (order.source === "partial" || order.fromPartialId) modifiers.push("Partial");
+
+                            // Combine: "Facebook" or "Facebook + Partial" or "Organic + Testing"
+                            return modifiers.length > 0
+                              ? `${trafficSource} + ${modifiers.join(" + ")}`
+                              : trafficSource;
                           })()}
                         </span>
                       </div>

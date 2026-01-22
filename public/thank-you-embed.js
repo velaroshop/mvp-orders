@@ -120,89 +120,84 @@
     countdown = Math.max(0, Math.floor((expiresAt - now) / 1000));
 
     const html = `
-      <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+      <div style="max-width: 700px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
         <!-- Countdown Badge -->
-        <div style="text-align: center; margin-bottom: 30px;">
-          <div id="countdown-badge" style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; background-color: #dc2626; color: white; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: pulse 2s infinite;">
-            <svg style="width: 24px; height: 24px;" fill="currentColor" viewBox="0 0 20 20">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div id="countdown-badge" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #dc2626; color: white; border-radius: 50px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3); animation: pulse 2s infinite;">
+            <svg style="width: 18px; height: 18px;" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
             </svg>
-            <span id="countdown-text">OFERTĂ EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span>!</span>
+            <span id="countdown-text">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
           </div>
         </div>
 
         <!-- Postsale Card -->
-        <div style="background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border-radius: 24px; padding: 40px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); position: relative; overflow: hidden;">
+        <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
 
-          <!-- Background Decoration -->
-          <div style="position: absolute; top: 0; right: 0; width: 300px; height: 300px; background: ${colors.accent}; opacity: 0.1; border-radius: 50%; filter: blur(60px);"></div>
+          <!-- Title -->
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 36px; margin-bottom: 8px;">🎁</div>
+            <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 6px 0; color: #111827; line-height: 1.2;">
+              FELICITĂRI!
+            </h2>
+            <p style="font-size: 16px; font-weight: 600; color: ${colors.accent}; margin: 0;">
+              Bonus Exclusiv Deblocat
+            </p>
+          </div>
 
-          <!-- Content -->
-          <div style="position: relative; z-index: 1;">
-            <!-- Title -->
-            <div style="text-align: center; margin-bottom: 30px;">
-              <div style="font-size: 48px; margin-bottom: 10px;">🎁</div>
-              <h2 style="font-size: 32px; font-weight: 900; margin: 0 0 10px 0; background: linear-gradient(135deg, ${colors.accent} 0%, ${colors.primary} 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                FELICITĂRI!
-              </h2>
-              <p style="font-size: 24px; font-weight: bold; color: #111827; margin: 0;">
-                🎉 BONUS EXCLUSIV DEBLOCAT! 🎉
-              </p>
-            </div>
-
-            <!-- Product Image -->
-            ${upsell.mediaUrl ? `
-              <div style="text-align: center; margin-bottom: 30px;">
-                <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 300px; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-              </div>
-            ` : ''}
-
-            <!-- Product Title & Description -->
+          <!-- Product Image -->
+          ${upsell.mediaUrl ? `
             <div style="text-align: center; margin-bottom: 20px;">
-              <h3 style="font-size: 24px; font-weight: bold; color: #111827; margin: 0 0 10px 0;">
-                ${upsell.title}
-              </h3>
-              ${upsell.description ? `
-                <p style="font-size: 16px; color: #6b7280; margin: 0;">
-                  ${upsell.description}
-                </p>
-              ` : ''}
+              <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
             </div>
+          ` : ''}
 
-            <!-- Pricing -->
-            <div style="text-align: center; margin-bottom: 30px;">
-              <div style="text-decoration: line-through; color: #6b7280; font-size: 18px; margin-bottom: 10px;">
-                Preț normal: <strong>${upsell.srp.toFixed(2)} LEI</strong>
-              </div>
-              <div style="display: inline-block; border: 4px solid #dc2626; background-color: #fef2f2; border-radius: 16px; padding: 16px 24px; margin-bottom: 10px;">
-                <div style="font-size: 36px; font-weight: 900; color: #dc2626;">
-                  -${Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100)}% REDUCERE!
-                </div>
-              </div>
-              <div style="font-size: 32px; font-weight: 900; color: ${colors.accent};">
-                DOAR ${upsell.price.toFixed(2)} LEI!
-              </div>
-            </div>
+          <!-- Product Title & Description -->
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 8px 0; line-height: 1.3;">
+              ${upsell.title}
+            </h3>
+            ${upsell.description ? `
+              <p style="font-size: 14px; color: #6b7280; margin: 0; line-height: 1.5;">
+                ${upsell.description}
+              </p>
+            ` : ''}
+          </div>
 
-            <!-- CTA Buttons -->
-            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-              <button
-                id="accept-postsale-btn"
-                style="background: ${colors.primary}; color: white; border: none; padding: 18px 48px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s; flex: 1; min-width: 200px; max-width: 300px;"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 12px rgba(0,0,0,0.15)';"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';"
-              >
-                ✓ DA, VREAU OFERTA!
-              </button>
-              <button
-                id="decline-postsale-btn"
-                style="background: #6b7280; color: white; border: none; padding: 18px 48px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s; flex: 1; min-width: 200px; max-width: 300px;"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 12px rgba(0,0,0,0.15)';"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';"
-              >
-                NU MULȚUMESC
-              </button>
+          <!-- Pricing -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="text-decoration: line-through; color: #9ca3af; font-size: 15px; margin-bottom: 8px;">
+              Preț normal: ${upsell.srp.toFixed(2)} LEI
             </div>
+            <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-radius: 12px; padding: 12px 20px; margin: 0 auto 12px auto; display: inline-block;">
+              <div style="font-size: 28px; font-weight: 900; line-height: 1;">
+                -${Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100)}% REDUCERE
+              </div>
+            </div>
+            <div style="font-size: 28px; font-weight: 900; color: ${colors.accent}; line-height: 1;">
+              DOAR ${upsell.price.toFixed(2)} LEI
+            </div>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button
+              id="accept-postsale-btn"
+              style="background: ${colors.primary}; color: ${colors.textOnDark || '#ffffff'}; border: none; padding: 16px 40px; font-size: 16px; font-weight: 700; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s; flex: 1; min-width: 180px; max-width: 280px;"
+              onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.2)';"
+              onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+            >
+              ✓ DA, VREAU OFERTA!
+            </button>
+            <button
+              id="decline-postsale-btn"
+              style="background: #9ca3af; color: white; border: none; padding: 16px 40px; font-size: 16px; font-weight: 700; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; flex: 1; min-width: 180px; max-width: 280px;"
+              onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.15)';"
+              onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+            >
+              NU MULȚUMESC
+            </button>
           </div>
         </div>
       </div>
@@ -210,7 +205,7 @@
       <style>
         @keyframes pulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.8; }
+          50% { opacity: 0.85; }
         }
       </style>
     `;

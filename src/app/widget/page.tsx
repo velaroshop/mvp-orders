@@ -226,27 +226,36 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
-  // Block scrolling when postsale modal is shown
+  // Block scrolling when postsale modal is shown (both in iframe and parent page)
   useEffect(() => {
     if (showPostsaleOffer && postsaleUpsells.length > 0) {
-      // Save original body style
+      // Block scrolling in iframe
       const originalStyle = window.getComputedStyle(document.body).overflow;
       const originalPosition = window.getComputedStyle(document.body).position;
 
-      // Block scrolling
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
       document.body.style.top = `-${window.scrollY}px`;
 
+      // Send message to parent page to block scrolling there too
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'block-scroll' }, '*');
+      }
+
       return () => {
-        // Restore original style
+        // Restore scrolling in iframe
         const scrollY = document.body.style.top;
         document.body.style.overflow = originalStyle;
         document.body.style.position = originalPosition;
         document.body.style.width = '';
         document.body.style.top = '';
         window.scrollTo(0, parseInt(scrollY || '0') * -1);
+
+        // Send message to parent page to restore scrolling
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'unblock-scroll' }, '*');
+        }
       };
     }
   }, [showPostsaleOffer, postsaleUpsells.length]);

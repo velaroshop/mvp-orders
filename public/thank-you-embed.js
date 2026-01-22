@@ -205,13 +205,20 @@
     container.innerHTML = html;
 
     // Attach event listeners
-    document.getElementById('accept-postsale-btn').addEventListener('click', () => {
-      handleAcceptPostsale(data.orderId, upsell);
-    });
+    const acceptBtn = document.getElementById('accept-postsale-btn');
+    const declineBtn = document.getElementById('decline-postsale-btn');
 
-    document.getElementById('decline-postsale-btn').addEventListener('click', () => {
-      handleDeclinePostsale(data.orderId);
-    });
+    if (acceptBtn && declineBtn) {
+      acceptBtn.addEventListener('click', () => {
+        handleAcceptPostsale(data.orderId, upsell);
+      });
+
+      declineBtn.addEventListener('click', () => {
+        handleDeclinePostsale(data.orderId);
+      });
+    } else {
+      console.error('Velaro Thank You: Buttons not found in DOM');
+    }
 
     // Start countdown
     startCountdown(data.orderId);

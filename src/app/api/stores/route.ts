@@ -31,10 +31,13 @@ export async function GET(request: NextRequest) {
 
     const organizationId = session.user.activeOrganizationId;
 
-    // Fetch stores for the organization
+    // Fetch stores for the organization with landing page count
     const { data: stores, error } = await supabase
       .from("stores")
-      .select("*")
+      .select(`
+        *,
+        landing_pages:landing_pages(count)
+      `)
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false });
 
@@ -46,7 +49,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ stores: stores || [] });
+    // Transform the data to include landing_pages_count
+    const storesWithCount = stores?.map((store: any) => ({
+      ...store,
+      landing_pages_count: store.landing_pages?.[0]?.count || 0,
+      landing_pages: undefined, // Remove the nested object
+    })) || [];
+
+    return NextResponse.json({ stores: storesWithCount });
   } catch (error) {
     console.error("Error in GET /api/stores:", error);
     return NextResponse.json(

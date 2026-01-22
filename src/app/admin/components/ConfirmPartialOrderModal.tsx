@@ -18,6 +18,7 @@ export interface ConfirmPartialData {
   city: string;
   address: string;
   selectedOffer: OfferCode;
+  scheduledDate?: string;
 }
 
 export default function ConfirmPartialOrderModal({
@@ -33,6 +34,7 @@ export default function ConfirmPartialOrderModal({
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+  const [scheduledDate, setScheduledDate] = useState("");
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{
     hasOrders: boolean;
@@ -145,6 +147,7 @@ export default function ConfirmPartialOrderModal({
       city: city.trim(),
       address: address.trim(),
       selectedOffer,
+      scheduledDate: scheduledDate || undefined,
     });
   }
 

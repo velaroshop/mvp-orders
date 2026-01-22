@@ -500,15 +500,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Revenue Growth Chart - Full width */}
-      <div className="mb-6">
-        <RevenueGrowthChart
-          data={revenueGrowthData.data}
-          granularity={revenueGrowthData.granularity}
-          loading={revenueGrowthLoading}
-        />
-      </div>
-
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Revenue by Product Card */}
@@ -859,6 +850,15 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Revenue Growth Chart - Full width */}
+      <div className="mb-6">
+        <RevenueGrowthChart
+          data={revenueGrowthData.data}
+          granularity={revenueGrowthData.granularity}
+          loading={revenueGrowthLoading}
+        />
       </div>
     </div>
   );

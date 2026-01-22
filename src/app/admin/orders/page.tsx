@@ -648,19 +648,19 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* 2-Column Layout: Compact Chart + Search/Filters */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-            {/* Left Column: Compact Revenue Chart */}
+          {/* Revenue Chart - Full Width */}
+          <div className="mb-4">
             <CompactRevenueChart
               data={todayRevenueData.data}
               granularity={todayRevenueData.granularity}
               loading={revenueLoading}
             />
+          </div>
 
-            {/* Right Column: Search and Filters */}
-            <div className="flex flex-col gap-3">
-              {/* Search Bar */}
-              <div className="relative flex-1">
+          {/* Search and Filter Bar */}
+          <div className="flex gap-3">
+            {/* Search Bar */}
+            <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-zinc-400"
@@ -708,10 +708,10 @@ export default function AdminPage() {
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
                 </div>
               )}
-              </div>
+            </div>
 
-              {/* Status Filter Dropdown */}
-              <div className="relative status-filter-dropdown">
+            {/* Status Filter Dropdown */}
+            <div className="relative status-filter-dropdown">
               <button
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
                 className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
@@ -782,7 +782,6 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
-              </div>
             </div>
           </div>
         </header>

@@ -226,40 +226,6 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
-  // Block scrolling when postsale modal is shown (both in iframe and parent page)
-  useEffect(() => {
-    if (showPostsaleOffer && postsaleUpsells.length > 0) {
-      // Block scrolling in iframe
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      const originalPosition = window.getComputedStyle(document.body).position;
-
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.top = `-${window.scrollY}px`;
-
-      // Send message to parent page to block scrolling there too
-      if (window.parent !== window) {
-        window.parent.postMessage({ type: 'block-scroll' }, '*');
-      }
-
-      return () => {
-        // Restore scrolling in iframe
-        const scrollY = document.body.style.top;
-        document.body.style.overflow = originalStyle;
-        document.body.style.position = originalPosition;
-        document.body.style.width = '';
-        document.body.style.top = '';
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-
-        // Send message to parent page to restore scrolling
-        if (window.parent !== window) {
-          window.parent.postMessage({ type: 'unblock-scroll' }, '*');
-        }
-      };
-    }
-  }, [showPostsaleOffer, postsaleUpsells.length]);
-
   // Helper function to scroll parent to widget
   const scrollParentToWidget = () => {
     try {
@@ -1605,11 +1571,11 @@ function WidgetFormContent() {
           {/* Post-Sale Offer Popup */}
           {showPostsaleOffer && postsaleUpsells.length > 0 && (
             <div
-              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto"
               style={{ animation: 'fadeIn 0.4s ease-out' }}
             >
               <div
-                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-y-auto my-auto"
+                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-hidden my-auto"
                 style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', maxHeight: '90vh' }}
               >
                 {/* Animated background elements */}

@@ -111,40 +111,6 @@
   }
 
   /**
-   * Variables to store scroll lock state
-   */
-  let scrollPosition = 0;
-  let isScrollLocked = false;
-
-  /**
-   * Block scrolling on parent page
-   */
-  function blockScroll() {
-    if (isScrollLocked) return;
-
-    scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollPosition}px`;
-    document.body.style.width = '100%';
-    isScrollLocked = true;
-  }
-
-  /**
-   * Restore scrolling on parent page
-   */
-  function unblockScroll() {
-    if (!isScrollLocked) return;
-
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    window.scrollTo(0, scrollPosition);
-    isScrollLocked = false;
-  }
-
-  /**
    * Handle postMessage events from iframe
    */
   function handlePostMessage(event, iframes) {
@@ -176,16 +142,6 @@
           });
         }
       });
-    }
-
-    // Handle blocking scroll on parent page (for postsale modal)
-    if (data.type === 'block-scroll') {
-      blockScroll();
-    }
-
-    // Handle unblocking scroll on parent page
-    if (data.type === 'unblock-scroll') {
-      unblockScroll();
     }
 
     // Handle purchase redirect to thank you page

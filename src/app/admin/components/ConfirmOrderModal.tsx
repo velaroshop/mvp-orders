@@ -368,82 +368,6 @@ export default function ConfirmOrderModal({
                   </div>
                 </div>
               </div>
-
-              {/* Order Summary */}
-              <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="text-sm">📄</span>
-                  <h4 className="text-xs font-semibold text-white">
-                    Order Summary
-                  </h4>
-                </div>
-                <div className="space-y-2 bg-zinc-800 rounded-lg p-3">
-                  {/* Main Product */}
-                  <div className="pb-2 border-b border-zinc-700">
-                    <p className="text-xs text-white font-medium mb-0.5">
-                      {order.productName || 'Produs'}
-                    </p>
-                    <p className="text-xs text-zinc-400">
-                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
-                    </p>
-                    <p className="text-xs text-white mt-1">
-                      {order.subtotal.toFixed(2)} RON
-                    </p>
-                  </div>
-
-                  {/* PRE-SALE Upsells */}
-                  {order.upsells && order.upsells.filter((u: any) => u.type === 'presale').length > 0 && (
-                    <div className="pb-2 border-b border-zinc-700">
-                      <p className="text-xs text-emerald-400 font-semibold mb-1">PRE-SALE</p>
-                      <div className="space-y-0.5">
-                        {order.upsells.filter((u: any) => u.type === 'presale').map((upsell: any, idx: number) => (
-                          <div key={idx} className="flex justify-between text-xs">
-                            <span className="text-zinc-300">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
-                            <span className="text-white">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* POST-SALE Upsells */}
-                  {order.upsells && order.upsells.filter((u: any) => u.type === 'postsale').length > 0 && (
-                    <div className="pb-2 border-b border-zinc-700">
-                      <p className="text-xs text-purple-400 font-semibold mb-1">POST-SALE</p>
-                      <div className="space-y-0.5">
-                        {order.upsells.filter((u: any) => u.type === 'postsale').map((upsell: any, idx: number) => (
-                          <div key={idx} className="flex justify-between text-xs">
-                            <span className="text-zinc-300">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
-                            <span className="text-white">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Total */}
-                  <div className="pt-1.5">
-                    <div className="flex justify-between items-center text-white font-semibold">
-                      <span>Total</span>
-                      <span className="text-lg">
-                        {(() => {
-                          // Calculate total including all upsells
-                          const productSubtotal = order.subtotal || 0;
-                          const shipping = order.shippingCost || 0;
-                          const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
-                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                          }, 0) || 0;
-                          const total = productSubtotal + shipping + upsellsTotal;
-                          return `${total.toFixed(2)} RON`;
-                        })()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-1">
-                      including {order.shippingCost.toFixed(2)} RON shipping
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right Column - Shipping Address */}
@@ -594,6 +518,104 @@ export default function ConfirmOrderModal({
                 </div>
               </div>
 
+            </div>
+          </div>
+
+          {/* Order Summary - Full Width */}
+          <div className="mt-3 pt-3 border-t border-zinc-700/50">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-sm">📄</span>
+              <h4 className="text-xs font-semibold text-white">
+                Order Summary
+              </h4>
+            </div>
+            <div className="bg-zinc-800 rounded-lg p-3">
+              {/* Main Product - Full Width */}
+              <div className="pb-2 border-b border-zinc-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs text-white font-medium mb-0.5">
+                      {order.productName || 'Produs'}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
+                    </p>
+                  </div>
+                  <p className="text-xs text-white font-medium">
+                    {order.subtotal.toFixed(2)} RON
+                  </p>
+                </div>
+              </div>
+
+              {/* Upsells Grid - 2 Columns */}
+              {order.upsells && order.upsells.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 py-2 border-b border-zinc-700">
+                  {/* PRE-SALE Column */}
+                  <div>
+                    {order.upsells.filter((u: any) => u.type === 'presale').length > 0 && (
+                      <>
+                        <p className="text-xs text-emerald-400 font-semibold mb-1.5">PRE-SALE</p>
+                        <div className="space-y-1">
+                          {order.upsells.filter((u: any) => u.type === 'presale').map((upsell: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-xs">
+                              <span className="text-zinc-300 flex-1 pr-2">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                              <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* POST-SALE Column */}
+                  <div>
+                    {order.upsells.filter((u: any) => u.type === 'postsale').length > 0 && (
+                      <>
+                        <p className="text-xs text-purple-400 font-semibold mb-1.5">POST-SALE</p>
+                        <div className="space-y-1">
+                          {order.upsells.filter((u: any) => u.type === 'postsale').map((upsell: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-xs">
+                              <span className="text-zinc-300 flex-1 pr-2">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                              <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Total - Full Width */}
+              <div className="pt-2">
+                <div className="flex justify-between items-center text-white font-semibold mb-1">
+                  <span className="text-xs">Subtotal + Shipping</span>
+                  <span className="text-xs">
+                    {(() => {
+                      const productSubtotal = order.subtotal || 0;
+                      const shipping = order.shippingCost || 0;
+                      const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                        return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                      }, 0) || 0;
+                      return `${(productSubtotal + upsellsTotal).toFixed(2)} + ${shipping.toFixed(2)} RON`;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-white font-bold">
+                  <span className="text-sm">TOTAL</span>
+                  <span className="text-base">
+                    {(() => {
+                      const productSubtotal = order.subtotal || 0;
+                      const shipping = order.shippingCost || 0;
+                      const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                        return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                      }, 0) || 0;
+                      const total = productSubtotal + shipping + upsellsTotal;
+                      return `${total.toFixed(2)} RON`;
+                    })()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

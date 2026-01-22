@@ -226,10 +226,24 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
+  // Helper function to scroll parent to widget
+  const scrollParentToWidget = () => {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'scroll-to-widget' },
+          '*'
+        );
+      }
+    } catch (error) {
+      console.debug('Could not send scroll message to parent:', error);
+    }
+  };
+
   // Send height to parent window if in iframe
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const sendHeight = () => {
       try {
         if (window.parent && window.parent !== window) {
@@ -247,10 +261,10 @@ function WidgetFormContent() {
 
     // Send height on initial render and when content changes
     sendHeight();
-    
+
     // Send height on resize
     window.addEventListener('resize', sendHeight);
-    
+
     // Send height after a delay to account for dynamic content
     const timeout = setTimeout(sendHeight, 100);
     const interval = setInterval(sendHeight, 500);
@@ -720,6 +734,9 @@ function WidgetFormContent() {
       // Show success popup with appropriate message
       setShowSuccessPopup(true);
 
+      // Scroll parent page to widget so popup is visible
+      scrollParentToWidget();
+
       // Handle postsale flow
       if (landingPage.post_purchase_status && landingPage.id && hasValidPostsale) {
         // We have valid postsale upsells, show the offer after 2 seconds
@@ -727,6 +744,8 @@ function WidgetFormContent() {
           setShowSuccessPopup(false);
           setPostsaleCountdown(180); // Reset countdown to 3 minutes
           setShowPostsaleOffer(true);
+          // Scroll again when postsale appears
+          scrollParentToWidget();
         }, 2000);
         return; // Don't redirect yet
       }

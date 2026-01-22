@@ -101,7 +101,7 @@
     iframe.style.display = 'block';
     iframe.style.minHeight = '600px';
     iframe.scrolling = 'no';
-    iframe.loading = 'lazy';
+    iframe.loading = 'eager';
 
     // Clear container and append iframe
     container.innerHTML = '';
@@ -127,6 +127,19 @@
       iframes.forEach(iframe => {
         if (event.source === iframe.contentWindow) {
           iframe.style.height = `${data.height}px`;
+        }
+      });
+    }
+
+    // Handle scroll to widget (when popups appear)
+    if (data.type === 'scroll-to-widget') {
+      iframes.forEach(iframe => {
+        if (event.source === iframe.contentWindow) {
+          // Scroll to iframe with smooth animation and center it in viewport
+          iframe.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
         }
       });
     }

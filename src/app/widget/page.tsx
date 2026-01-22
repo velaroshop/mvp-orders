@@ -226,22 +226,6 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
-  // Block body scroll when postsale offer is shown
-  useEffect(() => {
-    if (showPostsaleOffer) {
-      // Save current overflow style
-      const originalOverflow = document.body.style.overflow;
-
-      // Block scroll
-      document.body.style.overflow = 'hidden';
-
-      // Restore scroll on cleanup
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [showPostsaleOffer]);
-
   // Helper function to scroll parent to widget
   const scrollParentToWidget = () => {
     try {
@@ -1587,11 +1571,11 @@ function WidgetFormContent() {
           {/* Post-Sale Offer Popup */}
           {showPostsaleOffer && postsaleUpsells.length > 0 && (
             <div
-              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto"
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
               style={{ animation: 'fadeIn 0.4s ease-out' }}
             >
               <div
-                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-hidden my-auto"
+                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-y-auto my-auto"
                 style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', maxHeight: '90vh' }}
               >
                 {/* Animated background elements */}

@@ -77,6 +77,15 @@ export async function GET(request: NextRequest) {
 
     const revenueData: Record<string, { totalRevenue: number; upsellRevenue: number; count: number }> = {};
 
+    // For monthly granularity, adjust start date to the first order's month if it's later than the specified start
+    let adjustedStart = start;
+    if (granularity === 'monthly' && filteredOrders.length > 0) {
+      const firstOrderDate = new Date(filteredOrders[0].created_at);
+      if (firstOrderDate > start) {
+        adjustedStart = new Date(firstOrderDate.getUTCFullYear(), firstOrderDate.getUTCMonth(), 1);
+      }
+    }
+
     // Generate all time periods in the date range with 0 values
     if (granularity === 'hourly') {
       // Generate all 24 hours
@@ -91,8 +100,8 @@ export async function GET(request: NextRequest) {
         revenueData[dayKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
       }
     } else {
-      // Generate all months in the range
-      const currentDate = new Date(start);
+      // Generate all months in the range (starting from first order month)
+      const currentDate = new Date(adjustedStart);
       while (currentDate <= end) {
         const monthKey = `${currentDate.getUTCFullYear()}-${String(currentDate.getUTCMonth() + 1).padStart(2, '0')}`;
         revenueData[monthKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };

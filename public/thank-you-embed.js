@@ -125,10 +125,10 @@
         <!-- Title -->
         <div style="text-align: center; margin-bottom: 12px;">
           <h2 style="font-size: 32px; font-weight: 900; margin: 0 0 6px 0; color: #111827; line-height: 1.1;">
-            FELICITĂRI!
+            🎉 AI CÂȘTIGAT! 🎉
           </h2>
           <p style="font-size: 15px; font-weight: 600; color: #374151; margin: 0 0 6px 0;">
-            AI DEBLOCAT O REDUCERE
+            AI DEBLOCAT O REDUCERE EXCLUSIVĂ
           </p>
           <!-- Countdown -->
           <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;">
@@ -141,8 +141,8 @@
 
         <!-- Product Image -->
         ${upsell.mediaUrl ? `
-          <div style="text-align: center; margin-bottom: 16px;">
-            <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 100%; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <div style="text-align: center; margin-bottom: 16px; overflow: hidden; border-radius: 12px;">
+            <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="width: 100%; height: 400px; object-fit: cover; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
           </div>
         ` : ''}
 

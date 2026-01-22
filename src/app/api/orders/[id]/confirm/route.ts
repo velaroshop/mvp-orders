@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { HelpshipClient } from "@/lib/helpship";
@@ -12,6 +14,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user ? (session.user as any).id : undefined;
+
     const { id: orderId } = await params;
     const body = await request.json();
 
@@ -24,6 +29,7 @@ export async function POST(
       address,
       streetNumber,
       postalCode,
+      scheduledDate,
     } = body;
 
     // Validare cod poștal: maxim 6 cifre
@@ -33,6 +39,10 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    // Verificăm dacă e comandă programată pentru viitor
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const isScheduledForFuture = scheduledDate && scheduledDate > today;
 
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabaseAdmin
@@ -46,6 +56,40 @@ export async function POST(
         { error: "Order not found" },
         { status: 404 },
       );
+    }
+
+    // Dacă comanda e programată pentru viitor, nu sincronizăm cu Helpship acum
+    // O lăsăm OnHold până la data programată
+    if (isScheduledForFuture) {
+      console.log(`[Scheduled Order] Saving order ${orderId} as scheduled for ${scheduledDate}`);
+
+      // Actualizează datele în DB cu status "scheduled"
+      const updateData: any = {
+        status: "scheduled",
+        scheduled_date: scheduledDate,
+      };
+      if (userId) updateData.confirmed_by = userId;
+      if (fullName) updateData.full_name = fullName;
+      if (phone) updateData.phone = phone;
+      if (county) updateData.county = county;
+      if (city) updateData.city = city;
+      if (address) updateData.address = address;
+      if (postalCode) updateData.postal_code = postalCode;
+
+      const { error: updateError } = await supabaseAdmin
+        .from("orders")
+        .update(updateData)
+        .eq("id", orderId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return NextResponse.json({
+        success: true,
+        scheduled: true,
+        scheduledDate
+      }, { status: 200 });
     }
 
     // Dacă comanda are helpshipOrderId, verificăm statusul în Helpship
@@ -115,6 +159,7 @@ export async function POST(
 
     // Actualizează datele în DB (dacă au fost modificate)
     const updateData: any = { status: "confirmed" };
+    if (userId) updateData.confirmed_by = userId;
     if (fullName) updateData.full_name = fullName;
     if (phone) updateData.phone = phone;
     if (county) updateData.county = county;

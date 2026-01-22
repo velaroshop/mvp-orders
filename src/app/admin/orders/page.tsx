@@ -157,6 +157,60 @@ export default function AdminPage() {
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
+
+    // For scheduled orders, confirm immediately without modal
+    if (order.status === "scheduled") {
+      if (!confirm(`Confirm this scheduled order now?\n\nOrder: ${formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}\nScheduled for: ${order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString() : 'N/A'}`)) {
+        setSelectedOrder(null);
+        return;
+      }
+
+      setConfirming(order.id);
+      try {
+        const response = await fetch(`/api/orders/${order.id}/confirm`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fullName: order.fullName,
+            phone: order.phone,
+            county: order.county,
+            city: order.city,
+            address: order.address,
+            postalCode: order.postalCode,
+            scheduledDate: "", // Empty to confirm immediately
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          const errorMessage = errorData.error || "Failed to confirm order";
+          throw new Error(errorMessage);
+        }
+
+        await fetchOrders();
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: "Scheduled order confirmed successfully! ✓",
+        });
+      } catch (error) {
+        console.error("Error confirming scheduled order:", error);
+        const errorMessage = error instanceof Error ? error.message : "Failed to confirm order";
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
+      } finally {
+        setConfirming(null);
+        setSelectedOrder(null);
+      }
+      return;
+    }
+
+    // For other orders, proceed with duplicate check and modal
     setIsCheckingDuplicates(true);
 
     try {
@@ -637,6 +691,7 @@ export default function AdminPage() {
                         { value: "testing", label: "Testing", color: "bg-blue-600" },
                         { value: "pending", label: "Pending", color: "bg-yellow-600" },
                         { value: "confirmed", label: "Confirmed", color: "bg-emerald-600" },
+                        { value: "scheduled", label: "Scheduled", color: "bg-cyan-600" },
                         { value: "hold", label: "Hold", color: "bg-orange-600" },
                         { value: "cancelled", label: "Cancelled", color: "bg-red-600" },
                         { value: "sync_error", label: "Sync Error", color: "bg-rose-600" },
@@ -711,6 +766,8 @@ export default function AdminPage() {
                               ? "bg-blue-600 text-white"
                               : order.status === "confirmed"
                               ? "bg-emerald-600 text-white"
+                              : order.status === "scheduled"
+                              ? "bg-cyan-600 text-white"
                               : order.status === "cancelled"
                               ? "bg-red-600 text-white"
                               : order.status === "hold"
@@ -726,6 +783,8 @@ export default function AdminPage() {
                             ? "🧪 Testing"
                             : order.status === "pending"
                             ? "Pending"
+                            : order.status === "scheduled"
+                            ? "📅 Scheduled"
                             : order.status === "cancelled"
                             ? "Cancelled"
                             : order.status === "hold"
@@ -743,6 +802,13 @@ export default function AdminPage() {
                             ) : (
                               <span className="text-amber-400">Testing</span>
                             )}
+                          </span>
+                        )}
+                        {/* Show scheduled date for SCHEDULED orders */}
+                        {order.status === "scheduled" && order.scheduledDate && (
+                          <span className="text-[10px] font-medium">
+                            <span className="text-zinc-400">for </span>
+                            <span className="text-cyan-400">{new Date(order.scheduledDate).toLocaleDateString()}</span>
                           </span>
                         )}
                         {/* Show confirmer + source for CONFIRMED orders */}
@@ -895,10 +961,12 @@ export default function AdminPage() {
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "confirmed"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "scheduled"
+                              ? "bg-cyan-600 text-white hover:bg-cyan-700 hover:shadow-lg"
                               : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
                           }`}
                         >
-                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : "CONFIRM"}
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : order.status === "scheduled" ? "⚡ CONFIRM NOW" : "CONFIRM"}
                         </button>
 
                         {/* Actions Dropdown */}

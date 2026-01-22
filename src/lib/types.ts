@@ -1,4 +1,4 @@
-export type OrderStatus = "queue" | "pending" | "confirmed" | "cancelled" | "hold" | "sync_error" | "testing";
+export type OrderStatus = "queue" | "pending" | "confirmed" | "cancelled" | "hold" | "sync_error" | "testing" | "scheduled";
 
 export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later" | "duplicate";
 
@@ -72,6 +72,7 @@ export interface Order {
   queueExpiresAt?: string; // Timestamp when queue expires (3 minutes from creation)
   promotedFromTesting?: boolean; // Flag to indicate order was promoted from testing status
   confirmerName?: string; // Name of the user who confirmed/created the order
+  scheduledDate?: string; // Scheduled date for order confirmation (YYYY-MM-DD)
   // Meta Tracking fields
   fbclid?: string; // Facebook click ID from URL
   fbc?: string; // Facebook click cookie

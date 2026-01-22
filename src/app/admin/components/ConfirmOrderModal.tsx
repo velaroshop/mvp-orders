@@ -26,6 +26,7 @@ export default function ConfirmOrderModal({
     address: "",
     streetNumber: "",
     postalCode: "",
+    scheduledDate: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [postalCodes, setPostalCodes] = useState<PostalCodeResult[]>([]);
@@ -102,6 +103,7 @@ export default function ConfirmOrderModal({
             address: currentOrder.address || "",
             streetNumber: "",
             postalCode: currentOrder.postalCode || "",
+            scheduledDate: "",
           };
           setFormData(initialData);
           
@@ -134,6 +136,7 @@ export default function ConfirmOrderModal({
               address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
               streetNumber: "",
               postalCode: postalCode,
+              scheduledDate: "",
             };
             setFormData(initialData);
             
@@ -169,6 +172,7 @@ export default function ConfirmOrderModal({
             address: currentOrder.address || "",
             streetNumber: "",
             postalCode: currentOrder.postalCode || "",
+            scheduledDate: "",
           };
           setFormData(initialData);
           
@@ -199,6 +203,7 @@ export default function ConfirmOrderModal({
         address: formData.address,
         streetNumber: formData.streetNumber,
         postalCode: formData.postalCode,
+        scheduledDate: formData.scheduledDate || undefined,
       };
 
       await onConfirm(updatedOrder);
@@ -315,13 +320,29 @@ export default function ConfirmOrderModal({
                 </h3>
                 <div>
                   <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                    Scheduled Date
+                    Scheduled Date (optional)
                   </label>
                   <input
                     type="date"
-                    defaultValue={new Date().toISOString().split("T")[0]}
+                    value={formData.scheduledDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, scheduledDate: e.target.value })
+                    }
+                    min={(() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      return tomorrow.toISOString().split('T')[0];
+                    })()}
+                    max={(() => {
+                      const maxDate = new Date();
+                      maxDate.setDate(maxDate.getDate() + 10);
+                      return maxDate.toISOString().split('T')[0];
+                    })()}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Leave empty to confirm immediately (max 10 days ahead)
+                  </p>
                 </div>
               </div>
             </div>

@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+interface ProductRevenue {
+  name: string;
+  revenue: number;
+}
+
 interface DashboardStats {
   totalRevenue: number;
   avgOrderValue: number;
@@ -9,6 +14,7 @@ interface DashboardStats {
   productsSold: number;
   upsellRate: number;
   ordersByStatus: Record<string, number>;
+  revenueByProduct: ProductRevenue[];
 }
 
 interface LandingPage {
@@ -26,7 +32,9 @@ export default function DashboardPage() {
     productsSold: 0,
     upsellRate: 0,
     ordersByStatus: {},
+    revenueByProduct: [],
   });
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("today");
   const [startDate, setStartDate] = useState("");
@@ -344,18 +352,68 @@ export default function DashboardPage() {
 
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Card 1 */}
+        {/* Revenue by Product Card */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Total Revenue</h3>
-            <div className="w-10 h-10 rounded-full bg-emerald-600/20 flex items-center justify-center">
-              <span className="text-xl">💰</span>
+          <h3 className="text-lg font-semibold text-white mb-4">Revenue by Product</h3>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-zinc-400">Loading...</p>
             </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Product bars */}
+              {(showAllProducts ? stats.revenueByProduct : stats.revenueByProduct.slice(0, 6)).map((product, index) => {
+                const maxRevenue = stats.revenueByProduct[0]?.revenue || 1;
+                const widthPercentage = (product.revenue / maxRevenue) * 100;
+
+                // Color palette for bars
+                const colors = [
+                  'bg-blue-500',
+                  'bg-purple-500',
+                  'bg-emerald-500',
+                  'bg-orange-500',
+                  'bg-cyan-500',
+                  'bg-pink-500',
+                  'bg-yellow-500',
+                  'bg-red-500',
+                  'bg-indigo-500',
+                  'bg-teal-500',
+                ];
+                const barColor = colors[index % colors.length];
+
+                return (
+                  <div key={product.name} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white truncate max-w-[60%]">{product.name}</span>
+                      <span className="text-white font-semibold">{product.revenue.toFixed(2)} RON</span>
+                    </div>
+                    <div className="w-full bg-zinc-700 rounded-full h-2">
+                      <div
+                        className={`${barColor} h-2 rounded-full transition-all duration-500`}
+                        style={{ width: `${widthPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Show All / Show Less link */}
+              {stats.revenueByProduct.length > 6 && (
+                <button
+                  onClick={() => setShowAllProducts(!showAllProducts)}
+                  className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors mt-2"
+                >
+                  {showAllProducts ? 'Show less' : `Show all (${stats.revenueByProduct.length} products)`}
+                </button>
+              )}
+
+              {/* Show message if no products */}
+              {stats.revenueByProduct.length === 0 && (
+                <p className="text-sm text-zinc-400 text-center py-4">No products found</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Card 2 */}

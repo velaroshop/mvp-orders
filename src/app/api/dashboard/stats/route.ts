@@ -105,6 +105,19 @@ export async function GET(request: NextRequest) {
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
+    // Calculate revenue by product
+    const productRevenue: Record<string, number> = {};
+    filteredOrders.forEach((order: any) => {
+      const productName = order.product_name || "Unknown Product";
+      const orderTotal = order.total || 0;
+      productRevenue[productName] = (productRevenue[productName] || 0) + orderTotal;
+    });
+
+    // Convert to array and sort by revenue (descending)
+    const revenueByProduct = Object.entries(productRevenue)
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
     return NextResponse.json({
       totalRevenue,
       avgOrderValue,
@@ -112,6 +125,7 @@ export async function GET(request: NextRequest) {
       productsSold,
       upsellRate,
       ordersByStatus: statusCounts,
+      revenueByProduct,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stats:", error);

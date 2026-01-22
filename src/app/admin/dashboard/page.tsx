@@ -804,58 +804,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-
-        {/* Card 4 */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Average Order Value</h3>
-            <div className="w-10 h-10 rounded-full bg-orange-600/20 flex items-center justify-center">
-              <span className="text-xl">💵</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
-        </div>
-
-        {/* Card 5 */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Total Customers</h3>
-            <div className="w-10 h-10 rounded-full bg-pink-600/20 flex items-center justify-center">
-              <span className="text-xl">👥</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
-        </div>
-
-        {/* Card 6 */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-zinc-400">Pending Orders</h3>
-            <div className="w-10 h-10 rounded-full bg-yellow-600/20 flex items-center justify-center">
-              <span className="text-xl">⏳</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-3xl font-bold text-white">-</p>
-            <p className="text-xs text-zinc-500">Coming soon</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Coming Soon Notice */}
-      <div className="mt-8 bg-zinc-800/50 border border-zinc-700 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-semibold text-white mb-2">
-          🚀 Advanced Analytics Coming Soon
-        </h3>
-        <p className="text-zinc-400 text-sm">
-          We're working on bringing you detailed insights, charts, and reports to help you make better business decisions.
-        </p>
       </div>
     </div>
   );

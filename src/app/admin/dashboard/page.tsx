@@ -65,6 +65,12 @@ export default function DashboardPage() {
   const [selectedLandingPage, setSelectedLandingPage] = useState("all");
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
 
+  // Stock Analysis independent filters
+  const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [stockAnalysisPeriod, setStockAnalysisPeriod] = useState<1 | 3 | 7 | 14>(7);
+  const [stockAnalysisLoading, setStockAnalysisLoading] = useState(false);
+  const [stockAnalysisData, setStockAnalysisData] = useState<ProductStockAnalysis | null>(null);
+
   // Calculate date ranges for quick filters
   const getDateRange = (filter: QuickFilter): { start: string; end: string } => {
     const today = new Date();
@@ -145,6 +151,11 @@ export default function DashboardPage() {
         const data = await response.json();
         console.log("Dashboard stats received:", data);
         setStats(data);
+
+        // Auto-select first product for stock analysis if not already selected
+        if (data.productStockAnalysis?.length > 0 && !selectedProduct) {
+          setSelectedProduct(data.productStockAnalysis[0].name);
+        }
       } else {
         console.error("Failed to fetch stats:", response.status, await response.text());
       }
@@ -152,6 +163,30 @@ export default function DashboardPage() {
       console.error("Error fetching stats:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch stock analysis for selected product
+  const fetchStockAnalysis = async (product: string, period: number) => {
+    if (!product) return;
+
+    setStockAnalysisLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("productName", product);
+      params.set("days", period.toString());
+
+      const response = await fetch(`/api/dashboard/stock-analysis?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStockAnalysisData(data);
+      } else {
+        console.error("Failed to fetch stock analysis:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching stock analysis:", error);
+    } finally {
+      setStockAnalysisLoading(false);
     }
   };
 
@@ -173,6 +208,13 @@ export default function DashboardPage() {
   const handleQuickFilterClick = (filter: QuickFilter) => {
     setQuickFilter(filter);
   };
+
+  // Fetch stock analysis when product or period changes
+  useEffect(() => {
+    if (selectedProduct) {
+      fetchStockAnalysis(selectedProduct, stockAnalysisPeriod);
+    }
+  }, [selectedProduct, stockAnalysisPeriod]);
 
   // Status configuration with colors
   const statusConfig = [
@@ -580,60 +622,93 @@ export default function DashboardPage() {
 
         {/* Products Stock Analysis Card */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Products Stock Analysis</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Products Stock Analysis</h3>
+
+          {/* Filters */}
+          <div className="space-y-4 mb-6">
+            {/* Product Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
+                Select Product
+              </label>
+              <select
+                value={selectedProduct}
+                onChange={(e) => setSelectedProduct(e.target.value)}
+                disabled={loading || stats.productStockAnalysis.length === 0}
+                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {stats.productStockAnalysis.length === 0 ? (
+                  <option value="">No products available</option>
+                ) : (
+                  stats.productStockAnalysis.map((product) => (
+                    <option key={product.name} value={product.name}>
+                      {product.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Period Buttons */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
+                Analysis Period
+              </label>
+              <div className="flex gap-2">
+                {[1, 3, 7, 14].map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setStockAnalysisPeriod(period as 1 | 3 | 7 | 14)}
+                    disabled={!selectedProduct}
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      stockAnalysisPeriod === period
+                        ? "bg-emerald-600 text-white"
+                        : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                    }`}
+                  >
+                    {period} {period === 1 ? 'day' : 'days'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {loading ? (
+          {/* Analysis Results */}
+          {stockAnalysisLoading ? (
             <div className="text-center py-8">
-              <p className="text-zinc-400">Loading...</p>
+              <p className="text-zinc-400">Loading analysis...</p>
+            </div>
+          ) : stockAnalysisData ? (
+            <div className="space-y-4">
+              <div className="bg-zinc-900/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-semibold text-white">{stockAnalysisData.name}</h4>
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-400">Total Sold</p>
+                    <p className="text-2xl font-bold text-emerald-500">{stockAnalysisData.totalSold}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-zinc-800 rounded p-3">
+                    <p className="text-xs text-zinc-400 mb-1">Daily Average</p>
+                    <p className="text-lg font-semibold text-white">
+                      {stockAnalysisData.dailyAverage.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-zinc-500">units/day</p>
+                  </div>
+                  <div className="bg-zinc-800 rounded p-3">
+                    <p className="text-xs text-zinc-400 mb-1">Weekly Estimate</p>
+                    <p className="text-lg font-semibold text-white">
+                      {(stockAnalysisData.dailyAverage * 7).toFixed(0)}
+                    </p>
+                    <p className="text-xs text-zinc-500">units/week</p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Info about period */}
-              {stats.productStockAnalysis.length > 0 && (
-                <div className="bg-zinc-900/50 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-zinc-400">
-                    Analysis period: <span className="font-semibold text-white">{stats.productStockAnalysis[0].daysInPeriod} days</span>
-                  </p>
-                </div>
-              )}
-
-              {/* Product list */}
-              <div className="space-y-4">
-                {stats.productStockAnalysis.map((product, index) => (
-                  <div key={product.name} className="border-b border-zinc-700 pb-4 last:border-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-white truncate max-w-[60%]">
-                        {product.name}
-                      </h4>
-                      <div className="text-right">
-                        <p className="text-xs text-zinc-400">Total Sold</p>
-                        <p className="text-lg font-bold text-emerald-500">{product.totalSold}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      <div className="bg-zinc-900/50 rounded p-2">
-                        <p className="text-xs text-zinc-400 mb-1">Daily Average</p>
-                        <p className="text-sm font-semibold text-white">
-                          {product.dailyAverage.toFixed(2)} units/day
-                        </p>
-                      </div>
-                      <div className="bg-zinc-900/50 rounded p-2">
-                        <p className="text-xs text-zinc-400 mb-1">Weekly Estimate</p>
-                        <p className="text-sm font-semibold text-white">
-                          {(product.dailyAverage * 7).toFixed(0)} units
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Show message if no products */}
-                {stats.productStockAnalysis.length === 0 && (
-                  <p className="text-sm text-zinc-400 text-center py-4">No products sold in this period</p>
-                )}
-              </div>
+            <div className="text-center py-8">
+              <p className="text-zinc-400 text-sm">Select a product to view analysis</p>
             </div>
           )}
         </div>

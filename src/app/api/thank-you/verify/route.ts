@@ -6,6 +6,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("order");
 
+    console.log("[Thank You Verify] Request for orderId:", orderId);
+
     if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
@@ -20,13 +22,17 @@ export async function GET(request: Request) {
       .eq("id", orderId)
       .single();
 
+    console.log("[Thank You Verify] Order fetch result:", { order, orderError });
+
     if (orderError || !order) {
-      console.error("Error fetching order:", orderError);
+      console.error("[Thank You Verify] Error fetching order:", orderError);
       return NextResponse.json(
         { error: "Order not found" },
         { status: 404 }
       );
     }
+
+    console.log("[Thank You Verify] Fetching landing page with slug:", order.landing_key);
 
     // Fetch landing page and store details separately
     const { data: landingPage, error: landingError } = await supabaseAdmin
@@ -44,8 +50,10 @@ export async function GET(request: Request) {
       .eq("slug", order.landing_key)
       .single();
 
+    console.log("[Thank You Verify] Landing page fetch result:", { landingPage, landingError });
+
     if (landingError || !landingPage) {
-      console.error("Error fetching landing page:", landingError);
+      console.error("[Thank You Verify] Error fetching landing page:", landingError);
       return NextResponse.json(
         { error: "Landing page not found" },
         { status: 404 }

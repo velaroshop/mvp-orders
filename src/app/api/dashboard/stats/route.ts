@@ -37,14 +37,18 @@ export async function GET(request: NextRequest) {
 
     // Build the query - filter by organization first
     // Exclude cancelled and testing orders
+    // Use T00:00:00Z and T23:59:59.999Z to ensure proper timezone handling
+    const startDateTime = startDate ? `${startDate}T00:00:00.000Z` : `${new Date().toISOString().split("T")[0]}T00:00:00.000Z`;
+    const endDateTime = endDate ? `${endDate}T23:59:59.999Z` : `${new Date().toISOString().split("T")[0]}T23:59:59.999Z`;
+
     let query = supabase
       .from("orders")
       .select("*")
       .eq("organization_id", organizationId)
       .neq("status", "cancelled")
       .neq("status", "testing")
-      .gte("created_at", startDate || new Date().toISOString().split("T")[0])
-      .lte("created_at", endDate || new Date().toISOString().split("T")[0] + "T23:59:59");
+      .gte("created_at", startDateTime)
+      .lte("created_at", endDateTime);
 
     // Filter by landing page if specified
     if (landingPageId && landingPageId !== "all") {
@@ -65,6 +69,8 @@ export async function GET(request: NextRequest) {
       organizationId,
       startDate,
       endDate,
+      startDateTime,
+      endDateTime,
       landingPageId,
       ordersCount: orders?.length || 0,
     });

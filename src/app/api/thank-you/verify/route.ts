@@ -27,7 +27,7 @@ export async function GET(request: Request) {
           id,
           slug,
           enable_postsale,
-          stores!inner(
+          stores(
             primary_color,
             accent_color,
             text_on_dark_color
@@ -44,8 +44,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const landingPage = order.landing_pages;
-    const store = landingPage.stores;
+    const landingPage = order.landing_pages as any;
+    const store = landingPage.stores as any;
 
     // If order is not in queue or postsale is not enabled, return simple confirmation
     if (order.status !== "queue" || !landingPage.enable_postsale) {

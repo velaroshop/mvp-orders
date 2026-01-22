@@ -36,11 +36,13 @@ export async function GET(request: NextRequest) {
     const landingPageId = searchParams.get("landingPage");
 
     // Build the query - filter by organization first
+    // Exclude cancelled and testing orders
     let query = supabase
       .from("orders")
       .select("*")
       .eq("organization_id", organizationId)
       .neq("status", "cancelled")
+      .neq("status", "testing")
       .gte("created_at", startDate || new Date().toISOString().split("T")[0])
       .lte("created_at", endDate || new Date().toISOString().split("T")[0] + "T23:59:59");
 
@@ -58,6 +60,14 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log("Dashboard stats query:", {
+      organizationId,
+      startDate,
+      endDate,
+      landingPageId,
+      ordersCount: orders?.length || 0,
+    });
 
     const filteredOrders = orders || [];
 

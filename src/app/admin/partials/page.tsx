@@ -248,14 +248,14 @@ export default function PartialsPage() {
   if (isLoading) {
     return (
       <div className="max-w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Partial Orders</h1>
-          <p className="text-zinc-400 mt-2">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Partial Orders</h1>
+          <p className="text-zinc-400 text-sm mt-1">
             Track and recover incomplete orders
           </p>
         </div>
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">Loading partial orders...</p>
+        <div className="bg-zinc-800 rounded-md shadow-sm border border-zinc-700 p-4 text-center">
+          <p className="text-zinc-400 text-sm">Loading partial orders...</p>
         </div>
       </div>
     );
@@ -264,11 +264,11 @@ export default function PartialsPage() {
   if (error) {
     return (
       <div className="max-w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Partial Orders</h1>
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Partial Orders</h1>
         </div>
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
-          <p className="text-red-400">{error}</p>
+        <div className="bg-red-900/20 border border-red-800 rounded-md p-3">
+          <p className="text-red-400 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -277,21 +277,21 @@ export default function PartialsPage() {
   return (
     <div className="max-w-full">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-3xl font-bold text-white">Partial Orders</h1>
-            <p className="text-zinc-400 mt-2">
-              Track incomplete orders - {totalCount} total{selectedStatuses.length > 0 && ` (${partialOrders.length} filtered)`}
+            <h1 className="text-2xl font-bold text-white">Partial Orders</h1>
+            <p className="text-zinc-400 text-sm mt-1">
+              {totalCount} total{selectedStatuses.length > 0 && ` (${partialOrders.length} filtered)`}
             </p>
           </div>
           <button
             onClick={fetchPartialOrders}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <svg
-              className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -311,12 +311,12 @@ export default function PartialsPage() {
         <div className="relative status-filter-dropdown inline-block">
           <button
             onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-            className={`px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
+            className={`px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-xs font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-1.5 ${
               selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
             }`}
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -330,27 +330,27 @@ export default function PartialsPage() {
             </svg>
             Status
             {selectedStatuses.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+              <span className="ml-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] rounded-full">
                 {selectedStatuses.length}
               </span>
             )}
           </button>
 
           {isStatusDropdownOpen && (
-            <div className="absolute left-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
-              <div className="p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold text-white">Filtrează după status</span>
+            <div className="absolute left-0 mt-1.5 w-56 bg-zinc-800 border border-zinc-700 rounded-md shadow-xl z-50">
+              <div className="p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-white">Filtrează după status</span>
                   {selectedStatuses.length > 0 && (
                     <button
                       onClick={clearStatusFilters}
-                      className="text-xs text-emerald-500 hover:text-emerald-400"
+                      className="text-[10px] text-emerald-500 hover:text-emerald-400"
                     >
-                      Șterge toate
+                      Șterge
                     </button>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {[
                     { value: "pending", label: "Pending", color: "bg-blue-500" },
                     { value: "accepted", label: "Accepted", color: "bg-emerald-500" },
@@ -361,16 +361,16 @@ export default function PartialsPage() {
                   ].map((status) => (
                     <label
                       key={status.value}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
+                      className="flex items-center gap-1.5 cursor-pointer hover:bg-zinc-700 px-1.5 py-1 rounded"
                     >
                       <input
                         type="checkbox"
                         checked={selectedStatuses.includes(status.value)}
                         onChange={() => toggleStatus(status.value)}
-                        className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                        className="w-3 h-3 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
                       />
-                      <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
-                      <span className="text-sm text-white">{status.label}</span>
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full ${status.color}`}></span>
+                      <span className="text-xs text-white">{status.label}</span>
                     </label>
                   ))}
                 </div>
@@ -382,37 +382,37 @@ export default function PartialsPage() {
 
       {/* Table */}
       {partialOrders.length === 0 ? (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">No partial orders found.</p>
+        <div className="bg-zinc-800 rounded-md shadow-sm border border-zinc-700 p-4 text-center">
+          <p className="text-zinc-400 text-sm">No partial orders found.</p>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
+        <div className="bg-zinc-800 rounded-md shadow-sm border border-zinc-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-zinc-900 border-b border-zinc-700">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Customer
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Vendable
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Pricing
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Landing Page
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Address
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Note
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  <th className="px-2 py-1.5 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -424,70 +424,70 @@ export default function PartialsPage() {
                     className="hover:bg-zinc-700/50 transition-colors"
                   >
                     {/* Customer */}
-                    <td className="px-4 py-4">
-                      <div className="text-sm">
+                    <td className="px-2 py-2">
+                      <div className="text-xs">
                         <div className="font-medium text-white">
                           {partial.fullName || "—"}
                         </div>
                         {partial.phone ? (
                           <a
                             href={`/admin/customers?phone=${partial.phone}`}
-                            className="text-emerald-400 hover:text-emerald-300 hover:underline"
+                            className="text-emerald-400 hover:text-emerald-300 hover:underline text-[10px]"
                           >
                             {partial.phone}
                           </a>
                         ) : (
-                          <div className="text-zinc-400">—</div>
+                          <div className="text-zinc-400 text-[10px]">—</div>
                         )}
-                        <div className="text-xs text-zinc-500 mt-1">
-                          Partial ID: {partial.partialNumber || "—"}
+                        <div className="text-[10px] text-zinc-500 mt-0.5">
+                          ID: {partial.partialNumber || "—"}
                         </div>
                       </div>
                     </td>
 
                     {/* Vendable (Product) */}
-                    <td className="px-4 py-4">
-                      <div className="text-sm">
+                    <td className="px-2 py-2">
+                      <div className="text-xs">
                         <div className="text-white font-medium">
                           {partial.productName || "—"}
                         </div>
                         {partial.productSku && (
-                          <div className="text-orange-400 text-xs font-medium">
+                          <div className="text-orange-400 text-[10px] font-medium">
                             {partial.productSku}
                           </div>
                         )}
-                        <div className="text-zinc-400 text-xs">
-                          Quantity: {partial.productQuantity || "—"}
+                        <div className="text-zinc-400 text-[10px]">
+                          Qty: {partial.productQuantity || "—"}
                         </div>
                       </div>
                     </td>
 
                     {/* Pricing */}
-                    <td className="px-4 py-4">
-                      <div className="text-sm">
+                    <td className="px-2 py-2">
+                      <div className="text-xs">
                         <div className="text-white font-medium">
-                          Total: {formatPrice(partial.total)}
+                          {formatPrice(partial.total)}
                         </div>
-                        <div className="text-zinc-400 text-xs">
+                        <div className="text-zinc-400 text-[10px]">
                           {formatPrice(partial.subtotal)} +{" "}
                           {formatPrice(partial.shippingCost)}
                         </div>
                         {partial.upsells && partial.upsells.length > 0 && (
-                          <div className="text-emerald-400 text-xs font-medium mt-1">
-                            + {partial.upsells.length} Pre-sale offer{partial.upsells.length > 1 ? 's' : ''}
+                          <div className="text-emerald-400 text-[10px] font-medium mt-0.5">
+                            + {partial.upsells.length} upsell{partial.upsells.length > 1 ? 's' : ''}
                           </div>
                         )}
                       </div>
                     </td>
 
                     {/* Landing Page */}
-                    <td className="px-4 py-4">
-                      <div className="text-sm">
-                        <div className="text-blue-400">
+                    <td className="px-2 py-2">
+                      <div className="text-xs">
+                        <div className="text-blue-400 text-[10px]">
                           {partial.storeUrl || "—"}
                         </div>
                         {partial.productName && (
-                          <div className="text-white text-xs font-medium">
+                          <div className="text-white text-[10px] font-medium">
                             {partial.productName}
                           </div>
                         )}
@@ -495,10 +495,10 @@ export default function PartialsPage() {
                     </td>
 
                     {/* Address */}
-                    <td className="px-4 py-4">
-                      <div className="text-sm max-w-xs">
-                        <div className="text-white">
-                          Judet:{" "}
+                    <td className="px-2 py-2">
+                      <div className="text-[10px] max-w-xs">
+                        <div className="text-zinc-300">
+                          <span className="text-zinc-500">J:</span>{" "}
                           <span
                             className={
                               partial.county
@@ -509,8 +509,8 @@ export default function PartialsPage() {
                             {partial.county || "?"}
                           </span>
                         </div>
-                        <div className="text-white">
-                          Localitate:{" "}
+                        <div className="text-zinc-300">
+                          <span className="text-zinc-500">L:</span>{" "}
                           <span
                             className={
                               partial.city ? "text-white" : "text-red-400"
@@ -519,8 +519,8 @@ export default function PartialsPage() {
                             {partial.city || "?"}
                           </span>
                         </div>
-                        <div className="text-white">
-                          Strada:{" "}
+                        <div className="text-zinc-300">
+                          <span className="text-zinc-500">S:</span>{" "}
                           <span
                             className={
                               partial.address
@@ -535,44 +535,44 @@ export default function PartialsPage() {
                     </td>
 
                     {/* Note (Time since created) */}
-                    <td className="px-4 py-4">
-                      <div className="text-xs text-white font-medium">
+                    <td className="px-2 py-2">
+                      <div className="text-[10px] text-white font-medium">
                         {formatFullDateTime(partial.createdAt)}
                       </div>
-                      <div className="text-xs text-zinc-400 mt-1">
+                      <div className="text-[10px] text-zinc-400 mt-0.5">
                         {formatRelativeTime(partial.createdAt)}
                       </div>
-                      <div className="text-xs text-zinc-500 mt-1">
-                        {partial.completionPercentage}% complete
+                      <div className="text-[10px] text-zinc-500 mt-0.5">
+                        {partial.completionPercentage}% done
                       </div>
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-2">
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold border ${getStatusColor(partial.status)}`}
+                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold border ${getStatusColor(partial.status)}`}
                       >
                         {getStatusLabel(partial.status)}
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex flex-col items-end gap-1">
+                    <td className="px-2 py-2 text-right">
+                      <div className="flex flex-col items-end gap-0.5">
                         {/* Confirm Button */}
                         {isPartialTooNew(partial.createdAt) ? (
                           <button
                             disabled
-                            className="px-2 py-1 bg-orange-900/30 text-orange-400 text-xs font-medium rounded cursor-not-allowed border border-orange-500/30"
+                            className="px-1.5 py-0.5 bg-orange-900/30 text-orange-400 text-[10px] font-medium rounded cursor-not-allowed border border-orange-500/30"
                             title={`Customer is likely still completing the form. Wait ${getMinutesUntilConfirmable(partial.createdAt)} more minute(s).`}
                           >
-                            ⏳ Wait {getMinutesUntilConfirmable(partial.createdAt)}m
+                            ⏳ {getMinutesUntilConfirmable(partial.createdAt)}m
                           </button>
                         ) : (
                           <button
                             onClick={() => handleConfirm(partial.id)}
                             disabled={confirmingId === partial.id}
-                            className="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-medium rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             title="Ready to confirm - 10 minutes have passed since creation"
                           >
                             {confirmingId === partial.id ? "..." : "Confirm"}
@@ -587,10 +587,10 @@ export default function PartialsPage() {
                                 openDropdown === partial.id ? null : partial.id
                               )
                             }
-                            className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
+                            className="p-0.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
                           >
                             <svg
-                              className="w-4 h-4"
+                              className="w-3 h-3"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -605,38 +605,38 @@ export default function PartialsPage() {
                           </button>
 
                           {openDropdown === partial.id && (
-                            <div className="absolute right-0 mt-2 w-56 bg-zinc-800 rounded-lg shadow-lg border border-zinc-700 py-1 z-10">
+                            <div className="absolute right-0 mt-1 w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-10">
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "call_later")
                                 }
-                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                                className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
                               >
-                                Partial Later
+                                Call Later
                               </button>
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "refused")
                                 }
-                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                                className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
                               >
-                                Partial Refuse
+                                Refuse
                               </button>
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "unanswered")
                                 }
-                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                                className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
                               >
-                                Partial Mark Unanswered
+                                Unanswered
                               </button>
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "duplicate")
                                 }
-                                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                                className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
                               >
-                                Partial Mark Duplicate
+                                Duplicate
                               </button>
                             </div>
                           )}
@@ -651,17 +651,17 @@ export default function PartialsPage() {
 
           {/* Pagination Controls - Simple Previous/Next */}
           {totalCount > partialsPerPage && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-700">
-              <div className="text-sm text-zinc-400">
-                Afișare {(currentPage - 1) * partialsPerPage + 1}-{Math.min(currentPage * partialsPerPage, totalCount)} din {totalCount} comenzi parțiale
+            <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-700">
+              <div className="text-xs text-zinc-400">
+                {(currentPage - 1) * partialsPerPage + 1}-{Math.min(currentPage * partialsPerPage, totalCount)} / {totalCount}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2 py-1 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  ← Anterior
+                  ← Prev
                 </button>
                 <button
                   onClick={() =>
@@ -670,9 +670,9 @@ export default function PartialsPage() {
                     )
                   }
                   disabled={currentPage >= Math.ceil(totalCount / partialsPerPage)}
-                  className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2 py-1 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Următor →
+                  Next →
                 </button>
               </div>
             </div>

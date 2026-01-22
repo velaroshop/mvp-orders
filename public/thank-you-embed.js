@@ -54,6 +54,22 @@
    * Handle postsale acceptance
    */
   async function handleAcceptPostsale(orderId, upsell) {
+    // Disable both buttons to prevent multiple clicks
+    const acceptBtn = document.getElementById('accept-postsale-btn');
+    const declineBtn = document.getElementById('decline-postsale-btn');
+
+    if (acceptBtn) {
+      acceptBtn.disabled = true;
+      acceptBtn.style.opacity = '0.5';
+      acceptBtn.style.cursor = 'not-allowed';
+      acceptBtn.textContent = 'SE PROCESEAZĂ...';
+    }
+    if (declineBtn) {
+      declineBtn.disabled = true;
+      declineBtn.style.opacity = '0.5';
+      declineBtn.style.cursor = 'not-allowed';
+    }
+
     try {
       const response = await fetch(`${API_DOMAIN}/api/orders/${orderId}/add-postsale-upsell`, {
         method: 'POST',
@@ -79,6 +95,20 @@
       showConfirmationMessage(orderData.customerName);
     } catch (error) {
       console.error('Error adding postsale:', error);
+
+      // Re-enable buttons on error
+      if (acceptBtn) {
+        acceptBtn.disabled = false;
+        acceptBtn.style.opacity = '1';
+        acceptBtn.style.cursor = 'pointer';
+        acceptBtn.textContent = 'DA, ADAUGĂ LA COMANDĂ!';
+      }
+      if (declineBtn) {
+        declineBtn.disabled = false;
+        declineBtn.style.opacity = '1';
+        declineBtn.style.cursor = 'pointer';
+      }
+
       alert('A apărut o eroare. Te rugăm să reîncarci pagina.');
     }
   }
@@ -87,6 +117,22 @@
    * Handle postsale decline
    */
   async function handleDeclinePostsale(orderId) {
+    // Disable both buttons to prevent multiple clicks
+    const acceptBtn = document.getElementById('accept-postsale-btn');
+    const declineBtn = document.getElementById('decline-postsale-btn');
+
+    if (acceptBtn) {
+      acceptBtn.disabled = true;
+      acceptBtn.style.opacity = '0.5';
+      acceptBtn.style.cursor = 'not-allowed';
+    }
+    if (declineBtn) {
+      declineBtn.disabled = true;
+      declineBtn.style.opacity = '0.5';
+      declineBtn.style.cursor = 'not-allowed';
+      declineBtn.textContent = 'SE PROCESEAZĂ...';
+    }
+
     try {
       const response = await fetch(`${API_DOMAIN}/api/orders/${orderId}/finalize`, {
         method: 'POST',
@@ -103,6 +149,20 @@
       showConfirmationMessage(orderData.customerName);
     } catch (error) {
       console.error('Error finalizing order:', error);
+
+      // Re-enable buttons on error
+      if (acceptBtn) {
+        acceptBtn.disabled = false;
+        acceptBtn.style.opacity = '1';
+        acceptBtn.style.cursor = 'pointer';
+      }
+      if (declineBtn) {
+        declineBtn.disabled = false;
+        declineBtn.style.opacity = '1';
+        declineBtn.style.cursor = 'pointer';
+        declineBtn.textContent = 'NU MULȚUMESC';
+      }
+
       alert('A apărut o eroare. Te rugăm să reîncarci pagina.');
     }
   }
@@ -274,8 +334,7 @@
           Mulțumim pentru comandă${customerName ? `, ${customerName}` : ''}!
         </p>
         <p style="font-size: 16px; color: #6b7280; margin: 0; line-height: 1.6;">
-          Comanda ta va fi livrată prin curier rapid în <strong>1-3 zile lucrătoare</strong>.<br>
-          Vei fi contactat telefonic pentru confirmare.
+          Comanda ta va fi livrată prin curier rapid în <strong>1-3 zile lucrătoare</strong>.
         </p>
       </div>
     `;

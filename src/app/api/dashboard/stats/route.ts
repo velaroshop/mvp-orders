@@ -119,23 +119,38 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.revenue - a.revenue);
 
     // Calculate upsells split by product and type
-    const upsellsByProduct: Record<string, { presale: number; postsale: number }> = {};
+    const upsellsByProduct: Record<string, {
+      presale: number;
+      postsale: number;
+      presaleRevenue: number;
+      postsaleRevenue: number;
+    }> = {};
+
     filteredOrders.forEach((order: any) => {
       const upsells = order.upsells || [];
       if (Array.isArray(upsells)) {
         upsells.forEach((upsell: any) => {
           const productName = upsell.product_name || upsell.title || "Unknown Upsell";
           const quantity = upsell.quantity || 1;
+          const price = upsell.price || 0;
           const type = upsell.type || "presale";
+          const revenue = quantity * price;
 
           if (!upsellsByProduct[productName]) {
-            upsellsByProduct[productName] = { presale: 0, postsale: 0 };
+            upsellsByProduct[productName] = {
+              presale: 0,
+              postsale: 0,
+              presaleRevenue: 0,
+              postsaleRevenue: 0
+            };
           }
 
           if (type === "presale") {
             upsellsByProduct[productName].presale += quantity;
+            upsellsByProduct[productName].presaleRevenue += revenue;
           } else if (type === "postsale") {
             upsellsByProduct[productName].postsale += quantity;
+            upsellsByProduct[productName].postsaleRevenue += revenue;
           }
         });
       }
@@ -147,6 +162,9 @@ export async function GET(request: NextRequest) {
       presale: counts.presale,
       postsale: counts.postsale,
       total: counts.presale + counts.postsale,
+      presaleRevenue: counts.presaleRevenue,
+      postsaleRevenue: counts.postsaleRevenue,
+      totalRevenue: counts.presaleRevenue + counts.postsaleRevenue,
     })).sort((a, b) => b.total - a.total);
 
     return NextResponse.json({

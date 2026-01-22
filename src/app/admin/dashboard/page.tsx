@@ -12,6 +12,9 @@ interface UpsellSplit {
   presale: number;
   postsale: number;
   total: number;
+  presaleRevenue: number;
+  postsaleRevenue: number;
+  totalRevenue: number;
 }
 
 interface DashboardStats {
@@ -429,7 +432,7 @@ export default function DashboardPage() {
 
         {/* Upsells Split Card */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-lg font-semibold text-white">Upsells Split</h3>
 
             {/* Filter buttons */}
@@ -467,6 +470,22 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Total Upsells Revenue */}
+          {!loading && stats.upsellsSplit.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm text-zinc-400">
+                Total Revenue:{" "}
+                <span className="font-semibold text-emerald-500">
+                  {stats.upsellsSplit.reduce((sum, u) => {
+                    if (upsellFilter === "all") return sum + u.totalRevenue;
+                    if (upsellFilter === "pre") return sum + u.presaleRevenue;
+                    return sum + u.postsaleRevenue;
+                  }, 0).toFixed(2)} RON
+                </span>
+              </p>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-8">
               <p className="text-zinc-400">Loading...</p>
@@ -475,14 +494,18 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {/* Upsell bars */}
               {(showAllUpsells ? stats.upsellsSplit : stats.upsellsSplit.slice(0, 6)).map((upsell, index) => {
-                // Calculate count based on filter
+                // Calculate count and revenue based on filter
                 let count = 0;
+                let revenue = 0;
                 if (upsellFilter === "all") {
                   count = upsell.total;
+                  revenue = upsell.totalRevenue;
                 } else if (upsellFilter === "pre") {
                   count = upsell.presale;
+                  revenue = upsell.presaleRevenue;
                 } else if (upsellFilter === "post") {
                   count = upsell.postsale;
+                  revenue = upsell.postsaleRevenue;
                 }
 
                 // Skip if count is 0
@@ -513,8 +536,10 @@ export default function DashboardPage() {
                 return (
                   <div key={upsell.name} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white truncate max-w-[60%]">{upsell.name}</span>
-                      <span className="text-white font-semibold">{count} units</span>
+                      <span className="text-white truncate max-w-[45%]">{upsell.name}</span>
+                      <span className="text-white font-semibold">
+                        {count} units ({revenue.toFixed(2)} RON)
+                      </span>
                     </div>
                     <div className="w-full bg-zinc-700 rounded-full h-2">
                       <div

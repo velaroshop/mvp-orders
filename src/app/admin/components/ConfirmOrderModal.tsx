@@ -102,6 +102,7 @@ export default function ConfirmOrderModal({
             county: currentOrder.county || "",
             city: currentOrder.city || "",
             address: currentOrder.address || "",
+            streetNumber: "",
             postalCode: currentOrder.postalCode || "",
             shippingPrice: currentOrder.shippingCost || 0,
             discount: 0,
@@ -127,7 +128,7 @@ export default function ConfirmOrderModal({
                               "";
 
             const initialData = {
-              fullName: helpshipOrder?.mailingAddress?.name || 
+              fullName: helpshipOrder?.mailingAddress?.name ||
                        (helpshipOrder?.mailingAddress?.firstName && helpshipOrder?.mailingAddress?.lastName
                          ? `${helpshipOrder.mailingAddress.firstName} ${helpshipOrder.mailingAddress.lastName}`
                          : currentOrder.fullName || ""),
@@ -135,6 +136,7 @@ export default function ConfirmOrderModal({
               county: helpshipOrder?.mailingAddress?.province || currentOrder.county || "",
               city: helpshipOrder?.mailingAddress?.city || currentOrder.city || "",
               address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
+              streetNumber: "",
               postalCode: postalCode,
               shippingPrice: currentOrder.shippingCost || 0,
               discount: 0,
@@ -153,6 +155,7 @@ export default function ConfirmOrderModal({
               county: currentOrder.county || "",
               city: currentOrder.city || "",
               address: currentOrder.address || "",
+              streetNumber: "",
               postalCode: currentOrder.postalCode || "",
               shippingPrice: currentOrder.shippingCost || 0,
               discount: 0,
@@ -172,6 +175,7 @@ export default function ConfirmOrderModal({
             county: currentOrder.county || "",
             city: currentOrder.city || "",
             address: currentOrder.address || "",
+            streetNumber: "",
             postalCode: currentOrder.postalCode || "",
             shippingPrice: currentOrder.shippingCost || 0,
             discount: 0,

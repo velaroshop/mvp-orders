@@ -246,7 +246,12 @@ export function sanitizeStreet(raw: string): SanitizeResult {
     parts.push(streetName);
   }
 
-  // Add details (WITHOUT nr. - will go in separate field)
+  // Add number to street address (keeping it in both places)
+  if (numberToken) {
+    parts.push('nr. ' + numberToken);
+  }
+
+  // Add details
   if (details) {
     parts.push(details);
   }
@@ -333,51 +338,51 @@ interface TestCase {
 
 const TEST_CASES: TestCase[] = [
   // Basic street type normalization
-  { input: 'str florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Basic str -> Strada' },
-  { input: 'str. florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'str. with dot' },
-  { input: 'strada florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Full strada' },
+  { input: 'str florilor 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Basic str -> Strada' },
+  { input: 'str. florilor 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'str. with dot' },
+  { input: 'strada florilor 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Full strada' },
 
   // Boulevard variations
-  { input: 'bd mihai viteazu 12', expectedStreet: 'Bulevardul Mihai Viteazu', expectedNumber: '12', description: 'Boulevard bd' },
-  { input: 'blv unirii 5', expectedStreet: 'Bulevardul Unirii', expectedNumber: '5', description: 'Boulevard blv' },
-  { input: 'bulevardul republicii 20', expectedStreet: 'Bulevardul Republicii', expectedNumber: '20', description: 'Full bulevardul' },
+  { input: 'bd mihai viteazu 12', expectedStreet: 'Bulevardul Mihai Viteazu nr. 12', expectedNumber: '12', description: 'Boulevard bd' },
+  { input: 'blv unirii 5', expectedStreet: 'Bulevardul Unirii nr. 5', expectedNumber: '5', description: 'Boulevard blv' },
+  { input: 'bulevardul republicii 20', expectedStreet: 'Bulevardul Republicii nr. 20', expectedNumber: '20', description: 'Full bulevardul' },
 
   // Șoseaua (with/without diacritics)
-  { input: 'sos kiseleff 10', expectedStreet: 'Șoseaua Kiseleff', expectedNumber: '10', description: 'Șoseaua sos' },
-  { input: 'șos pantelimon 15', expectedStreet: 'Șoseaua Pantelimon', expectedNumber: '15', description: 'Șoseaua with diacritic' },
+  { input: 'sos kiseleff 10', expectedStreet: 'Șoseaua Kiseleff nr. 10', expectedNumber: '10', description: 'Șoseaua sos' },
+  { input: 'șos pantelimon 15', expectedStreet: 'Șoseaua Pantelimon nr. 15', expectedNumber: '15', description: 'Șoseaua with diacritic' },
 
   // Other street types
-  { input: 'al teiului 3', expectedStreet: 'Aleea Teiului', expectedNumber: '3', description: 'Aleea' },
-  { input: 'cal victoriei 100', expectedStreet: 'Calea Victoriei', expectedNumber: '100', description: 'Calea' },
-  { input: 'piata unirii 1', expectedStreet: 'Piața Unirii', expectedNumber: '1', description: 'Piața' },
-  { input: 'intr salciilor 7', expectedStreet: 'Intrarea Salciilor', expectedNumber: '7', description: 'Intrarea' },
+  { input: 'al teiului 3', expectedStreet: 'Aleea Teiului nr. 3', expectedNumber: '3', description: 'Aleea' },
+  { input: 'cal victoriei 100', expectedStreet: 'Calea Victoriei nr. 100', expectedNumber: '100', description: 'Calea' },
+  { input: 'piata unirii 1', expectedStreet: 'Piața Unirii nr. 1', expectedNumber: '1', description: 'Piața' },
+  { input: 'intr salciilor 7', expectedStreet: 'Intrarea Salciilor nr. 7', expectedNumber: '7', description: 'Intrarea' },
 
   // Number variations
-  { input: 'str florilor nr 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Explicit nr' },
-  { input: 'str florilor nr. 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Explicit nr.' },
-  { input: 'str florilor nr8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'nr8 stuck together' },
-  { input: 'str florilor numar 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'numar instead of nr' },
-  { input: 'str florilor 12a', expectedStreet: 'Strada Florilor', expectedNumber: '12A', description: 'Number with letter' },
-  { input: 'str florilor 12 a', expectedStreet: 'Strada Florilor', expectedNumber: '12A', description: 'Number with spaced letter' },
-  { input: 'str florilor 12-14', expectedStreet: 'Strada Florilor', expectedNumber: '12-14', description: 'Number range' },
+  { input: 'str florilor nr 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Explicit nr' },
+  { input: 'str florilor nr. 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Explicit nr.' },
+  { input: 'str florilor nr8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'nr8 stuck together' },
+  { input: 'str florilor numar 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'numar instead of nr' },
+  { input: 'str florilor 12a', expectedStreet: 'Strada Florilor nr. 12A', expectedNumber: '12A', description: 'Number with letter' },
+  { input: 'str florilor 12 a', expectedStreet: 'Strada Florilor nr. 12A', expectedNumber: '12A', description: 'Number with spaced letter' },
+  { input: 'str florilor 12-14', expectedStreet: 'Strada Florilor nr. 12-14', expectedNumber: '12-14', description: 'Number range' },
 
   // Details (bl, sc, et, ap) - THE CRITICAL TEST!
-  { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor bl. A', expectedNumber: '8', description: 'With bloc' },
-  { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor bl. A sc. 2', expectedNumber: '8', description: 'Bloc and scara' },
-  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor bl. A sc. 2 et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
+  { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor nr. 8 bl. A', expectedNumber: '8', description: 'With bloc' },
+  { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor nr. 8 bl. A sc. 2', expectedNumber: '8', description: 'Bloc and scara' },
+  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor nr. 8 bl. A sc. 2 et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
 
   // Title case with prepositions
-  { input: 'str unirea din 1918 nr 5', expectedStreet: 'Strada Unirea din 1918', expectedNumber: '5', description: 'Preposition "din" lowercase' },
-  { input: 'bd carol i 10', expectedStreet: 'Bulevardul Carol I', expectedNumber: '10', description: 'Roman numeral uppercase' },
+  { input: 'str unirea din 1918 nr 5', expectedStreet: 'Strada Unirea din 1918 nr. 5', expectedNumber: '5', description: 'Preposition "din" lowercase' },
+  { input: 'bd carol i 10', expectedStreet: 'Bulevardul Carol I nr. 10', expectedNumber: '10', description: 'Roman numeral uppercase' },
 
   // Messy input with multiple separators
-  { input: 'str,, florilor,  8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Multiple commas' },
-  { input: 'str. florilor / 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Slash separator' },
-  { input: 'str   florilor   8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Multiple spaces' },
+  { input: 'str,, florilor,  8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Multiple commas' },
+  { input: 'str. florilor / 8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Slash separator' },
+  { input: 'str   florilor   8', expectedStreet: 'Strada Florilor nr. 8', expectedNumber: '8', description: 'Multiple spaces' },
 
   // No street type
-  { input: 'florilor 8', expectedStreet: 'Florilor', expectedNumber: '8', description: 'No street type prefix' },
-  { input: 'mihai viteazu 12', expectedStreet: 'Mihai Viteazu', expectedNumber: '12', description: 'No type, multi-word name' },
+  { input: 'florilor 8', expectedStreet: 'Florilor nr. 8', expectedNumber: '8', description: 'No street type prefix' },
+  { input: 'mihai viteazu 12', expectedStreet: 'Mihai Viteazu nr. 12', expectedNumber: '12', description: 'No type, multi-word name' },
 
   // No number
   { input: 'str florilor', expectedStreet: 'Strada Florilor', expectedNumber: '', description: 'No number at all' },

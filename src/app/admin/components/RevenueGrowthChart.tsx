@@ -2,24 +2,43 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-interface HourlyData {
-  hour: string;
+interface RevenueData {
+  period: string;
   totalRevenue: number;
   upsellRevenue: number;
   orderCount: number;
 }
 
 interface RevenueGrowthChartProps {
-  hourlyRevenue: HourlyData[];
+  data: RevenueData[];
+  granularity: 'hourly' | 'daily' | 'monthly';
   loading?: boolean;
 }
 
-export default function RevenueGrowthChart({ hourlyRevenue, loading }: RevenueGrowthChartProps) {
-  // Format hour for display (show only time)
-  const formattedData = hourlyRevenue.map(item => ({
-    ...item,
-    hourDisplay: item.hour.split(' ')[1] || item.hour, // Extract time part
-  }));
+export default function RevenueGrowthChart({ data, granularity, loading }: RevenueGrowthChartProps) {
+  // Format period for display based on granularity
+  const formattedData = data.map(item => {
+    let displayLabel = item.period;
+
+    if (granularity === 'hourly') {
+      // Already in format "HH:00"
+      displayLabel = item.period;
+    } else if (granularity === 'daily') {
+      // Format: "YYYY-MM-DD" -> "DD MMM"
+      const date = new Date(item.period);
+      displayLabel = `${date.getUTCDate()} ${date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`;
+    } else {
+      // Format: "YYYY-MM" -> "MMM YYYY"
+      const [year, month] = item.period.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      displayLabel = date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    return {
+      ...item,
+      displayLabel,
+    };
+  });
 
   if (loading) {
     return (
@@ -49,9 +68,12 @@ export default function RevenueGrowthChart({ hourlyRevenue, loading }: RevenueGr
           <LineChart data={formattedData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
             <XAxis
-              dataKey="hourDisplay"
+              dataKey="displayLabel"
               stroke="#a1a1aa"
               tick={{ fill: '#a1a1aa', fontSize: 12 }}
+              angle={granularity === 'daily' ? -45 : 0}
+              textAnchor={granularity === 'daily' ? 'end' : 'middle'}
+              height={granularity === 'daily' ? 80 : 30}
             />
             <YAxis
               stroke="#a1a1aa"

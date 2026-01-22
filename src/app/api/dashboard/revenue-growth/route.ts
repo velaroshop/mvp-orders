@@ -15,7 +15,8 @@ const supabase = createClient(
 );
 
 /**
- * GET /api/dashboard/revenue-growth - Get hourly revenue data
+ * GET /api/dashboard/revenue-growth - Get revenue data with adaptive granularity
+ * Granularity: hourly (1 day), daily (2-31 days), monthly (>31 days)
  * Query params: startDate, endDate
  */
 export async function GET(request: NextRequest) {
@@ -59,27 +60,63 @@ export async function GET(request: NextRequest) {
 
     const filteredOrders = orders || [];
 
-    // Initialize all hours in the date range with 0 values
-    const hourlyData: Record<string, { totalRevenue: number; upsellRevenue: number; count: number }> = {};
-
     const start = new Date(startDateTime);
     const end = new Date(endDateTime);
 
-    // Generate all hours in the date range
-    for (let date = new Date(start); date <= end; date.setHours(date.getHours() + 1)) {
-      const hourKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')} ${String(date.getUTCHours()).padStart(2, '0')}:00`;
-      hourlyData[hourKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+    // Calculate the difference in days
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Determine granularity: hourly (1 day), daily (2-31 days), monthly (>31 days)
+    let granularity: 'hourly' | 'daily' | 'monthly' = 'hourly';
+    if (diffDays > 31) {
+      granularity = 'monthly';
+    } else if (diffDays > 1) {
+      granularity = 'daily';
+    }
+
+    const revenueData: Record<string, { totalRevenue: number; upsellRevenue: number; count: number }> = {};
+
+    // Generate all time periods in the date range with 0 values
+    if (granularity === 'hourly') {
+      // Generate all 24 hours
+      for (let hour = 0; hour < 24; hour++) {
+        const hourKey = `${String(hour).padStart(2, '0')}:00`;
+        revenueData[hourKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+      }
+    } else if (granularity === 'daily') {
+      // Generate all days in the range
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dayKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+        revenueData[dayKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+      }
+    } else {
+      // Generate all months in the range
+      const currentDate = new Date(start);
+      while (currentDate <= end) {
+        const monthKey = `${currentDate.getUTCFullYear()}-${String(currentDate.getUTCMonth() + 1).padStart(2, '0')}`;
+        revenueData[monthKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
     }
 
     // Fill in actual order data
     filteredOrders.forEach((order: any) => {
       const createdAt = new Date(order.created_at);
-      const hourKey = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}-${String(createdAt.getUTCDate()).padStart(2, '0')} ${String(createdAt.getUTCHours()).padStart(2, '0')}:00`;
+      let key: string;
 
-      if (hourlyData[hourKey]) {
+      if (granularity === 'hourly') {
+        key = `${String(createdAt.getUTCHours()).padStart(2, '0')}:00`;
+      } else if (granularity === 'daily') {
+        key = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}-${String(createdAt.getUTCDate()).padStart(2, '0')}`;
+      } else {
+        key = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}`;
+      }
+
+      if (revenueData[key]) {
         // Add total revenue
-        hourlyData[hourKey].totalRevenue += order.total || 0;
-        hourlyData[hourKey].count += 1;
+        revenueData[key].totalRevenue += order.total || 0;
+        revenueData[key].count += 1;
 
         // Calculate upsell revenue from upsells JSONB field
         const upsells = order.upsells || [];
@@ -87,21 +124,21 @@ export async function GET(request: NextRequest) {
           upsells.forEach((upsell: any) => {
             const quantity = upsell.quantity || 1;
             const price = upsell.price || 0;
-            hourlyData[hourKey].upsellRevenue += quantity * price;
+            revenueData[key].upsellRevenue += quantity * price;
           });
         }
       }
     });
 
     // Convert to array and sort by time
-    const hourlyRevenue = Object.entries(hourlyData)
-      .map(([hour, data]) => ({
-        hour,
+    const hourlyRevenue = Object.entries(revenueData)
+      .map(([period, data]) => ({
+        period,
         totalRevenue: data.totalRevenue,
         upsellRevenue: data.upsellRevenue,
         orderCount: data.count,
       }))
-      .sort((a, b) => a.hour.localeCompare(b.hour));
+      .sort((a, b) => a.period.localeCompare(b.period));
 
     // Calculate Pre-Purchase vs Post-Purchase split for entire period
     let presaleRevenue = 0;
@@ -126,7 +163,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      hourlyRevenue,
+      data: hourlyRevenue,
+      granularity,
       upsellSplit: {
         presale: presaleRevenue,
         postsale: postsaleRevenue,

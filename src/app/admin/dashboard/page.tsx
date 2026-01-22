@@ -84,18 +84,20 @@ export default function DashboardPage() {
   // Revenue Growth data
   const [revenueGrowthLoading, setRevenueGrowthLoading] = useState(false);
   const [revenueGrowthData, setRevenueGrowthData] = useState<{
-    hourlyRevenue: Array<{
-      hour: string;
+    data: Array<{
+      period: string;
       totalRevenue: number;
       upsellRevenue: number;
       orderCount: number;
     }>;
+    granularity: 'hourly' | 'daily' | 'monthly';
     upsellSplit: {
       presale: number;
       postsale: number;
     };
   }>({
-    hourlyRevenue: [],
+    data: [],
+    granularity: 'hourly',
     upsellSplit: { presale: 0, postsale: 0 },
   });
 
@@ -501,7 +503,8 @@ export default function DashboardPage() {
       {/* Revenue Growth Chart - Full width */}
       <div className="mb-6">
         <RevenueGrowthChart
-          hourlyRevenue={revenueGrowthData.hourlyRevenue}
+          data={revenueGrowthData.data}
+          granularity={revenueGrowthData.granularity}
           loading={revenueGrowthLoading}
         />
       </div>

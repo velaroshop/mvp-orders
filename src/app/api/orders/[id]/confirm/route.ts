@@ -94,6 +94,7 @@ export async function POST(
           customerName: fullName || order.fullName,
           customerPhone: phone || order.phone,
           postalCode: postalCode,
+          shippingPrice: shippingPrice !== undefined ? shippingPrice : undefined,
           shippingAddress: {
             county: county || order.county,
             city: city || order.city,

@@ -623,6 +623,7 @@ class HelpshipClient {
       customerName?: string;
       customerPhone?: string;
       postalCode?: string;
+      shippingPrice?: number;
       shippingAddress?: {
         county?: string;
         city?: string;
@@ -756,12 +757,55 @@ class HelpshipClient {
       console.log("[Helpship] No address update needed");
     }
 
+    // Actualizare shipping price dacă este furnizat
+    if (updates.shippingPrice !== undefined) {
+      try {
+        console.log(`[Helpship] Updating shipping price to ${updates.shippingPrice}...`);
+
+        // Obținem comanda curentă pentru a păstra datele existente
+        const currentOrderResponse = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+          method: "GET",
+        });
+
+        if (currentOrderResponse.ok) {
+          const currentOrder = await currentOrderResponse.json();
+
+          // Încercăm să actualizăm shipping price folosind endpoint-ul general PUT /api/Order/{id}
+          // NOTĂ: Acest endpoint poate necesita permisiuni speciale
+          const updatePayload = {
+            ...currentOrder,
+            shippingPrice: updates.shippingPrice,
+          };
+
+          const updateResponse = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+            method: "PUT",
+            body: JSON.stringify(updatePayload),
+          });
+
+          if (updateResponse.ok) {
+            console.log(`[Helpship] ✓ Shipping price updated successfully to ${updates.shippingPrice}`);
+          } else {
+            const errorText = await updateResponse.text();
+            console.warn(`[Helpship] Failed to update shipping price: ${updateResponse.status} - ${errorText.substring(0, 200)}`);
+            console.warn("[Helpship] Continuing with other updates despite shipping price update failure");
+          }
+        } else {
+          console.warn(`[Helpship] Failed to fetch current order for shipping price update`);
+        }
+      } catch (err) {
+        console.error("[Helpship] Failed to update shipping price:", err);
+        console.warn("[Helpship] Continuing with other updates despite shipping price update failure");
+      }
+    } else {
+      console.log("[Helpship] No shipping price update needed");
+    }
+
     // NOTĂ: Nu folosim endpoint-ul general /api/Order/{id} pentru update
     // deoarece necesită permisiuni de administrator și returnează eroare 500/405
     // Folosim doar endpoint-uri specifice:
     // - /api/order/{id}/updateAddress pentru adresă (deja făcut mai sus)
     // - /api/Order/{id}/unhold sau /hold pentru status (se face mai jos)
-    
+
     // Dacă avem paymentStatus de actualizat, nu putem face update direct
     // (ar necesita permisiuni de administrator)
     if (updates.paymentStatus) {

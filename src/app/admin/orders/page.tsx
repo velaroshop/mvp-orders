@@ -732,14 +732,14 @@ export default function AdminPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-700 bg-zinc-900 text-xs font-semibold uppercase text-zinc-400">
               <tr>
-                <th className="px-3 py-2">Order ID</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Customer</th>
-                <th className="px-3 py-2">Order Note</th>
-                <th className="px-3 py-2">Order Source</th>
-                <th className="px-3 py-2">Price</th>
-                <th className="px-3 py-2">Order Date</th>
-                <th className="px-3 py-2">Actions</th>
+                <th className="px-2 py-2">Order ID</th>
+                <th className="px-2 py-2">Status</th>
+                <th className="px-2 py-2">Customer</th>
+                <th className="px-2 py-2 hidden md:table-cell">Order Note</th>
+                <th className="px-2 py-2 hidden lg:table-cell">Order Source</th>
+                <th className="px-2 py-2">Price</th>
+                <th className="px-2 py-2 hidden sm:table-cell">Order Date</th>
+                <th className="px-2 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -759,17 +759,17 @@ export default function AdminPage() {
                     className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50"
                   >
                     {/* Order ID */}
-                    <td className="px-3 py-2">
-                      <span className="font-medium text-white">
+                    <td className="px-2 py-1.5">
+                      <span className="font-medium text-white text-xs">
                         {formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="px-3 py-2">
-                      <div className="flex flex-col gap-1">
+                    <td className="px-2 py-1.5">
+                      <div className="flex flex-col gap-0.5">
                         <span
-                          className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
                             order.status === "queue"
                               ? "bg-violet-600 text-white"
                               : order.status === "testing"
@@ -803,62 +803,41 @@ export default function AdminPage() {
                             ? "Sync Error"
                             : "Confirmed"}
                         </span>
-                        {/* Show source for PENDING orders */}
+                        {/* Show metadata (hidden on mobile) */}
                         {order.status === "pending" && (order.fromPartialId || order.promotedFromTesting) && (
-                          <span className="text-[10px] font-medium">
-                            <span className="text-zinc-400">from </span>
+                          <span className="text-[9px] font-medium hidden sm:inline-block">
                             {order.fromPartialId ? (
-                              <span className="text-emerald-400">Partials</span>
+                              <span className="text-emerald-400">Partial</span>
                             ) : (
-                              <span className="text-amber-400">Testing</span>
+                              <span className="text-amber-400">Test</span>
                             )}
                           </span>
                         )}
-                        {/* Show scheduled date for SCHEDULED orders */}
-                        {order.status === "scheduled" && order.scheduledDate && (
-                          <span className="text-[10px] font-medium">
-                            <span className="text-zinc-400">for </span>
-                            <span className="text-cyan-400">{new Date(order.scheduledDate).toLocaleDateString()}</span>
-                          </span>
-                        )}
-                        {/* Show confirmer + source for CONFIRMED orders */}
                         {order.status === "confirmed" && order.confirmerName && (
-                          <span className="text-[10px] font-medium">
-                            <span className="text-zinc-400">by {order.confirmerName}</span>
-                            {order.fromPartialId && (
-                              <>
-                                <span className="text-zinc-400"> from </span>
-                                <span className="text-emerald-400">Partials</span>
-                              </>
-                            )}
-                            {order.promotedFromTesting && !order.fromPartialId && (
-                              <>
-                                <span className="text-zinc-400"> from </span>
-                                <span className="text-amber-400">Testing</span>
-                              </>
-                            )}
+                          <span className="text-[9px] text-zinc-400 hidden sm:inline-block truncate max-w-20">
+                            {order.confirmerName}
                           </span>
                         )}
                       </div>
                     </td>
 
                     {/* Customer */}
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-1.5">
                       <div>
-                        <p className="font-medium text-white">{order.fullName}</p>
-                        <p className="text-zinc-400">{order.phone}</p>
+                        <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
+                        <p className="text-zinc-400 text-[10px]">{order.phone}</p>
                       </div>
                     </td>
 
                     {/* Order Note */}
-                    <td className="px-3 py-2">
-                      <span className="text-zinc-300">
+                    <td className="px-2 py-1.5 hidden md:table-cell">
+                      <span className="text-zinc-300 text-[10px] truncate max-w-24 inline-block">
                         {order.orderNote || "none"}
                       </span>
                     </td>
 
                     {/* Order Source */}
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-1.5 hidden lg:table-cell">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-zinc-300 font-medium uppercase">
                           {order.landingKey}
@@ -896,75 +875,61 @@ export default function AdminPage() {
                     </td>
 
                     {/* Price */}
-                    <td className="px-3 py-2">
-                      <div className="space-y-0.5">
-                        <p className="font-semibold text-white">
-                          Total: {(() => {
-                            // Calculate total dynamically including all upsells
-                            const productSubtotal = order.subtotal || 0;
-                            const shipping = order.shippingCost || 0;
-                            const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
-                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                            }, 0) || 0;
-                            const total = productSubtotal + shipping + upsellsTotal;
-                            return total.toFixed(2);
-                          })()} RON
-                        </p>
-                        <p className="text-zinc-400">
-                          Items: {order.subtotal.toFixed(2)} RON ({order.productQuantity || 1}x)
-                        </p>
-                        {(() => {
-                          const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                    <td className="px-2 py-1.5">
+                      {(() => {
+                        const productSubtotal = order.subtotal || 0;
+                        const shipping = order.shippingCost || 0;
+                        const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                          return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                        }, 0) || 0;
+                        const total = productSubtotal + shipping + upsellsTotal;
 
-                          // Calculate PRE total (presale or no type - defaults to presale)
-                          const preTotal = upsellsArray
-                            .filter((upsell: any) => !upsell.type || upsell.type === "presale")
-                            .reduce((sum: number, upsell: any) => {
-                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                            }, 0);
+                        const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+                        const preTotal = upsellsArray
+                          .filter((upsell: any) => !upsell.type || upsell.type === "presale")
+                          .reduce((sum: number, upsell: any) => sum + ((upsell.price || 0) * (upsell.quantity || 1)), 0);
+                        const postTotal = upsellsArray
+                          .filter((upsell: any) => upsell.type === "postsale")
+                          .reduce((sum: number, upsell: any) => sum + ((upsell.price || 0) * (upsell.quantity || 1)), 0);
 
-                          // Calculate POST total (explicitly postsale only)
-                          const postTotal = upsellsArray
-                            .filter((upsell: any) => upsell.type === "postsale")
-                            .reduce((sum: number, upsell: any) => {
-                              return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                            }, 0);
-
-                          return (
-                            <>
+                        return (
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-white text-xs whitespace-nowrap">
+                              {total.toFixed(2)} RON
+                            </p>
+                            <div className="text-[10px] text-zinc-400 space-y-0.5 hidden md:block">
+                              <p>Items: {order.subtotal.toFixed(2)} ({order.productQuantity || 1}x)</p>
                               {preTotal > 0 && (
-                                <p className="font-semibold" style={{ color: '#22c55e' }}>
-                                  PRE: {preTotal.toFixed(2)} RON
+                                <p className="font-semibold text-emerald-400">
+                                  PRE: {preTotal.toFixed(2)}
                                 </p>
                               )}
                               {postTotal > 0 && (
-                                <p className="font-semibold" style={{ color: '#8b5cf6' }}>
-                                  POST: {postTotal.toFixed(2)} RON
+                                <p className="font-semibold text-purple-400">
+                                  POST: {postTotal.toFixed(2)}
                                 </p>
                               )}
-                            </>
-                          );
-                        })()}
-                        <p className="text-zinc-400">
-                          Shipping: {order.shippingCost.toFixed(2)} RON
-                        </p>
-                        <p className="text-zinc-400">Discount: 0,00 RON</p>
-                      </div>
+                              <p>Ship: {order.shippingCost.toFixed(2)}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* Order Date */}
-                    <td className="px-3 py-2">
-                      <span className="text-zinc-300">{formatDate(order.createdAt)}</span>
+                    <td className="px-2 py-1.5 hidden sm:table-cell">
+                      <span className="text-zinc-300 text-[10px]">{formatDate(order.createdAt)}</span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-3 py-2">
-                      <div className="flex flex-col gap-2">
-                        {/* CONFIRM Button - Always visible, disabled if queue, testing or confirmed */}
+                    <td className="px-2 py-1.5">
+                      <div className="flex gap-1">
+                        {/* CONFIRM Button - Compact icon on mobile, text on desktop */}
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}
                           disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || confirming === order.id}
-                          className={`rounded-md px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all ${
+                          title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
+                          className={`rounded px-2 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
                             order.status === "queue"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "testing"
@@ -972,20 +937,23 @@ export default function AdminPage() {
                               : order.status === "confirmed"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "scheduled"
-                              ? "bg-cyan-600 text-white hover:bg-cyan-700 hover:shadow-lg"
-                              : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
+                              ? "bg-cyan-600 text-white hover:bg-cyan-700"
+                              : "bg-emerald-600 text-white hover:bg-emerald-700"
                           }`}
                         >
-                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
+                          <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "scheduled" ? "NOW" : "CONFIRM"}</span>
+                          <span className="sm:hidden">✓</span>
                         </button>
 
-                        {/* Actions Dropdown */}
+                        {/* Actions Dropdown - Compact */}
                         <div className="relative actions-dropdown">
                           <button
                             onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
-                            className="rounded-md bg-zinc-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-zinc-500 w-full"
+                            title="Actions"
+                            className="rounded bg-zinc-600 px-2 py-1 text-[10px] sm:text-[11px] font-medium text-white hover:bg-zinc-500"
                           >
-                            Actions ▼
+                            <span className="hidden sm:inline">Actions ▼</span>
+                            <span className="sm:hidden">⋮</span>
                           </button>
                           {openDropdown === order.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10">

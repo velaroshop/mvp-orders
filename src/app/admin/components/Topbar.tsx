@@ -30,22 +30,22 @@ export default function Topbar() {
   const userRole = (session.user as any)?.activeRole as UserRole;
 
   return (
-    <div className="fixed top-0 left-48 right-0 h-16 bg-zinc-900 border-b border-zinc-800 z-30 lg:left-48">
-      <div className="h-full px-6 flex items-center justify-between">
+    <div className="fixed top-0 left-0 right-0 h-16 bg-zinc-900 border-b border-zinc-800 z-30 lg:left-48">
+      <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         {/* Left side - Organization info */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           {activeOrganization && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-base sm:text-lg">
                   {activeOrganization.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div>
-                <h2 className="text-sm font-semibold text-white">
+              <div className="min-w-0 hidden sm:block">
+                <h2 className="text-sm font-semibold text-white truncate">
                   {activeOrganization.name}
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-400 truncate">
                   Organization Dashboard
                 </p>
               </div>
@@ -54,13 +54,13 @@ export default function Topbar() {
         </div>
 
         {/* Right side - User menu */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative shrink-0" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-lg hover:bg-zinc-800 transition-colors"
           >
-            <div className="text-right">
-              <div className="text-sm font-medium text-white">
+            <div className="text-right hidden lg:block">
+              <div className="text-sm font-medium text-white truncate max-w-50">
                 {session.user.email}
               </div>
               {userRole && (
@@ -71,11 +71,11 @@ export default function Topbar() {
                 </div>
               )}
             </div>
-            <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-medium shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-medium shrink-0">
               {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase()}
             </div>
             <svg
-              className={`w-4 h-4 text-zinc-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+              className={`w-4 h-4 text-zinc-400 transition-transform hidden sm:block ${isDropdownOpen ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

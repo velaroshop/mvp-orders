@@ -9,7 +9,7 @@ interface ConfirmOrderModalProps {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (updatedOrder: Partial<Order>) => Promise<void>;
+  onConfirm: (updatedOrder: Partial<Order> & { streetNumber?: string }) => Promise<void>;
 }
 
 export default function ConfirmOrderModal({
@@ -195,7 +195,7 @@ export default function ConfirmOrderModal({
 
     try {
       // Trimite datele actualizate la onConfirm
-      const updatedOrder: Partial<Order> = {
+      const updatedOrder: Partial<Order> & { streetNumber?: string } = {
         fullName: formData.fullName,
         phone: formData.phone,
         county: formData.county,

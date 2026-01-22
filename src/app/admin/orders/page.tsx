@@ -31,7 +31,7 @@ export default function AdminPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 50;
+  const ordersPerPage = 25;
 
   // Finalize Queue Modal state
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
@@ -852,67 +852,30 @@ export default function AdminPage() {
           </table>
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination Controls - Simple Previous/Next */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-zinc-400">
               Afișare {(currentPage - 1) * ordersPerPage + 1}-{Math.min(currentPage * ordersPerPage, totalOrders)} din {totalOrders} comenzi
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {/* Previous button */}
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Anterior
+                ← Anterior
               </button>
-
-              {/* Page numbers */}
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  // Show first page, last page, current page, and pages around current
-                  const showPage =
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 2 && page <= currentPage + 2);
-
-                  if (!showPage) {
-                    // Show ellipsis
-                    if (page === currentPage - 3 || page === currentPage + 3) {
-                      return (
-                        <span key={page} className="px-3 py-1 text-sm text-zinc-500">
-                          ...
-                        </span>
-                      );
-                    }
-                    return null;
-                  }
-
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`px-3 py-1 text-sm rounded-md ${
-                        currentPage === page
-                          ? "bg-emerald-600 text-white"
-                          : "bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-              </div>
 
               {/* Next button */}
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Următor
+                Următor →
               </button>
             </div>
           </div>

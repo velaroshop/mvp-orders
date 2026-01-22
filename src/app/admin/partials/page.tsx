@@ -18,7 +18,7 @@ export default function PartialsPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const partialsPerPage = 50;
+  const partialsPerPage = 25;
 
   useEffect(() => {
     fetchPartialOrders();
@@ -531,24 +531,20 @@ export default function PartialsPage() {
             </table>
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination Controls - Simple Previous/Next */}
           {totalCount > partialsPerPage && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-700">
               <div className="text-sm text-zinc-400">
-                Showing {(currentPage - 1) * partialsPerPage + 1} to{" "}
-                {Math.min(currentPage * partialsPerPage, totalCount)} of {totalCount} partial orders
+                Afișare {(currentPage - 1) * partialsPerPage + 1}-{Math.min(currentPage * partialsPerPage, totalCount)} din {totalCount} comenzi parțiale
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 bg-zinc-700 text-white rounded hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Previous
+                  ← Anterior
                 </button>
-                <span className="px-3 py-1 text-sm text-zinc-300">
-                  Page {currentPage} of {Math.ceil(totalCount / partialsPerPage)}
-                </span>
                 <button
                   onClick={() =>
                     setCurrentPage((p) =>
@@ -556,9 +552,9 @@ export default function PartialsPage() {
                     )
                   }
                   disabled={currentPage >= Math.ceil(totalCount / partialsPerPage)}
-                  className="px-3 py-1 bg-zinc-700 text-white rounded hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                  className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Next
+                  Următor →
                 </button>
               </div>
             </div>

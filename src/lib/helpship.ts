@@ -612,33 +612,68 @@ class HelpshipClient {
   }
 
   /**
-   * Obține numărul de unități în stoc pentru un produs după ExternalSku
+   * Obține numărul de unități în stoc pentru un produs după SKU
+   * Încearcă mai multe strategii: ExternalSku, Code, și CodesSearch
    * Folosește endpoint-ul GET /api/Item/count
    */
-  async getProductStock(externalSku: string): Promise<number | null> {
+  async getProductStock(sku: string): Promise<number | null> {
     try {
-      console.log(`[Helpship] Getting stock for product with ExternalSku: ${externalSku}...`);
+      console.log(`[Helpship] Getting stock for product with SKU: ${sku}...`);
 
-      // Construim query parameters pentru filtrare după ExternalSku
-      const params = new URLSearchParams({
-        ExternalSku: externalSku,
-      });
+      // Strategy 1: Încearcă cu ExternalSku
+      console.log(`[Helpship] Strategy 1: Trying ExternalSku parameter...`);
+      let params = new URLSearchParams({ ExternalSku: sku });
+      let endpoint = `/api/Item/count?${params.toString()}`;
+      let response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
 
-      const endpoint = `/api/Item/count?${params.toString()}`;
-      const response = await this.makeAuthenticatedRequest(endpoint, {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Helpship] Failed to get product stock: ${response.status} ${errorText}`);
-        return null;
+      if (response.ok) {
+        const count = await response.json();
+        if (typeof count === 'number' && count > 0) {
+          console.log(`[Helpship] ✓ Found ${count} units using ExternalSku`);
+          return count;
+        }
+        console.log(`[Helpship] ExternalSku returned ${count}, trying other strategies...`);
+      } else {
+        console.log(`[Helpship] ExternalSku failed with status ${response.status}`);
       }
 
-      // API-ul returnează un număr simplu (count)
-      const count = await response.json();
-      console.log(`[Helpship] Product ${externalSku} has ${count} units in stock`);
-      return typeof count === 'number' ? count : null;
+      // Strategy 2: Încearcă cu Code
+      console.log(`[Helpship] Strategy 2: Trying Code parameter...`);
+      params = new URLSearchParams({ Code: sku });
+      endpoint = `/api/Item/count?${params.toString()}`;
+      response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
+
+      if (response.ok) {
+        const count = await response.json();
+        if (typeof count === 'number' && count > 0) {
+          console.log(`[Helpship] ✓ Found ${count} units using Code`);
+          return count;
+        }
+        console.log(`[Helpship] Code returned ${count}, trying other strategies...`);
+      } else {
+        console.log(`[Helpship] Code failed with status ${response.status}`);
+      }
+
+      // Strategy 3: Încearcă cu CodesSearch
+      console.log(`[Helpship] Strategy 3: Trying CodesSearch parameter...`);
+      params = new URLSearchParams({ CodesSearch: sku });
+      endpoint = `/api/Item/count?${params.toString()}`;
+      response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
+
+      if (response.ok) {
+        const count = await response.json();
+        if (typeof count === 'number' && count > 0) {
+          console.log(`[Helpship] ✓ Found ${count} units using CodesSearch`);
+          return count;
+        }
+        console.log(`[Helpship] CodesSearch returned ${count}`);
+      } else {
+        console.log(`[Helpship] CodesSearch failed with status ${response.status}`);
+      }
+
+      // Dacă nicio strategie nu a funcționat, returnăm null
+      console.log(`[Helpship] ⚠️ Could not find stock for SKU ${sku} using any strategy`);
+      return null;
     } catch (err) {
       console.error(`[Helpship] Error getting product stock:`, err);
       return null;

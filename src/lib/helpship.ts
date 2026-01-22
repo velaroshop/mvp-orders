@@ -628,13 +628,15 @@ class HelpshipClient {
 
       if (response.ok) {
         const count = await response.json();
-        if (typeof count === 'number' && count > 0) {
+        console.log(`[Helpship] ExternalSku response:`, count);
+        if (typeof count === 'number') {
           console.log(`[Helpship] ✓ Found ${count} units using ExternalSku`);
           return count;
         }
-        console.log(`[Helpship] ExternalSku returned ${count}, trying other strategies...`);
+        console.log(`[Helpship] ExternalSku returned non-number:`, typeof count, count);
       } else {
-        console.log(`[Helpship] ExternalSku failed with status ${response.status}`);
+        const errorText = await response.text();
+        console.log(`[Helpship] ExternalSku failed with status ${response.status}:`, errorText);
       }
 
       // Strategy 2: Încearcă cu Code
@@ -645,13 +647,15 @@ class HelpshipClient {
 
       if (response.ok) {
         const count = await response.json();
-        if (typeof count === 'number' && count > 0) {
+        console.log(`[Helpship] Code response:`, count);
+        if (typeof count === 'number') {
           console.log(`[Helpship] ✓ Found ${count} units using Code`);
           return count;
         }
-        console.log(`[Helpship] Code returned ${count}, trying other strategies...`);
+        console.log(`[Helpship] Code returned non-number:`, typeof count, count);
       } else {
-        console.log(`[Helpship] Code failed with status ${response.status}`);
+        const errorText = await response.text();
+        console.log(`[Helpship] Code failed with status ${response.status}:`, errorText);
       }
 
       // Strategy 3: Încearcă cu CodesSearch
@@ -662,13 +666,15 @@ class HelpshipClient {
 
       if (response.ok) {
         const count = await response.json();
-        if (typeof count === 'number' && count > 0) {
+        console.log(`[Helpship] CodesSearch response:`, count);
+        if (typeof count === 'number') {
           console.log(`[Helpship] ✓ Found ${count} units using CodesSearch`);
           return count;
         }
-        console.log(`[Helpship] CodesSearch returned ${count}`);
+        console.log(`[Helpship] CodesSearch returned non-number:`, typeof count, count);
       } else {
-        console.log(`[Helpship] CodesSearch failed with status ${response.status}`);
+        const errorText = await response.text();
+        console.log(`[Helpship] CodesSearch failed with status ${response.status}:`, errorText);
       }
 
       // Dacă nicio strategie nu a funcționat, returnăm null

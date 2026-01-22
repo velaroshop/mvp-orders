@@ -8,6 +8,7 @@ import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal
 import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
 import Toast from "../components/Toast";
+import CompactRevenueChart from "../components/CompactRevenueChart";
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -54,6 +55,21 @@ export default function AdminPage() {
     message: "",
   });
 
+  // Revenue chart state (today only)
+  const [todayRevenueData, setTodayRevenueData] = useState<{
+    data: Array<{
+      period: string;
+      totalRevenue: number;
+      upsellRevenue: number;
+      orderCount: number;
+    }>;
+    granularity: 'hourly' | 'daily' | 'monthly';
+  }>({
+    data: [],
+    granularity: 'hourly',
+  });
+  const [revenueLoading, setRevenueLoading] = useState(false);
+
   async function fetchOrders(query: string = "") {
     setIsSearching(true);
     const params = new URLSearchParams({
@@ -76,6 +92,34 @@ export default function AdminPage() {
     setOrders(data.orders ?? []);
     setTotalOrders(data.total ?? 0);
     setIsSearching(false);
+  }
+
+  // Fetch today's revenue data
+  async function fetchTodayRevenue() {
+    setRevenueLoading(true);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const params = new URLSearchParams({
+        startDate: today,
+        endDate: today,
+      });
+
+      const response = await fetch(`/api/dashboard/revenue-growth?${params}`);
+      if (!response.ok) {
+        console.error("Failed to fetch today's revenue");
+        return;
+      }
+
+      const result = await response.json();
+      setTodayRevenueData({
+        data: result.data || [],
+        granularity: result.granularity || 'hourly',
+      });
+    } catch (error) {
+      console.error("Error fetching today's revenue:", error);
+    } finally {
+      setRevenueLoading(false);
+    }
   }
 
   // Debounced search
@@ -125,6 +169,11 @@ export default function AdminPage() {
   useEffect(() => {
     fetchOrders(searchQuery);
   }, [currentPage, selectedStatuses]);
+
+  // Fetch today's revenue on mount
+  useEffect(() => {
+    fetchTodayRevenue();
+  }, []);
 
   // Închide dropdown-ul când se face click în afara lui
   useEffect(() => {
@@ -599,10 +648,19 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Search and Filter Bar */}
-          <div className="flex gap-3">
-            {/* Search Bar */}
-            <div className="relative flex-1">
+          {/* 2-Column Layout: Compact Chart + Search/Filters */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            {/* Left Column: Compact Revenue Chart */}
+            <CompactRevenueChart
+              data={todayRevenueData.data}
+              granularity={todayRevenueData.granularity}
+              loading={revenueLoading}
+            />
+
+            {/* Right Column: Search and Filters */}
+            <div className="flex flex-col gap-3">
+              {/* Search Bar */}
+              <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-zinc-400"
@@ -650,10 +708,10 @@ export default function AdminPage() {
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
                 </div>
               )}
-            </div>
+              </div>
 
-            {/* Status Filter Dropdown */}
-            <div className="relative status-filter-dropdown">
+              {/* Status Filter Dropdown */}
+              <div className="relative status-filter-dropdown">
               <button
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
                 className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
@@ -724,6 +782,7 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </header>

@@ -630,13 +630,17 @@ class HelpshipClient {
         const data = await response.json();
         console.log(`[Helpship] ExternalSku response:`, data);
 
-        // API returnează un array sau un obiect cu items
-        const items = Array.isArray(data) ? data : (data.items || data.data || []);
-        if (items.length > 0) {
-          const item = items[0];
-          const stock = item.quantityAvailable || item.available || item.quantity || 0;
-          console.log(`[Helpship] ✓ Found item using ExternalSku, stock: ${stock}`, item);
-          return stock;
+        // API poate returna un obiect direct sau un array
+        if (data && typeof data === 'object') {
+          // Dacă e array, luăm primul element
+          const item = Array.isArray(data) ? data[0] : data;
+
+          if (item) {
+            // Câmpul corect este availableQuantity
+            const stock = item.availableQuantity ?? item.quantityAvailable ?? item.available ?? item.quantity ?? 0;
+            console.log(`[Helpship] ✓ Found item using ExternalSku, stock: ${stock}`, item);
+            return stock;
+          }
         }
         console.log(`[Helpship] ExternalSku found no items`);
       } else {
@@ -654,12 +658,14 @@ class HelpshipClient {
         const data = await response.json();
         console.log(`[Helpship] Code response:`, data);
 
-        const items = Array.isArray(data) ? data : (data.items || data.data || []);
-        if (items.length > 0) {
-          const item = items[0];
-          const stock = item.quantityAvailable || item.available || item.quantity || 0;
-          console.log(`[Helpship] ✓ Found item using Code, stock: ${stock}`, item);
-          return stock;
+        if (data && typeof data === 'object') {
+          const item = Array.isArray(data) ? data[0] : data;
+
+          if (item) {
+            const stock = item.availableQuantity ?? item.quantityAvailable ?? item.available ?? item.quantity ?? 0;
+            console.log(`[Helpship] ✓ Found item using Code, stock: ${stock}`, item);
+            return stock;
+          }
         }
         console.log(`[Helpship] Code found no items`);
       } else {
@@ -677,12 +683,14 @@ class HelpshipClient {
         const data = await response.json();
         console.log(`[Helpship] CodesSearch response:`, data);
 
-        const items = Array.isArray(data) ? data : (data.items || data.data || []);
-        if (items.length > 0) {
-          const item = items[0];
-          const stock = item.quantityAvailable || item.available || item.quantity || 0;
-          console.log(`[Helpship] ✓ Found item using CodesSearch, stock: ${stock}`, item);
-          return stock;
+        if (data && typeof data === 'object') {
+          const item = Array.isArray(data) ? data[0] : data;
+
+          if (item) {
+            const stock = item.availableQuantity ?? item.quantityAvailable ?? item.available ?? item.quantity ?? 0;
+            console.log(`[Helpship] ✓ Found item using CodesSearch, stock: ${stock}`, item);
+            return stock;
+          }
         }
         console.log(`[Helpship] CodesSearch found no items`);
       } else {

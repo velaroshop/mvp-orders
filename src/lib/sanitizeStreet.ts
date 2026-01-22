@@ -15,6 +15,8 @@
  */
 const STREET_TYPE_MAP: Record<string, string> = {
   // Strada
+  'st': 'Strada',
+  'st.': 'Strada',
   'str': 'Strada',
   'str.': 'Strada',
   'strada': 'Strada',
@@ -248,7 +250,12 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 
   // Add number to street address (keeping it in both places)
   if (numberToken) {
-    parts.push('nr. ' + numberToken);
+    // Add comma after number if we have details
+    if (details) {
+      parts.push('nr. ' + numberToken + ',');
+    } else {
+      parts.push('nr. ' + numberToken);
+    }
   }
 
   // Add details
@@ -318,8 +325,8 @@ function parseDetails(tokens: string[]): string {
     i++;
   }
 
-  // Build details string in standard order: bl -> sc -> et -> ap -> interfon
-  const order = ['bl.', 'sc.', 'et.', 'ap.', 'interfon'];
+  // Build details string in standard order: sc -> bl -> et -> ap -> interfon
+  const order = ['sc.', 'bl.', 'et.', 'ap.', 'interfon'];
   const sorted = details.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
   return sorted.map(d => `${d.type} ${d.value}`).join(' ');
@@ -367,9 +374,10 @@ const TEST_CASES: TestCase[] = [
   { input: 'str florilor 12-14', expectedStreet: 'Strada Florilor nr. 12-14', expectedNumber: '12-14', description: 'Number range' },
 
   // Details (bl, sc, et, ap) - THE CRITICAL TEST!
-  { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor nr. 8 bl. A', expectedNumber: '8', description: 'With bloc' },
-  { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor nr. 8 bl. A sc. 2', expectedNumber: '8', description: 'Bloc and scara' },
-  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor nr. 8 bl. A sc. 2 et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
+  { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor nr. 8, bl. A', expectedNumber: '8', description: 'With bloc' },
+  { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor nr. 8, sc. 2 bl. A', expectedNumber: '8', description: 'Bloc and scara' },
+  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor nr. 8, sc. 2 bl. A et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
+  { input: 'st ficusului 8, scara a bloc 2', expectedStreet: 'Strada Ficusului nr. 8, sc. A bl. 2', expectedNumber: '8', description: 'St abbreviation with scara and bloc' },
 
   // Title case with prepositions
   { input: 'str unirea din 1918 nr 5', expectedStreet: 'Strada Unirea din 1918 nr. 5', expectedNumber: '5', description: 'Preposition "din" lowercase' },

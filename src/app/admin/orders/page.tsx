@@ -6,6 +6,7 @@ import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
 import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
 import ConfirmModal from "../components/ConfirmModal";
+import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
 import Toast from "../components/Toast";
 
 export default function AdminPage() {
@@ -41,6 +42,10 @@ export default function AdminPage() {
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [orderToFinalize, setOrderToFinalize] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
+
+  // Confirm Scheduled Order Modal state
+  const [isScheduledModalOpen, setIsScheduledModalOpen] = useState(false);
+  const [scheduledOrderToConfirm, setScheduledOrderToConfirm] = useState<Order | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
@@ -158,55 +163,10 @@ export default function AdminPage() {
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
 
-    // For scheduled orders, confirm immediately without modal
+    // For scheduled orders, show beautiful modal
     if (order.status === "scheduled") {
-      if (!confirm(`Confirm this scheduled order now?\n\nOrder: ${formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}\nScheduled for: ${order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString() : 'N/A'}`)) {
-        setSelectedOrder(null);
-        return;
-      }
-
-      setConfirming(order.id);
-      try {
-        const response = await fetch(`/api/orders/${order.id}/confirm`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fullName: order.fullName,
-            phone: order.phone,
-            county: order.county,
-            city: order.city,
-            address: order.address,
-            postalCode: order.postalCode,
-            scheduledDate: "", // Empty to confirm immediately
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.error || "Failed to confirm order";
-          throw new Error(errorMessage);
-        }
-
-        await fetchOrders();
-        setToast({
-          isOpen: true,
-          type: "success",
-          message: "Scheduled order confirmed successfully! ✓",
-        });
-      } catch (error) {
-        console.error("Error confirming scheduled order:", error);
-        const errorMessage = error instanceof Error ? error.message : "Failed to confirm order";
-        setToast({
-          isOpen: true,
-          type: "error",
-          message: errorMessage,
-        });
-      } finally {
-        setConfirming(null);
-        setSelectedOrder(null);
-      }
+      setScheduledOrderToConfirm(order);
+      setIsScheduledModalOpen(true);
       return;
     }
 
@@ -307,13 +267,63 @@ export default function AdminPage() {
 
       // Reîncarcă lista de comenzi
       await fetchOrders();
-      
+
       setIsModalOpen(false);
       setSelectedOrder(null);
     } catch (error) {
       console.error("Error confirming order:", error);
       // Eroarea va fi afișată în modal prin setSubmitError
       // Re-aruncăm eroarea pentru a fi prinsă de modal
+      throw error;
+    } finally {
+      setConfirming(null);
+    }
+  }
+
+  async function handleConfirmScheduledOrder(): Promise<void> {
+    if (!scheduledOrderToConfirm) return;
+
+    setConfirming(scheduledOrderToConfirm.id);
+
+    try {
+      const response = await fetch(`/api/orders/${scheduledOrderToConfirm.id}/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName: scheduledOrderToConfirm.fullName,
+          phone: scheduledOrderToConfirm.phone,
+          county: scheduledOrderToConfirm.county,
+          city: scheduledOrderToConfirm.city,
+          address: scheduledOrderToConfirm.address,
+          postalCode: scheduledOrderToConfirm.postalCode,
+          scheduledDate: "", // Empty to confirm immediately
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || "Failed to confirm order";
+        throw new Error(errorMessage);
+      }
+
+      await fetchOrders();
+      setIsScheduledModalOpen(false);
+      setScheduledOrderToConfirm(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Scheduled order confirmed successfully! ✓",
+      });
+    } catch (error) {
+      console.error("Error confirming scheduled order:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to confirm order";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
       throw error;
     } finally {
       setConfirming(null);
@@ -784,7 +794,7 @@ export default function AdminPage() {
                             : order.status === "pending"
                             ? "Pending"
                             : order.status === "scheduled"
-                            ? "📅 Scheduled"
+                            ? "Scheduled"
                             : order.status === "cancelled"
                             ? "Cancelled"
                             : order.status === "hold"
@@ -966,7 +976,7 @@ export default function AdminPage() {
                               : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
                           }`}
                         >
-                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : order.status === "scheduled" ? "⚡ CONFIRM NOW" : "CONFIRM"}
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪 TESTING" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
                         </button>
 
                         {/* Actions Dropdown */}
@@ -1136,6 +1146,18 @@ export default function AdminPage() {
                 cancelText="Cancel"
                 confirmButtonClass="bg-violet-600 hover:bg-violet-700"
                 isProcessing={isFinalizing}
+              />
+
+              {/* Confirm Scheduled Order Modal */}
+              <ConfirmScheduledOrderModal
+                order={scheduledOrderToConfirm}
+                isOpen={isScheduledModalOpen}
+                onClose={() => {
+                  setIsScheduledModalOpen(false);
+                  setScheduledOrderToConfirm(null);
+                }}
+                onConfirm={handleConfirmScheduledOrder}
+                isConfirming={confirming === scheduledOrderToConfirm?.id}
               />
 
               {/* Toast Notifications */}

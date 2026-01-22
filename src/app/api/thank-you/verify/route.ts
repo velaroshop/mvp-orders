@@ -13,42 +13,49 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch order with landing page and store details
+    // Fetch order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select(`
-        id,
-        status,
-        landing_key,
-        full_name,
-        queue_expires_at,
-        upsells,
-        landing_pages!inner(
-          id,
-          slug,
-          enable_postsale,
-          stores(
-            primary_color,
-            accent_color,
-            text_on_dark_color
-          )
-        )
-      `)
+      .select("id, status, landing_key, full_name, queue_expires_at, upsells")
       .eq("id", orderId)
       .single();
 
     if (orderError || !order) {
+      console.error("Error fetching order:", orderError);
       return NextResponse.json(
         { error: "Order not found" },
         { status: 404 }
       );
     }
 
-    const landingPage = order.landing_pages as any;
-    const store = landingPage.stores as any;
+    // Fetch landing page and store details separately
+    const { data: landingPage, error: landingError } = await supabaseAdmin
+      .from("landing_pages")
+      .select(`
+        id,
+        slug,
+        enable_postsale,
+        stores(
+          primary_color,
+          accent_color,
+          text_on_dark_color
+        )
+      `)
+      .eq("slug", order.landing_key)
+      .single();
+
+    if (landingError || !landingPage) {
+      console.error("Error fetching landing page:", landingError);
+      return NextResponse.json(
+        { error: "Landing page not found" },
+        { status: 404 }
+      );
+    }
+
+    const store = (landingPage as any).stores;
 
     // If order is not in queue or postsale is not enabled, return simple confirmation
-    if (order.status !== "queue" || !landingPage.enable_postsale) {
+    if (order.status !== "queue" || !(landingPage as any).enable_postsale) {
       return NextResponse.json({
         orderId: order.id,
         status: order.status,
@@ -76,7 +83,7 @@ export async function GET(request: Request) {
           status
         )
       `)
-      .eq("landing_page_id", landingPage.id)
+      .eq("landing_page_id", (landingPage as any).id)
       .eq("type", "postsale")
       .eq("active", true)
       .eq("products.status", "active")

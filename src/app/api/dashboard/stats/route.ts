@@ -98,12 +98,20 @@ export async function GET(request: NextRequest) {
     }).length;
     const upsellRate = orderCount > 0 ? (ordersWithUpsells / orderCount) * 100 : 0;
 
+    // Calculate orders by status
+    const statusCounts: Record<string, number> = {};
+    filteredOrders.forEach((order: any) => {
+      const status = order.status || "unknown";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
     return NextResponse.json({
       totalRevenue,
       avgOrderValue,
       orderCount,
       productsSold,
       upsellRate,
+      ordersByStatus: statusCounts,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stats:", error);

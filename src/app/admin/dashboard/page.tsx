@@ -8,6 +8,7 @@ interface DashboardStats {
   orderCount: number;
   productsSold: number;
   upsellRate: number;
+  ordersByStatus: Record<string, number>;
 }
 
 interface LandingPage {
@@ -24,6 +25,7 @@ export default function DashboardPage() {
     orderCount: 0,
     productsSold: 0,
     upsellRate: 0,
+    ordersByStatus: {},
   });
   const [loading, setLoading] = useState(true);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("today");
@@ -141,6 +143,18 @@ export default function DashboardPage() {
     setQuickFilter(filter);
   };
 
+  // Status configuration with colors
+  const statusConfig = [
+    { key: "pending", label: "Pending", color: "bg-yellow-500" },
+    { key: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
+    { key: "hold", label: "Hold", color: "bg-orange-500" },
+    { key: "cancelled", label: "Cancelled", color: "bg-red-500" },
+    { key: "queue", label: "Queue", color: "bg-purple-500" },
+    { key: "scheduled", label: "Scheduled", color: "bg-cyan-500" },
+    { key: "testing", label: "Testing", color: "bg-blue-500" },
+    { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
+  ];
+
   return (
     <div className="max-w-7xl">
       {/* Header */}
@@ -151,8 +165,10 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Filters & KPIs Card */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6 mb-6">
+      {/* Main Grid: Filters & KPIs (2/3) + Orders by Status (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Filters & KPIs Card - 2/3 width */}
+        <div className="lg:col-span-2 bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
         {/* Filters Section */}
         <div className="mb-6">
           <h3 className="text-sm font-medium text-zinc-400 mb-4">Filters</h3>
@@ -280,6 +296,47 @@ export default function DashboardPage() {
                   {stats.upsellRate.toFixed(1)}%
                 </p>
               </div>
+            </div>
+          )}
+        </div>
+        </div>
+
+        {/* Orders by Status Card - 1/3 width */}
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Orders by Status</h3>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-zinc-400">Loading...</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Table Header */}
+              <div className="grid grid-cols-2 gap-4 pb-2 border-b border-zinc-700">
+                <p className="text-xs font-medium text-zinc-400 uppercase">Status</p>
+                <p className="text-xs font-medium text-zinc-400 uppercase text-right">Count</p>
+              </div>
+
+              {/* Status Rows */}
+              {statusConfig.map((status) => {
+                const count = stats.ordersByStatus[status.key] || 0;
+                if (count === 0) return null;
+
+                return (
+                  <div key={status.key} className="grid grid-cols-2 gap-4 items-center">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                      <span className="text-sm text-white">{status.label}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-white text-right">{count}</p>
+                  </div>
+                );
+              })}
+
+              {/* Show message if no orders */}
+              {Object.keys(stats.ordersByStatus).length === 0 && (
+                <p className="text-sm text-zinc-400 text-center py-4">No orders found</p>
+              )}
             </div>
           )}
         </div>

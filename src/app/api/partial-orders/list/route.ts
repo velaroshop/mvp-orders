@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
     // Get query params for pagination
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status"); // Optional filter by status
+    const statusesParam = searchParams.get("statuses") || ""; // Multiple statuses filter
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
@@ -36,9 +36,12 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1); // CRITICAL: Pagination in DB
 
-    // Filter by status if provided
-    if (status) {
-      query = query.eq("status", status);
+    // Filter by statuses if provided
+    if (statusesParam.trim()) {
+      const statuses = statusesParam.split(",").map(s => s.trim()).filter(Boolean);
+      if (statuses.length > 0) {
+        query = query.in("status", statuses);
+      }
     }
 
     const { data, error, count } = await query;

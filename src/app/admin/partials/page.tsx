@@ -20,9 +20,30 @@ export default function PartialsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const partialsPerPage = 25;
 
+  // Status filter state
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
   useEffect(() => {
     fetchPartialOrders();
-  }, [currentPage]);
+  }, [currentPage, selectedStatuses]);
+
+  // Close status dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".status-filter-dropdown")) {
+        setIsStatusDropdownOpen(false);
+      }
+    }
+
+    if (isStatusDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isStatusDropdownOpen]);
 
   async function fetchPartialOrders() {
     try {
@@ -32,6 +53,11 @@ export default function PartialsPage() {
         limit: partialsPerPage.toString(),
         offset: offset.toString(),
       });
+
+      // Add status filters if any are selected
+      if (selectedStatuses.length > 0) {
+        params.append("statuses", selectedStatuses.join(","));
+      }
 
       const response = await fetch(`/api/partial-orders/list?${params}`);
 
@@ -134,6 +160,24 @@ export default function PartialsPage() {
     return labels[status] || status.toUpperCase();
   }
 
+  // Toggle status filter
+  function toggleStatus(status: string) {
+    setSelectedStatuses((prev) => {
+      if (prev.includes(status)) {
+        return prev.filter((s) => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+    setCurrentPage(1); // Reset to first page when filter changes
+  }
+
+  // Clear all status filters
+  function clearStatusFilters() {
+    setSelectedStatuses([]);
+    setCurrentPage(1);
+  }
+
   function handleConfirm(partialId: string) {
     const partial = partialOrders.find((p) => p.id === partialId);
     if (partial) {
@@ -233,33 +277,107 @@ export default function PartialsPage() {
   return (
     <div className="max-w-full">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Partial Orders</h1>
-          <p className="text-zinc-400 mt-2">
-            Track incomplete orders - {partialOrders.length} total
-          </p>
-        </div>
-        <button
-          onClick={fetchPartialOrders}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg
-            className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Partial Orders</h1>
+            <p className="text-zinc-400 mt-2">
+              Track incomplete orders - {totalCount} total{selectedStatuses.length > 0 && ` (${partialOrders.length} filtered)`}
+            </p>
+          </div>
+          <button
+            onClick={fetchPartialOrders}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Refresh
-        </button>
+            <svg
+              className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        {/* Status Filter */}
+        <div className="relative status-filter-dropdown inline-block">
+          <button
+            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+            className={`px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
+              selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
+            }`}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            Status
+            {selectedStatuses.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                {selectedStatuses.length}
+              </span>
+            )}
+          </button>
+
+          {isStatusDropdownOpen && (
+            <div className="absolute left-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-white">Filtrează după status</span>
+                  {selectedStatuses.length > 0 && (
+                    <button
+                      onClick={clearStatusFilters}
+                      className="text-xs text-emerald-500 hover:text-emerald-400"
+                    >
+                      Șterge toate
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { value: "pending", label: "Pending", color: "bg-blue-500" },
+                    { value: "accepted", label: "Accepted", color: "bg-emerald-500" },
+                    { value: "refused", label: "Refused", color: "bg-red-500" },
+                    { value: "unanswered", label: "Unanswered", color: "bg-orange-500" },
+                    { value: "call_later", label: "Call Later", color: "bg-purple-500" },
+                    { value: "duplicate", label: "Duplicate", color: "bg-yellow-500" },
+                  ].map((status) => (
+                    <label
+                      key={status.value}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedStatuses.includes(status.value)}
+                        onChange={() => toggleStatus(status.value)}
+                        className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
+                      <span className="text-sm text-white">{status.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Table */}

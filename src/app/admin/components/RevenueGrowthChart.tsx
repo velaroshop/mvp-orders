@@ -149,38 +149,6 @@ export default function RevenueGrowthChart({ hourlyRevenue, upsellSplit, loading
           </BarChart>
         </ResponsiveContainer>
       </div>
-
-      {/* Summary Stats */}
-      {hourlyRevenue.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-zinc-700">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-xs text-zinc-400 mb-1">Total Revenue</p>
-              <p className="text-lg font-bold text-emerald-500">
-                {hourlyRevenue.reduce((sum, h) => sum + h.totalRevenue, 0).toFixed(2)} RON
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-400 mb-1">Upsell Revenue</p>
-              <p className="text-lg font-bold text-orange-500">
-                {hourlyRevenue.reduce((sum, h) => sum + h.upsellRevenue, 0).toFixed(2)} RON
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-400 mb-1">Pre-Purchase</p>
-              <p className="text-lg font-bold text-blue-500">
-                {upsellSplit.presale.toFixed(2)} RON
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-400 mb-1">Post-Purchase</p>
-              <p className="text-lg font-bold text-purple-500">
-                {upsellSplit.postsale.toFixed(2)} RON
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

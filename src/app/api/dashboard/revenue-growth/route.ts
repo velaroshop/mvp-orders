@@ -59,29 +59,37 @@ export async function GET(request: NextRequest) {
 
     const filteredOrders = orders || [];
 
-    // Group orders by hour
+    // Initialize all hours in the date range with 0 values
     const hourlyData: Record<string, { totalRevenue: number; upsellRevenue: number; count: number }> = {};
 
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+
+    // Generate all hours in the date range
+    for (let date = new Date(start); date <= end; date.setHours(date.getHours() + 1)) {
+      const hourKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')} ${String(date.getUTCHours()).padStart(2, '0')}:00`;
+      hourlyData[hourKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+    }
+
+    // Fill in actual order data
     filteredOrders.forEach((order: any) => {
       const createdAt = new Date(order.created_at);
       const hourKey = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}-${String(createdAt.getUTCDate()).padStart(2, '0')} ${String(createdAt.getUTCHours()).padStart(2, '0')}:00`;
 
-      if (!hourlyData[hourKey]) {
-        hourlyData[hourKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
-      }
+      if (hourlyData[hourKey]) {
+        // Add total revenue
+        hourlyData[hourKey].totalRevenue += order.total || 0;
+        hourlyData[hourKey].count += 1;
 
-      // Add total revenue
-      hourlyData[hourKey].totalRevenue += order.total || 0;
-      hourlyData[hourKey].count += 1;
-
-      // Calculate upsell revenue from upsells JSONB field
-      const upsells = order.upsells || [];
-      if (Array.isArray(upsells)) {
-        upsells.forEach((upsell: any) => {
-          const quantity = upsell.quantity || 1;
-          const price = upsell.price || 0;
-          hourlyData[hourKey].upsellRevenue += quantity * price;
-        });
+        // Calculate upsell revenue from upsells JSONB field
+        const upsells = order.upsells || [];
+        if (Array.isArray(upsells)) {
+          upsells.forEach((upsell: any) => {
+            const quantity = upsell.quantity || 1;
+            const price = upsell.price || 0;
+            hourlyData[hourKey].upsellRevenue += quantity * price;
+          });
+        }
       }
     });
 

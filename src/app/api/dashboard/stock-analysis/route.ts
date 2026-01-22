@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { helpshipClient } from "@/lib/helpship";
 
 // Use service role key for API routes to bypass RLS
 const supabase = createClient(
@@ -78,11 +79,40 @@ export async function GET(request: NextRequest) {
     // Calculate daily average
     const dailyAverage = totalSold / days;
 
+    // Get product SKU from database to fetch stock from HelpShip
+    const { data: product } = await supabase
+      .from("products")
+      .select("sku")
+      .eq("organization_id", organizationId)
+      .eq("name", productName)
+      .eq("status", "active")
+      .single();
+
+    let currentStock: number | null = null;
+    let daysUntilStockout: number | null = null;
+
+    // Fetch current stock from HelpShip if product has SKU
+    if (product?.sku) {
+      try {
+        currentStock = await helpshipClient.getProductStock(product.sku);
+
+        // Calculate how many days the stock will last
+        if (currentStock !== null && dailyAverage > 0) {
+          daysUntilStockout = Math.floor(currentStock / dailyAverage);
+        }
+      } catch (error) {
+        console.error("Error fetching stock from HelpShip:", error);
+        // Continue without stock data if HelpShip API fails
+      }
+    }
+
     return NextResponse.json({
       name: productName,
       totalSold,
       dailyAverage,
       daysInPeriod: days,
+      currentStock,
+      daysUntilStockout,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stock-analysis:", error);

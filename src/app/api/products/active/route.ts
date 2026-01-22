@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
 
     const organizationId = session.user.activeOrganizationId;
 
-    // Get all active products
+    // Get all active products with SKU for HelpShip integration
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name")
+      .select("id, name, sku")
       .eq("organization_id", organizationId)
       .eq("status", "active")
       .order("name", { ascending: true });

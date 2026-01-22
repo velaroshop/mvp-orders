@@ -612,6 +612,40 @@ class HelpshipClient {
   }
 
   /**
+   * Obține numărul de unități în stoc pentru un produs după ExternalSku
+   * Folosește endpoint-ul GET /api/Item/count
+   */
+  async getProductStock(externalSku: string): Promise<number | null> {
+    try {
+      console.log(`[Helpship] Getting stock for product with ExternalSku: ${externalSku}...`);
+
+      // Construim query parameters pentru filtrare după ExternalSku
+      const params = new URLSearchParams({
+        ExternalSku: externalSku,
+      });
+
+      const endpoint = `/api/Item/count?${params.toString()}`;
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Helpship] Failed to get product stock: ${response.status} ${errorText}`);
+        return null;
+      }
+
+      // API-ul returnează un număr simplu (count)
+      const count = await response.json();
+      console.log(`[Helpship] Product ${externalSku} has ${count} units in stock`);
+      return typeof count === 'number' ? count : null;
+    } catch (err) {
+      console.error(`[Helpship] Error getting product stock:`, err);
+      return null;
+    }
+  }
+
+  /**
    * Actualizează o comandă existentă în Helpship
    * Poate actualiza datele comenzii și/sau status-ul
    */

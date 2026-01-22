@@ -22,6 +22,8 @@ interface ProductStockAnalysis {
   totalSold: number;
   dailyAverage: number;
   daysInPeriod: number;
+  currentStock?: number | null;
+  daysUntilStockout?: number | null;
 }
 
 interface DashboardStats {
@@ -44,6 +46,7 @@ interface LandingPage {
 interface Product {
   id: string;
   name: string;
+  sku?: string;
 }
 
 type QuickFilter = "today" | "yesterday" | "last3days" | "wtd" | "mtd" | "all";
@@ -724,7 +727,9 @@ export default function DashboardPage() {
                     <p className="text-2xl font-bold text-emerald-500">{stockAnalysisData.totalSold}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+
+                {/* Sales metrics */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-zinc-800 rounded p-3">
                     <p className="text-xs text-zinc-400 mb-1">Daily Average</p>
                     <p className="text-lg font-semibold text-white">
@@ -740,6 +745,57 @@ export default function DashboardPage() {
                     <p className="text-xs text-zinc-500">units/week</p>
                   </div>
                 </div>
+
+                {/* Stock information from HelpShip */}
+                {stockAnalysisData.currentStock !== null && stockAnalysisData.currentStock !== undefined ? (
+                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-xs text-zinc-400 mb-1">Current Stock</p>
+                        <p className="text-2xl font-bold text-white">{stockAnalysisData.currentStock}</p>
+                        <p className="text-xs text-zinc-500">units available</p>
+                      </div>
+                      {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined ? (
+                        <div className="text-right">
+                          <p className="text-xs text-zinc-400 mb-1">Stock Duration</p>
+                          <p className={`text-2xl font-bold ${
+                            stockAnalysisData.daysUntilStockout <= 7
+                              ? 'text-red-500'
+                              : stockAnalysisData.daysUntilStockout <= 14
+                              ? 'text-yellow-500'
+                              : 'text-emerald-500'
+                          }`}>
+                            {stockAnalysisData.daysUntilStockout}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            {stockAnalysisData.daysUntilStockout === 1 ? 'day left' : 'days left'}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                    {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined ? (
+                      <div className="mt-3 pt-3 border-t border-zinc-700">
+                        {stockAnalysisData.daysUntilStockout <= 7 ? (
+                          <p className="text-xs text-red-400">
+                            ⚠️ Critical: Stock will run out in {stockAnalysisData.daysUntilStockout} {stockAnalysisData.daysUntilStockout === 1 ? 'day' : 'days'}. Order immediately!
+                          </p>
+                        ) : stockAnalysisData.daysUntilStockout <= 14 ? (
+                          <p className="text-xs text-yellow-400">
+                            ⚡ Warning: Stock will run out in {stockAnalysisData.daysUntilStockout} days. Consider ordering soon.
+                          </p>
+                        ) : (
+                          <p className="text-xs text-emerald-400">
+                            ✓ Stock is sufficient for the next {stockAnalysisData.daysUntilStockout} days
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                    <p className="text-xs text-zinc-400 text-center">Stock data not available from HelpShip</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

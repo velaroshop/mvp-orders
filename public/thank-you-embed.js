@@ -122,40 +122,37 @@
     const html = `
       <div style="max-width: 700px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 
-        <!-- Countdown Badge -->
-        <div style="text-align: center; margin-bottom: 20px;">
-          <div id="countdown-badge" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #dc2626; color: white; border-radius: 50px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3); animation: pulse 2s infinite;">
-            <svg style="width: 18px; height: 18px;" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-            </svg>
-            <span id="countdown-text">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
-          </div>
-        </div>
-
         <!-- Postsale Card -->
-        <div style="background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
+        <div style="background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
 
           <!-- Title -->
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 36px; margin-bottom: 8px;">🎁</div>
-            <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 6px 0; color: #111827; line-height: 1.2;">
+          <div style="text-align: center; margin-bottom: 12px;">
+            <div style="font-size: 36px; margin-bottom: 6px;">🎁</div>
+            <h2 style="font-size: 32px; font-weight: 900; margin: 0 0 4px 0; color: #111827; line-height: 1.1;">
               FELICITĂRI!
             </h2>
-            <p style="font-size: 16px; font-weight: 600; color: ${colors.accent}; margin: 0;">
-              Bonus Exclusiv Deblocat
+            <p style="font-size: 15px; font-weight: 600; color: #374151; margin: 0 0 4px 0;">
+              AI DEBLOCAT O REDUCERE
             </p>
+            <!-- Countdown -->
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;">
+              <svg style="width: 16px; height: 16px; color: #dc2626;" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+              </svg>
+              <span style="font-size: 13px; font-weight: 700; color: #dc2626;">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
+            </div>
           </div>
 
           <!-- Product Image -->
           ${upsell.mediaUrl ? `
-            <div style="text-align: center; margin-bottom: 20px;">
-              <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 300px; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="max-width: 95%; width: 95%; height: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
             </div>
           ` : ''}
 
           <!-- Product Title & Description -->
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 8px 0; line-height: 1.3;">
+          <div style="text-align: center; margin-bottom: 16px;">
+            <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 6px 0; line-height: 1.3;">
               ${upsell.title}
             </h3>
             ${upsell.description ? `
@@ -166,12 +163,12 @@
           </div>
 
           <!-- Pricing -->
-          <div style="text-align: center; margin-bottom: 24px;">
-            <div style="text-decoration: line-through; color: #9ca3af; font-size: 15px; margin-bottom: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="text-decoration: line-through; color: #6b7280; font-size: 16px; font-weight: 600; margin-bottom: 10px;">
               Preț normal: ${upsell.srp.toFixed(2)} LEI
             </div>
-            <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-radius: 12px; padding: 12px 20px; margin: 0 auto 12px auto; display: inline-block;">
-              <div style="font-size: 28px; font-weight: 900; line-height: 1;">
+            <div id="discount-badge" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-radius: 10px; padding: 10px 18px; margin: 0 auto 10px auto; display: inline-block; animation: scaleUp 0.6s ease-in-out infinite alternate;">
+              <div style="font-size: 24px; font-weight: 900; line-height: 1;">
                 -${Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100)}% REDUCERE
               </div>
             </div>
@@ -203,9 +200,9 @@
       </div>
 
       <style>
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.85; }
+        @keyframes scaleUp {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.05); }
         }
       </style>
     `;

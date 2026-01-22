@@ -1,6 +1,6 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface HourlyData {
   hour: string;
@@ -9,32 +9,17 @@ interface HourlyData {
   orderCount: number;
 }
 
-interface UpsellSplit {
-  presale: number;
-  postsale: number;
-}
-
 interface RevenueGrowthChartProps {
   hourlyRevenue: HourlyData[];
-  upsellSplit: UpsellSplit;
   loading?: boolean;
 }
 
-export default function RevenueGrowthChart({ hourlyRevenue, upsellSplit, loading }: RevenueGrowthChartProps) {
+export default function RevenueGrowthChart({ hourlyRevenue, loading }: RevenueGrowthChartProps) {
   // Format hour for display (show only time)
   const formattedData = hourlyRevenue.map(item => ({
     ...item,
     hourDisplay: item.hour.split(' ')[1] || item.hour, // Extract time part
   }));
-
-  // Prepare bar chart data
-  const barData = [
-    {
-      name: 'Upsell Split',
-      'Pre-Purchase': upsellSplit.presale,
-      'Post-Purchase': upsellSplit.postsale,
-    },
-  ];
 
   if (loading) {
     return (
@@ -59,7 +44,7 @@ export default function RevenueGrowthChart({ hourlyRevenue, upsellSplit, loading
       </div>
 
       {/* Line Chart */}
-      <div className="mb-8">
+      <div>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={formattedData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
@@ -101,52 +86,6 @@ export default function RevenueGrowthChart({ hourlyRevenue, upsellSplit, loading
               dot={{ fill: '#f97316', r: 4 }}
             />
           </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Bar Chart */}
-      <div>
-        <ResponsiveContainer width="100%" height={150}>
-          <BarChart
-            data={barData}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
-            <XAxis
-              type="number"
-              stroke="#a1a1aa"
-              tick={{ fill: '#a1a1aa', fontSize: 12 }}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              stroke="#a1a1aa"
-              tick={{ fill: '#a1a1aa', fontSize: 12 }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#27272a',
-                border: '1px solid #3f3f46',
-                borderRadius: '0.5rem',
-                color: '#fff'
-              }}
-              formatter={(value: any) => `${Number(value).toFixed(2)} RON`}
-            />
-            <Legend
-              wrapperStyle={{ color: '#a1a1aa' }}
-            />
-            <Bar
-              dataKey="Pre-Purchase"
-              fill="#3b82f6"
-              radius={[0, 4, 4, 0]}
-            />
-            <Bar
-              dataKey="Post-Purchase"
-              fill="#8b5cf6"
-              radius={[0, 4, 4, 0]}
-            />
-          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>

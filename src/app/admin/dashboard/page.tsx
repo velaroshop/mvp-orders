@@ -502,7 +502,6 @@ export default function DashboardPage() {
       <div className="mb-6">
         <RevenueGrowthChart
           hourlyRevenue={revenueGrowthData.hourlyRevenue}
-          upsellSplit={revenueGrowthData.upsellSplit}
           loading={revenueGrowthLoading}
         />
       </div>

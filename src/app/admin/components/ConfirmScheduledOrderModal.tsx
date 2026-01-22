@@ -31,12 +31,25 @@ export default function ConfirmScheduledOrderModal({
   };
 
   const scheduledDateFormatted = order.scheduledDate
-    ? new Date(order.scheduledDate).toLocaleDateString("ro-RO", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+    ? (() => {
+        // Parse YYYY-MM-DD format correctly (add time to avoid timezone issues)
+        const dateStr = order.scheduledDate.includes('T')
+          ? order.scheduledDate
+          : `${order.scheduledDate}T12:00:00`;
+        const date = new Date(dateStr);
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return order.scheduledDate; // Fallback to raw string
+        }
+
+        return date.toLocaleDateString("ro-RO", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      })()
     : "N/A";
 
   return (

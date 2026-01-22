@@ -90,10 +90,6 @@ export async function POST(request: NextRequest) {
       accentColor = "#00A854",
       backgroundColor = "#2C3E50",
       textOnDarkColor = "#FFFFFF",
-      fbPixelId = "",
-      fbConversionToken = "",
-      clientSideTracking = false,
-      serverSideTracking = false,
       duplicateOrderDays = 14,
     } = body;
 
@@ -131,10 +127,6 @@ export async function POST(request: NextRequest) {
         accent_color: accentColor,
         background_color: backgroundColor,
         text_on_dark_color: textOnDarkColor,
-        fb_pixel_id: fbPixelId || null,
-        fb_conversion_token: fbConversionToken || null,
-        client_side_tracking: clientSideTracking,
-        server_side_tracking: serverSideTracking,
         duplicate_order_days: duplicateOrderDays,
       })
       .select()

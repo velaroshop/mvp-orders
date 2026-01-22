@@ -137,10 +137,18 @@ function titleCaseStreetName(name: string): string {
 // MAIN SANITIZATION FUNCTION
 // ============================================================================
 
-export function sanitizeStreet(raw: string): string {
+/**
+ * Result type for sanitization with street address and extracted number
+ */
+export interface SanitizeResult {
+  street: string;
+  number: string;
+}
+
+export function sanitizeStreet(raw: string): SanitizeResult {
   // Step 1: Basic cleanup
   let cleaned = raw.trim();
-  if (!cleaned) return '';
+  if (!cleaned) return { street: '', number: '' };
 
   // Step 2: Normalize whitespace and remove separators
   cleaned = normalizeWhitespace(cleaned);
@@ -149,7 +157,7 @@ export function sanitizeStreet(raw: string): string {
 
   // Step 3: Tokenize
   const tokens = cleaned.split(' ');
-  if (tokens.length === 0) return raw.trim();
+  if (tokens.length === 0) return { street: raw.trim(), number: '' };
 
   // Step 4: Detect street type (prefix)
   let streetType = '';
@@ -166,6 +174,9 @@ export function sanitizeStreet(raw: string): string {
   let numberToken = '';
   let detailsTokens: string[] = [];
   let foundNumber = false;
+
+  // Detail markers to help identify what's NOT a street number
+  const detailMarkers = ['bl', 'bloc', 'sc', 'scara', 'et', 'etaj', 'ap', 'apartament', 'interfon'];
 
   for (let i = startIndex; i < tokens.length; i++) {
     const token = tokens[i];
@@ -188,12 +199,19 @@ export function sanitizeStreet(raw: string): string {
       // We already found number, rest are details
       detailsTokens.push(token);
     } else {
+      // Check if this is a detail marker (bl, sc, etc.) - if so, everything from here is details
+      if (detailMarkers.includes(lowerToken)) {
+        // This and everything after is details
+        detailsTokens = tokens.slice(i);
+        break;
+      }
+
       // Still part of street name
       streetNameTokens.push(token);
     }
   }
 
-  // Step 6: If no explicit number marker found, check if last token is a number
+  // Step 6: If no explicit number marker found, check if a token before details is a number
   if (!foundNumber && streetNameTokens.length > 0) {
     const lastToken = streetNameTokens[streetNameTokens.length - 1];
     // Check if it's a number (digits, optionally with letter: 8, 12A, 12-14)
@@ -228,20 +246,17 @@ export function sanitizeStreet(raw: string): string {
     parts.push(streetName);
   }
 
-  // Add number
-  if (numberToken) {
-    parts.push('nr. ' + numberToken);
-  }
-
-  // Add details
+  // Add details (WITHOUT nr. - will go in separate field)
   if (details) {
     parts.push(details);
   }
 
-  const result = parts.join(' ');
+  const street = parts.join(' ') || raw.trim();
 
-  // If result is empty, return original trimmed
-  return result || raw.trim();
+  return {
+    street,
+    number: numberToken
+  };
 }
 
 /**
@@ -311,65 +326,66 @@ function parseDetails(tokens: string[]): string {
 
 interface TestCase {
   input: string;
-  expected: string;
+  expectedStreet: string;
+  expectedNumber: string;
   description?: string;
 }
 
 const TEST_CASES: TestCase[] = [
   // Basic street type normalization
-  { input: 'str florilor 8', expected: 'Strada Florilor nr. 8', description: 'Basic str -> Strada' },
-  { input: 'str. florilor 8', expected: 'Strada Florilor nr. 8', description: 'str. with dot' },
-  { input: 'strada florilor 8', expected: 'Strada Florilor nr. 8', description: 'Full strada' },
+  { input: 'str florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Basic str -> Strada' },
+  { input: 'str. florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'str. with dot' },
+  { input: 'strada florilor 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Full strada' },
 
   // Boulevard variations
-  { input: 'bd mihai viteazu 12', expected: 'Bulevardul Mihai Viteazu nr. 12', description: 'Boulevard bd' },
-  { input: 'blv unirii 5', expected: 'Bulevardul Unirii nr. 5', description: 'Boulevard blv' },
-  { input: 'bulevardul republicii 20', expected: 'Bulevardul Republicii nr. 20', description: 'Full bulevardul' },
+  { input: 'bd mihai viteazu 12', expectedStreet: 'Bulevardul Mihai Viteazu', expectedNumber: '12', description: 'Boulevard bd' },
+  { input: 'blv unirii 5', expectedStreet: 'Bulevardul Unirii', expectedNumber: '5', description: 'Boulevard blv' },
+  { input: 'bulevardul republicii 20', expectedStreet: 'Bulevardul Republicii', expectedNumber: '20', description: 'Full bulevardul' },
 
   // Șoseaua (with/without diacritics)
-  { input: 'sos kiseleff 10', expected: 'Șoseaua Kiseleff nr. 10', description: 'Șoseaua sos' },
-  { input: 'șos pantelimon 15', expected: 'Șoseaua Pantelimon nr. 15', description: 'Șoseaua with diacritic' },
+  { input: 'sos kiseleff 10', expectedStreet: 'Șoseaua Kiseleff', expectedNumber: '10', description: 'Șoseaua sos' },
+  { input: 'șos pantelimon 15', expectedStreet: 'Șoseaua Pantelimon', expectedNumber: '15', description: 'Șoseaua with diacritic' },
 
   // Other street types
-  { input: 'al teiului 3', expected: 'Aleea Teiului nr. 3', description: 'Aleea' },
-  { input: 'cal victoriei 100', expected: 'Calea Victoriei nr. 100', description: 'Calea' },
-  { input: 'piata unirii 1', expected: 'Piața Unirii nr. 1', description: 'Piața' },
-  { input: 'intr salciilor 7', expected: 'Intrarea Salciilor nr. 7', description: 'Intrarea' },
+  { input: 'al teiului 3', expectedStreet: 'Aleea Teiului', expectedNumber: '3', description: 'Aleea' },
+  { input: 'cal victoriei 100', expectedStreet: 'Calea Victoriei', expectedNumber: '100', description: 'Calea' },
+  { input: 'piata unirii 1', expectedStreet: 'Piața Unirii', expectedNumber: '1', description: 'Piața' },
+  { input: 'intr salciilor 7', expectedStreet: 'Intrarea Salciilor', expectedNumber: '7', description: 'Intrarea' },
 
   // Number variations
-  { input: 'str florilor nr 8', expected: 'Strada Florilor nr. 8', description: 'Explicit nr' },
-  { input: 'str florilor nr. 8', expected: 'Strada Florilor nr. 8', description: 'Explicit nr.' },
-  { input: 'str florilor nr8', expected: 'Strada Florilor nr. 8', description: 'nr8 stuck together' },
-  { input: 'str florilor numar 8', expected: 'Strada Florilor nr. 8', description: 'numar instead of nr' },
-  { input: 'str florilor 12a', expected: 'Strada Florilor nr. 12A', description: 'Number with letter' },
-  { input: 'str florilor 12 a', expected: 'Strada Florilor nr. 12A', description: 'Number with spaced letter' },
-  { input: 'str florilor 12-14', expected: 'Strada Florilor nr. 12-14', description: 'Number range' },
+  { input: 'str florilor nr 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Explicit nr' },
+  { input: 'str florilor nr. 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Explicit nr.' },
+  { input: 'str florilor nr8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'nr8 stuck together' },
+  { input: 'str florilor numar 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'numar instead of nr' },
+  { input: 'str florilor 12a', expectedStreet: 'Strada Florilor', expectedNumber: '12A', description: 'Number with letter' },
+  { input: 'str florilor 12 a', expectedStreet: 'Strada Florilor', expectedNumber: '12A', description: 'Number with spaced letter' },
+  { input: 'str florilor 12-14', expectedStreet: 'Strada Florilor', expectedNumber: '12-14', description: 'Number range' },
 
-  // Details (bl, sc, et, ap)
-  { input: 'str florilor 8 bl a', expected: 'Strada Florilor nr. 8 bl. A', description: 'With bloc' },
-  { input: 'str florilor 8 bloc a sc 2', expected: 'Strada Florilor nr. 8 bl. A sc. 2', description: 'Bloc and scara' },
-  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expected: 'Strada Florilor nr. 8 bl. A sc. 2 et. 3 ap. 10', description: 'Full details' },
+  // Details (bl, sc, et, ap) - THE CRITICAL TEST!
+  { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor bl. A', expectedNumber: '8', description: 'With bloc' },
+  { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor bl. A sc. 2', expectedNumber: '8', description: 'Bloc and scara' },
+  { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor bl. A sc. 2 et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
 
   // Title case with prepositions
-  { input: 'str unirea din 1918 nr 5', expected: 'Strada Unirea din 1918 nr. 5', description: 'Preposition "din" lowercase' },
-  { input: 'bd carol i 10', expected: 'Bulevardul Carol I nr. 10', description: 'Roman numeral uppercase' },
+  { input: 'str unirea din 1918 nr 5', expectedStreet: 'Strada Unirea din 1918', expectedNumber: '5', description: 'Preposition "din" lowercase' },
+  { input: 'bd carol i 10', expectedStreet: 'Bulevardul Carol I', expectedNumber: '10', description: 'Roman numeral uppercase' },
 
   // Messy input with multiple separators
-  { input: 'str,, florilor,  8', expected: 'Strada Florilor nr. 8', description: 'Multiple commas' },
-  { input: 'str. florilor / 8', expected: 'Strada Florilor nr. 8', description: 'Slash separator' },
-  { input: 'str   florilor   8', expected: 'Strada Florilor nr. 8', description: 'Multiple spaces' },
+  { input: 'str,, florilor,  8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Multiple commas' },
+  { input: 'str. florilor / 8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Slash separator' },
+  { input: 'str   florilor   8', expectedStreet: 'Strada Florilor', expectedNumber: '8', description: 'Multiple spaces' },
 
   // No street type
-  { input: 'florilor 8', expected: 'Florilor nr. 8', description: 'No street type prefix' },
-  { input: 'mihai viteazu 12', expected: 'Mihai Viteazu nr. 12', description: 'No type, multi-word name' },
+  { input: 'florilor 8', expectedStreet: 'Florilor', expectedNumber: '8', description: 'No street type prefix' },
+  { input: 'mihai viteazu 12', expectedStreet: 'Mihai Viteazu', expectedNumber: '12', description: 'No type, multi-word name' },
 
   // No number
-  { input: 'str florilor', expected: 'Strada Florilor', description: 'No number at all' },
+  { input: 'str florilor', expectedStreet: 'Strada Florilor', expectedNumber: '', description: 'No number at all' },
 
   // Edge cases
-  { input: '', expected: '', description: 'Empty string' },
-  { input: '   ', expected: '', description: 'Only whitespace' },
-  { input: 'str', expected: 'Strada', description: 'Only street type' },
+  { input: '', expectedStreet: '', expectedNumber: '', description: 'Empty string' },
+  { input: '   ', expectedStreet: '', expectedNumber: '', description: 'Only whitespace' },
+  { input: 'str', expectedStreet: 'Strada', expectedNumber: '', description: 'Only street type' },
 ];
 
 /**
@@ -383,7 +399,9 @@ export function runTests(): void {
 
   TEST_CASES.forEach((test, index) => {
     const result = sanitizeStreet(test.input);
-    const isPass = result === test.expected;
+    const isPassStreet = result.street === test.expectedStreet;
+    const isPassNumber = result.number === test.expectedNumber;
+    const isPass = isPassStreet && isPassNumber;
 
     if (isPass) {
       passed++;
@@ -392,9 +410,15 @@ export function runTests(): void {
       failed++;
       console.log(`❌ Test ${index + 1}: FAIL`);
       console.log(`   Description: ${test.description || 'N/A'}`);
-      console.log(`   Input:    "${test.input}"`);
-      console.log(`   Expected: "${test.expected}"`);
-      console.log(`   Got:      "${result}"`);
+      console.log(`   Input:           "${test.input}"`);
+      if (!isPassStreet) {
+        console.log(`   Expected Street: "${test.expectedStreet}"`);
+        console.log(`   Got Street:      "${result.street}"`);
+      }
+      if (!isPassNumber) {
+        console.log(`   Expected Number: "${test.expectedNumber}"`);
+        console.log(`   Got Number:      "${result.number}"`);
+      }
     }
   });
 

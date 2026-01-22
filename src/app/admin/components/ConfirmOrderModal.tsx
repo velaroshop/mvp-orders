@@ -24,6 +24,7 @@ export default function ConfirmOrderModal({
     county: "",
     city: "",
     address: "",
+    streetNumber: "",
     postalCode: "",
     shippingPrice: 0,
     discount: 0,
@@ -383,8 +384,8 @@ export default function ConfirmOrderModal({
                 <button
                   type="button"
                   onClick={() => {
-                    const sanitized = sanitizeStreet(formData.address);
-                    setFormData({ ...formData, address: sanitized });
+                    const result = sanitizeStreet(formData.address);
+                    setFormData({ ...formData, address: result.street, streetNumber: result.number });
                   }}
                   className="text-xs text-blue-400 hover:text-blue-300"
                 >
@@ -438,6 +439,10 @@ export default function ConfirmOrderModal({
                   />
                   <input
                     type="text"
+                    value={formData.streetNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, streetNumber: e.target.value })
+                    }
                     className="w-20 rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="Number"
                   />

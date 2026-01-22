@@ -188,14 +188,14 @@
             🎉 AI CÂȘTIGAT! 🎉
           </h2>
           <p style="font-size: 15px; font-weight: 600; color: #374151; margin: 0 0 6px 0;">
-            AI DEBLOCAT O REDUCERE EXCLUSIVĂ
+            AI DEBLOCAT O REDUCERE LIMITATĂ
           </p>
           <!-- Countdown -->
           <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 4px;">
-            <svg style="width: 18px; height: 18px; color: #dc2626;" fill="currentColor" viewBox="0 0 20 20">
+            <svg style="width: 20px; height: 20px; color: #dc2626;" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
             </svg>
-            <span style="font-size: 15px; font-weight: 700; color: #dc2626;">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
+            <span style="font-size: 17px; font-weight: 700; color: #dc2626;">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
           </div>
         </div>
 

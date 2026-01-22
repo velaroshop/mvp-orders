@@ -682,21 +682,18 @@ class HelpshipClient {
           const firstName = nameParts[0] || null;
           const lastName = nameParts.slice(1).join(" ") || null;
           
-          const addressParts = updates.shippingAddress?.address?.match(/^(.+?)\s+(\d+.*)$/) || 
-                              currentAddress.addressLine1?.match(/^(.+?)\s+(\d+.*)$/) || [];
-          const street = addressParts ? addressParts[1]?.trim() : 
-                        updates.shippingAddress?.address || 
-                        currentAddress.addressLine1 || "";
-          const number = addressParts ? addressParts[2]?.trim() : null;
-          
+          // Street = full address string, Number = extracted number from addressLine2
+          const street = updates.shippingAddress?.address || currentAddress.addressLine1 || "";
+          const number = updates.shippingAddress?.addressLine2 || currentAddress.number || null;
+
           // Construim payload-ul pentru updateAddress
           const addressPayload: any = {
             firstName: firstName || currentAddress.firstName || null,
             lastName: lastName || currentAddress.lastName || null,
-            addressLine1: updates.shippingAddress?.address || currentAddress.addressLine1 || "",
-            addressLine2: updates.shippingAddress?.addressLine2 || currentAddress.addressLine2 || null,
+            addressLine1: street,
+            addressLine2: number,
             street: street,
-            number: number || currentAddress.number || null,
+            number: number,
             zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,
             city: updates.shippingAddress?.city || currentAddress.city || "",
             province: updates.shippingAddress?.county || currentAddress.province || "",

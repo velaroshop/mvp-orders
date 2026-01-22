@@ -154,6 +154,7 @@ export default function ConfirmOrderModal({
               address: currentOrder.address || "",
               streetNumber: "",
               postalCode: currentOrder.postalCode || "",
+              scheduledDate: "",
             };
             setFormData(initialData);
             

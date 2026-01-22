@@ -456,14 +456,15 @@ function WidgetFormContent() {
 
   function redirectToThankYouPage() {
     setShowPostsaleOffer(false);
-    if (landingPage?.stores?.url) {
+    if (landingPage?.stores?.url && createdOrderId) {
       const thankYouSlug = landingPage.thank_you_path || "thank-you";
       let storeUrl = landingPage.stores.url;
       if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
         storeUrl = `https://${storeUrl}`;
       }
       storeUrl = storeUrl.replace(/\/$/, '');
-      const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+      // Add order ID as query parameter
+      const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${createdOrderId}`;
       if (window.parent && window.parent !== window) {
         window.parent.location.href = thankYouUrl;
       } else {
@@ -715,57 +716,27 @@ function WidgetFormContent() {
         throw new Error(data.error || "Nu s-a putut trimite comanda.");
       }
 
-      // Get order ID and queue expiration from response
+      // Get order ID from response
       const orderData = await response.json();
       const orderId = orderData.orderId;
-      const queueExpires = orderData.queueExpiresAt;
       setCreatedOrderId(orderId);
-      setQueueExpiresAt(queueExpires);
 
-      // Check if postsale is active and fetch to determine what message to show
-      let hasValidPostsale = false;
-      if (landingPage.post_purchase_status && landingPage.id) {
-        // Always fetch postsale upsells to get real-time product status
-        const fetchedPostsaleUpsells = await fetchPostsaleUpsells(landingPage.id);
-        hasValidPostsale = fetchedPostsaleUpsells.length > 0;
-        setWillShowPostsale(hasValidPostsale);
-      }
-
-      // Show success popup with appropriate message
+      // Show success popup briefly
       setShowSuccessPopup(true);
 
       // Scroll parent page to widget so popup is visible
       scrollParentToWidget();
 
-      // Handle postsale flow
-      if (landingPage.post_purchase_status && landingPage.id && hasValidPostsale) {
-        // We have valid postsale upsells, show the offer after 2 seconds
-        setTimeout(() => {
-          setShowSuccessPopup(false);
-          setPostsaleCountdown(180); // Reset countdown to 3 minutes
-          setShowPostsaleOffer(true);
-          // Scroll again when postsale appears
-          scrollParentToWidget();
-        }, 2000);
-        return; // Don't redirect yet
-      }
-
-      // No postsale or no valid products - finalize order immediately and redirect
-      // Finalize the order (sync to Helpship) since there's no postsale
+      // Send client-side Purchase event (deduplicated with server-side CAPI)
       try {
-        await fetch(`/api/orders/${orderId}/finalize`, {
-          method: "POST",
-        });
-        console.log("[Order] Finalized immediately (no postsale)");
-
-        // Send client-side Purchase event (deduplicated with server-side CAPI)
         await sendClientSidePurchaseEvent(orderId, getTotalPrice());
       } catch (err) {
-        console.error("[Order] Failed to finalize:", err);
-        // Continue with redirect even if finalization fails - cleanup will handle it
+        console.error("[Order] Failed to send purchase event:", err);
+        // Continue with redirect even if tracking fails
       }
 
-      // Redirect to thank you page
+      // Redirect to thank you page immediately after brief success message
+      // The thank you page will handle postsale offers
       setTimeout(() => {
         if (landingPage.stores?.url) {
           const thankYouSlug = landingPage.thank_you_path || "thank-you";
@@ -774,7 +745,8 @@ function WidgetFormContent() {
             storeUrl = `https://${storeUrl}`;
           }
           storeUrl = storeUrl.replace(/\/$/, '');
-          const thankYouUrl = `${storeUrl}/${thankYouSlug}`;
+          // Add order ID to URL for thank you page to process
+          const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
 
           if (window.parent && window.parent !== window) {
             window.parent.location.href = thankYouUrl;
@@ -793,7 +765,7 @@ function WidgetFormContent() {
           setAddress("");
           setSelectedOffer("offer_1");
         }
-      }, 3000); // 3 seconds delay
+      }, 2000); // 2 seconds delay to show success message
     } catch (err) {
       setError(
         err instanceof Error

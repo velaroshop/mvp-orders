@@ -70,6 +70,7 @@ export default function LandingPagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [embedModalOpen, setEmbedModalOpen] = useState<string | null>(null);
+  const [embedModalType, setEmbedModalType] = useState<"form" | "thankyou">("form");
   const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editUpsellModal, setEditUpsellModal] = useState<Upsell | null>(null);
@@ -319,9 +320,16 @@ export default function LandingPagesPage() {
     return `${window.location.origin}/widget?slug=${slug}`;
   }
 
-  function getEmbedCode(slug: string) {
+  function getEmbedCode(slug: string, type: "form" | "thankyou" = "form") {
     if (typeof window === "undefined") return "";
     const origin = window.location.origin;
+
+    if (type === "thankyou") {
+      return `<!-- Velaro Thank You Page Embed (Post-Purchase) -->
+<script src="${origin}/thank-you-embed.js"></script>
+<div id="velaro-thank-you"></div>`;
+    }
+
     const containerId = `velaro-widget-${slug}`;
     return `<!-- Velaro Widget Embed with Tracking -->
 <script src="${origin}/embed.js"></script>
@@ -717,10 +725,22 @@ export default function LandingPagesPage() {
                                   Vezi formular
                                 </Link>
                                 <button
-                                  onClick={() => setEmbedModalOpen(page.id)}
+                                  onClick={() => {
+                                    setEmbedModalOpen(page.id);
+                                    setEmbedModalType("form");
+                                  }}
                                   className="px-3 py-1.5 bg-zinc-600 text-white rounded text-xs font-medium hover:bg-zinc-700 transition-colors"
                                 >
-                                  Cod embed
+                                  Cod embed formular
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEmbedModalOpen(page.id);
+                                    setEmbedModalType("thankyou");
+                                  }}
+                                  className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors"
+                                >
+                                  Cod embed post-purchase
                                 </button>
                                 <button
                                   onClick={() => toggleRowExpansion(page.id)}
@@ -763,7 +783,7 @@ export default function LandingPagesPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">
-                  Cod embed pentru formular
+                  {embedModalType === "form" ? "Cod embed pentru formular" : "Cod embed pentru post-purchase"}
                 </h3>
                 <button
                   onClick={() => setEmbedModalOpen(null)}
@@ -785,11 +805,14 @@ export default function LandingPagesPage() {
                 </button>
               </div>
               <p className="text-sm text-zinc-300 mb-4">
-                Copiază acest cod și inserează-l în pagina ta de vânzare pentru a afișa formularul. Iframe-ul se va adapta automat la înălțimea conținutului.
+                {embedModalType === "form"
+                  ? "Copiază acest cod și inserează-l în pagina ta de vânzare pentru a afișa formularul. Iframe-ul se va adapta automat la înălțimea conținutului."
+                  : "Copiază acest cod și inserează-l în pagina de thank you. Script-ul va afișa automat oferta de post-purchase sau mesajul de confirmare, în funcție de statusul comenzii."
+                }
               </p>
               <div className="bg-zinc-900 rounded-md p-4 mb-4 border border-zinc-600">
                 <pre className="text-xs text-zinc-300 overflow-x-auto whitespace-pre-wrap break-words">
-                  <code>{embedModalOpen && getEmbedCode(landingPages.find(p => p.id === embedModalOpen)?.slug || "")}</code>
+                  <code>{embedModalOpen && getEmbedCode(landingPages.find(p => p.id === embedModalOpen)?.slug || "", embedModalType)}</code>
                 </pre>
               </div>
               <div className="flex gap-2">
@@ -797,7 +820,7 @@ export default function LandingPagesPage() {
                   onClick={() => {
                     const page = landingPages.find(p => p.id === embedModalOpen);
                     if (page) {
-                      copyToClipboard(getEmbedCode(page.slug));
+                      copyToClipboard(getEmbedCode(page.slug, embedModalType));
                     }
                   }}
                   className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium"

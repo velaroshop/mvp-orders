@@ -41,6 +41,11 @@ interface LandingPage {
   name: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+}
+
 type QuickFilter = "today" | "yesterday" | "last3days" | "wtd" | "mtd" | "all";
 
 export default function DashboardPage() {
@@ -64,6 +69,7 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState("");
   const [selectedLandingPage, setSelectedLandingPage] = useState("all");
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   // Stock Analysis independent filters
   const [selectedProduct, setSelectedProduct] = useState<string>("");
@@ -131,6 +137,28 @@ export default function DashboardPage() {
     fetchLandingPages();
   }, []);
 
+  // Fetch active products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products/active");
+        if (response.ok) {
+          const data = await response.json();
+          const productList = data.products || [];
+          setProducts(productList);
+
+          // Auto-select first product if not already selected
+          if (productList.length > 0 && !selectedProduct) {
+            setSelectedProduct(productList[0].name);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   // Fetch stats when filters change
   const fetchStats = async (start?: string, end?: string, landingPage?: string) => {
     setLoading(true);
@@ -151,11 +179,6 @@ export default function DashboardPage() {
         const data = await response.json();
         console.log("Dashboard stats received:", data);
         setStats(data);
-
-        // Auto-select first product for stock analysis if not already selected
-        if (data.productStockAnalysis?.length > 0 && !selectedProduct) {
-          setSelectedProduct(data.productStockAnalysis[0].name);
-        }
       } else {
         console.error("Failed to fetch stats:", response.status, await response.text());
       }
@@ -634,14 +657,14 @@ export default function DashboardPage() {
               <select
                 value={selectedProduct}
                 onChange={(e) => setSelectedProduct(e.target.value)}
-                disabled={loading || stats.productStockAnalysis.length === 0}
+                disabled={products.length === 0}
                 className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {stats.productStockAnalysis.length === 0 ? (
+                {products.length === 0 ? (
                   <option value="">No products available</option>
                 ) : (
-                  stats.productStockAnalysis.map((product) => (
-                    <option key={product.name} value={product.name}>
+                  products.map((product) => (
+                    <option key={product.id} value={product.name}>
                       {product.name}
                     </option>
                   ))

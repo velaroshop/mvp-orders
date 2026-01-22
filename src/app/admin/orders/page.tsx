@@ -769,7 +769,7 @@ export default function AdminPage() {
                     <td className="px-2 py-1.5">
                       <div className="flex flex-col gap-0.5">
                         <span
-                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
+                          className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${
                             order.status === "queue"
                               ? "bg-violet-600 text-white"
                               : order.status === "testing"

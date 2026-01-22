@@ -31,7 +31,7 @@ export default function Topbar() {
 
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-zinc-900 border-b border-zinc-800 z-30 lg:left-48">
-      <div className="h-full px-3 sm:px-6 flex items-center justify-between">
+      <div className="h-full pl-16 pr-3 sm:px-6 lg:pl-6 flex items-center justify-between">
         {/* Left side - Organization info */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           {activeOrganization && (

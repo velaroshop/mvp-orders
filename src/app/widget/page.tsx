@@ -226,6 +226,31 @@ function WidgetFormContent() {
     return () => clearInterval(interval);
   }, [showPostsaleOffer, queueExpiresAt]);
 
+  // Block scrolling when postsale modal is shown
+  useEffect(() => {
+    if (showPostsaleOffer && postsaleUpsells.length > 0) {
+      // Save original body style
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      const originalPosition = window.getComputedStyle(document.body).position;
+
+      // Block scrolling
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+
+      return () => {
+        // Restore original style
+        const scrollY = document.body.style.top;
+        document.body.style.overflow = originalStyle;
+        document.body.style.position = originalPosition;
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      };
+    }
+  }, [showPostsaleOffer, postsaleUpsells.length]);
+
   // Helper function to scroll parent to widget
   const scrollParentToWidget = () => {
     try {

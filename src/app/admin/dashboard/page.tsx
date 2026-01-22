@@ -151,13 +151,26 @@ export default function DashboardPage() {
           if (productList.length > 0 && !selectedProduct) {
             setSelectedProduct(productList[0].name);
           }
+        } else {
+          console.error("Failed to fetch products, using fallback");
+          // Fallback: use productStockAnalysis from stats if available
+          if (stats.productStockAnalysis.length > 0) {
+            const fallbackProducts = stats.productStockAnalysis.map(p => ({
+              id: p.name,
+              name: p.name
+            }));
+            setProducts(fallbackProducts);
+            if (!selectedProduct) {
+              setSelectedProduct(fallbackProducts[0].name);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching products:", error);
       }
     };
     fetchProducts();
-  }, []);
+  }, [stats.productStockAnalysis]);
 
   // Fetch stats when filters change
   const fetchStats = async (start?: string, end?: string, landingPage?: string) => {

@@ -35,10 +35,11 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
     const landingPageId = searchParams.get("landingPage");
 
-    // Build the query
+    // Build the query - filter by organization first
     let query = supabase
       .from("orders")
-      .select("*, landing_pages!inner(store_id)")
+      .select("*")
+      .eq("organization_id", organizationId)
       .neq("status", "cancelled")
       .gte("created_at", startDate || new Date().toISOString().split("T")[0])
       .lte("created_at", endDate || new Date().toISOString().split("T")[0] + "T23:59:59");
@@ -48,7 +49,6 @@ export async function GET(request: NextRequest) {
       query = query.eq("landing_page_id", landingPageId);
     }
 
-    // Filter by organization through landing_pages join
     const { data: orders, error } = await query;
 
     if (error) {
@@ -59,16 +59,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Filter orders to only include those from stores in the organization
-    const { data: stores } = await supabase
-      .from("stores")
-      .select("id")
-      .eq("organization_id", organizationId);
-
-    const storeIds = stores?.map((s) => s.id) || [];
-    const filteredOrders = orders?.filter((order: any) =>
-      storeIds.includes(order.landing_pages?.store_id)
-    ) || [];
+    const filteredOrders = orders || [];
 
     // Calculate stats
     const totalRevenue = filteredOrders.reduce(
@@ -78,20 +69,16 @@ export async function GET(request: NextRequest) {
     const orderCount = filteredOrders.length;
     const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
 
-    // Calculate products sold (sum of all product quantities)
+    // Calculate products sold (sum of product_quantity from each order)
     const productsSold = filteredOrders.reduce((sum, order: any) => {
-      const products = order.products || [];
-      const orderProductCount = products.reduce(
-        (productSum: number, product: any) => productSum + (product.quantity || 0),
-        0
-      );
-      return sum + orderProductCount;
+      return sum + (order.product_quantity || 0);
     }, 0);
 
     // Calculate upsell rate (percentage of orders with at least one upsell)
+    // Check if order has upsells in the upsells JSONB field
     const ordersWithUpsells = filteredOrders.filter((order: any) => {
       const upsells = order.upsells || [];
-      return upsells.length > 0;
+      return Array.isArray(upsells) && upsells.length > 0;
     }).length;
     const upsellRate = orderCount > 0 ? (ordersWithUpsells / orderCount) * 100 : 0;
 

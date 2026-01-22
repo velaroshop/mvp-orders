@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       .select(`
         id,
         slug,
-        enable_postsale,
+        post_purchase_status,
         stores(
           primary_color,
           accent_color,
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     const store = (landingPage as any).stores;
 
     // If order is not in queue or postsale is not enabled, return simple confirmation
-    if (order.status !== "queue" || !(landingPage as any).enable_postsale) {
+    if (order.status !== "queue" || !(landingPage as any).post_purchase_status) {
       return NextResponse.json({
         orderId: order.id,
         status: order.status,

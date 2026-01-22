@@ -15,7 +15,6 @@ export async function createOrder(input: {
   upsells?: string[];
   subtotal: number;
   shippingCost: number;
-  discount?: number;
   total: number;
   organizationId: string;
   productName?: string | null;
@@ -100,7 +99,6 @@ export async function createOrder(input: {
       upsells: input.upsells ?? [],
       subtotal: input.subtotal,
       shipping_cost: input.shippingCost,
-      discount: input.discount ?? 0,
       total: input.total,
       status: initialStatus,
       queue_expires_at: initialStatus === "queue" ? queueExpiresAt : null, // Only set expiration for queue orders
@@ -145,7 +143,6 @@ export async function createOrder(input: {
     upsells: data.upsells as string[],
     subtotal: parseFloat(data.subtotal.toString()),
     shippingCost: parseFloat(data.shipping_cost.toString()),
-    discount: data.discount ? parseFloat(data.discount.toString()) : undefined,
     total: parseFloat(data.total.toString()),
     status: data.status as OrderStatus,
     helpshipOrderId: data.helpship_order_id ?? undefined,
@@ -185,7 +182,6 @@ export async function listOrders(): Promise<Order[]> {
     upsells: row.upsells as string[],
     subtotal: parseFloat(row.subtotal.toString()),
     shippingCost: parseFloat(row.shipping_cost.toString()),
-    discount: row.discount ? parseFloat(row.discount.toString()) : undefined,
     total: parseFloat(row.total.toString()),
     status: row.status as OrderStatus,
     helpshipOrderId: row.helpship_order_id ?? undefined,

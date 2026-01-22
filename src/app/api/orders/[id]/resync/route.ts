@@ -111,7 +111,6 @@ export async function POST(
         productQuantity, // Cantitatea din oferta selectată
         subtotal: parseFloat(order.subtotal.toString()),
         shippingCost: parseFloat(order.shipping_cost.toString()),
-        discount: order.discount ? parseFloat(order.discount.toString()) : 0,
         total: parseFloat(order.total.toString()),
         upsells: order.upsells || [],
       });

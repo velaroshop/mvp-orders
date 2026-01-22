@@ -103,7 +103,6 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       productQuantity: order.product_quantity || 1,
       subtotal: Number(order.subtotal) || 0,
       shippingCost: Number(order.shipping_cost) || 0,
-      discount: Number(order.discount) || 0,
       total: actualTotal, // Use calculated total including all upsells
       upsells: upsellsWithProductNames,
     });

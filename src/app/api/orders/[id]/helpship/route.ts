@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
-import { HelpshipClient } from "@/lib/helpship";
-import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { supabase } from "@/lib/supabase";
+import { helpshipClient } from "@/lib/helpship";
 
 /**
  * Obține datele comenzii din Helpship
@@ -14,7 +13,7 @@ export async function GET(
     const { id: orderId } = await params;
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabaseAdmin
+    const { data: order, error: fetchError } = await supabase
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -29,10 +28,6 @@ export async function GET(
 
     // Dacă comanda are helpshipOrderId, obține datele din Helpship
     if (order.helpship_order_id) {
-      // Get Helpship credentials for organization
-      const credentials = await getHelpshipCredentials(order.organization_id);
-      const helpshipClient = new HelpshipClient(credentials);
-
       const helpshipOrder = await helpshipClient.getOrder(order.helpship_order_id);
       
       if (!helpshipOrder) {

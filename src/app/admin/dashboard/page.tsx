@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import RevenueGrowthChart from "../components/RevenueGrowthChart";
 
 interface ProductRevenue {
   name: string;
@@ -79,6 +80,24 @@ export default function DashboardPage() {
   const [stockAnalysisPeriod, setStockAnalysisPeriod] = useState<1 | 3 | 7 | 14>(7);
   const [stockAnalysisLoading, setStockAnalysisLoading] = useState(false);
   const [stockAnalysisData, setStockAnalysisData] = useState<ProductStockAnalysis | null>(null);
+
+  // Revenue Growth data
+  const [revenueGrowthLoading, setRevenueGrowthLoading] = useState(false);
+  const [revenueGrowthData, setRevenueGrowthData] = useState<{
+    hourlyRevenue: Array<{
+      hour: string;
+      totalRevenue: number;
+      upsellRevenue: number;
+      orderCount: number;
+    }>;
+    upsellSplit: {
+      presale: number;
+      postsale: number;
+    };
+  }>({
+    hourlyRevenue: [],
+    upsellSplit: { presale: 0, postsale: 0 },
+  });
 
   // Calculate date ranges for quick filters
   const getDateRange = (filter: QuickFilter): { start: string; end: string } => {
@@ -229,6 +248,28 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch revenue growth data
+  const fetchRevenueGrowth = async (start: string, end: string) => {
+    setRevenueGrowthLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("startDate", start);
+      params.set("endDate", end);
+
+      const response = await fetch(`/api/dashboard/revenue-growth?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRevenueGrowthData(data);
+      } else {
+        console.error("Failed to fetch revenue growth:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching revenue growth:", error);
+    } finally {
+      setRevenueGrowthLoading(false);
+    }
+  };
+
   // Auto-apply quick filters
   useEffect(() => {
     const { start, end } = getDateRange(quickFilter);
@@ -236,11 +277,13 @@ export default function DashboardPage() {
     setStartDate(start);
     setEndDate(end);
     fetchStats(start, end, selectedLandingPage);
+    fetchRevenueGrowth(start, end);
   }, [quickFilter]);
 
   // Handle manual Apply Filters
   const handleApplyFilters = () => {
     fetchStats(startDate, endDate, selectedLandingPage);
+    fetchRevenueGrowth(startDate, endDate);
   };
 
   // Handle quick filter button click
@@ -280,13 +323,13 @@ export default function DashboardPage() {
       {/* Main Grid: Filters & KPIs (2/3) + Orders by Status (1/3) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Filters & KPIs Card - 2/3 width */}
-        <div className="lg:col-span-2 bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
+        <div className="lg:col-span-2 bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-4">
         {/* Filters Section */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-zinc-400 mb-4">Filters</h3>
+        <div className="mb-4">
+          <h3 className="text-xs font-medium text-zinc-400 mb-3">Filters</h3>
 
           {/* Quick Filters */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             {[
               { key: "today", label: "Today" },
               { key: "yesterday", label: "Yesterday" },
@@ -298,7 +341,7 @@ export default function DashboardPage() {
               <button
                 key={filter.key}
                 onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   quickFilter === filter.key
                     ? "bg-emerald-600 text-white"
                     : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
@@ -310,37 +353,37 @@ export default function DashboardPage() {
           </div>
 
           {/* Manual Date & Landing Page Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
                 Start Date
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
                 End Date
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
                 Landing Page
               </label>
               <select
                 value={selectedLandingPage}
                 onChange={(e) => setSelectedLandingPage(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
               >
                 <option value="all">All Landing Pages</option>
                 {landingPages.map((lp) => (
@@ -353,10 +396,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Apply Filters Button */}
-          <div className="mt-4">
+          <div className="mt-3">
             <button
               onClick={handleApplyFilters}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium"
+              className="px-4 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium"
             >
               Apply Filters
             </button>
@@ -364,47 +407,48 @@ export default function DashboardPage() {
         </div>
 
         {/* KPIs Section */}
-        <div className="border-t border-zinc-700 pt-6">
-          <h3 className="text-sm font-medium text-zinc-400 mb-4">Key Performance Indicators</h3>
+        <div className="border-t border-zinc-700 pt-4">
+          <h3 className="text-xs font-medium text-zinc-400 mb-3">Key Performance Indicators</h3>
 
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-zinc-400">Loading stats...</p>
+            <div className="text-center py-6">
+              <p className="text-zinc-400 text-sm">Loading stats...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {/* Total Revenue */}
               <div>
-                <p className="text-xs text-zinc-400 mb-1">Total</p>
-                <p className="text-2xl font-bold text-emerald-500">
-                  {stats.totalRevenue.toFixed(2)} RON
+                <p className="text-[10px] text-zinc-400 mb-0.5">Total</p>
+                <p className="text-xl font-bold text-emerald-500">
+                  {stats.totalRevenue.toFixed(2)}
                 </p>
+                <p className="text-[10px] text-zinc-500">RON</p>
               </div>
 
               {/* Average Order Value */}
               <div>
-                <p className="text-xs text-zinc-400 mb-1">Avg. Value</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Value</p>
+                <p className="text-xl font-bold text-white">
                   {stats.avgOrderValue.toFixed(2)} RON
                 </p>
               </div>
 
               {/* Orders */}
               <div>
-                <p className="text-xs text-zinc-400 mb-1">Orders</p>
-                <p className="text-2xl font-bold text-white">{stats.orderCount}</p>
+                <p className="text-[10px] text-zinc-400 mb-0.5">Orders</p>
+                <p className="text-xl font-bold text-white">{stats.orderCount}</p>
               </div>
 
               {/* Products Sold */}
               <div>
-                <p className="text-xs text-zinc-400 mb-1">Products Sold</p>
-                <p className="text-2xl font-bold text-white">{stats.productsSold}</p>
+                <p className="text-[10px] text-zinc-400 mb-0.5">Products Sold</p>
+                <p className="text-xl font-bold text-white">{stats.productsSold}</p>
               </div>
 
               {/* Upsell Rate */}
               <div>
-                <p className="text-xs text-zinc-400 mb-1">Upsell Rate</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-[10px] text-zinc-400 mb-0.5">Upsell Rate</p>
+                <p className="text-xl font-bold text-white">
                   {stats.upsellRate.toFixed(1)}%
                 </p>
               </div>
@@ -452,6 +496,15 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Revenue Growth Chart - Full width */}
+      <div className="mb-6">
+        <RevenueGrowthChart
+          hourlyRevenue={revenueGrowthData.hourlyRevenue}
+          upsellSplit={revenueGrowthData.upsellSplit}
+          loading={revenueGrowthLoading}
+        />
       </div>
 
       {/* Stats Cards Grid */}

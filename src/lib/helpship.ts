@@ -614,64 +614,77 @@ class HelpshipClient {
   /**
    * Obține numărul de unități în stoc pentru un produs după SKU
    * Încearcă mai multe strategii: ExternalSku, Code, și CodesSearch
-   * Folosește endpoint-ul GET /api/Item/count
+   * Folosește endpoint-ul GET /api/Item pentru a obține datele complete incluzând stocul
    */
   async getProductStock(sku: string): Promise<number | null> {
     try {
       console.log(`[Helpship] Getting stock for product with SKU: ${sku}...`);
 
       // Strategy 1: Încearcă cu ExternalSku
-      console.log(`[Helpship] Strategy 1: Trying ExternalSku parameter...`);
+      console.log(`[Helpship] Strategy 1: Trying /api/Item with ExternalSku parameter...`);
       let params = new URLSearchParams({ ExternalSku: sku });
-      let endpoint = `/api/Item/count?${params.toString()}`;
+      let endpoint = `/api/Item?${params.toString()}`;
       let response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
 
       if (response.ok) {
-        const count = await response.json();
-        console.log(`[Helpship] ExternalSku response:`, count);
-        if (typeof count === 'number') {
-          console.log(`[Helpship] ✓ Found ${count} units using ExternalSku`);
-          return count;
+        const data = await response.json();
+        console.log(`[Helpship] ExternalSku response:`, data);
+
+        // API returnează un array sau un obiect cu items
+        const items = Array.isArray(data) ? data : (data.items || data.data || []);
+        if (items.length > 0) {
+          const item = items[0];
+          const stock = item.quantityAvailable || item.available || item.quantity || 0;
+          console.log(`[Helpship] ✓ Found item using ExternalSku, stock: ${stock}`, item);
+          return stock;
         }
-        console.log(`[Helpship] ExternalSku returned non-number:`, typeof count, count);
+        console.log(`[Helpship] ExternalSku found no items`);
       } else {
         const errorText = await response.text();
         console.log(`[Helpship] ExternalSku failed with status ${response.status}:`, errorText);
       }
 
       // Strategy 2: Încearcă cu Code
-      console.log(`[Helpship] Strategy 2: Trying Code parameter...`);
+      console.log(`[Helpship] Strategy 2: Trying /api/Item with Code parameter...`);
       params = new URLSearchParams({ Code: sku });
-      endpoint = `/api/Item/count?${params.toString()}`;
+      endpoint = `/api/Item?${params.toString()}`;
       response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
 
       if (response.ok) {
-        const count = await response.json();
-        console.log(`[Helpship] Code response:`, count);
-        if (typeof count === 'number') {
-          console.log(`[Helpship] ✓ Found ${count} units using Code`);
-          return count;
+        const data = await response.json();
+        console.log(`[Helpship] Code response:`, data);
+
+        const items = Array.isArray(data) ? data : (data.items || data.data || []);
+        if (items.length > 0) {
+          const item = items[0];
+          const stock = item.quantityAvailable || item.available || item.quantity || 0;
+          console.log(`[Helpship] ✓ Found item using Code, stock: ${stock}`, item);
+          return stock;
         }
-        console.log(`[Helpship] Code returned non-number:`, typeof count, count);
+        console.log(`[Helpship] Code found no items`);
       } else {
         const errorText = await response.text();
         console.log(`[Helpship] Code failed with status ${response.status}:`, errorText);
       }
 
       // Strategy 3: Încearcă cu CodesSearch
-      console.log(`[Helpship] Strategy 3: Trying CodesSearch parameter...`);
+      console.log(`[Helpship] Strategy 3: Trying /api/Item with CodesSearch parameter...`);
       params = new URLSearchParams({ CodesSearch: sku });
-      endpoint = `/api/Item/count?${params.toString()}`;
+      endpoint = `/api/Item?${params.toString()}`;
       response = await this.makeAuthenticatedRequest(endpoint, { method: "GET" });
 
       if (response.ok) {
-        const count = await response.json();
-        console.log(`[Helpship] CodesSearch response:`, count);
-        if (typeof count === 'number') {
-          console.log(`[Helpship] ✓ Found ${count} units using CodesSearch`);
-          return count;
+        const data = await response.json();
+        console.log(`[Helpship] CodesSearch response:`, data);
+
+        const items = Array.isArray(data) ? data : (data.items || data.data || []);
+        if (items.length > 0) {
+          const item = items[0];
+          const stock = item.quantityAvailable || item.available || item.quantity || 0;
+          console.log(`[Helpship] ✓ Found item using CodesSearch, stock: ${stock}`, item);
+          return stock;
         }
-        console.log(`[Helpship] CodesSearch returned non-number:`, typeof count, count);
+        console.log(`[Helpship] CodesSearch found no items`);
       } else {
         const errorText = await response.text();
         console.log(`[Helpship] CodesSearch failed with status ${response.status}:`, errorText);

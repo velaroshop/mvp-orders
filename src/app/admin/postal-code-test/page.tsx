@@ -3,19 +3,19 @@
 import { useState } from "react";
 
 interface PostalCodeResult {
-  postcode: string;
-  formatted: string;
+  postal_code: string;
+  county: string;
+  city: string;
+  street_type: string;
+  street_name: string;
+  number: string;
+  sector?: string;
+  full_address: string;
   confidence: number;
-  sanitizedAddress: {
-    county: string;
-    city: string;
-    street: string;
-    number?: string;
-    original: {
-      county: string;
-      city: string;
-      address: string;
-    };
+  scores: {
+    county: number;
+    city: number;
+    street: number;
   };
 }
 
@@ -23,15 +23,16 @@ export default function PostalCodeTestPage() {
   const [formData, setFormData] = useState({
     county: "",
     city: "",
-    address: "",
+    street: "",
   });
   const [results, setResults] = useState<PostalCodeResult[]>([]);
+  const [totalFound, setTotalFound] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSearch() {
-    if (!formData.county || !formData.city || !formData.address) {
-      setError("Completează toate câmpurile");
+    if (!formData.county || !formData.city) {
+      setError("Completează cel puțin județul și orașul");
       return;
     }
 
@@ -40,13 +41,17 @@ export default function PostalCodeTestPage() {
     setResults([]);
 
     try {
-      const params = new URLSearchParams({
-        county: formData.county,
-        city: formData.city,
-        address: formData.address,
+      const response = await fetch('/api/postal-code-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          county: formData.county,
+          city: formData.city,
+          street: formData.street,
+        }),
       });
-
-      const response = await fetch(`/api/postal-code/sanitize?${params.toString()}`);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -54,7 +59,8 @@ export default function PostalCodeTestPage() {
       }
 
       const data = await response.json();
-      setResults(data.postalCodes || []);
+      setResults(data.results || []);
+      setTotalFound(data.total_found || 0);
     } catch (err) {
       console.error("Error searching postal codes:", err);
       setError(err instanceof Error ? err.message : "Eroare la căutarea codurilor poștale");
@@ -63,22 +69,27 @@ export default function PostalCodeTestPage() {
     }
   }
 
-  function loadExample(example: "1" | "2" | "3") {
+  function loadExample(example: "1" | "2" | "3" | "4") {
     const examples = {
       "1": {
         county: "vilcea",
         city: "drgasani",
-        address: "str viilor numaru 5a",
+        street: "str viilor",
       },
       "2": {
         county: "iasi",
         city: "iasi",
-        address: "Strada Logovat nr 3",
+        street: "Strada Logovat",
       },
       "3": {
         county: "Cluj",
         city: "Cluj-Napoca",
-        address: "Strada Memorandumului",
+        street: "Strada Memorandumului",
+      },
+      "4": {
+        county: "VL",
+        city: "Ramnicu Valcea",
+        street: "",
       },
     };
 
@@ -92,210 +103,214 @@ export default function PostalCodeTestPage() {
           Test Sistem Coduri Poștale
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Testează sistemul de sanitizare și căutare coduri poștale
+          Testează sistemul de căutare cu fuzzy matching pentru coduri poștale
         </p>
       </header>
 
-        <div className="rounded-lg bg-white shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-            Introdu adresa pentru testare
-          </h2>
+      <div className="rounded-lg bg-white shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+          Introdu adresa pentru testare
+        </h2>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-900 mb-1">
-                Județ
-              </label>
-              <input
-                type="text"
-                value={formData.county}
-                onChange={(e) =>
-                  setFormData({ ...formData, county: e.target.value })
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="ex: vilcea, iasi, Cluj"
-              />
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-zinc-900 mb-1">
+              Județ*
+            </label>
+            <input
+              type="text"
+              value={formData.county}
+              onChange={(e) =>
+                setFormData({ ...formData, county: e.target.value })
+              }
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="ex: Vâlcea, VL, vilcea, Iași, Cluj"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Acceptă abrevieri (VL, MH, B) și variații (vilcea, iasi)
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-zinc-900 mb-1">
-                Localitate / Oraș
-              </label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) =>
-                  setFormData({ ...formData, city: e.target.value })
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="ex: drgasani, iasi, Cluj-Napoca"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-900 mb-1">
+              Localitate / Oraș*
+            </label>
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) =>
+                setFormData({ ...formData, city: e.target.value })
+              }
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="ex: Drăgășani, drgasani, Cluj-Napoca"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Acceptă variații și greșeli de scriere
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-zinc-900 mb-1">
-                Stradă și număr
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="ex: str viilor numaru 5a, Strada Logovat nr 3"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-900 mb-1">
+              Stradă (opțional)
+            </label>
+            <input
+              type="text"
+              value={formData.street}
+              onChange={(e) =>
+                setFormData({ ...formData, street: e.target.value })
+              }
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="ex: Viilor, Memorandumului, Logovat"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Lasă gol pentru căutare doar după județ și oraș
+            </p>
+          </div>
 
-            <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleSearch}
+              disabled={isLoading}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {isLoading ? "Se caută..." : "Caută coduri poștale"}
+            </button>
+
+            <div className="flex gap-2">
               <button
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                onClick={() => loadExample("1")}
+                className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
               >
-                {isLoading ? "Se caută..." : "Caută coduri poștale"}
+                Ex 1: Vâlcea
               </button>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => loadExample("1")}
-                  className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
-                >
-                  Exemplu 1
-                </button>
-                <button
-                  onClick={() => loadExample("2")}
-                  className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
-                >
-                  Exemplu 2
-                </button>
-                <button
-                  onClick={() => loadExample("3")}
-                  className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
-                >
-                  Exemplu 3
-                </button>
-              </div>
+              <button
+                onClick={() => loadExample("2")}
+                className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
+              >
+                Ex 2: Iași
+              </button>
+              <button
+                onClick={() => loadExample("3")}
+                className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
+              >
+                Ex 3: Cluj
+              </button>
+              <button
+                onClick={() => loadExample("4")}
+                className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
+              >
+                Ex 4: Abreviere
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-6">
-            <p className="text-sm text-red-800 font-medium">Eroare</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        )}
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4 mb-6">
+          <p className="text-sm text-red-800 font-medium">Eroare</p>
+          <p className="text-sm text-red-700 mt-1">{error}</p>
+        </div>
+      )}
 
-        {results.length > 0 && (
-          <div className="space-y-4">
-            <div className="rounded-lg bg-white shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-                Adresa sanitizată
-              </h2>
-              <div className="bg-zinc-50 rounded-md p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-600 w-24">
-                    Județ:
-                  </span>
-                  <span className="text-sm text-zinc-900">
-                    {results[0].sanitizedAddress.county}
-                    {results[0].sanitizedAddress.county !==
-                      results[0].sanitizedAddress.original.county && (
-                      <span className="text-zinc-500 ml-2">
-                        (era: {results[0].sanitizedAddress.original.county})
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-600 w-24">
-                    Localitate:
-                  </span>
-                  <span className="text-sm text-zinc-900">
-                    {results[0].sanitizedAddress.city}
-                    {results[0].sanitizedAddress.city !==
-                      results[0].sanitizedAddress.original.city && (
-                      <span className="text-zinc-500 ml-2">
-                        (era: {results[0].sanitizedAddress.original.city})
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-600 w-24">
-                    Stradă:
-                  </span>
-                  <span className="text-sm text-zinc-900">
-                    {results[0].sanitizedAddress.street}
-                    {results[0].sanitizedAddress.street !==
-                      results[0].sanitizedAddress.original.address && (
-                      <span className="text-zinc-500 ml-2">
-                        (era: {results[0].sanitizedAddress.original.address})
-                      </span>
-                    )}
-                  </span>
-                </div>
-                {results[0].sanitizedAddress.number && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-zinc-600 w-24">
-                      Număr:
-                    </span>
-                    <span className="text-sm text-zinc-900">
-                      {results[0].sanitizedAddress.number}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-white shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 mb-4">
-                Coduri poștale găsite ({results.length})
-              </h2>
-              <div className="space-y-3">
-                {results.map((result, index) => (
-                  <div
-                    key={index}
-                    className="border border-zinc-200 rounded-md p-4 hover:bg-zinc-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-lg font-bold text-emerald-600">
-                            {result.postcode}
-                          </span>
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              result.confidence >= 0.9
-                                ? "bg-emerald-100 text-emerald-800"
-                                : result.confidence >= 0.7
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-zinc-100 text-zinc-800"
-                            }`}
-                          >
-                            Confidence: {(result.confidence * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                        <p className="text-sm text-zinc-600">
-                          {result.formatted}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {results.length === 0 && !isLoading && !error && (
-          <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-6 text-center">
-            <p className="text-sm text-zinc-600">
-              Completează adresa și apasă "Caută coduri poștale" pentru a testa sistemul
+      {results.length > 0 && (
+        <div className="space-y-4">
+          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+            <p className="text-sm text-emerald-800">
+              <span className="font-medium">Rezultate:</span> Găsite {totalFound} coduri poștale, afișate top 3 cele mai relevante
             </p>
           </div>
-        )}
+
+          <div className="rounded-lg bg-white shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+              Top 3 Coduri Poștale
+            </h2>
+            <div className="space-y-3">
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  className="border border-zinc-200 rounded-md p-4 hover:bg-zinc-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-emerald-600">
+                        {result.postal_code}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          result.confidence >= 0.9
+                            ? "bg-emerald-100 text-emerald-800"
+                            : result.confidence >= 0.7
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-orange-100 text-orange-800"
+                        }`}
+                      >
+                        {result.confidence >= 0.9 ? '✓ ' : result.confidence >= 0.7 ? '⚠ ' : '? '}
+                        Confidence: {(result.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-1 rounded">
+                      #{index + 1}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-zinc-900 font-medium mb-2">
+                    {result.full_address}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-zinc-50 rounded p-2">
+                      <span className="text-zinc-500">Județ:</span>
+                      <span className="ml-1 font-medium text-zinc-900">{result.county}</span>
+                      <span className="ml-2 text-emerald-600">
+                        ({(result.scores.county * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="bg-zinc-50 rounded p-2">
+                      <span className="text-zinc-500">Oraș:</span>
+                      <span className="ml-1 font-medium text-zinc-900">{result.city}</span>
+                      <span className="ml-2 text-emerald-600">
+                        ({(result.scores.city * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                    {result.street_name && (
+                      <div className="bg-zinc-50 rounded p-2 col-span-2">
+                        <span className="text-zinc-500">Stradă:</span>
+                        <span className="ml-1 font-medium text-zinc-900">
+                          {result.street_type} {result.street_name}
+                          {result.number && `, ${result.number}`}
+                        </span>
+                        <span className="ml-2 text-emerald-600">
+                          ({(result.scores.street * 100).toFixed(0)}%)
+                        </span>
+                      </div>
+                    )}
+                    {result.sector && (
+                      <div className="bg-blue-50 rounded p-2 col-span-2">
+                        <span className="text-blue-700 font-medium">
+                          Sector {result.sector}, București
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {results.length === 0 && !isLoading && !error && (
+        <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-8 text-center">
+          <div className="text-zinc-400 text-4xl mb-3">📮</div>
+          <p className="text-sm text-zinc-600">
+            Completează județ și oraș pentru a căuta coduri poștale
+          </p>
+          <p className="text-xs text-zinc-500 mt-2">
+            Sistemul acceptă abrevieri, greșeli de scriere și variații ale denumirilor
+          </p>
+        </div>
+      )}
     </>
   );
 }

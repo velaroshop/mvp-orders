@@ -1,0 +1,239 @@
+import { NextRequest, NextResponse } from "next/server";
+import postalCodesData from "@/data/postal-codes-normalized.json";
+
+interface PostalCodeEntry {
+  county: string;
+  county_normalized: string;
+  city: string;
+  city_normalized: string;
+  street_type: string;
+  street_name: string;
+  street_normalized: string;
+  number: string;
+  postal_code: string;
+  sector?: string;
+  siruta: string | number;
+  sheet: string;
+}
+
+// County abbreviation map for normalization
+const countyAbbrevMap: Record<string, string> = {
+  'vl': 'valcea',
+  'vilcea': 'valcea',
+  'mh': 'mures',
+  'b': 'bucuresti',
+  'if': 'ilfov',
+  'cj': 'cluj',
+  'tm': 'timis',
+  'is': 'iasi',
+  'ct': 'constanta',
+  'bv': 'brasov',
+  'br': 'braila',
+  'db': 'dambovita',
+  'dj': 'dolj',
+  'gl': 'galati',
+  'ph': 'prahova',
+  'sb': 'sibiu',
+  'bh': 'bihor',
+  'bc': 'bacau',
+  'ar': 'arad',
+  'ag': 'arges',
+  'ab': 'alba',
+  'bt': 'botosani',
+  'cv': 'covasna',
+  'cs': 'caras-severin',
+  'cl': 'calarasi',
+  'gj': 'gorj',
+  'hr': 'harghita',
+  'hd': 'hunedoara',
+  'il': 'ialomita',
+  'mm': 'maramures',
+  'ms': 'mures',
+  'nt': 'neamt',
+  'ot': 'olt',
+  'sm': 'satu mare',
+  'sj': 'salaj',
+  'sv': 'suceava',
+  'tr': 'teleorman',
+  'vs': 'vaslui',
+  'vn': 'vrancea',
+};
+
+// Normalize text (remove diacritics, lowercase)
+function normalize(text: string): string {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ş/g, 's')
+    .replace(/ș/g, 's')
+    .replace(/ţ/g, 't')
+    .replace(/ț/g, 't')
+    .replace(/ă/g, 'a')
+    .replace(/â/g, 'a')
+    .replace(/î/g, 'i')
+    .trim();
+}
+
+// Calculate Levenshtein distance for fuzzy matching
+function levenshteinDistance(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[len1][len2];
+}
+
+// Calculate similarity score (0-1, higher is better)
+function similarityScore(str1: string, str2: string): number {
+  const distance = levenshteinDistance(str1, str2);
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return 1;
+  return 1 - distance / maxLen;
+}
+
+/**
+ * POST /api/postal-code-search
+ * Search for postal codes based on county, city, and street
+ * Returns top 3 matches with confidence scores
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { county, city, street } = body;
+
+    if (!county || !city) {
+      return NextResponse.json(
+        { error: "County and city are required" },
+        { status: 400 }
+      );
+    }
+
+    // Normalize inputs
+    let countyNorm = normalize(county);
+    const cityNorm = normalize(city);
+    const streetNorm = street ? normalize(street) : '';
+
+    // Check if county is abbreviated and expand it
+    if (countyAbbrevMap[countyNorm]) {
+      countyNorm = countyAbbrevMap[countyNorm];
+    }
+
+    console.log('Search params:', { county, city, street });
+    console.log('Normalized:', { countyNorm, cityNorm, streetNorm });
+
+    const data = postalCodesData as PostalCodeEntry[];
+    const matches: Array<{
+      entry: PostalCodeEntry;
+      score: number;
+      countyScore: number;
+      cityScore: number;
+      streetScore: number;
+    }> = [];
+
+    // Search through all entries
+    for (const entry of data) {
+      // County matching
+      const countyScore = similarityScore(countyNorm, entry.county_normalized);
+      if (countyScore < 0.7) continue; // Skip if county doesn't match well
+
+      // City matching
+      const cityScore = similarityScore(cityNorm, entry.city_normalized);
+      if (cityScore < 0.6) continue; // Skip if city doesn't match well
+
+      // Street matching (if provided and entry has street data)
+      let streetScore = 1.0;
+      if (streetNorm && entry.street_normalized) {
+        // Check if street is contained or vice versa
+        if (entry.street_normalized.includes(streetNorm) || streetNorm.includes(entry.street_normalized)) {
+          streetScore = 0.95; // High score for partial match
+        } else {
+          streetScore = similarityScore(streetNorm, entry.street_normalized);
+        }
+      } else if (streetNorm && !entry.street_normalized) {
+        // User provided street but entry has no street data (small city)
+        streetScore = 0.5; // Lower confidence
+      }
+
+      // Calculate overall score (weighted average)
+      const overallScore = streetNorm
+        ? (countyScore * 0.2 + cityScore * 0.3 + streetScore * 0.5)
+        : (countyScore * 0.3 + cityScore * 0.7);
+
+      matches.push({
+        entry,
+        score: overallScore,
+        countyScore,
+        cityScore,
+        streetScore,
+      });
+    }
+
+    // Sort by score (highest first) and take top 3
+    matches.sort((a, b) => b.score - a.score);
+    const topMatches = matches.slice(0, 3);
+
+    console.log(`Found ${matches.length} total matches, returning top 3`);
+    console.log('Top scores:', topMatches.map(m => m.score.toFixed(2)));
+
+    // Format results
+    const results = topMatches.map((match) => {
+      const e = match.entry;
+      const fullAddress = e.street_name
+        ? `${e.street_type} ${e.street_name}${e.number ? ', ' + e.number : ''}, ${e.city}${e.sector ? ', Sector ' + e.sector : ''}, ${e.county}`
+        : `${e.city}, ${e.county}`;
+
+      return {
+        postal_code: e.postal_code,
+        county: e.county,
+        city: e.city,
+        street_type: e.street_type,
+        street_name: e.street_name,
+        number: e.number,
+        sector: e.sector,
+        full_address: fullAddress,
+        confidence: match.score,
+        scores: {
+          county: match.countyScore,
+          city: match.cityScore,
+          street: match.streetScore,
+        },
+      };
+    });
+
+    return NextResponse.json({
+      query: { county, city, street },
+      results,
+      total_found: matches.length,
+    });
+  } catch (error) {
+    console.error("Error in POST /api/postal-code-search:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

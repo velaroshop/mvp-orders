@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# postal code data processing
+/postal-codes-raw.xls
+/convert-postal-codes.js
+/normalize-postal-codes.js
+/src/data/postal-codes.json

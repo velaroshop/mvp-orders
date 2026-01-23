@@ -151,16 +151,23 @@ function similarityScore(str1: string, str2: string): number {
 // Check if street names match with word order flexibility
 // Example: "henri coanda" matches "coanda henri"
 function streetWordsMatch(userStreet: string, dbStreet: string): number {
-  // Split into words and filter out common street type words
-  const streetTypeWords = ['strada', 'str', 'stradă', 'sosea', 'şosea', 'șosea', 'calea', 'bulevardul', 'bd', 'aleea'];
+  // Split into words and filter out common street type words and number markers
+  const ignoreWords = [
+    // Street types
+    'strada', 'str', 'stradă', 'sosea', 'şosea', 'șosea', 'calea', 'bulevardul', 'bd', 'aleea',
+    // Number markers
+    'nr', 'nr.', 'numar', 'număr', 'no',
+    // Block/apartment markers (sometimes included in address)
+    'bl', 'bloc', 'sc', 'scara', 'et', 'etaj', 'ap', 'apartament',
+  ];
 
   const userWords = userStreet
     .split(/\s+/)
-    .filter(w => w.length > 2 && !streetTypeWords.includes(w));
+    .filter(w => w.length > 2 && !ignoreWords.includes(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
 
   const dbWords = dbStreet
     .split(/\s+/)
-    .filter(w => w.length > 2 && !streetTypeWords.includes(w));
+    .filter(w => w.length > 2 && !ignoreWords.includes(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
 
   if (userWords.length === 0 || dbWords.length === 0) {
     return 0;

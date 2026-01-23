@@ -155,6 +155,11 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   // Step 2: Normalize whitespace and remove separators
   cleaned = normalizeWhitespace(cleaned);
   cleaned = removeSeparators(cleaned);
+
+  // Step 2.5: Separate "Nr.2" into "Nr. 2" and similar patterns
+  // This handles cases like "Nr.2", "Bl.2", "Sc.C", "Et.1", "Ap.4"
+  cleaned = cleaned.replace(/\b(nr|n|bl|bloc|sc|scara|et|etaj|ap|apartament)\.?(\d+[a-z]?)/gi, '$1 $2');
+
   cleaned = normalizeWhitespace(cleaned); // Again after separator removal
 
   // Step 3: Tokenize
@@ -377,6 +382,7 @@ const TEST_CASES: TestCase[] = [
   { input: 'str florilor 8 bl a', expectedStreet: 'Strada Florilor nr. 8, bl. A', expectedNumber: '8', description: 'With bloc' },
   { input: 'str florilor 8 bloc a sc 2', expectedStreet: 'Strada Florilor nr. 8, sc. 2 bl. A', expectedNumber: '8', description: 'Bloc and scara' },
   { input: 'str florilor 8 bl a sc 2 et 3 ap 10', expectedStreet: 'Strada Florilor nr. 8, sc. 2 bl. A et. 3 ap. 10', expectedNumber: '8', description: 'Full details' },
+  { input: 'Strada Daciei Nr.2 Bloc 2 Sc C Et1 Ap4', expectedStreet: 'Strada Daciei nr. 2, sc. C bl. 2 et. 1 ap. 4', expectedNumber: '2', description: 'Real case: Nr.2 stuck, Et1/Ap4 stuck' },
   { input: 'st ficusului 8, scara a bloc 2', expectedStreet: 'Strada Ficusului nr. 8, sc. A bl. 2', expectedNumber: '8', description: 'St abbreviation with scara and bloc' },
 
   // Title case with prepositions

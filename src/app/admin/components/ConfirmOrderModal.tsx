@@ -382,9 +382,9 @@ export default function ConfirmOrderModal({
                   type="button"
                   onClick={() => {
                     const result = sanitizeStreet(formData.address);
-                    setFormData({ ...formData, address: result.street, streetNumber: result.number });
+                    setFormData((prev) => ({ ...prev, address: result.street, streetNumber: result.number }));
                   }}
-                  className="text-xs text-blue-400 hover:text-blue-300"
+                  className="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
                 >
                   Clean & Autofill
                 </button>

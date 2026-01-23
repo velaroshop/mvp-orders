@@ -322,7 +322,10 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // No parenthesis in DB, standard matching
-        cityScore = similarityScore(userCityBase || cityNorm, dbCityNorm);
+        // Try both full city name AND base city name (in case user split wrongly)
+        const fullCityScore = similarityScore(cityNorm, dbCityNorm);
+        const baseCityScore = userCityBase ? similarityScore(userCityBase, dbCityNorm) : 0;
+        cityScore = Math.max(fullCityScore, baseCityScore);
       }
 
       if (cityScore < 0.6) continue; // Skip if city doesn't match well

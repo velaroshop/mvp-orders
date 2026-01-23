@@ -55,12 +55,20 @@ export async function POST(
     // Toggle the is_active status
     const newActiveStatus = !organization.is_active;
 
+    // When activating, also set is_pending to false (no longer a new registration)
+    const updateData: { is_active: boolean; is_pending?: boolean; updated_at: string } = {
+      is_active: newActiveStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (newActiveStatus) {
+      // When activating, clear the pending flag
+      updateData.is_pending = false;
+    }
+
     const { data: updatedOrg, error: updateError } = await supabaseAdmin
       .from("organizations")
-      .update({
-        is_active: newActiveStatus,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", organizationId)
       .select()
       .single();

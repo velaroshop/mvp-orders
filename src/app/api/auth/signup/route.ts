@@ -90,13 +90,14 @@ export async function POST(request: NextRequest) {
         counter++;
       }
 
-      // Create organization (inactive by default - requires superadmin activation)
+      // Create organization (inactive and pending by default - requires superadmin activation)
       const { data: organization, error: orgError } = await supabase
         .from("organizations")
         .insert({
           name: organizationName,
           slug: finalSlug,
           is_active: false, // New organizations require superadmin activation
+          is_pending: true, // Mark as pending (new registration)
         })
         .select()
         .single();

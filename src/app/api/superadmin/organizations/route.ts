@@ -33,6 +33,7 @@ export async function GET() {
         name,
         slug,
         is_active,
+        is_pending,
         is_superadmin,
         created_at,
         updated_at
@@ -93,12 +94,20 @@ export async function GET() {
       name: org.name,
       slug: org.slug,
       isActive: org.is_active,
+      isPending: org.is_pending,
       isSuperadmin: org.is_superadmin,
       memberCount: memberCountMap.get(org.id) || 0,
       owner: ownerMap.get(org.id) || null,
       createdAt: org.created_at,
       updatedAt: org.updated_at,
     }));
+
+    // Sort: superadmin orgs first, then by created_at desc
+    mappedOrganizations.sort((a, b) => {
+      if (a.isSuperadmin && !b.isSuperadmin) return -1;
+      if (!a.isSuperadmin && b.isSuperadmin) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
     return NextResponse.json({ organizations: mappedOrganizations });
   } catch (error) {

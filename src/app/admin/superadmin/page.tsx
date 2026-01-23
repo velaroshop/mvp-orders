@@ -9,6 +9,7 @@ interface Organization {
   name: string;
   slug: string;
   isActive: boolean;
+  isPending: boolean;
   isSuperadmin: boolean;
   memberCount: number;
   owner: { email: string; name: string } | null;
@@ -113,9 +114,15 @@ export default function SuperadminPage() {
     );
   }
 
-  const activeOrgs = organizations.filter((o) => o.isActive && !o.isSuperadmin);
-  const inactiveOrgs = organizations.filter((o) => !o.isActive);
+  // Organization categories:
+  // - Superadmin orgs: is_superadmin = true (protected, always first)
+  // - Active orgs: is_active = true, is_superadmin = false
+  // - Pending orgs: is_active = false, is_pending = true (new registrations)
+  // - Suspended orgs: is_active = false, is_pending = false (intentionally deactivated)
   const superadminOrgs = organizations.filter((o) => o.isSuperadmin);
+  const activeOrgs = organizations.filter((o) => o.isActive && !o.isSuperadmin);
+  const pendingOrgs = organizations.filter((o) => !o.isActive && o.isPending);
+  const suspendedOrgs = organizations.filter((o) => !o.isActive && !o.isPending && !o.isSuperadmin);
 
   return (
     <div className="max-w-7xl">
@@ -146,7 +153,7 @@ export default function SuperadminPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-emerald-900/30 rounded-lg flex items-center justify-center">
@@ -154,7 +161,7 @@ export default function SuperadminPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{activeOrgs.length}</p>
-              <p className="text-sm text-zinc-400">Active Organizations</p>
+              <p className="text-sm text-zinc-400">Active</p>
             </div>
           </div>
         </div>
@@ -164,8 +171,19 @@ export default function SuperadminPage() {
               <span className="text-amber-400 text-xl">⏳</span>
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{inactiveOrgs.length}</p>
-              <p className="text-sm text-zinc-400">Pending Activation</p>
+              <p className="text-2xl font-bold text-white">{pendingOrgs.length}</p>
+              <p className="text-sm text-zinc-400">Pending</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-900/30 rounded-lg flex items-center justify-center">
+              <span className="text-red-400 text-xl">⛔</span>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">{suspendedOrgs.length}</p>
+              <p className="text-sm text-zinc-400">Suspended</p>
             </div>
           </div>
         </div>
@@ -176,26 +194,26 @@ export default function SuperadminPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{superadminOrgs.length}</p>
-              <p className="text-sm text-zinc-400">Superadmin Organizations</p>
+              <p className="text-sm text-zinc-400">Superadmin</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pending Activation Section */}
-      {inactiveOrgs.length > 0 && (
+      {/* Pending Activation Section - New Registrations */}
+      {pendingOrgs.length > 0 && (
         <div className="bg-amber-900/20 border border-amber-700 rounded-lg mb-6">
           <div className="p-4 border-b border-amber-700/50">
             <h2 className="text-lg font-semibold text-amber-300 flex items-center gap-2">
               <span>⏳</span>
-              Pending Activation ({inactiveOrgs.length})
+              Pending Activation ({pendingOrgs.length})
             </h2>
             <p className="text-sm text-amber-400/70 mt-1">
-              These organizations are waiting for activation. Users cannot log in until activated.
+              New registrations waiting for activation. Users cannot log in until activated.
             </p>
           </div>
           <div className="divide-y divide-amber-700/30">
-            {inactiveOrgs.map((org) => (
+            {pendingOrgs.map((org) => (
               <div key={org.id} className="p-4 flex items-center justify-between">
                 <div className="flex-1">
                   <h3 className="text-white font-medium">{org.name}</h3>
@@ -225,6 +243,58 @@ export default function SuperadminPage() {
                     <>
                       <span>✓</span>
                       Activate
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Suspended Section - Intentionally Deactivated */}
+      {suspendedOrgs.length > 0 && (
+        <div className="bg-red-900/20 border border-red-700 rounded-lg mb-6">
+          <div className="p-4 border-b border-red-700/50">
+            <h2 className="text-lg font-semibold text-red-300 flex items-center gap-2">
+              <span>⛔</span>
+              Suspended ({suspendedOrgs.length})
+            </h2>
+            <p className="text-sm text-red-400/70 mt-1">
+              Organizations that have been intentionally deactivated. Users cannot log in.
+            </p>
+          </div>
+          <div className="divide-y divide-red-700/30">
+            {suspendedOrgs.map((org) => (
+              <div key={org.id} className="p-4 flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-white font-medium">{org.name}</h3>
+                  <div className="flex items-center gap-4 mt-1">
+                    <span className="text-sm text-zinc-400">
+                      Owner: {org.owner?.email || "No owner"}
+                    </span>
+                    <span className="text-sm text-zinc-500">
+                      Created: {new Date(org.createdAt).toLocaleDateString("ro-RO")}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggleActive(org.id)}
+                  disabled={togglingId === org.id}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                >
+                  {togglingId === org.id ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Reactivating...
+                    </>
+                  ) : (
+                    <>
+                      <span>↩</span>
+                      Reactivate
                     </>
                   )}
                 </button>
@@ -298,10 +368,15 @@ export default function SuperadminPage() {
                           <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
                           Active
                         </span>
-                      ) : (
+                      ) : org.isPending ? (
                         <span className="inline-flex items-center gap-1.5 text-amber-400 text-sm">
                           <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
                           Pending
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-red-400 text-sm">
+                          <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                          Suspended
                         </span>
                       )}
                     </td>
@@ -320,7 +395,7 @@ export default function SuperadminPage() {
                             disabled={togglingId === org.id}
                             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                               org.isActive
-                                ? "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                                ? "bg-red-900/50 text-red-300 hover:bg-red-900/70 border border-red-700"
                                 : "bg-emerald-600 text-white hover:bg-emerald-700"
                             }`}
                           >
@@ -330,9 +405,11 @@ export default function SuperadminPage() {
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
                             ) : org.isActive ? (
-                              "Deactivate"
-                            ) : (
+                              "Suspend"
+                            ) : org.isPending ? (
                               "Activate"
+                            ) : (
+                              "Reactivate"
                             )}
                           </button>
                         )}
@@ -348,14 +425,16 @@ export default function SuperadminPage() {
 
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-md">
-        <h3 className="text-sm font-semibold text-blue-300 mb-2">How Organization Activation Works</h3>
+        <h3 className="text-sm font-semibold text-blue-300 mb-2">Organization States</h3>
         <ul className="text-sm text-blue-300 space-y-1">
-          <li><strong>New signups:</strong> Organizations are created as inactive by default</li>
-          <li><strong>Inactive organizations:</strong> Users cannot log in and see an error message</li>
-          <li><strong>Activation:</strong> Click "Activate" to allow users to access the platform</li>
-          <li><strong>Deactivation:</strong> Existing sessions continue, but new logins are blocked</li>
-          <li><strong>Superadmin orgs:</strong> Cannot be deactivated (protected)</li>
+          <li><strong className="text-amber-300">Pending:</strong> New registrations waiting for first activation</li>
+          <li><strong className="text-emerald-300">Active:</strong> Organization is operational, users can log in</li>
+          <li><strong className="text-red-300">Suspended:</strong> Intentionally deactivated, users cannot log in</li>
+          <li><strong className="text-purple-300">Superadmin:</strong> Protected organizations that cannot be suspended</li>
         </ul>
+        <p className="text-xs text-blue-400/70 mt-2">
+          Note: When an active organization is suspended, it will appear in the Suspended section (not Pending).
+        </p>
       </div>
     </div>
   );

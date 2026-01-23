@@ -113,6 +113,16 @@ Abbreviated counties are expanded:
 - Uses best score from both methods
 - Results preserve full city name with commune identifier
 
+### 4.5. Commune Specification Support
+- Users can specify which commune when village exists in multiple places
+- Supported formats:
+  - Comma-separated: "Boureni, Motca"
+  - Space-separated: "Boureni Motca"
+  - Parenthesis: "Boureni(Motca)"
+- When commune is specified and matches, huge confidence boost (95%+)
+- When commune doesn't match, applies penalty to deprioritize result
+- Helps narrow down results when village appears in 5+ communes
+
 ### 5. Filtering Thresholds
 - County: ≥ 0.7 similarity required
 - City: ≥ 0.6 similarity required
@@ -178,6 +188,12 @@ Located at: `/admin/postal-code-test`
    - County: "Iasi"
    - City: "Boureni" (exists in both Balș and Moțca communes)
    - Will return both: "Boureni (Balş)" and "Boureni (Moţca)"
+
+7. **Village with commune specified**:
+   - County: "Iasi"
+   - City: "Boureni, Motca" (specifies which commune)
+   - Will prioritize "Boureni (Moţca)" with 95%+ confidence
+   - Other formats also work: "Boureni Motca", "Boureni(Motca)"
 
 ## Files
 

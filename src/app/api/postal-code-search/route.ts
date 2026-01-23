@@ -197,24 +197,68 @@ export async function POST(request: NextRequest) {
 
       // City matching with parenthesis handling
       // Example: "Boureni" should match "Boureni (Balş)"
+      // Also handles: "Boureni, Bals" or "Boureni Bals" to prioritize specific commune
       let cityScore = 0;
       const dbCityNorm = entry.city_normalized;
+
+      // Check if user included commune info (comma or space separated)
+      // Examples: "boureni, bals", "boureni bals", "boureni(bals)"
+      const hasCommaSeparator = cityNorm.includes(',');
+      const hasParenthesisInInput = cityNorm.includes('(');
+
+      let userCityBase = cityNorm;
+      let userCommune = '';
+
+      if (hasCommaSeparator) {
+        // Split by comma: "boureni, bals" -> ["boureni", "bals"]
+        const parts = cityNorm.split(',').map(p => p.trim());
+        userCityBase = parts[0];
+        userCommune = parts[1] || '';
+      } else if (hasParenthesisInInput) {
+        // Split by parenthesis: "boureni(bals)" -> ["boureni", "bals"]
+        const parts = cityNorm.split('(');
+        userCityBase = parts[0].trim();
+        userCommune = parts[1] ? parts[1].replace(')', '').trim() : '';
+      } else if (cityNorm.includes(' ')) {
+        // Check if last word might be commune (heuristic: if 2-3 words)
+        const words = cityNorm.split(/\s+/);
+        if (words.length === 2 || words.length === 3) {
+          // Try treating last word as commune
+          userCityBase = words.slice(0, -1).join(' ');
+          userCommune = words[words.length - 1];
+        }
+      }
 
       // Check if DB city has parenthesis (e.g., "boureni (bals)")
       const hasParenthesis = dbCityNorm.includes('(');
 
       if (hasParenthesis) {
-        // Extract city name before parenthesis
+        // Extract city name and commune from DB
         const dbCityBase = dbCityNorm.split('(')[0].trim();
+        const dbCommune = dbCityNorm.split('(')[1]?.replace(')', '').trim() || '';
 
         // Try matching both the full name and the base name
         const fullScore = similarityScore(cityNorm, dbCityNorm);
-        const baseScore = similarityScore(cityNorm, dbCityBase);
+        const baseScore = similarityScore(userCityBase, dbCityBase);
 
-        // Use the better score
-        cityScore = Math.max(fullScore, baseScore);
+        // If user provided commune info, check if it matches
+        if (userCommune) {
+          const communeScore = similarityScore(userCommune, dbCommune);
+
+          // If commune matches well, give huge boost
+          if (communeScore >= 0.7) {
+            cityScore = Math.max(baseScore * 0.5 + communeScore * 0.5, 0.95);
+          } else {
+            // Commune doesn't match, use base score but penalize
+            cityScore = baseScore * 0.8;
+          }
+        } else {
+          // No commune provided, use the better score
+          cityScore = Math.max(fullScore, baseScore);
+        }
       } else {
-        cityScore = similarityScore(cityNorm, dbCityNorm);
+        // No parenthesis in DB, standard matching
+        cityScore = similarityScore(userCityBase || cityNorm, dbCityNorm);
       }
 
       if (cityScore < 0.6) continue; // Skip if city doesn't match well

@@ -101,9 +101,37 @@ export default function ConfirmOrderModal({
     }
   }
 
+  // Funcție pentru a elimina diacriticele din text
+  function removeDiacritics(text: string): string {
+    if (!text) return '';
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ş/g, 's')
+      .replace(/ș/g, 's')
+      .replace(/ţ/g, 't')
+      .replace(/ț/g, 't')
+      .replace(/ă/g, 'a')
+      .replace(/â/g, 'a')
+      .replace(/î/g, 'i')
+      .replace(/Ş/g, 'S')
+      .replace(/Ș/g, 'S')
+      .replace(/Ţ/g, 'T')
+      .replace(/Ț/g, 'T')
+      .replace(/Ă/g, 'A')
+      .replace(/Â/g, 'A')
+      .replace(/Î/g, 'I');
+  }
+
   // Funcție pentru selectarea unui cod poștal
+  // Populează automat și județul și localitatea (fără diacritice)
   function selectPostalCode(result: PostalCodeResult) {
-    setFormData((prev) => ({ ...prev, postalCode: result.postal_code }));
+    setFormData((prev) => ({
+      ...prev,
+      postalCode: result.postal_code,
+      county: removeDiacritics(result.county),
+      city: removeDiacritics(result.city),
+    }));
   }
 
   // Populează formularul când se deschide modalul

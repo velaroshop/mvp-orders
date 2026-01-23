@@ -58,19 +58,24 @@ export async function GET(
             .single()
         : Promise.resolve({ data: null }),
 
-      // Presale upsells query
+      // Presale upsells query (matching the public upsells API structure)
       supabase
         .from("upsells")
-        .select("id, title, description, quantity, price, srp, media_url, active, products(name, sku, status)")
+        .select("id, title, description, quantity, price, srp, media_url, active, product:products!product_id(id, name, sku, status)")
         .eq("landing_page_id", landingPage.id)
         .eq("type", "presale")
         .eq("active", true)
-        .order("sort_order", { ascending: true })
+        .order("display_order", { ascending: true })
     ]);
 
     const productData = productResult.data;
     const storeData = storeResult.data;
-    const presaleUpsells = upsellsResult.data || [];
+
+    // Filter upsells based on product status (only "active" products)
+    const presaleUpsells = (upsellsResult.data || []).filter((upsell: any) => {
+      const productStatus = upsell.product?.status;
+      return productStatus === "active";
+    });
 
     // Fetch settings only if we have organization_id (still parallel-safe)
     let metaTestMode = false;

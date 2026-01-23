@@ -981,7 +981,7 @@ export default function AdminPage() {
 
                     {/* Actions */}
                     <td className="px-2 py-1.5">
-                      <div className="flex gap-1">
+                      <div className="flex flex-col gap-1">
                         {/* CONFIRM Button - Compact icon on mobile, text on desktop */}
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}

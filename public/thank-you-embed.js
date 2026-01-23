@@ -212,7 +212,7 @@
           </div>
 
           <!-- FELICITĂRI TITLE -->
-          <h1 style="font-size: 36px; font-weight: 900; text-align: center; margin: 0 0 4px 0; background: linear-gradient(135deg, #ffd700 0%, #ffec80 50%, #ffd700 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 30px rgba(255, 215, 0, 0.5); animation: shimmer 2s ease-in-out infinite;">
+          <h1 style="font-size: 42px; font-weight: 900; text-align: center; margin: 0 0 8px 0; color: #ffd700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0,0,0,0.3);">
             ✨ FELICITĂRI! ✨
           </h1>
 
@@ -221,15 +221,15 @@
             ⭐ AI DEBLOCAT O REDUCERE LIMITATĂ ⭐
           </p>
 
-          <!-- PRODUCT IMAGE with glow effect -->
+          <!-- PRODUCT IMAGE with glow effect - 90-95% width -->
           ${upsell.mediaUrl ? `
-            <div style="position: relative; width: 100%; max-width: 280px; margin-bottom: 16px;">
+            <div style="position: relative; width: 92%; margin-bottom: 16px;">
               <div style="position: absolute; inset: -4px; background: linear-gradient(135deg, #ffd700, #ff6b6b, #ffd700); border-radius: 20px; filter: blur(15px); opacity: 0.6; animation: pulse 3s ease-in-out infinite;"></div>
               <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="position: relative; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
 
               <!-- Discount badge on image -->
-              <div style="position: absolute; top: -10px; right: -10px; background: linear-gradient(135deg, #dc2626, #991b1b); color: white; border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: bounce 1s ease-in-out infinite;">
-                <span style="font-size: 20px; line-height: 1;">-${discountPercent}%</span>
+              <div style="position: absolute; top: -12px; right: -12px; background: linear-gradient(135deg, #dc2626, #991b1b); color: white; border-radius: 50%; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); animation: bounce 1s ease-in-out infinite;">
+                <span style="font-size: 22px; line-height: 1;">-${discountPercent}%</span>
               </div>
             </div>
           ` : ''}

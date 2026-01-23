@@ -7,46 +7,9 @@ import { authOptions } from "@/lib/auth";
 import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
- * Background sync to Helpship - fire and forget
- * Logs errors but doesn't block the response
- */
-async function syncUncancelToHelpship(
-  helpshipOrderId: string,
-  organizationId: string,
-) {
-  try {
-    const credentials = await getHelpshipCredentials(organizationId);
-    const helpshipClient = new HelpshipClient(credentials);
-
-    // Verificăm statusul comenzii în Helpship
-    const orderStatus = await helpshipClient.getOrderStatus(helpshipOrderId);
-
-    if (!orderStatus) {
-      console.error(`[Uncancel Background] Failed to get order status from Helpship for ${helpshipOrderId}`);
-      return;
-    }
-
-    const statusName = orderStatus.statusName;
-    if (statusName !== "Archived") {
-      console.log(`[Uncancel Background] Order ${helpshipOrderId} not archived in Helpship (status: ${statusName}), no action needed`);
-      return;
-    }
-
-    console.log(`[Uncancel Background] Uncanceling order ${helpshipOrderId} in Helpship...`);
-    await helpshipClient.uncancelOrder(helpshipOrderId);
-    console.log(`[Uncancel Background] Order ${helpshipOrderId} uncanceled successfully in Helpship.`);
-  } catch (error) {
-    console.error(`[Uncancel Background] Failed to uncancel order ${helpshipOrderId} in Helpship:`, error);
-    // Don't throw - this is background processing
-  }
-}
-
-/**
  * Anulează anularea unei comenzi: schimbă status-ul din Archived în Pending în Helpship
  * Verifică mai întâi dacă comanda este anulată
  * SECURIZAT: Necesită autentificare și verifică ownership-ul
- *
- * OPTIMIZED: Updates DB first, returns immediately, syncs to Helpship in background
  */
 export async function POST(
   request: NextRequest,
@@ -124,10 +87,31 @@ export async function POST(
 
     console.log(`[Uncancel] Order ${orderId} restored to status: ${previousStatus}`);
 
-    // Start background sync to Helpship (fire and forget)
+    // Sync to Helpship (blocking - wait for completion)
     if (order.helpship_order_id) {
-      // Don't await - let it run in the background
-      syncUncancelToHelpship(order.helpship_order_id, order.organization_id);
+      try {
+        const credentials = await getHelpshipCredentials(order.organization_id);
+        const helpshipClient = new HelpshipClient(credentials);
+
+        // Verificăm statusul comenzii în Helpship
+        const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
+
+        if (orderStatus) {
+          const statusName = orderStatus.statusName;
+          if (statusName !== "Archived") {
+            console.log(`[Uncancel] Order ${order.helpship_order_id} not archived in Helpship (status: ${statusName}), no action needed`);
+          } else {
+            console.log(`[Uncancel] Uncanceling order ${order.helpship_order_id} in Helpship...`);
+            await helpshipClient.uncancelOrder(order.helpship_order_id);
+            console.log(`[Uncancel] Order ${order.helpship_order_id} uncanceled successfully in Helpship.`);
+          }
+        } else {
+          console.error(`[Uncancel] Failed to get order status from Helpship for ${order.helpship_order_id}`);
+        }
+      } catch (helpshipError) {
+        console.error(`[Uncancel] Failed to uncancel order in Helpship:`, helpshipError);
+        // DB is already updated, log the error but don't fail the request
+      }
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

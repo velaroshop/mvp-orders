@@ -103,7 +103,7 @@ export default function ConfirmOrderModal({
 
   // Funcție pentru selectarea unui cod poștal
   function selectPostalCode(result: PostalCodeResult) {
-    setFormData({ ...formData, postalCode: result.postal_code });
+    setFormData((prev) => ({ ...prev, postalCode: result.postal_code }));
   }
 
   // Populează formularul când se deschide modalul

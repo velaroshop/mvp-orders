@@ -76,8 +76,22 @@ function normalize(text: string): string {
     .trim();
 }
 
+// Common city abbreviations map
+const cityAbbrevMap: Record<string, string> = {
+  'rm': 'ramnicu',
+  'rm.': 'ramnicu',
+  'sf': 'sfantu',
+  'sf.': 'sfantu',
+  'tg': 'targu',
+  'tg.': 'targu',
+  'dr': 'drobeta',
+  'dr.': 'drobeta',
+  'turnu': 'turnu',
+};
+
 // Clean city input by removing common locality prefixes
 // Examples: "sat boureni" -> "boureni", "com. motca" -> "motca"
+// Also expands abbreviations: "rm valcea" -> "ramnicu valcea"
 function cleanCityInput(text: string): string {
   if (!text) return '';
 
@@ -102,6 +116,14 @@ function cleanCityInput(text: string): string {
     const regex = new RegExp(`(^|,\\s*|\\s+)${prefix}\\s+`, 'gi');
     cleaned = cleaned.replace(regex, '$1');
   }
+
+  // Expand city abbreviations (rm -> ramnicu, tg -> targu, etc.)
+  const words = cleaned.split(/\s+/);
+  const expandedWords = words.map(word => {
+    const lowerWord = word.toLowerCase();
+    return cityAbbrevMap[lowerWord] || word;
+  });
+  cleaned = expandedWords.join(' ');
 
   // Clean up extra spaces and commas
   cleaned = cleaned.replace(/\s+/g, ' ').replace(/,\s*,/g, ',').trim();

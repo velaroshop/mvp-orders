@@ -98,6 +98,7 @@ export default function AdminPage() {
     productsSold: 0,
     upsellRate: 0,
     ordersByStatus: {} as Record<string, number>,
+    partialsByStatus: {} as Record<string, number>,
   });
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -1208,6 +1209,35 @@ export default function AdminPage() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Partials Section */}
+              {!statsLoading && (
+                <div className="mt-3 pt-2 border-t border-zinc-700">
+                  <h4 className="text-[10px] font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Partials</h4>
+                  <div className="space-y-0.5">
+                    {[
+                      { key: "pending", label: "Pending", color: "bg-yellow-500" },
+                      { key: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
+                      { key: "refused", label: "Refused", color: "bg-red-500" },
+                      { key: "unanswered", label: "Unanswered", color: "bg-zinc-400" },
+                    ].map((status) => {
+                      const count = kpiStats.partialsByStatus?.[status.key] || 0;
+                      const isZero = count === 0;
+                      return (
+                        <div key={status.key} className="flex items-center justify-between py-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
+                            <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
+                          </div>
+                          <p className={`text-xs font-semibold ${isZero ? 'text-zinc-600' : 'text-white'}`}>
+                            {count}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

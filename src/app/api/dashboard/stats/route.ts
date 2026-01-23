@@ -141,6 +141,40 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.totalSold - a.totalSold);
 
+    // Fetch partial orders stats with same filters
+    let partialQuery = supabase
+      .from("partial_orders")
+      .select("status")
+      .eq("organization_id", organizationId)
+      .gte("created_at", startDateTime)
+      .lte("created_at", endDateTime);
+
+    // Filter by landing page if specified
+    if (landingPageId && landingPageId !== "all") {
+      partialQuery = partialQuery.eq("landing_page_id", landingPageId);
+    }
+
+    const { data: partialOrders, error: partialError } = await partialQuery;
+
+    // Calculate partial orders by status
+    const partialsByStatus: Record<string, number> = {
+      pending: 0,
+      confirmed: 0,
+      refused: 0,
+      unanswered: 0,
+    };
+
+    if (!partialError && partialOrders) {
+      partialOrders.forEach((partial: any) => {
+        const status = partial.status || "pending";
+        // Map 'accepted' to 'confirmed' for display consistency
+        const displayStatus = status === "accepted" ? "confirmed" : status;
+        if (displayStatus in partialsByStatus) {
+          partialsByStatus[displayStatus]++;
+        }
+      });
+    }
+
     // Calculate upsells split by product and type
     const upsellsByProduct: Record<string, {
       presale: number;
@@ -197,6 +231,7 @@ export async function GET(request: NextRequest) {
       productsSold,
       upsellRate,
       ordersByStatus: statusCounts,
+      partialsByStatus,
       revenueByProduct,
       upsellsSplit,
       productStockAnalysis,

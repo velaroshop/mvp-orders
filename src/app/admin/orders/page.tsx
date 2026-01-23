@@ -5,6 +5,7 @@ import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
 import OrderNoteModal from "../components/OrderNoteModal";
+import CancelOrderModal from "../components/CancelOrderModal";
 import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
@@ -24,6 +25,10 @@ export default function AdminPage() {
   const [noteOrderId, setNoteOrderId] = useState<string | null>(null);
   const [noteOrderCurrentNote, setNoteOrderCurrentNote] = useState<string>("");
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+
+  // Cancel modal state
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   // Duplicate detection state
   const [duplicateOrders, setDuplicateOrders] = useState<Order[]>([]);
@@ -326,6 +331,37 @@ export default function AdminPage() {
     }
   }
 
+  async function handleCancelConfirm(note: string): Promise<void> {
+    if (!cancelOrderId) return;
+
+    try {
+      const response = await fetch(`/api/orders/${cancelOrderId}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to cancel order");
+      }
+
+      await fetchOrders();
+      setIsCancelModalOpen(false);
+      setCancelOrderId(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Comanda a fost anulată cu succes",
+      });
+    } catch (error) {
+      console.error("Error canceling order:", error);
+      throw error;
+    }
+  }
+
   async function handleModalConfirm(updatedOrder: Partial<Order>): Promise<void> {
     if (!selectedOrder) return;
 
@@ -448,32 +484,8 @@ export default function AdminPage() {
     }
 
     if (action === "cancel") {
-      try {
-        const response = await fetch(`/api/orders/${orderId}/cancel`, {
-          method: "POST",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to cancel order");
-        }
-
-        // Reîncarcă lista de comenzi
-        await fetchOrders();
-        setToast({
-          isOpen: true,
-          type: "success",
-          message: "Comanda a fost anulată cu succes",
-        });
-      } catch (error) {
-        console.error("Error canceling order:", error);
-        const errorMessage = error instanceof Error ? error.message : "Eroare la anularea comenzii";
-        setToast({
-          isOpen: true,
-          type: "error",
-          message: errorMessage,
-        });
-      }
+      setCancelOrderId(orderId);
+      setIsCancelModalOpen(true);
       setOpenDropdown(null);
       return;
     }
@@ -950,6 +962,11 @@ export default function AdminPage() {
                             {order.confirmerName}
                           </span>
                         )}
+                        {order.status === "cancelled" && order.cancellerName && (
+                          <span className="text-[9px] text-zinc-400 hidden sm:inline-block truncate max-w-20">
+                            {order.cancellerName}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -963,17 +980,32 @@ export default function AdminPage() {
 
                     {/* Order Note */}
                     <td className="px-2 py-1.5 hidden md:table-cell">
-                      {order.orderNote ? (
-                        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
-                          {order.orderNote.split("\n").map((line, idx) => (
-                            <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-zinc-500 text-[10px]">—</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {/* Cancel Note - Red styling */}
+                        {order.cancelledNote && (
+                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 max-w-28">
+                            {order.cancelledNote.split("\n").map((line, idx) => (
+                              <p key={idx} className="text-red-300 text-[10px] font-medium truncate">
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {/* Regular Order Note - Yellow styling */}
+                        {order.orderNote && (
+                          <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
+                            {order.orderNote.split("\n").map((line, idx) => (
+                              <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {/* Show dash if no notes */}
+                        {!order.orderNote && !order.cancelledNote && (
+                          <span className="text-zinc-500 text-[10px]">—</span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Order Source */}
@@ -1261,6 +1293,17 @@ export default function AdminPage() {
                 onConfirm={handleNoteConfirm}
                 orderId={noteOrderId || ""}
                 currentNote={noteOrderCurrentNote}
+              />
+
+              {/* Cancel Order Modal */}
+              <CancelOrderModal
+                isOpen={isCancelModalOpen}
+                onClose={() => {
+                  setIsCancelModalOpen(false);
+                  setCancelOrderId(null);
+                }}
+                onConfirm={handleCancelConfirm}
+                orderId={cancelOrderId || ""}
               />
 
               {/* Finalize Queue Modal */}

@@ -93,6 +93,8 @@ export async function GET(request: Request) {
         promotedFromTesting: row.promoted_from_testing ?? undefined,
         fromPartialId: row.from_partial_id ?? undefined,
         confirmerName: row.confirmer?.name ?? undefined,
+        cancellerName: row.canceller_name ?? undefined,
+        cancelledNote: row.cancelled_note ?? undefined,
         scheduledDate: row.scheduled_date ?? undefined,
         createdAt: row.created_at,
       };

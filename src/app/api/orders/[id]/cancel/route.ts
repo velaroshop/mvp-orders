@@ -9,6 +9,7 @@ import { verifyOrderOwnership } from "@/lib/auth-helpers";
 /**
  * Anulează o comandă: schimbă status-ul în Archived în Helpship
  * Verifică mai întâi dacă comanda este deja anulată
+ * Acceptă opțional o notă de anulare
  * SECURIZAT: Necesită autentificare și verifică ownership-ul
  */
 export async function POST(
@@ -26,6 +27,15 @@ export async function POST(
     }
 
     const { id: orderId } = await params;
+
+    // Parse body pentru nota de anulare (opțională)
+    let cancelNote: string | null = null;
+    try {
+      const body = await request.json();
+      cancelNote = body.note || null;
+    } catch {
+      // Body gol sau invalid - nota rămâne null
+    }
 
     // Verifică că comanda aparține organizației userului
     const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
@@ -101,13 +111,16 @@ export async function POST(
     // Actualizăm statusul în DB la "cancelled"
     // Salvăm statusul curent în cancelled_from_status pentru a-l putea restabili la uncancel
     const currentStatus = order.status;
-    console.log(`[Cancel] Current order status: ${currentStatus}, setting to cancelled...`);
-    
+    const cancellerName = session.user.name || session.user.email || "Unknown";
+    console.log(`[Cancel] Current order status: ${currentStatus}, setting to cancelled by ${cancellerName}...`);
+
     const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         status: "cancelled",
         cancelled_from_status: currentStatus,
+        cancelled_note: cancelNote,
+        canceller_name: cancellerName,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)

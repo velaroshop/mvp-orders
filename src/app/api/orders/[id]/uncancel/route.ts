@@ -88,13 +88,15 @@ export async function POST(
       }
     }
 
-    // Restabilim statusul inițial în DB
+    // Restabilim statusul inițial în DB și ștergem datele de anulare
     const previousStatus = (order.cancelled_from_status as string) || "pending";
     const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         status: previousStatus,
         cancelled_from_status: null,
+        cancelled_note: null,
+        canceller_name: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);

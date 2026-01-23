@@ -402,9 +402,12 @@
           </div>
 
           <!-- Customer name greeting -->
-          <p style="font-size: 18px; font-weight: 600; color: white; text-align: center; margin: 0 0 20px 0;">
-            Mulțumim pentru comandă${customerName ? `, <span style="color: #ffd700;">${customerName}</span>` : ''}!
-          </p>
+          <div style="text-align: center; margin: 0 0 20px 0;">
+            <p style="font-size: 18px; font-weight: 600; color: white; margin: 0 0 4px 0;">
+              Mulțumim pentru comandă,
+            </p>
+            ${customerName ? `<p style="font-size: 20px; font-weight: 700; color: #ffd700; margin: 0;">${customerName}!</p>` : ''}
+          </div>
 
           <!-- Info box -->
           <div style="width: 100%; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
@@ -436,7 +439,7 @@
 
           <!-- Trust message -->
           <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0; line-height: 1.6;">
-            Vei primi un SMS sau email cu detaliile comenzii și urmărirea coletului.
+            Te vom notifica prin SMS când vom avea noutăți legate de comandă!
           </p>
 
         </div>

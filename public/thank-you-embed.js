@@ -213,8 +213,8 @@
 
           <!-- FELICITĂRI TITLE - Big and Gold -->
           <div style="text-align: center; margin-bottom: 8px;">
-            <span style="font-size: 44px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block;">
-              ✨ FELICITĂRI! ✨
+            <span style="font-size: 40px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block;">
+              FELICITĂRI!
             </span>
           </div>
 
@@ -433,6 +433,6 @@
   // Expose global API
   window.VelaroThankYou = {
     init: init,
-    version: '2.0.0'
+    version: '2.1.0'
   };
 })();

@@ -271,68 +271,62 @@ export default function ConfirmOrderModal({
                 </h3>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Full Name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Phone Number
-                </label>
-                <div className="relative">
+              {/* Full Name & Phone on same line */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                    Full Name
+                  </label>
                   <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => {
-                      // Accept only digits and max 10 characters
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setFormData({ ...formData, phone: value });
-                    }}
-                    maxLength={10}
-                    pattern="07[0-9]{8}"
-                    className={`w-full rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 pr-9 ${
-                      formData.phone.length === 0
-                        ? 'border-zinc-700 focus:ring-emerald-500'
-                        : formData.phone.length === 10 && formData.phone.startsWith('07')
-                        ? 'border-emerald-500 focus:ring-emerald-500'
-                        : 'border-red-500 focus:ring-red-500'
-                    }`}
-                    placeholder="07XXXXXXXX"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fullName: e.target.value })
+                    }
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Full Name"
                   />
-                  {formData.phone.length > 0 && (
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                      {formData.phone.length === 10 && formData.phone.startsWith('07') ? (
-                        <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                  )}
                 </div>
-                <p className={`text-xs mt-0.5 ${
-                  formData.phone.length === 0
-                    ? 'text-zinc-500'
-                    : formData.phone.length === 10 && formData.phone.startsWith('07')
-                    ? 'text-emerald-400'
-                    : 'text-red-400'
-                }`}>
-                  {formData.phone.length} digits
-                </p>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        // Accept only digits and max 10 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({ ...formData, phone: value });
+                      }}
+                      maxLength={10}
+                      pattern="07[0-9]{8}"
+                      className={`w-full rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 pr-9 ${
+                        formData.phone.length === 0
+                          ? 'border-zinc-700 focus:ring-emerald-500'
+                          : formData.phone.length === 10 && formData.phone.startsWith('07')
+                          ? 'border-emerald-500 focus:ring-emerald-500'
+                          : 'border-red-500 focus:ring-red-500'
+                      }`}
+                      placeholder="07XXXXXXXX"
+                    />
+                    {formData.phone.length > 0 && (
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        {formData.phone.length === 10 && formData.phone.startsWith('07') ? (
+                          <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Scheduling */}
@@ -367,6 +361,97 @@ export default function ConfirmOrderModal({
                   </p>
                 </div>
               </div>
+
+              {/* Order Summary - moved to left column */}
+              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-sm">📄</span>
+                  <h4 className="text-xs font-semibold text-white">
+                    Order Summary
+                  </h4>
+                </div>
+                <div className="bg-zinc-800 rounded-lg p-2">
+                  {/* Main Product */}
+                  <div className="pb-2 border-b border-zinc-700">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-white font-medium mb-0.5 truncate">
+                          {order.productName || 'Produs'}
+                        </p>
+                        <p className="text-xs text-zinc-400">
+                          SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
+                        </p>
+                      </div>
+                      <p className="text-xs text-white font-medium ml-2">
+                        {order.subtotal.toFixed(2)} RON
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Upsells - compact single column */}
+                  {order.upsells && order.upsells.length > 0 && (
+                    <div className="py-2 border-b border-zinc-700 space-y-1.5">
+                      {order.upsells.filter((u: any) => u.type === 'presale').length > 0 && (
+                        <div>
+                          <p className="text-xs text-emerald-400 font-semibold mb-1">PRE-SALE</p>
+                          <div className="space-y-0.5">
+                            {order.upsells.filter((u: any) => u.type === 'presale').map((upsell: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-xs">
+                                <span className="text-zinc-300 flex-1 pr-2 truncate">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                                <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {order.upsells.filter((u: any) => u.type === 'postsale').length > 0 && (
+                        <div>
+                          <p className="text-xs text-purple-400 font-semibold mb-1">POST-SALE</p>
+                          <div className="space-y-0.5">
+                            {order.upsells.filter((u: any) => u.type === 'postsale').map((upsell: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-xs">
+                                <span className="text-zinc-300 flex-1 pr-2 truncate">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
+                                <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  <div className="pt-2">
+                    <div className="flex justify-between items-center text-white font-semibold mb-1">
+                      <span className="text-xs">Subtotal + Shipping</span>
+                      <span className="text-xs">
+                        {(() => {
+                          const productSubtotal = order.subtotal || 0;
+                          const shipping = order.shippingCost || 0;
+                          const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                          }, 0) || 0;
+                          return `${(productSubtotal + upsellsTotal).toFixed(2)} + ${shipping.toFixed(2)} RON`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-white font-bold">
+                      <span className="text-sm">TOTAL</span>
+                      <span className="text-base">
+                        {(() => {
+                          const productSubtotal = order.subtotal || 0;
+                          const shipping = order.shippingCost || 0;
+                          const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
+                            return sum + ((upsell.price || 0) * (upsell.quantity || 1));
+                          }, 0) || 0;
+                          const total = productSubtotal + shipping + upsellsTotal;
+                          return `${total.toFixed(2)} RON`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Right Column - Shipping Address */}
@@ -390,34 +475,43 @@ export default function ConfirmOrderModal({
                 </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  County
-                </label>
-                <input
-                  type="text"
-                  value={formData.county}
-                  onChange={(e) =>
-                    setFormData({ ...formData, county: e.target.value })
-                  }
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="County"
-                />
-              </div>
+              {/* County & City on same line */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                    County
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.county}
+                    onChange={(e) =>
+                      setFormData({ ...formData, county: e.target.value })
+                    }
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="County"
+                  />
+                  <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                    Initial: {order.county || '-'}
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
-                  }
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="City"
-                />
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="City"
+                  />
+                  <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                    Initial: {order.city || '-'}
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -539,105 +633,7 @@ export default function ConfirmOrderModal({
             </div>
           </div>
 
-          {/* Order Summary - Full Width */}
-          <div className="mt-3 pt-3 border-t border-zinc-700/50">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-sm">📄</span>
-              <h4 className="text-xs font-semibold text-white">
-                Order Summary
-              </h4>
-            </div>
-            <div className="bg-zinc-800 rounded-lg p-3">
-              {/* Main Product - Full Width */}
-              <div className="pb-2 border-b border-zinc-700">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs text-white font-medium mb-0.5">
-                      {order.productName || 'Produs'}
-                    </p>
-                    <p className="text-xs text-zinc-400">
-                      SKU: {order.productSku || 'N/A'} | Qty: {order.productQuantity || 1}
-                    </p>
-                  </div>
-                  <p className="text-xs text-white font-medium">
-                    {order.subtotal.toFixed(2)} RON
-                  </p>
-                </div>
-              </div>
-
-              {/* Upsells Grid - 2 Columns */}
-              {order.upsells && order.upsells.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 py-2 border-b border-zinc-700">
-                  {/* PRE-SALE Column */}
-                  <div>
-                    {order.upsells.filter((u: any) => u.type === 'presale').length > 0 && (
-                      <>
-                        <p className="text-xs text-emerald-400 font-semibold mb-1.5">PRE-SALE</p>
-                        <div className="space-y-1">
-                          {order.upsells.filter((u: any) => u.type === 'presale').map((upsell: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-xs">
-                              <span className="text-zinc-300 flex-1 pr-2">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
-                              <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* POST-SALE Column */}
-                  <div>
-                    {order.upsells.filter((u: any) => u.type === 'postsale').length > 0 && (
-                      <>
-                        <p className="text-xs text-purple-400 font-semibold mb-1.5">POST-SALE</p>
-                        <div className="space-y-1">
-                          {order.upsells.filter((u: any) => u.type === 'postsale').map((upsell: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-xs">
-                              <span className="text-zinc-300 flex-1 pr-2">{upsell.title || upsell.name} x{upsell.quantity || 1}</span>
-                              <span className="text-white whitespace-nowrap">{((upsell.price || 0) * (upsell.quantity || 1)).toFixed(2)} RON</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Total - Full Width */}
-              <div className="pt-2">
-                <div className="flex justify-between items-center text-white font-semibold mb-1">
-                  <span className="text-xs">Subtotal + Shipping</span>
-                  <span className="text-xs">
-                    {(() => {
-                      const productSubtotal = order.subtotal || 0;
-                      const shipping = order.shippingCost || 0;
-                      const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
-                        return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                      }, 0) || 0;
-                      return `${(productSubtotal + upsellsTotal).toFixed(2)} + ${shipping.toFixed(2)} RON`;
-                    })()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-white font-bold">
-                  <span className="text-sm">TOTAL</span>
-                  <span className="text-base">
-                    {(() => {
-                      const productSubtotal = order.subtotal || 0;
-                      const shipping = order.shippingCost || 0;
-                      const upsellsTotal = order.upsells?.reduce((sum: number, upsell: any) => {
-                        return sum + ((upsell.price || 0) * (upsell.quantity || 1));
-                      }, 0) || 0;
-                      const total = productSubtotal + shipping + upsellsTotal;
-                      return `${total.toFixed(2)} RON`;
-                    })()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-                 {/* Error Message */}
+          {/* Error Message */}
                  {submitError && (
                    <div className="mt-3 p-2 bg-red-900/20 border border-red-700 rounded-md">
                      <p className="text-xs text-red-400 font-medium">Eroare</p>

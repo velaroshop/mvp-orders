@@ -86,6 +86,9 @@ export default function ConfirmOrderModal({
 
       if (data.results && data.results.length === 0) {
         setPostalCodeError("Nu s-au găsit coduri poștale pentru această adresă");
+      } else if (data.results && data.results.length > 0) {
+        // Auto-select highest confidence result
+        selectPostalCode(data.results[0]);
       }
     } catch (error) {
       console.error("Error searching postal codes:", error);
@@ -508,7 +511,7 @@ export default function ConfirmOrderModal({
                             onClick={() => selectPostalCode(result)}
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold text-white">
+                              <span className="text-sm font-bold text-white">
                                 {result.postal_code}
                               </span>
                               <span className="text-xs text-zinc-500">—</span>

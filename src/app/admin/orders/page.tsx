@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
+import OrderNoteModal from "../components/OrderNoteModal";
 import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
@@ -18,6 +19,11 @@ export default function AdminPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
+
+  // Note modal state
+  const [noteOrderId, setNoteOrderId] = useState<string | null>(null);
+  const [noteOrderCurrentNote, setNoteOrderCurrentNote] = useState<string>("");
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   // Duplicate detection state
   const [duplicateOrders, setDuplicateOrders] = useState<Order[]>([]);
@@ -293,6 +299,33 @@ export default function AdminPage() {
     }
   }
 
+  async function handleNoteConfirm(note: string): Promise<void> {
+    if (!noteOrderId) return;
+
+    try {
+      const response = await fetch(`/api/orders/${noteOrderId}/note`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save note");
+      }
+
+      await fetchOrders();
+      setIsNoteModalOpen(false);
+      setNoteOrderId(null);
+      setNoteOrderCurrentNote("");
+    } catch (error) {
+      console.error("Error saving note:", error);
+      throw error;
+    }
+  }
+
   async function handleModalConfirm(updatedOrder: Partial<Order>): Promise<void> {
     if (!selectedOrder) return;
 
@@ -533,6 +566,15 @@ export default function AdminPage() {
 
     if (action === "promote") {
       handlePromoteTestingOrder(orderId);
+      setOpenDropdown(null);
+      return;
+    }
+
+    if (action === "note") {
+      const order = orders.find((o) => o.id === orderId);
+      setNoteOrderId(orderId);
+      setNoteOrderCurrentNote(order?.orderNote || "");
+      setIsNoteModalOpen(true);
       setOpenDropdown(null);
       return;
     }
@@ -1156,6 +1198,19 @@ export default function AdminPage() {
                 }}
                 onConfirm={handleHoldConfirm}
                 orderId={holdOrderId || ""}
+              />
+
+              {/* Order Note Modal */}
+              <OrderNoteModal
+                isOpen={isNoteModalOpen}
+                onClose={() => {
+                  setIsNoteModalOpen(false);
+                  setNoteOrderId(null);
+                  setNoteOrderCurrentNote("");
+                }}
+                onConfirm={handleNoteConfirm}
+                orderId={noteOrderId || ""}
+                currentNote={noteOrderCurrentNote}
               />
 
               {/* Finalize Queue Modal */}

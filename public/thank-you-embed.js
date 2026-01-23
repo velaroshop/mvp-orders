@@ -211,10 +211,12 @@
             <span style="font-size: 18px; font-weight: 700; color: #fca5a5;">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
           </div>
 
-          <!-- FELICITĂRI TITLE -->
-          <h1 style="font-size: 42px; font-weight: 900; text-align: center; margin: 0 0 8px 0; color: #ffd700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0,0,0,0.3);">
-            ✨ FELICITĂRI! ✨
-          </h1>
+          <!-- FELICITĂRI TITLE - Big and Gold -->
+          <div style="text-align: center; margin-bottom: 8px;">
+            <span style="font-size: 44px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block;">
+              ✨ FELICITĂRI! ✨
+            </span>
+          </div>
 
           <!-- SUBTITLE -->
           <p style="font-size: 14px; font-weight: 600; color: #94a3b8; text-align: center; margin: 0 0 16px 0; letter-spacing: 1px;">
@@ -431,6 +433,6 @@
   // Expose global API
   window.VelaroThankYou = {
     init: init,
-    version: '1.0.0'
+    version: '2.0.0'
   };
 })();

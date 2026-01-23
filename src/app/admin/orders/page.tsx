@@ -1606,10 +1606,11 @@ export default function AdminPage() {
                     <td className="px-2 py-1.5">
                       <div className="flex flex-col gap-1">
                         {/* CONFIRM Button - Compact icon on mobile, text on desktop */}
+                        {/* Disabled for: queue, testing, confirmed, cancelled, sync_error */}
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}
-                          disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || confirming === order.id}
-                          title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
+                          disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error" || confirming === order.id}
+                          title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "cancelled" ? "CANCELLED" : order.status === "sync_error" ? "SYNC ERROR" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
                           className={`rounded px-2 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
                             order.status === "queue"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
@@ -1617,12 +1618,16 @@ export default function AdminPage() {
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "confirmed"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "cancelled"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "sync_error"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "scheduled"
                               ? "bg-cyan-600 text-white hover:bg-cyan-700"
                               : "bg-emerald-600 text-white hover:bg-emerald-700"
                           }`}
                         >
-                          <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "scheduled" ? "NOW" : "CONFIRM"}</span>
+                          <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "cancelled" ? "✕" : order.status === "sync_error" ? "⚠" : order.status === "scheduled" ? "NOW" : "CONFIRM"}</span>
                           <span className="sm:hidden">✓</span>
                         </button>
 
@@ -1639,8 +1644,8 @@ export default function AdminPage() {
                           {openDropdown === order.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10">
                               <div className="py-1">
-                                {/* Hide Order Confirm for testing orders */}
-                                {order.status !== "testing" && (
+                                {/* Hide Order Confirm for testing, cancelled, sync_error orders */}
+                                {order.status !== "testing" && order.status !== "cancelled" && order.status !== "sync_error" && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "confirm")}
                                     disabled={order.status === "queue" || confirming === order.id}

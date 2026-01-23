@@ -931,9 +931,17 @@ export default function AdminPage() {
 
                     {/* Order Note */}
                     <td className="px-2 py-1.5 hidden md:table-cell">
-                      <span className="text-zinc-300 text-[10px] truncate max-w-24 inline-block">
-                        {order.orderNote || "none"}
-                      </span>
+                      {order.orderNote ? (
+                        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
+                          {order.orderNote.split("\n").map((line, idx) => (
+                            <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-zinc-500 text-[10px]">—</span>
+                      )}
                     </td>
 
                     {/* Order Source */}

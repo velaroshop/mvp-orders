@@ -9,20 +9,24 @@ interface HoldOrderModalProps {
   orderId: string;
 }
 
+const MAX_CHARS_PER_LINE = 20;
+
 export default function HoldOrderModal({
   isOpen,
   onClose,
   onConfirm,
   orderId,
 }: HoldOrderModalProps) {
-  const [note, setNote] = useState("");
+  const [line1, setLine1] = useState("");
+  const [line2, setLine2] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Resetează state-ul când modalul se deschide sau când se schimbă comanda
+  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setNote("");
+      setLine1("");
+      setLine2("");
       setError(null);
       setIsSubmitting(false);
     }
@@ -32,20 +36,17 @@ export default function HoldOrderModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    // Validare: maxim 2 linii
-    const lines = note.split("\n").filter(line => line.trim().length > 0);
-    if (lines.length > 2) {
-      setError("Nota poate avea maxim 2 linii");
-      return;
-    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await onConfirm(note.trim());
-      setNote(""); // Reset după succes
+      // Combine lines into note (filter empty lines)
+      const note = [line1.trim(), line2.trim()]
+        .filter(line => line.length > 0)
+        .join("\n");
+
+      await onConfirm(note);
       onClose();
     } catch (err) {
       console.error("Error holding order:", err);
@@ -72,24 +73,41 @@ export default function HoldOrderModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-900 mb-2">
-              Notă (maxim 2 linii)
-            </label>
-            <textarea
-              value={note}
-              onChange={(e) => {
-                setNote(e.target.value);
-                setError(null);
-              }}
-              rows={2}
-              maxLength={200}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-              placeholder="Introduceți nota pentru această comandă..."
-            />
-            <p className="text-xs text-zinc-500 mt-1">
-              {note.split("\n").filter(line => line.trim().length > 0).length} / 2 linii
-            </p>
+          <div className="mb-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-zinc-900 mb-1">
+                Linia 1 ({line1.length}/{MAX_CHARS_PER_LINE})
+              </label>
+              <input
+                type="text"
+                value={line1}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, MAX_CHARS_PER_LINE);
+                  setLine1(value);
+                  setError(null);
+                }}
+                maxLength={MAX_CHARS_PER_LINE}
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Motivul hold-ului..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-900 mb-1">
+                Linia 2 ({line2.length}/{MAX_CHARS_PER_LINE})
+              </label>
+              <input
+                type="text"
+                value={line2}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, MAX_CHARS_PER_LINE);
+                  setLine2(value);
+                  setError(null);
+                }}
+                maxLength={MAX_CHARS_PER_LINE}
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Detalii adiționale..."
+              />
+            </div>
           </div>
 
           {error && (

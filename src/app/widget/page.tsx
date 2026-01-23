@@ -1210,16 +1210,16 @@ function WidgetFormContent() {
                 )}
               </button>
             </div>
-          </div>
 
-          {/* Delivery Method - Moved here, after offers */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border border-zinc-200 rounded-lg">
-              <div className="flex-1">
-                <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
-              </div>
-              <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
-                {landingPage.shipping_price.toFixed(2)} Lei
+            {/* Delivery Method - Same card as offers */}
+            <div className="mt-4 pt-4 border-t border-zinc-200">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare prin curier rapid (1-3 zile)</div>
+                </div>
+                <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
+                  {landingPage.shipping_price.toFixed(2)} Lei
+                </div>
               </div>
             </div>
           </div>
@@ -1228,10 +1228,14 @@ function WidgetFormContent() {
           {presaleUpsells.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
               {/* Scarcity Header */}
-              <div className="mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center gap-2">
+              <div className="mb-4 text-center">
+                <p className="text-sm sm:text-base font-semibold text-zinc-600 uppercase tracking-wide mb-1">
+                  PRODUSE AFLATE ÎN OFERTĂ
+                </p>
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2">
                   <span className="text-xl sm:text-2xl">⚡</span>
-                  Doar câteva bucăți rămase la acest preț!
+                  ULTIMELE BUCĂȚI ÎN STOC
+                  <span className="text-xl sm:text-2xl">⚡</span>
                 </h2>
               </div>
 

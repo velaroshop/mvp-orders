@@ -862,13 +862,13 @@ function WidgetFormContent() {
 
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-xl mx-auto">
         {/* Price Header - COMPACT & EYE-CATCHING */}
         <div className="rounded-lg shadow-lg p-3 sm:p-4 mb-4 sm:mb-6" style={{ backgroundColor }}>
           {/* Discount Badge - Gradient - 30% larger - Separate row on desktop */}
           <div className="flex items-center justify-center mb-3">
             <span
-              className="px-4 py-2 text-white rounded-md text-lg sm:text-xl font-black whitespace-nowrap shadow-lg animate-pulse"
+              className="px-5 py-2.5 text-white rounded-md text-xl sm:text-2xl font-black whitespace-nowrap shadow-lg animate-pulse"
               style={{
                 background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
@@ -1125,7 +1125,7 @@ function WidgetFormContent() {
           {/* Quantity Selection - COMPACT */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
-              Selectați cantitatea
+              SELECTAȚI OFERTA DORITĂ
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
@@ -1133,28 +1133,29 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_1")}
                 className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
-                  borderColor: accentColor,
-                  backgroundColor: `${accentColor}08`
+                  borderColor: primaryColor,
+                  backgroundColor: backgroundColor,
                 } : {
-                  borderColor: '#e5e7eb'
+                  borderColor: '#e5e7eb',
+                  backgroundColor: '#fff'
                 }}
               >
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
-                  style={{ backgroundColor: backgroundColor }}
+                  style={{ backgroundColor: selectedOffer === "offer_1" ? primaryColor : backgroundColor }}
                 >
                   {landingPage.offer_heading_1}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_1}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_1" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
                     ✓ Selectat
                   </div>
                 )}
@@ -1165,28 +1166,29 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_2")}
                 className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
-                  borderColor: accentColor,
-                  backgroundColor: `${accentColor}08`
+                  borderColor: primaryColor,
+                  backgroundColor: backgroundColor,
                 } : {
-                  borderColor: '#e5e7eb'
+                  borderColor: '#e5e7eb',
+                  backgroundColor: '#fff'
                 }}
               >
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
-                  style={{ backgroundColor: backgroundColor }}
+                  style={{ backgroundColor: selectedOffer === "offer_2" ? primaryColor : backgroundColor }}
                 >
                   {landingPage.offer_heading_2}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_2}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_2" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
                     ✓ Selectat
                   </div>
                 )}
@@ -1197,32 +1199,45 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_3")}
                 className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
-                  borderColor: accentColor,
-                  backgroundColor: `${accentColor}08`
+                  borderColor: primaryColor,
+                  backgroundColor: backgroundColor,
                 } : {
-                  borderColor: '#e5e7eb'
+                  borderColor: '#e5e7eb',
+                  backgroundColor: '#fff'
                 }}
               >
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
-                  style={{ backgroundColor: backgroundColor }}
+                  style={{ backgroundColor: selectedOffer === "offer_3" ? primaryColor : backgroundColor }}
                 >
                   {landingPage.offer_heading_3}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold text-zinc-900 mb-1">
+                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_3}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
+                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {selectedOffer === "offer_3" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: accentColor }}>
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
                     ✓ Selectat
                   </div>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Delivery Method - Moved here, after offers */}
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border border-zinc-200 rounded-lg">
+              <div className="flex-1">
+                <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
+              </div>
+              <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
+                {landingPage.shipping_price.toFixed(2)} Lei
+              </div>
             </div>
           </div>
 
@@ -1256,14 +1271,14 @@ function WidgetFormContent() {
                       onClick={() => toggleUpsell(upsell.id)}
                       className="relative w-full p-3 sm:p-4 rounded-lg text-left transition-all duration-300"
                       style={{
-                        background: isSelected ? '#fff' : '#fff',
+                        background: isSelected ? backgroundColor : '#fff',
                         border: isSelected
-                          ? `3px solid ${accentColor}`
+                          ? `3px solid ${primaryColor}`
                           : 'none',
                         boxShadow: isSelected ? '0 4px 12px -1px rgba(0, 0, 0, 0.15)' : 'none',
                       }}
                     >
-                      {/* SVG Marching Ants Border for non-selected */}
+                      {/* SVG Marching Ants Border for non-selected - uses primaryColor */}
                       {!isSelected && (
                         <svg
                           className="absolute inset-0 w-full h-full pointer-events-none"
@@ -1275,7 +1290,7 @@ function WidgetFormContent() {
                             width="calc(100% - 3px)"
                             height="calc(100% - 3px)"
                             fill="none"
-                            stroke="#d1d5db"
+                            stroke={primaryColor}
                             strokeWidth="2"
                             strokeDasharray="8 4"
                             rx="8"
@@ -1302,7 +1317,7 @@ function WidgetFormContent() {
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                               isSelected ? 'border-0' : 'border-zinc-300'
                             }`}
-                            style={isSelected ? { backgroundColor: accentColor } : {}}
+                            style={isSelected ? { backgroundColor: primaryColor } : {}}
                           >
                             {isSelected && (
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1316,7 +1331,7 @@ function WidgetFormContent() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <h3 className="text-base sm:text-lg text-zinc-900 leading-tight">
+                              <h3 className="text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
                                 Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
                                 <span
                                   className="font-bold text-lg sm:text-xl"
@@ -1325,7 +1340,7 @@ function WidgetFormContent() {
                                   {upsell.price.toFixed(2)} Lei
                                 </span>
                                 {upsell.srp > upsell.price && (
-                                  <span className="text-sm sm:text-base text-zinc-500">
+                                  <span className="text-sm sm:text-base" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
                                     {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
                                   </span>
                                 )}
@@ -1350,43 +1365,31 @@ function WidgetFormContent() {
             </div>
           )}
 
-          {/* Delivery Method */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-3 p-3 sm:p-4 border border-zinc-200 rounded-lg">
-              <div className="flex-1">
-                <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare Standard - Curier rapid (1-3 zile lucrătoare)</div>
-              </div>
-              <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
-                {landingPage.shipping_price.toFixed(2)} Lei
-              </div>
-            </div>
-          </div>
-
-          {/* Order Summary */}
-          <div className="rounded-lg shadow-lg p-4 sm:p-6" style={{ backgroundColor }}>
-            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: textOnDarkColor }}>
+          {/* Order Summary - Compact */}
+          <div className="rounded-lg shadow-lg p-3 sm:p-4" style={{ backgroundColor }}>
+            <h2 className="text-lg sm:text-xl font-bold mb-2" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
-            <div className="space-y-2 mb-3 sm:mb-4">
-              <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+            <div className="space-y-1 mb-2">
+              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                <span className="break-words pr-2">• Livrare Standard - Curier rapid</span>
+              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                <span className="break-words pr-2">• Livrare curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
               {getUpsellsTotal() > 0 && (
-                <div className="flex justify-between text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                   <span className="break-words pr-2">• Oferte speciale ({selectedUpsells.size})</span>
                   <span className="whitespace-nowrap">{getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
               )}
             </div>
-            <div className="pt-3 sm:pt-4 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
+            <div className="pt-2 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-lg sm:text-xl font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
-                <span className="text-2xl sm:text-3xl font-bold" style={{ color: accentColor }}>
+                <span className="text-base sm:text-lg font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
+                <span className="text-xl sm:text-2xl font-bold" style={{ color: accentColor }}>
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>
@@ -1400,12 +1403,12 @@ function WidgetFormContent() {
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Submit Button - Text 50% larger */}
           <div className="space-y-2">
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-lg sm:text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-2xl sm:text-3xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
               style={{

@@ -50,7 +50,7 @@ export default function ConfirmOrderModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Funcție pentru căutarea codurilor poștale
-  async function searchPostalCodes(street?: string, city?: string, county?: string) {
+  async function searchPostalCodes(street?: string, city?: string, county?: string, autoSelect: boolean = true) {
     const searchStreet = street || formData.address;
     const searchCity = city || formData.city;
     const searchCounty = county || formData.county;
@@ -86,8 +86,8 @@ export default function ConfirmOrderModal({
 
       if (data.results && data.results.length === 0) {
         setPostalCodeError("Nu s-au găsit coduri poștale pentru această adresă");
-      } else if (data.results && data.results.length > 0) {
-        // Auto-select highest confidence result
+      } else if (data.results && data.results.length > 0 && autoSelect) {
+        // Auto-select highest confidence result only when explicitly requested
         selectPostalCode(data.results[0]);
       }
     } catch (error) {
@@ -129,7 +129,7 @@ export default function ConfirmOrderModal({
           setFormData(initialData);
           
           if (initialData.address && initialData.city && initialData.county) {
-            searchPostalCodes(initialData.address, initialData.city, initialData.county);
+            searchPostalCodes(initialData.address, initialData.city, initialData.county, false);
           }
           return;
         }
@@ -199,7 +199,7 @@ export default function ConfirmOrderModal({
           setFormData(initialData);
           
           if (initialData.address && initialData.city && initialData.county) {
-            searchPostalCodes(initialData.address, initialData.city, initialData.county);
+            searchPostalCodes(initialData.address, initialData.city, initialData.county, false);
           }
         }
       }

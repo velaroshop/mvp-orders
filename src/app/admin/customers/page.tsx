@@ -15,7 +15,7 @@ function CustomersPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const phoneFilter = searchParams.get("phone");
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const customersPerPage = 25;
 

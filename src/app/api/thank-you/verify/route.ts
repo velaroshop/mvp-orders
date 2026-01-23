@@ -1,41 +1,72 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// Lista de domenii permise pentru CORS
-// Adaugă aici toate domeniile tale de landing pages
-const ALLOWED_ORIGINS = [
+// Domenii de dezvoltare permise întotdeauna
+const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://mvp-orders.vercel.app',
-  // Adaugă domeniile tale de producție aici
 ];
 
-function getCorsHeaders(request: Request) {
-  const origin = request.headers.get('origin');
+/**
+ * Verifică dacă un origin corespunde unui domeniu din store
+ * storeUrl poate fi stocat fără protocol (ex: "velaro-shop.ro")
+ */
+function isOriginMatchingStoreUrl(origin: string, storeUrl: string): boolean {
+  if (!origin || !storeUrl) return false;
 
-  // Verifică dacă originea e în lista permisă sau dacă e un subdomeniu al domeniilor permise
-  const isAllowed = origin && (
-    ALLOWED_ORIGINS.includes(origin) ||
-    ALLOWED_ORIGINS.some(allowed => origin.endsWith(allowed.replace('https://', '.').replace('http://', '.')))
+  // Extrage hostname-ul din origin (ex: "https://velaro-shop.ro" -> "velaro-shop.ro")
+  let originHost: string;
+  try {
+    originHost = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+
+  // Normalizează storeUrl (elimină protocol dacă există)
+  const normalizedStoreUrl = storeUrl
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+  // Verifică match exact sau cu www
+  const originHostLower = originHost.toLowerCase();
+  return (
+    originHostLower === normalizedStoreUrl ||
+    originHostLower === `www.${normalizedStoreUrl}` ||
+    `www.${originHostLower}` === normalizedStoreUrl
   );
+}
 
+/**
+ * Obține header-ele CORS pentru un request
+ * În OPTIONS nu avem orderId, deci permitem doar dev origins
+ * În GET verificăm și domeniul store-ului
+ */
+function getBaseCorsHeaders(origin: string | null, allowedOrigin: string) {
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 }
 
+function isDevOrigin(origin: string | null): boolean {
+  return origin !== null && DEV_ORIGINS.includes(origin);
+}
+
 export async function GET(request: Request) {
-  const headers = getCorsHeaders(request);
+  const origin = request.headers.get('origin');
 
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("order");
 
-    console.log("[Thank You Verify] Request for orderId:", orderId);
+    console.log("[Thank You Verify] Request for orderId:", orderId, "from origin:", origin);
 
     if (!orderId) {
+      // Pentru erori fără orderId, permitem same-origin și dev origins
+      const headers = origin ? getBaseCorsHeaders(origin, isDevOrigin(origin) ? origin : DEV_ORIGINS[0]) : {};
       return NextResponse.json(
         { error: "Order ID is required" },
         { status: 400, headers }
@@ -53,6 +84,7 @@ export async function GET(request: Request) {
 
     if (orderError || !order) {
       console.error("[Thank You Verify] Error fetching order:", orderError);
+      const headers = origin ? getBaseCorsHeaders(origin, isDevOrigin(origin) ? origin : DEV_ORIGINS[0]) : {};
       return NextResponse.json(
         { error: "Order not found" },
         { status: 404, headers }
@@ -61,7 +93,7 @@ export async function GET(request: Request) {
 
     console.log("[Thank You Verify] Fetching landing page with slug:", order.landing_key);
 
-    // Fetch landing page and store details separately
+    // Fetch landing page and store details (inclusiv url pentru CORS)
     const { data: landingPage, error: landingError } = await supabaseAdmin
       .from("landing_pages")
       .select(`
@@ -69,6 +101,7 @@ export async function GET(request: Request) {
         slug,
         post_purchase_status,
         stores(
+          url,
           primary_color,
           accent_color,
           text_on_dark_color
@@ -81,6 +114,7 @@ export async function GET(request: Request) {
 
     if (landingError || !landingPage) {
       console.error("[Thank You Verify] Error fetching landing page:", landingError);
+      const headers = origin ? getBaseCorsHeaders(origin, isDevOrigin(origin) ? origin : DEV_ORIGINS[0]) : {};
       return NextResponse.json(
         { error: "Landing page not found" },
         { status: 404, headers }
@@ -88,6 +122,27 @@ export async function GET(request: Request) {
     }
 
     const store = (landingPage as any).stores;
+
+    // Verificare CORS:
+    // - origin null = same-origin request sau direct navigation (permis)
+    // - origin dev = development (permis)
+    // - origin == store.url = producție validă (permis)
+    const storeUrl = store?.url || null;
+    const isAllowedOrigin =
+      origin === null || // Same-origin sau direct navigation
+      isDevOrigin(origin) ||
+      (storeUrl && isOriginMatchingStoreUrl(origin, storeUrl));
+
+    if (!isAllowedOrigin) {
+      console.warn(`[Thank You Verify] CORS blocked: origin=${origin}, storeUrl=${storeUrl}`);
+      return NextResponse.json(
+        { error: "Origin not allowed" },
+        { status: 403, headers: getBaseCorsHeaders(origin, DEV_ORIGINS[0]) }
+      );
+    }
+
+    // Pentru same-origin requests, nu avem nevoie de CORS headers
+    const headers = origin ? getBaseCorsHeaders(origin, origin) : {};
 
     // If order is not in queue or postsale is not enabled, return simple confirmation
     if (order.status !== "queue" || !(landingPage as any).post_purchase_status) {
@@ -174,6 +229,8 @@ export async function GET(request: Request) {
     }, { headers });
   } catch (error) {
     console.error("Error verifying order for thank you page:", error);
+    const origin = request.headers.get('origin');
+    const headers = origin ? getBaseCorsHeaders(origin, isDevOrigin(origin) ? origin : DEV_ORIGINS[0]) : {};
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500, headers }
@@ -182,10 +239,23 @@ export async function GET(request: Request) {
 }
 
 // Handle OPTIONS request for CORS preflight
+// Pentru OPTIONS nu avem orderId, deci permitem doar dev origins
+// Browser-ul va face apoi GET cu orderId unde se face validarea completă
 export async function OPTIONS(request: Request) {
-  const headers = getCorsHeaders(request);
+  const origin = request.headers.get('origin');
+
+  // Pentru preflight, permitem dev origins și orice domeniu .ro (store-urile noastre)
+  // Validarea reală se face în GET când avem orderId
+  const isLikelyStoreOrigin = origin && (
+    isDevOrigin(origin) ||
+    origin.endsWith('.ro') ||
+    origin.includes('.ro:')
+  );
+
+  const allowedOrigin = isLikelyStoreOrigin ? origin! : DEV_ORIGINS[0];
+
   return new NextResponse(null, {
     status: 204,
-    headers,
+    headers: getBaseCorsHeaders(origin, allowedOrigin),
   });
 }

@@ -76,6 +76,39 @@ function normalize(text: string): string {
     .trim();
 }
 
+// Clean city input by removing common locality prefixes
+// Examples: "sat boureni" -> "boureni", "com. motca" -> "motca"
+function cleanCityInput(text: string): string {
+  if (!text) return '';
+
+  // List of common prefixes to remove
+  const prefixes = [
+    'satul',
+    'sat',
+    'comuna',
+    'com.',
+    'com',
+    'oras',
+    'orasul',
+    'municipiu',
+    'municipiul',
+  ];
+
+  let cleaned = text;
+
+  // Remove prefixes (case insensitive, with word boundaries)
+  for (const prefix of prefixes) {
+    // Match prefix at start or after comma/space
+    const regex = new RegExp(`(^|,\\s*|\\s+)${prefix}\\s+`, 'gi');
+    cleaned = cleaned.replace(regex, '$1');
+  }
+
+  // Clean up extra spaces and commas
+  cleaned = cleaned.replace(/\s+/g, ' ').replace(/,\s*,/g, ',').trim();
+
+  return cleaned;
+}
+
 // Calculate Levenshtein distance for fuzzy matching
 function levenshteinDistance(str1: string, str2: string): number {
   const len1 = str1.length;
@@ -167,9 +200,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize inputs
+    // Clean and normalize inputs
     let countyNorm = normalize(county);
-    const cityNorm = normalize(city);
+    const cityClean = cleanCityInput(city); // Remove "sat", "com.", etc.
+    const cityNorm = normalize(cityClean);
     const streetNorm = street ? normalize(street) : '';
 
     // Check if county is abbreviated and expand it
@@ -178,6 +212,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Search params:', { county, city, street });
+    console.log('Cleaned city:', cityClean);
     console.log('Normalized:', { countyNorm, cityNorm, streetNorm });
 
     const data = postalCodesData as PostalCodeEntry[];

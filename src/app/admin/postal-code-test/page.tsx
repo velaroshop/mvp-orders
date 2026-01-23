@@ -69,7 +69,7 @@ export default function PostalCodeTestPage() {
     }
   }
 
-  function loadExample(example: "1" | "2" | "3" | "4" | "5" | "6" | "7") {
+  function loadExample(example: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8") {
     const examples = {
       "1": {
         county: "vilcea",
@@ -104,6 +104,11 @@ export default function PostalCodeTestPage() {
       "7": {
         county: "Iasi",
         city: "Boureni, Motca",
+        street: "",
+      },
+      "8": {
+        county: "Iasi",
+        city: "sat Boureni, com. Bals",
         street: "",
       },
     };
@@ -160,7 +165,7 @@ export default function PostalCodeTestPage() {
               placeholder="ex: Drăgășani, Cluj-Napoca, Boureni, Motca"
             />
             <p className="mt-1 text-xs text-zinc-500">
-              Acceptă variații, greșeli de scriere. Pentru sate în comune multiple, adaugă comuna: "Sat, Comuna"
+              Acceptă variații, greșeli. Ignoră prefixe: "sat Boureni, com. Motca" → găsește "Boureni (Moțca)"
             </p>
           </div>
 
@@ -233,6 +238,12 @@ export default function PostalCodeTestPage() {
                 className="px-3 py-2 text-sm bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 font-medium"
               >
                 Ex 7: Sat, Comună
+              </button>
+              <button
+                onClick={() => loadExample("8")}
+                className="px-3 py-2 text-sm bg-pink-100 text-pink-800 rounded-md hover:bg-pink-200 font-medium"
+              >
+                Ex 8: Cu prefixe
               </button>
             </div>
           </div>

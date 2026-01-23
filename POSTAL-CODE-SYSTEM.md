@@ -87,7 +87,15 @@ Each entry contains:
 - Convert to lowercase
 - Trim whitespace
 
-### 2. County Expansion
+### 2. Input Cleaning
+Removes common locality prefixes before processing:
+- "sat Boureni" → "Boureni"
+- "com. Motca" → "Motca"
+- "comuna Bals" → "Bals"
+- "satul X, com. Y" → "X, Y"
+- Handles: sat, satul, com, com., comuna, oras, orasul, municipiu, municipiul
+
+### 3. County Expansion
 Abbreviated counties are expanded:
 - VL → valcea
 - MH → mures
@@ -95,25 +103,25 @@ Abbreviated counties are expanded:
 - CJ → cluj
 - etc.
 
-### 3. Fuzzy Matching (Levenshtein Distance)
+### 4. Fuzzy Matching (Levenshtein Distance)
 - Calculates edit distance between strings
 - Returns similarity score (0-1)
 
-### 3.5. Word-Order Flexibility for Streets
+### 4.5. Word-Order Flexibility for Streets
 - Handles reversed street names (e.g., "Henri Coandă" vs "Coandă Henri")
 - Splits street names into words
 - Filters out common street type words (strada, str, sosea, etc.)
 - Matches words in any order with typo tolerance
 - Returns ratio of matched words
 
-### 4. Parenthesis Handling for Cities
+### 5. Parenthesis Handling for Cities
 - Handles villages in multiple communes (e.g., "Boureni" in "Boureni (Balş)" and "Boureni (Moţca)")
 - Extracts base city name before parenthesis
 - Matches against both full name and base name
 - Uses best score from both methods
 - Results preserve full city name with commune identifier
 
-### 4.5. Commune Specification Support
+### 5.5. Commune Specification Support
 - Users can specify which commune when village exists in multiple places
 - Supported formats:
   - Comma-separated: "Boureni, Motca"
@@ -123,12 +131,12 @@ Abbreviated counties are expanded:
 - When commune doesn't match, applies penalty to deprioritize result
 - Helps narrow down results when village appears in 5+ communes
 
-### 5. Filtering Thresholds
+### 6. Filtering Thresholds
 - County: ≥ 0.7 similarity required
 - City: ≥ 0.6 similarity required
 - Street: Partial matches preferred
 
-### 6. Scoring
+### 7. Scoring
 **With street:**
 - County: 20% weight
 - City: 30% weight
@@ -138,7 +146,7 @@ Abbreviated counties are expanded:
 - County: 30% weight
 - City: 70% weight
 
-### 7. Results
+### 8. Results
 - Returns top 3 matches
 - Sorted by confidence score (highest first)
 - Includes individual component scores
@@ -194,6 +202,12 @@ Located at: `/admin/postal-code-test`
    - City: "Boureni, Motca" (specifies which commune)
    - Will prioritize "Boureni (Moţca)" with 95%+ confidence
    - Other formats also work: "Boureni Motca", "Boureni(Motca)"
+
+8. **Village with locality prefixes**:
+   - County: "Iasi"
+   - City: "sat Boureni, com. Bals" (with prefixes)
+   - Prefixes are cleaned: "sat", "com." removed automatically
+   - Will match "Boureni (Balş)" correctly
 
 ## Files
 

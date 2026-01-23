@@ -156,9 +156,16 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   cleaned = normalizeWhitespace(cleaned);
   cleaned = removeSeparators(cleaned);
 
-  // Step 2.5: Separate "Nr.2" into "Nr. 2" and similar patterns
-  // This handles cases like "Nr.2", "Bl.2", "Sc.C", "Et.1", "Ap.4"
-  cleaned = cleaned.replace(/\b(nr|n|bl|bloc|sc|scara|et|etaj|ap|apartament)\.?(\d+[a-z]?)/gi, '$1 $2');
+  // Step 2.5: Separate street type from street name when stuck together (str.1mai -> str. 1mai)
+  // Match street type abbreviations followed directly by alphanumeric (no space)
+  cleaned = cleaned.replace(/^(str|st|bd|bld|bul|blv|al|sos|șos|cal|intr|prel|dr)\.([a-zA-Z0-9])/gi, '$1. $2');
+
+  // Step 2.6: Separate detail markers from their values when stuck together
+  // This handles cases like "Nr.2", "Bl.D5", "Sc.C", "Et1", "Ap4", "sc1"
+  // Be careful: only match when followed by digits or single uppercase letters
+  cleaned = cleaned.replace(/\b(nr|bloc|bl|scara|sc|etaj|et|apartament|ap)\.?(\d+[a-zA-Z]?)/gi, '$1 $2');
+  // Handle letter values like scC, scA (scara with letter)
+  cleaned = cleaned.replace(/\b(sc|scara)\.?([a-zA-Z])(?=\s|$)/gi, '$1 $2');
 
   cleaned = normalizeWhitespace(cleaned); // Again after separator removal
 
@@ -170,7 +177,7 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   let streetType = '';
   let startIndex = 0;
 
-  const firstToken = tokens[0].toLowerCase();
+  const firstToken = tokens[0].toLowerCase().replace(/\./g, '');
   if (STREET_TYPE_MAP[firstToken]) {
     streetType = STREET_TYPE_MAP[firstToken];
     startIndex = 1;
@@ -197,6 +204,15 @@ export function sanitizeStreet(raw: string): SanitizeResult {
       if (i + 1 < tokens.length) {
         numberToken = tokens[i + 1];
         i++; // Skip the number token
+
+        // Check if next token is a single letter (like "B" in "nr.64 B") - combine it
+        if (i + 1 < tokens.length) {
+          const nextToken = tokens[i + 1];
+          if (/^[A-Za-z]$/.test(nextToken) && !detailMarkers.includes(nextToken.toLowerCase())) {
+            numberToken += nextToken.toUpperCase();
+            i++; // Skip the letter token
+          }
+        }
 
         // Collect remaining tokens as details
         detailsTokens = tokens.slice(i + 1);
@@ -239,6 +255,10 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   // Step 8: Parse details (bl, sc, et, ap)
   const details = parseDetails(detailsTokens);
 
+  // Step 8.5: Extract parenthetical notes from original input (e.g., "(Scoala Spectrum)")
+  const parenthesesMatch = raw.match(/\(([^)]+)\)/);
+  const parenthesesNote = parenthesesMatch ? parenthesesMatch[0] : '';
+
   // Step 9: Build output
   const parts: string[] = [];
 
@@ -255,8 +275,8 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 
   // Add number to street address (keeping it in both places)
   if (numberToken) {
-    // Add comma after number if we have details
-    if (details) {
+    // Add comma after number if we have details or parentheses note
+    if (details || parenthesesNote) {
       parts.push('nr. ' + numberToken + ',');
     } else {
       parts.push('nr. ' + numberToken);
@@ -266,6 +286,11 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   // Add details
   if (details) {
     parts.push(details);
+  }
+
+  // Add parentheses note at the end
+  if (parenthesesNote) {
+    parts.push(parenthesesNote);
   }
 
   const street = parts.join(' ') || raw.trim();

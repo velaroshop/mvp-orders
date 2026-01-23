@@ -316,32 +316,15 @@ function WidgetFormContent() {
       const data = await response.json();
       setLandingPage(data.landingPage);
 
-      // Fetch presale upsells for this landing page
-      if (data.landingPage?.id) {
-        fetchPresaleUpsells(data.landingPage.id);
+      // Use presale upsells from the same response (optimized - no extra request)
+      if (data.presaleUpsells) {
+        setPresaleUpsells(data.presaleUpsells);
       }
     } catch (err) {
       console.error("Error fetching landing page:", err);
       setError(err instanceof Error ? err.message : "Failed to load form");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function fetchPresaleUpsells(landingPageId: string) {
-    try {
-      const response = await fetch(`/api/upsells/public/${landingPageId}?type=presale`);
-
-      if (!response.ok) {
-        console.error("Failed to fetch presale upsells", response.status);
-        return;
-      }
-
-      const data = await response.json();
-      // Public endpoint already filters by active, so no need to filter again
-      setPresaleUpsells(data.upsells || []);
-    } catch (err) {
-      console.error("Error fetching presale upsells:", err);
     }
   }
 

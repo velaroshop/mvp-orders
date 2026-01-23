@@ -1,13 +1,33 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-export async function GET(request: Request) {
-  // Add CORS headers to allow requests from any origin (since this is embedded on customer sites)
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
+// Lista de domenii permise pentru CORS
+// Adaugă aici toate domeniile tale de landing pages
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://mvp-orders.vercel.app',
+  // Adaugă domeniile tale de producție aici
+];
+
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin');
+
+  // Verifică dacă originea e în lista permisă sau dacă e un subdomeniu al domeniilor permise
+  const isAllowed = origin && (
+    ALLOWED_ORIGINS.includes(origin) ||
+    ALLOWED_ORIGINS.some(allowed => origin.endsWith(allowed.replace('https://', '.').replace('http://', '.')))
+  );
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
+}
+
+export async function GET(request: Request) {
+  const headers = getCorsHeaders(request);
 
   try {
     const { searchParams } = new URL(request.url);
@@ -162,13 +182,10 @@ export async function GET(request: Request) {
 }
 
 // Handle OPTIONS request for CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
+  const headers = getCorsHeaders(request);
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers,
   });
 }

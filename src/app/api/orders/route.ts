@@ -47,6 +47,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validare telefon: doar cifre, 10 caractere, începe cu 07
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10 || !cleanPhone.startsWith('07')) {
+      return NextResponse.json(
+        { error: "Invalid phone number format. Must be 10 digits starting with 07" },
+        { status: 400 },
+      );
+    }
+
+    // Validare lungime câmpuri pentru a preveni abuse
+    if (String(fullName).length > 200) {
+      return NextResponse.json(
+        { error: "Full name too long (max 200 characters)" },
+        { status: 400 },
+      );
+    }
+    if (String(address).length > 500) {
+      return NextResponse.json(
+        { error: "Address too long (max 500 characters)" },
+        { status: 400 },
+      );
+    }
+    if (String(county).length > 100 || String(city).length > 100) {
+      return NextResponse.json(
+        { error: "County or city too long (max 100 characters)" },
+        { status: 400 },
+      );
+    }
+
+    // Validare numere - trebuie să fie pozitive
+    if (subtotal !== undefined && (typeof subtotal !== 'number' || subtotal < 0)) {
+      return NextResponse.json(
+        { error: "Invalid subtotal value" },
+        { status: 400 },
+      );
+    }
+    if (total !== undefined && (typeof total !== 'number' || total < 0)) {
+      return NextResponse.json(
+        { error: "Invalid total value" },
+        { status: 400 },
+      );
+    }
+
     const validOfferCodes: OfferCode[] = ["offer_1", "offer_2", "offer_3"];
     if (!validOfferCodes.includes(offerCode)) {
       return NextResponse.json(

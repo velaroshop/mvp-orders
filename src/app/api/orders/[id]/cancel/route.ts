@@ -1,17 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { helpshipClient } from "@/lib/helpship";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
  * Anulează o comandă: schimbă status-ul în Archived în Helpship
  * Verifică mai întâi dacă comanda este deja anulată
+ * SECURIZAT: Necesită autentificare și verifică ownership-ul
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Verifică autentificarea
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.activeOrganizationId) {
+      return NextResponse.json(
+        { error: "Unauthorized: Please log in" },
+        { status: 401 },
+      );
+    }
+
     const { id: orderId } = await params;
+
+    // Verifică că comanda aparține organizației userului
+    const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
+    if (!ownership.valid) {
+      return NextResponse.json(
+        { error: ownership.error || "Access denied" },
+        { status: 403 },
+      );
+    }
 
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabase

@@ -50,7 +50,7 @@ export default function ConfirmOrderModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Funcție pentru căutarea codurilor poștale
-  async function searchPostalCodes(street?: string, city?: string, county?: string, autoSelect: boolean = true) {
+  async function searchPostalCodes(street?: string, city?: string, county?: string) {
     const searchStreet = street || formData.address;
     const searchCity = city || formData.city;
     const searchCounty = county || formData.county;
@@ -86,9 +86,6 @@ export default function ConfirmOrderModal({
 
       if (data.results && data.results.length === 0) {
         setPostalCodeError("Nu s-au găsit coduri poștale pentru această adresă");
-      } else if (data.results && data.results.length > 0 && autoSelect) {
-        // Auto-select highest confidence result only when explicitly requested
-        selectPostalCode(data.results[0]);
       }
     } catch (error) {
       console.error("Error searching postal codes:", error);
@@ -157,7 +154,7 @@ export default function ConfirmOrderModal({
           setFormData(initialData);
           
           if (initialData.address && initialData.city && initialData.county) {
-            searchPostalCodes(initialData.address, initialData.city, initialData.county, false);
+            searchPostalCodes(initialData.address, initialData.city, initialData.county);
           }
           return;
         }
@@ -227,7 +224,7 @@ export default function ConfirmOrderModal({
           setFormData(initialData);
           
           if (initialData.address && initialData.city && initialData.county) {
-            searchPostalCodes(initialData.address, initialData.city, initialData.county, false);
+            searchPostalCodes(initialData.address, initialData.city, initialData.county);
           }
         }
       }
@@ -621,18 +618,27 @@ export default function ConfirmOrderModal({
                           : result.confidence >= 0.7
                           ? '⚠'
                           : '?';
+                        const isTopResult = index === 0;
+                        const isSelected = formData.postalCode === result.postal_code;
 
                         return (
                           <div
                             key={`${result.postal_code}-${index}`}
                             className={`p-2 border rounded-md cursor-pointer transition-all ${
-                              formData.postalCode === result.postal_code
+                              isSelected
                                 ? 'border-emerald-500 bg-emerald-500/10'
+                                : isTopResult
+                                ? 'border-blue-500/50 bg-blue-500/5 hover:border-blue-400 hover:bg-blue-500/10'
                                 : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-700/30'
                             }`}
                             onClick={() => selectPostalCode(result)}
                           >
                             <div className="flex items-center gap-2">
+                              {isTopResult && !isSelected && (
+                                <span className="text-xs font-medium text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded">
+                                  TOP
+                                </span>
+                              )}
                               <span className="text-sm font-bold text-white">
                                 {result.postal_code}
                               </span>

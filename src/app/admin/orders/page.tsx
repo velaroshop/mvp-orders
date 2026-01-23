@@ -97,8 +97,21 @@ export default function AdminPage() {
     orderCount: 0,
     productsSold: 0,
     upsellRate: 0,
+    ordersByStatus: {} as Record<string, number>,
   });
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // Status configuration for Orders by Status card
+  const statusConfig = [
+    { key: "pending", label: "Pending", color: "bg-yellow-500" },
+    { key: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
+    { key: "hold", label: "Hold", color: "bg-orange-500" },
+    { key: "cancelled", label: "Cancelled", color: "bg-red-500" },
+    { key: "queue", label: "Queue", color: "bg-purple-500" },
+    { key: "scheduled", label: "Scheduled", color: "bg-cyan-500" },
+    { key: "testing", label: "Testing", color: "bg-blue-500" },
+    { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
+  ];
 
   async function fetchOrders(query: string = "") {
     setIsSearching(true);
@@ -966,51 +979,77 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* KPI Card (1/3) + Revenue Chart (2/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-            {/* KPI Card - Compact */}
+          {/* KPI Card + Orders by Status + Revenue Chart */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            {/* KPI Card */}
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
               <h3 className="text-[10px] font-medium text-zinc-400 mb-2">Today&apos;s Performance</h3>
               {statsLoading ? (
-                <div className="text-center py-2">
+                <div className="text-center py-3">
                   <p className="text-zinc-400 text-xs">Loading...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                <div className="grid grid-cols-5 gap-2">
                   {/* Total Revenue */}
                   <div>
-                    <p className="text-[9px] text-zinc-500">Total</p>
-                    <p className="text-base font-bold text-emerald-500">
-                      {todayStats.totalRevenue.toFixed(0)}
-                      <span className="text-[9px] text-zinc-500 ml-0.5">RON</span>
-                    </p>
-                  </div>
-                  {/* Orders */}
-                  <div>
-                    <p className="text-[9px] text-zinc-500">Orders</p>
-                    <p className="text-base font-bold text-white">{todayStats.orderCount}</p>
+                    <p className="text-[9px] text-zinc-500 mb-0.5">Total</p>
+                    <p className="text-sm font-bold text-emerald-500">{todayStats.totalRevenue.toFixed(0)}</p>
+                    <p className="text-[8px] text-zinc-500">RON</p>
                   </div>
                   {/* Avg Value */}
                   <div>
-                    <p className="text-[9px] text-zinc-500">Avg. Value</p>
-                    <p className="text-base font-bold text-white">
-                      {todayStats.avgOrderValue.toFixed(0)}
-                      <span className="text-[9px] text-zinc-500 ml-0.5">RON</span>
-                    </p>
+                    <p className="text-[9px] text-zinc-500 mb-0.5">Avg</p>
+                    <p className="text-sm font-bold text-white">{todayStats.avgOrderValue.toFixed(0)}</p>
+                    <p className="text-[8px] text-zinc-500">RON</p>
+                  </div>
+                  {/* Orders */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500 mb-0.5">Orders</p>
+                    <p className="text-sm font-bold text-white">{todayStats.orderCount}</p>
+                  </div>
+                  {/* Products Sold */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500 mb-0.5">Products</p>
+                    <p className="text-sm font-bold text-white">{todayStats.productsSold}</p>
                   </div>
                   {/* Upsell Rate */}
                   <div>
-                    <p className="text-[9px] text-zinc-500">Upsell</p>
-                    <p className="text-base font-bold text-white">
-                      {todayStats.upsellRate.toFixed(0)}%
-                    </p>
+                    <p className="text-[9px] text-zinc-500 mb-0.5">Upsell</p>
+                    <p className="text-sm font-bold text-white">{todayStats.upsellRate.toFixed(0)}%</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Revenue Chart - 2/3 */}
-            <div className="lg:col-span-2">
+            {/* Orders by Status Card */}
+            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
+              <h3 className="text-[10px] font-medium text-zinc-400 mb-2">Orders by Status</h3>
+              {statsLoading ? (
+                <div className="text-center py-3">
+                  <p className="text-zinc-400 text-xs">Loading...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-x-2 gap-y-1">
+                  {statusConfig.map((status) => {
+                    const count = todayStats.ordersByStatus[status.key] || 0;
+                    if (count === 0) return null;
+                    return (
+                      <div key={status.key} className="flex items-center gap-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${status.color}`}></div>
+                        <span className="text-[10px] text-zinc-400">{status.label}</span>
+                        <span className="text-[10px] font-semibold text-white">{count}</span>
+                      </div>
+                    );
+                  })}
+                  {Object.keys(todayStats.ordersByStatus).length === 0 && (
+                    <p className="text-[10px] text-zinc-500 col-span-4">No orders</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Revenue Chart */}
+            <div>
               <CompactRevenueChart
                 data={todayRevenueData.data}
                 granularity={todayRevenueData.granularity}

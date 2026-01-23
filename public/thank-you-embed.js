@@ -193,7 +193,7 @@
     }
 
     const html = `
-      <div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden;">
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative;">
 
         <!-- Animated sparkles/particles background -->
         <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
@@ -201,7 +201,7 @@
         </div>
 
         <!-- Main content - fits mobile screen -->
-        <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 16px; display: flex; flex-direction: column; align-items: center; max-height: 100dvh; overflow-y: auto;">
+        <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 16px; display: flex; flex-direction: column; align-items: center;">
 
           <!-- COUNTDOWN TIMER -->
           <div style="display: flex; align-items: center; gap: 8px; background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.5); border-radius: 9999px; padding: 8px 16px; margin-bottom: 12px; animation: pulse 2s ease-in-out infinite;">

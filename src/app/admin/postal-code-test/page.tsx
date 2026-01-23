@@ -69,7 +69,7 @@ export default function PostalCodeTestPage() {
     }
   }
 
-  function loadExample(example: "1" | "2" | "3" | "4") {
+  function loadExample(example: "1" | "2" | "3" | "4" | "5") {
     const examples = {
       "1": {
         county: "vilcea",
@@ -90,6 +90,11 @@ export default function PostalCodeTestPage() {
         county: "VL",
         city: "Ramnicu Valcea",
         street: "",
+      },
+      "5": {
+        county: "Bucuresti",
+        city: "Bucuresti",
+        street: "Henri Coanda",
       },
     };
 
@@ -176,7 +181,7 @@ export default function PostalCodeTestPage() {
               {isLoading ? "Se caută..." : "Caută coduri poștale"}
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => loadExample("1")}
                 className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
@@ -200,6 +205,12 @@ export default function PostalCodeTestPage() {
                 className="px-3 py-2 text-sm bg-zinc-100 text-zinc-700 rounded-md hover:bg-zinc-200"
               >
                 Ex 4: Abreviere
+              </button>
+              <button
+                onClick={() => loadExample("5")}
+                className="px-3 py-2 text-sm bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 font-medium"
+              >
+                Ex 5: Nume inversat
               </button>
             </div>
           </div>

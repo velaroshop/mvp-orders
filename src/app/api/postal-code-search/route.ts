@@ -115,6 +115,41 @@ function similarityScore(str1: string, str2: string): number {
   return 1 - distance / maxLen;
 }
 
+// Check if street names match with word order flexibility
+// Example: "henri coanda" matches "coanda henri"
+function streetWordsMatch(userStreet: string, dbStreet: string): number {
+  // Split into words and filter out common street type words
+  const streetTypeWords = ['strada', 'str', 'stradă', 'sosea', 'şosea', 'șosea', 'calea', 'bulevardul', 'bd', 'aleea'];
+
+  const userWords = userStreet
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !streetTypeWords.includes(w));
+
+  const dbWords = dbStreet
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !streetTypeWords.includes(w));
+
+  if (userWords.length === 0 || dbWords.length === 0) {
+    return 0;
+  }
+
+  // Count how many user words are found in DB street (in any position)
+  let matchedWords = 0;
+  for (const userWord of userWords) {
+    for (const dbWord of dbWords) {
+      // Check if words are similar (handles typos)
+      const wordSimilarity = similarityScore(userWord, dbWord);
+      if (wordSimilarity >= 0.8) {
+        matchedWords++;
+        break;
+      }
+    }
+  }
+
+  // Return ratio of matched words
+  return matchedWords / userWords.length;
+}
+
 /**
  * POST /api/postal-code-search
  * Search for postal codes based on county, city, and street
@@ -167,11 +202,18 @@ export async function POST(request: NextRequest) {
       // Street matching (if provided and entry has street data)
       let streetScore = 1.0;
       if (streetNorm && entry.street_normalized) {
-        // Check if street is contained or vice versa
+        // Method 1: Check if street is contained or vice versa
         if (entry.street_normalized.includes(streetNorm) || streetNorm.includes(entry.street_normalized)) {
           streetScore = 0.95; // High score for partial match
         } else {
-          streetScore = similarityScore(streetNorm, entry.street_normalized);
+          // Method 2: Try word-by-word matching (handles reversed names like "henri coanda" vs "coanda henri")
+          const wordMatchScore = streetWordsMatch(streetNorm, entry.street_normalized);
+
+          // Method 3: Full string similarity
+          const fullSimilarity = similarityScore(streetNorm, entry.street_normalized);
+
+          // Use the best score from both methods
+          streetScore = Math.max(wordMatchScore, fullSimilarity);
         }
       } else if (streetNorm && !entry.street_normalized) {
         // User provided street but entry has no street data (small city)

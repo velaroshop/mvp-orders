@@ -99,6 +99,13 @@ Abbreviated counties are expanded:
 - Calculates edit distance between strings
 - Returns similarity score (0-1)
 
+### 3.5. Word-Order Flexibility for Streets
+- Handles reversed street names (e.g., "Henri Coandă" vs "Coandă Henri")
+- Splits street names into words
+- Filters out common street type words (strada, str, sosea, etc.)
+- Matches words in any order with typo tolerance
+- Returns ratio of matched words
+
 ### 4. Filtering Thresholds
 - County: ≥ 0.7 similarity required
 - City: ≥ 0.6 similarity required
@@ -154,6 +161,11 @@ Located at: `/admin/postal-code-test`
    - County: "VL"
    - City: "Ramnicu Valcea"
    - Street: (empty)
+
+5. **Reversed street name**:
+   - County: "Bucuresti"
+   - City: "Bucuresti"
+   - Street: "Henri Coanda" (DB has "Coandă Henri")
 
 ## Files
 

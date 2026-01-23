@@ -460,11 +460,19 @@ export default function AdminPage() {
 
         // Reîncarcă lista de comenzi
         await fetchOrders();
-        alert("Comanda a fost anulată cu succes");
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: "Comanda a fost anulată cu succes",
+        });
       } catch (error) {
         console.error("Error canceling order:", error);
         const errorMessage = error instanceof Error ? error.message : "Eroare la anularea comenzii";
-        alert(errorMessage);
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
       }
       setOpenDropdown(null);
       return;
@@ -483,11 +491,19 @@ export default function AdminPage() {
 
         // Reîncarcă lista de comenzi
         await fetchOrders();
-        alert("Anularea comenzii a fost anulată cu succes");
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: "Comanda a fost restabilită cu succes",
+        });
       } catch (error) {
         console.error("Error uncanceling order:", error);
-        const errorMessage = error instanceof Error ? error.message : "Eroare la anularea anulării comenzii";
-        alert(errorMessage);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la restabilirea comenzii";
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
       }
       setOpenDropdown(null);
       return;
@@ -513,11 +529,19 @@ export default function AdminPage() {
 
         // Reîncarcă lista de comenzi
         await fetchOrders();
-        alert("Comanda a fost scoasă din hold cu succes (status: pending)");
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: "Comanda a fost scoasă din hold cu succes",
+        });
       } catch (error) {
         console.error("Error unholding order:", error);
         const errorMessage = error instanceof Error ? error.message : "Eroare la scoaterea comenzii din hold";
-        alert(errorMessage);
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
       }
       setOpenDropdown(null);
       return;
@@ -544,11 +568,19 @@ export default function AdminPage() {
 
         // Reîncarcă lista de comenzi
         await fetchOrders();
-        alert(`✅ Comanda a fost sincronizată cu succes!\nHelpship Order ID: ${result.helpshipOrderId}`);
+        setToast({
+          isOpen: true,
+          type: "success",
+          message: `Comanda a fost sincronizată cu succes! Helpship ID: ${result.helpshipOrderId}`,
+        });
       } catch (error) {
         console.error("Error resyncing order:", error);
         const errorMessage = error instanceof Error ? error.message : "Eroare la re-sincronizarea comenzii";
-        alert(`❌ ${errorMessage}`);
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
       } finally {
         setConfirming(null);
       }
@@ -1084,7 +1116,12 @@ export default function AdminPage() {
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "uncancel")}
-                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                  disabled={order.status !== "cancelled"}
+                                  className={`w-full text-left px-3 py-2 text-xs ${
+                                    order.status !== "cancelled"
+                                      ? "text-zinc-500 cursor-not-allowed"
+                                      : "text-zinc-200 hover:bg-zinc-600"
+                                  }`}
                                 >
                                   Order Uncancel
                                 </button>
@@ -1096,7 +1133,12 @@ export default function AdminPage() {
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "unhold")}
-                                  className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
+                                  disabled={order.status !== "hold"}
+                                  className={`w-full text-left px-3 py-2 text-xs ${
+                                    order.status !== "hold"
+                                      ? "text-zinc-500 cursor-not-allowed"
+                                      : "text-zinc-200 hover:bg-zinc-600"
+                                  }`}
                                 >
                                   Order Unhold
                                 </button>

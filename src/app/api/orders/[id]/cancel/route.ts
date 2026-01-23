@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { helpshipClient } from "@/lib/helpship";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { HelpshipClient } from "@/lib/helpship";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { verifyOrderOwnership } from "@/lib/auth-helpers";
@@ -36,7 +37,7 @@ export async function POST(
     }
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -49,12 +50,24 @@ export async function POST(
       );
     }
 
-    // Dacă comanda are helpshipOrderId, verificăm statusul în Helpship
+    // Verifică dacă comanda este deja cancelled în DB
+    if (order.status === "cancelled") {
+      return NextResponse.json(
+        { error: "Comanda este deja anulată" },
+        { status: 400 },
+      );
+    }
+
+    // Dacă comanda are helpshipOrderId, anulăm în Helpship
     if (order.helpship_order_id) {
       try {
+        // Obține credențialele Helpship pentru organizație
+        const credentials = await getHelpshipCredentials(order.organization_id);
+        const helpshipClient = new HelpshipClient(credentials);
+
         // Verificăm statusul comenzii în Helpship
         const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
-        
+
         if (!orderStatus) {
           return NextResponse.json(
             { error: "Nu s-a putut verifica statusul comenzii în Helpship" },
@@ -65,18 +78,16 @@ export async function POST(
         // Verificăm dacă comanda este deja anulată (Archived)
         const statusName = orderStatus.statusName;
         if (statusName === "Archived") {
-          return NextResponse.json(
-            { error: "Comanda e deja anulată" },
-            { status: 400 },
-          );
+          // E deja anulată în Helpship, actualizăm doar DB-ul
+          console.log(`[Cancel] Order already archived in Helpship, updating DB only`);
+        } else {
+          console.log(`[Cancel] Canceling order ${order.helpship_order_id} in Helpship (current status: ${statusName})...`);
+
+          // Folosim endpoint-ul specific pentru cancel
+          await helpshipClient.cancelOrder(order.helpship_order_id);
+
+          console.log(`[Cancel] Order ${order.helpship_order_id} canceled successfully in Helpship.`);
         }
-
-        console.log(`[Helpship] Canceling order ${order.helpship_order_id} (current status: ${statusName})...`);
-
-        // Folosim endpoint-ul specific pentru cancel
-        await helpshipClient.cancelOrder(order.helpship_order_id);
-        
-        console.log(`[Helpship] Order ${order.helpship_order_id} canceled successfully.`);
       } catch (helpshipError) {
         console.error("Failed to cancel order in Helpship:", helpshipError);
         const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea comenzii în Helpship";
@@ -92,11 +103,12 @@ export async function POST(
     const currentStatus = order.status;
     console.log(`[Cancel] Current order status: ${currentStatus}, setting to cancelled...`);
     
-    const { data: updatedOrder, error: updateError } = await supabase
+    const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({ 
+      .update({
         status: "cancelled",
-        cancelled_from_status: currentStatus, // Salvăm statusul inițial
+        cancelled_from_status: currentStatus,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
       .select()
@@ -104,14 +116,13 @@ export async function POST(
 
     if (updateError) {
       console.error("[Cancel] Failed to update order status in DB:", updateError);
-      console.error("[Cancel] Error details:", JSON.stringify(updateError, null, 2));
       return NextResponse.json(
         { error: `Failed to update order status: ${updateError.message}` },
         { status: 500 },
       );
     }
 
-    console.log(`[Cancel] Order status updated successfully. New status: ${updatedOrder?.status}, cancelled_from_status: ${updatedOrder?.cancelled_from_status}`);
+    console.log(`[Cancel] Order status updated successfully. New status: ${updatedOrder?.status}`);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

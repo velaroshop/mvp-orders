@@ -1,20 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { helpshipClient } from "@/lib/helpship";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { HelpshipClient } from "@/lib/helpship";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
  * Anulează anularea unei comenzi: schimbă status-ul din Archived în Pending în Helpship
  * Verifică mai întâi dacă comanda este anulată
+ * SECURIZAT: Necesită autentificare și verifică ownership-ul
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Verifică autentificarea
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.activeOrganizationId) {
+      return NextResponse.json(
+        { error: "Unauthorized: Please log in" },
+        { status: 401 },
+      );
+    }
+
     const { id: orderId } = await params;
 
+    // Verifică că comanda aparține organizației userului
+    const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
+    if (!ownership.valid) {
+      return NextResponse.json(
+        { error: ownership.error || "Access denied" },
+        { status: 403 },
+      );
+    }
+
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -27,34 +50,34 @@ export async function POST(
       );
     }
 
-    // Dacă comanda are helpshipOrderId, verificăm statusul în Helpship
+    // Verifică dacă comanda este cancelled în DB
+    if (order.status !== "cancelled") {
+      return NextResponse.json(
+        { error: "Comanda nu este anulată" },
+        { status: 400 },
+      );
+    }
+
+    // Dacă comanda are helpshipOrderId, facem uncancel în Helpship
     if (order.helpship_order_id) {
       try {
+        // Obține credențialele Helpship pentru organizație
+        const credentials = await getHelpshipCredentials(order.organization_id);
+        const helpshipClient = new HelpshipClient(credentials);
+
         // Verificăm statusul comenzii în Helpship
         const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
-        
-        if (!orderStatus) {
-          return NextResponse.json(
-            { error: "Nu s-a putut verifica statusul comenzii în Helpship" },
-            { status: 500 },
-          );
+
+        if (orderStatus) {
+          const statusName = orderStatus.statusName;
+          if (statusName === "Archived") {
+            console.log(`[Uncancel] Uncanceling order ${order.helpship_order_id} in Helpship...`);
+            await helpshipClient.uncancelOrder(order.helpship_order_id);
+            console.log(`[Uncancel] Order ${order.helpship_order_id} uncanceled successfully in Helpship.`);
+          } else {
+            console.log(`[Uncancel] Order not archived in Helpship (status: ${statusName}), updating DB only`);
+          }
         }
-
-        // Verificăm dacă comanda este anulată (Archived)
-        const statusName = orderStatus.statusName;
-        if (statusName !== "Archived") {
-          return NextResponse.json(
-            { error: "Comanda nu este anulată" },
-            { status: 400 },
-          );
-        }
-
-        console.log(`[Helpship] Uncancel order ${order.helpship_order_id} (current status: ${statusName})...`);
-
-        // Folosim endpoint-ul specific pentru uncancel
-        await helpshipClient.uncancelOrder(order.helpship_order_id);
-        
-        console.log(`[Helpship] Order ${order.helpship_order_id} uncanceled successfully.`);
       } catch (helpshipError) {
         console.error("Failed to uncancel order in Helpship:", helpshipError);
         const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea anulării comenzii în Helpship";
@@ -66,13 +89,13 @@ export async function POST(
     }
 
     // Restabilim statusul inițial în DB
-    // Folosim cancelled_from_status dacă există, altfel "pending" (default)
     const previousStatus = (order.cancelled_from_status as string) || "pending";
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({ 
+      .update({
         status: previousStatus,
-        cancelled_from_status: null, // Ștergem câmpul după restabilire
+        cancelled_from_status: null,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
 
@@ -84,6 +107,7 @@ export async function POST(
       );
     }
 
+    console.log(`[Uncancel] Order ${orderId} restored to status: ${previousStatus}`);
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error uncanceling order", error);

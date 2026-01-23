@@ -355,7 +355,7 @@
   }
 
   /**
-   * Show confirmation message
+   * Show confirmation message - SPECTACULAR DESIGN matching postsale
    */
   function showConfirmationMessage(customerName) {
     const container = document.getElementById('velaro-thank-you');
@@ -366,19 +366,92 @@
       clearInterval(countdownInterval);
     }
 
+    // Generate sparkle particles
+    let particlesHtml = '';
+    for (let i = 0; i < 15; i++) {
+      const left = Math.random() * 100;
+      const top = Math.random() * 100;
+      const delay = Math.random() * 3;
+      const size = Math.random() * 4 + 2;
+      particlesHtml += `<div style="position: absolute; left: ${left}%; top: ${top}%; width: ${size}px; height: ${size}px; background: rgba(34, 197, 94, 0.6); border-radius: 50%; animation: sparkle 3s ease-in-out ${delay}s infinite;"></div>`;
+    }
+
     const html = `
-      <div style="max-width: 600px; margin: 60px auto; padding: 40px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-        <div style="font-size: 64px; margin-bottom: 20px;">✓</div>
-        <h2 style="font-size: 32px; font-weight: bold; color: #059669; margin: 0 0 20px 0;">
-          Comanda Ta A Fost Confirmată!
-        </h2>
-        <p style="font-size: 18px; color: #374151; margin: 0 0 10px 0;">
-          Mulțumim pentru comandă${customerName ? `, ${customerName}` : ''}!
-        </p>
-        <p style="font-size: 16px; color: #6b7280; margin: 0; line-height: 1.6;">
-          Comanda ta va fi livrată prin curier rapid în <strong>1-3 zile lucrătoare</strong>.
-        </p>
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative;">
+
+        <!-- Animated sparkles/particles background -->
+        <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+          ${particlesHtml}
+        </div>
+
+        <!-- Main content -->
+        <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 24px; display: flex; flex-direction: column; align-items: center;">
+
+          <!-- SUCCESS BADGE - Big green checkmark -->
+          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.5), 0 10px 30px rgba(0,0,0,0.3); animation: pulse 2s ease-in-out infinite;">
+            <svg style="width: 50px; height: 50px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+
+          <!-- TITLE - Gold like postsale -->
+          <div style="text-align: center; margin-bottom: 12px;">
+            <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block;">
+              COMANDĂ CONFIRMATĂ!
+            </span>
+          </div>
+
+          <!-- Customer name greeting -->
+          <p style="font-size: 18px; font-weight: 600; color: white; text-align: center; margin: 0 0 20px 0;">
+            Mulțumim pentru comandă${customerName ? `, <span style="color: #ffd700;">${customerName}</span>` : ''}!
+          </p>
+
+          <!-- Info box -->
+          <div style="width: 100%; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
+                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7h4.05a1 1 0 01.95.68l1.39 4.19a1 1 0 01.11.47V14a1 1 0 01-1 1h-.05a2.5 2.5 0 01-4.9 0H14V7z"></path>
+                </svg>
+              </div>
+              <div>
+                <p style="font-size: 16px; font-weight: 700; color: white; margin: 0;">Livrare prin curier rapid</p>
+                <p style="font-size: 14px; color: #94a3b8; margin: 0;">1-3 zile lucrătoare</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
+                  <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div>
+                <p style="font-size: 16px; font-weight: 700; color: white; margin: 0;">Plată la livrare</p>
+                <p style="font-size: 14px; color: #94a3b8; margin: 0;">Cash sau card la curier</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trust message -->
+          <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0; line-height: 1.6;">
+            Vei primi un SMS sau email cu detaliile comenzii și urmărirea coletului.
+          </p>
+
+        </div>
       </div>
+
+      <style>
+        @keyframes sparkle {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(34, 197, 94, 0.5), 0 10px 30px rgba(0,0,0,0.3); }
+          50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(34, 197, 94, 0.7), 0 15px 40px rgba(0,0,0,0.4); }
+        }
+      </style>
     `;
 
     container.innerHTML = html;

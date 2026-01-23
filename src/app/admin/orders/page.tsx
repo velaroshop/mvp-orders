@@ -1138,43 +1138,45 @@ export default function AdminPage() {
                     <p className="text-zinc-400 text-sm">Loading stats...</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-5 gap-4">
-                    {/* Total Revenue */}
-                    <div>
-                      <p className="text-[10px] text-zinc-400 mb-1">Total</p>
-                      <p className="text-base font-bold text-emerald-500">
-                        {kpiStats.totalRevenue.toFixed(2)}
-                      </p>
-                      <p className="text-[10px] text-zinc-500">RON</p>
+                  <div className="space-y-3">
+                    {/* Row 1: Revenue metrics */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Total Revenue */}
+                      <div className="bg-zinc-900/50 rounded p-2">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Total Revenue</p>
+                        <p className="text-lg font-bold text-emerald-500">
+                          {kpiStats.totalRevenue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
+                        </p>
+                      </div>
+
+                      {/* Average Order Value */}
+                      <div className="bg-zinc-900/50 rounded p-2">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Order Value</p>
+                        <p className="text-lg font-bold text-white">
+                          {kpiStats.avgOrderValue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Average Order Value */}
-                    <div>
-                      <p className="text-[10px] text-zinc-400 mb-1">Avg. Value</p>
-                      <p className="text-base font-bold text-white">
-                        {kpiStats.avgOrderValue.toFixed(2)}
-                      </p>
-                      <p className="text-[10px] text-zinc-500">RON</p>
-                    </div>
+                    {/* Row 2: Count metrics */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* Orders */}
+                      <div className="bg-zinc-900/50 rounded p-2 text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Orders</p>
+                        <p className="text-lg font-bold text-white">{kpiStats.orderCount}</p>
+                      </div>
 
-                    {/* Orders */}
-                    <div>
-                      <p className="text-[10px] text-zinc-400 mb-1">Orders</p>
-                      <p className="text-base font-bold text-white">{kpiStats.orderCount}</p>
-                    </div>
+                      {/* Products Sold */}
+                      <div className="bg-zinc-900/50 rounded p-2 text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Products</p>
+                        <p className="text-lg font-bold text-white">{kpiStats.productsSold}</p>
+                      </div>
 
-                    {/* Products Sold */}
-                    <div>
-                      <p className="text-[10px] text-zinc-400 mb-1">Products</p>
-                      <p className="text-base font-bold text-white">{kpiStats.productsSold}</p>
-                    </div>
-
-                    {/* Upsell Rate */}
-                    <div>
-                      <p className="text-[10px] text-zinc-400 mb-1">Upsell</p>
-                      <p className="text-base font-bold text-white">
-                        {kpiStats.upsellRate.toFixed(1)}%
-                      </p>
+                      {/* Upsell Rate */}
+                      <div className="bg-zinc-900/50 rounded p-2 text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Upsell Rate</p>
+                        <p className="text-lg font-bold text-white">{kpiStats.upsellRate.toFixed(1)}%</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1182,29 +1184,25 @@ export default function AdminPage() {
             </div>
 
             {/* Orders by Status Card */}
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Orders by Status</h3>
+            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
+              <h3 className="text-xs font-semibold text-white mb-2">Orders by Status</h3>
               {statsLoading ? (
-                <div className="text-center py-6">
-                  <p className="text-zinc-400 text-sm">Loading...</p>
+                <div className="text-center py-4">
+                  <p className="text-zinc-400 text-xs">Loading...</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-2 gap-4 pb-2 border-b border-zinc-700">
-                    <p className="text-xs font-medium text-zinc-400 uppercase">Status</p>
-                    <p className="text-xs font-medium text-zinc-400 uppercase text-right">Count</p>
-                  </div>
-                  {/* Status Rows - show all statuses, even with 0 count */}
+                <div className="space-y-0.5">
+                  {/* Status Rows - compact, gray for zero */}
                   {statusConfig.map((status) => {
                     const count = kpiStats.ordersByStatus[status.key] || 0;
+                    const isZero = count === 0;
                     return (
-                      <div key={status.key} className="grid grid-cols-2 gap-4 items-center py-1">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${status.color}`}></div>
-                          <span className="text-sm text-white">{status.label}</span>
+                      <div key={status.key} className="flex items-center justify-between py-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
+                          <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
                         </div>
-                        <p className={`text-sm font-semibold text-right ${count > 0 ? 'text-white' : 'text-zinc-600'}`}>
+                        <p className={`text-xs font-semibold ${isZero ? 'text-zinc-600' : 'text-white'}`}>
                           {count}
                         </p>
                       </div>

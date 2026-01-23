@@ -235,6 +235,18 @@ export default function ConfirmOrderModal({
 
   if (!isOpen || !order) return null;
 
+  // Format order number for title
+  function formatOrderNumber(orderNumber?: number, orderSeries?: string, orderId?: string) {
+    if (orderNumber && orderSeries) {
+      const series = orderSeries.endsWith('-') ? orderSeries : `${orderSeries}-`;
+      return `${series}${String(orderNumber).padStart(5, "0")}`;
+    }
+    if (orderNumber) {
+      return `VLR-${String(orderNumber).padStart(5, "0")}`;
+    }
+    return orderId ? orderId.substring(0, 8) : "";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -275,7 +287,14 @@ export default function ConfirmOrderModal({
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 rounded-lg shadow-xl">
         {/* Header */}
         <div className="sticky top-0 bg-zinc-900 text-white px-4 py-2.5 flex items-center justify-between border-b border-zinc-700/50">
-          <h2 className="text-base font-semibold">ORDER CONFIRM</h2>
+          <h2 className="text-base font-semibold">
+            ORDER CONFIRM
+            {order && (
+              <span className="ml-2 text-emerald-400">
+                {formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
+              </span>
+            )}
+          </h2>
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-white text-lg"
@@ -286,7 +305,7 @@ export default function ConfirmOrderModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left Column - Personal Information */}
             <div className="space-y-3">
               <div className="flex items-center gap-1.5 mb-2">

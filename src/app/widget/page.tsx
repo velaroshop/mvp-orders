@@ -1530,106 +1530,165 @@ function WidgetFormContent() {
             </div>
           )}
 
-          {/* Post-Sale Offer Popup */}
-          {showPostsaleOffer && postsaleUpsells.length > 0 && (
+          {/* Post-Sale Offer Popup - SPECTACULAR DESIGN */}
+          {showPostsaleOffer && postsaleUpsells.length > 0 && postsaleUpsells[0] && (
             <div
-              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto"
-              style={{ animation: 'fadeIn 0.4s ease-out' }}
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              style={{
+                animation: 'fadeIn 0.3s ease-out',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
+              }}
             >
-              <div
-                className="bg-gradient-to-br from-white via-white to-zinc-50 rounded-3xl shadow-2xl p-4 sm:p-6 max-w-2xl w-full relative overflow-hidden my-auto"
-                style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', maxHeight: '90vh' }}
-              >
-                {/* Animated background elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl opacity-20 animate-pulse" style={{ background: accentColor }}></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr rounded-full blur-3xl opacity-15 animate-pulse" style={{ background: primaryColor, animationDelay: '1s' }}></div>
+              {/* Animated sparkles/particles background */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-10 left-10 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+                <div className="absolute top-20 right-20 w-3 h-3 bg-yellow-300 rounded-full animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></div>
+                <div className="absolute bottom-32 left-16 w-2 h-2 bg-yellow-500 rounded-full animate-ping" style={{ animationDuration: '1.8s', animationDelay: '1s' }}></div>
+                <div className="absolute top-1/3 right-10 w-2 h-2 bg-amber-400 rounded-full animate-ping" style={{ animationDuration: '2.2s', animationDelay: '0.3s' }}></div>
+                <div className="absolute bottom-40 right-24 w-3 h-3 bg-yellow-400 rounded-full animate-ping" style={{ animationDuration: '2.7s', animationDelay: '0.8s' }}></div>
+              </div>
 
-                {/* Scarcity Badge with Countdown */}
-                <div className="relative mb-4 text-center">
+              {/* Main content - fits mobile screen */}
+              <div
+                className="relative w-full max-w-md mx-4 flex flex-col"
+                style={{
+                  animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  maxHeight: '100dvh',
+                  paddingTop: 'env(safe-area-inset-top, 12px)',
+                  paddingBottom: 'env(safe-area-inset-bottom, 12px)'
+                }}
+              >
+                {/* COUNTDOWN TIMER - Top sticky */}
+                <div className="flex-shrink-0 mb-3">
                   <div
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-bold text-sm sm:text-base shadow-lg animate-pulse"
-                    style={{ backgroundColor: '#dc2626' }}
+                    className="mx-auto w-fit px-6 py-2.5 rounded-full shadow-2xl border-2 border-red-400"
+                    style={{
+                      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }}
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                    </svg>
-                    OFERTĂ EXPIRĂ ÎN {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}!
+                    <div className="flex items-center gap-3 text-white">
+                      <svg className="w-5 h-5 animate-spin" style={{ animationDuration: '3s' }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-black text-lg tracking-wider">
+                        {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}
+                      </span>
+                      <span className="font-bold text-sm uppercase">rămase</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Main Title - Eye-catching */}
-                <div className="relative text-center mb-4">
-                  <div className="text-4xl sm:text-5xl mb-2">🎁</div>
-                  <h2
-                    className="text-2xl sm:text-4xl font-black mb-2 leading-tight"
+                {/* FELICITĂRI TITLE */}
+                <div className="flex-shrink-0 text-center mb-2">
+                  <h1
+                    className="text-4xl sm:text-5xl font-black tracking-tight"
                     style={{
-                      background: `linear-gradient(135deg, ${accentColor} 0%, ${primaryColor} 100%)`,
+                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #fbbf24 60%, #fcd34d 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
-                      textShadow: '0 2px 20px rgba(0,0,0,0.1)'
+                      textShadow: '0 0 40px rgba(251, 191, 36, 0.5)',
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
                     }}
                   >
                     FELICITĂRI!
-                  </h2>
-                  <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-3">
-                    🎉 BONUS EXCLUSIV DEBLOCAT! 🎉
-                  </p>
-                  {postsaleUpsells[0] && (
-                    <div className="mt-2 inline-block">
-                      <div className="text-zinc-600 text-base mb-2 line-through">
-                        Preț normal: <span className="font-bold">{postsaleUpsells[0].srp.toFixed(2)} LEI</span>
-                      </div>
-                      <div
-                        className="inline-block border-4 border-red-600 bg-red-50 rounded-xl px-4 py-2 mb-2"
-                      >
-                        <div className="text-3xl sm:text-4xl font-black" style={{ color: '#dc2626' }}>
-                          -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}% REDUCERE!
-                        </div>
-                      </div>
-                      <div className="text-2xl sm:text-3xl font-black mt-2" style={{ color: accentColor }}>
-                        DOAR {postsaleUpsells[0].price.toFixed(2)} LEI!
-                      </div>
-                    </div>
-                  )}
+                  </h1>
                 </div>
 
-                {/* Product Display */}
-                {postsaleUpsells[0] && (
-                  <div className="relative bg-white rounded-2xl p-4 mb-4 shadow-xl border-4 border-dashed" style={{ borderColor: accentColor }}>
-                    <div className="flex items-center gap-3">
-                      {postsaleUpsells[0].media_url && (
-                        <img
-                          src={postsaleUpsells[0].media_url}
-                          alt={postsaleUpsells[0].title}
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl shadow-lg flex-shrink-0"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg sm:text-xl font-bold text-zinc-900 mb-1">
-                          {postsaleUpsells[0].title}
-                        </h3>
-                        {postsaleUpsells[0].description && (
-                          <p className="text-sm sm:text-base text-zinc-600">
-                            {postsaleUpsells[0].description}
-                          </p>
-                        )}
+                {/* SUBTITLE */}
+                <div className="flex-shrink-0 text-center mb-4">
+                  <p className="text-white text-base sm:text-lg font-bold uppercase tracking-wide">
+                    <span className="text-yellow-400">★</span> AI DEBLOCAT O REDUCERE LIMITATĂ <span className="text-yellow-400">★</span>
+                  </p>
+                </div>
+
+                {/* PRODUCT IMAGE - Centered hero */}
+                <div className="flex-shrink-0 flex justify-center mb-3">
+                  <div className="relative">
+                    {/* Glow effect behind image */}
+                    <div
+                      className="absolute inset-0 rounded-2xl blur-xl opacity-60"
+                      style={{ background: accentColor, transform: 'scale(1.1)' }}
+                    ></div>
+                    {postsaleUpsells[0].media_url ? (
+                      <img
+                        src={postsaleUpsells[0].media_url}
+                        alt={postsaleUpsells[0].title}
+                        className="relative w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-2xl shadow-2xl border-4 border-white/20"
+                      />
+                    ) : (
+                      <div className="relative w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-zinc-700 to-zinc-800 rounded-2xl shadow-2xl border-4 border-white/20 flex items-center justify-center">
+                        <span className="text-5xl">🎁</span>
                       </div>
+                    )}
+                    {/* DISCOUNT BADGE - Overlapping image */}
+                    <div
+                      className="absolute -top-3 -right-3 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shadow-xl border-2 border-white"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                        animation: 'bounce 1s ease-in-out infinite'
+                      }}
+                    >
+                      <span className="text-white font-black text-lg sm:text-xl leading-none text-center">
+                        -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}%
+                      </span>
                     </div>
+                  </div>
+                </div>
+
+                {/* PRODUCT TITLE */}
+                <div className="flex-shrink-0 text-center mb-2 px-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                    {postsaleUpsells[0].title}
+                  </h2>
+                </div>
+
+                {/* PRODUCT DESCRIPTION */}
+                {postsaleUpsells[0].description && (
+                  <div className="flex-shrink-0 text-center mb-3 px-6">
+                    <p className="text-zinc-300 text-sm sm:text-base leading-snug">
+                      {postsaleUpsells[0].description}
+                    </p>
                   </div>
                 )}
 
-                {/* Urgency Messages */}
-                <div className="bg-red-50 border-2 border-red-500 rounded-xl p-3 mb-4">
-                  <p className="text-center text-base sm:text-lg font-bold text-red-700">
-                    ⚠️ OFERTA DISPARE ÎN {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}, DUPĂ CARE NU O VEI MAI VEDEA NICIODATĂ
+                {/* PRICE SECTION */}
+                <div className="flex-shrink-0 text-center mb-4">
+                  <div className="flex items-center justify-center gap-4">
+                    {/* Old price */}
+                    <div className="relative">
+                      <span className="text-zinc-400 text-lg sm:text-xl font-medium">
+                        {postsaleUpsells[0].srp.toFixed(2)} Lei
+                      </span>
+                      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 transform -rotate-12"></div>
+                    </div>
+                    {/* Arrow */}
+                    <span className="text-yellow-400 text-2xl">→</span>
+                    {/* New price */}
+                    <div
+                      className="px-4 py-2 rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
+                    >
+                      <span className="text-white text-2xl sm:text-3xl font-black">
+                        {postsaleUpsells[0].price.toFixed(2)} Lei
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* URGENCY MESSAGE */}
+                <div className="flex-shrink-0 mx-4 mb-4 p-3 rounded-xl bg-red-950/50 border border-red-500/50">
+                  <p className="text-center text-red-300 text-sm font-semibold">
+                    ⚡ Această ofertă dispare pentru totdeauna după {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')} ⚡
                   </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* ACTION BUTTONS - Stacked vertically */}
+                <div className="flex-shrink-0 px-4 space-y-3">
+                  {/* ACCEPT BUTTON */}
                   <button
                     onClick={async () => {
-                      if (postsaleProcessing) return; // Prevent double click
+                      if (postsaleProcessing) return;
 
                       if (!createdOrderId || !postsaleUpsells[0]) {
                         console.error('Missing order ID or upsell');
@@ -1640,7 +1699,6 @@ function WidgetFormContent() {
                       setPostsaleProcessing(true);
 
                       try {
-                        // Add postsale upsell to order
                         const response = await fetch(`/api/orders/${createdOrderId}/add-postsale-upsell`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1651,53 +1709,80 @@ function WidgetFormContent() {
                           console.error('Failed to add postsale upsell');
                         } else {
                           console.log('Postsale upsell added successfully!');
-
-                          // Calculate total including postsale upsell
                           const postsaleTotal = getTotalPrice() + (postsaleUpsells[0].price * postsaleUpsells[0].quantity);
-
-                          // Send client-side Purchase event (deduplicated with server-side CAPI)
                           await sendClientSidePurchaseEvent(createdOrderId, postsaleTotal);
                         }
                       } catch (error) {
                         console.error('Error adding postsale upsell:', error);
                       }
 
-                      // Redirect regardless of success/failure
                       redirectToThankYouPage();
                     }}
                     disabled={postsaleProcessing}
-                    className={`py-4 sm:py-5 px-6 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transition-all relative overflow-hidden ${
-                      postsaleProcessing
-                        ? 'opacity-60 cursor-not-allowed'
-                        : 'transform hover:scale-105'
+                    className={`w-full py-4 sm:py-5 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transition-all relative overflow-hidden ${
+                      postsaleProcessing ? 'opacity-60 cursor-not-allowed' : 'transform hover:scale-[1.02] active:scale-[0.98]'
                     }`}
-                    style={{ backgroundColor: accentColor }}
+                    style={{
+                      background: `linear-gradient(135deg, ${accentColor} 0%, ${primaryColor} 100%)`,
+                      boxShadow: `0 10px 40px -10px ${accentColor}80`
+                    }}
                   >
-                    <span className="relative z-10">
-                      {postsaleProcessing ? 'SE PROCESEAZĂ... ⏳' : 'DA, VREAU OFERTA!'}
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {postsaleProcessing ? (
+                        <>
+                          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          SE PROCESEAZĂ...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-2xl">✓</span>
+                          DA, ADAUGĂ LA OFERTĂ
+                        </>
+                      )}
                     </span>
                     {!postsaleProcessing && (
-                      <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+                      <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent 0%, white 50%, transparent 100%)',
+                          animation: 'shimmer 2s infinite'
+                        }}
+                      ></div>
                     )}
                   </button>
+
+                  {/* DECLINE BUTTON */}
                   <button
                     onClick={finalizeOrderAndRedirect}
                     disabled={postsaleProcessing}
-                    className={`py-4 sm:py-5 px-6 rounded-2xl font-bold text-lg sm:text-xl transition-all ${
+                    className={`w-full py-3 rounded-xl font-medium text-base transition-all ${
                       postsaleProcessing
-                        ? 'bg-zinc-300 text-zinc-400 cursor-not-allowed'
-                        : 'text-zinc-600 bg-zinc-200 hover:bg-zinc-300'
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : 'text-zinc-400 hover:text-zinc-300'
                     }`}
                   >
-                    Nu, mulțumesc
+                    NU MĂ INTERESEAZĂ
                   </button>
                 </div>
 
-                {/* Trust Badge */}
-                <p className="text-center text-sm text-zinc-500 mt-4">
-                  ✓ Ofertă verificată și garantată
-                </p>
+                {/* TRUST BADGE */}
+                <div className="flex-shrink-0 text-center mt-3 pb-2">
+                  <p className="text-zinc-500 text-xs">
+                    ✓ Plata la livrare • ✓ Retur gratuit 14 zile
+                  </p>
+                </div>
               </div>
+
+              {/* CSS for shimmer animation */}
+              <style jsx>{`
+                @keyframes shimmer {
+                  0% { transform: translateX(-100%); }
+                  100% { transform: translateX(100%); }
+                }
+              `}</style>
             </div>
           )}
         </form>

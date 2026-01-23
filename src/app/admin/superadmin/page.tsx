@@ -252,58 +252,6 @@ export default function SuperadminPage() {
         </div>
       )}
 
-      {/* Suspended Section - Intentionally Deactivated */}
-      {suspendedOrgs.length > 0 && (
-        <div className="bg-red-900/20 border border-red-700 rounded-lg mb-6">
-          <div className="p-4 border-b border-red-700/50">
-            <h2 className="text-lg font-semibold text-red-300 flex items-center gap-2">
-              <span>⛔</span>
-              Suspended ({suspendedOrgs.length})
-            </h2>
-            <p className="text-sm text-red-400/70 mt-1">
-              Organizations that have been intentionally deactivated. Users cannot log in.
-            </p>
-          </div>
-          <div className="divide-y divide-red-700/30">
-            {suspendedOrgs.map((org) => (
-              <div key={org.id} className="p-4 flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="text-white font-medium">{org.name}</h3>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-sm text-zinc-400">
-                      Owner: {org.owner?.email || "No owner"}
-                    </span>
-                    <span className="text-sm text-zinc-500">
-                      Created: {new Date(org.createdAt).toLocaleDateString("ro-RO")}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleActive(org.id)}
-                  disabled={togglingId === org.id}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
-                >
-                  {togglingId === org.id ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Reactivating...
-                    </>
-                  ) : (
-                    <>
-                      <span>↩</span>
-                      Reactivate
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* All Organizations Table */}
       <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
         <div className="p-6 border-b border-zinc-700">

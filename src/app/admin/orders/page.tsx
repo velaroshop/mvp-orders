@@ -90,6 +90,16 @@ export default function AdminPage() {
   });
   const [revenueLoading, setRevenueLoading] = useState(false);
 
+  // KPI state (today only)
+  const [todayStats, setTodayStats] = useState({
+    totalRevenue: 0,
+    avgOrderValue: 0,
+    orderCount: 0,
+    productsSold: 0,
+    upsellRate: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+
   async function fetchOrders(query: string = "") {
     setIsSearching(true);
     const params = new URLSearchParams({
@@ -114,31 +124,45 @@ export default function AdminPage() {
     setIsSearching(false);
   }
 
-  // Fetch today's revenue data
-  async function fetchTodayRevenue() {
-    setRevenueLoading(true);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const params = new URLSearchParams({
-        startDate: today,
-        endDate: today,
-      });
+  // Fetch today's revenue data and stats in parallel
+  async function fetchTodayData() {
+    const today = new Date().toISOString().split("T")[0];
+    const params = new URLSearchParams({
+      startDate: today,
+      endDate: today,
+    });
 
-      const response = await fetch(`/api/dashboard/revenue-growth?${params}`);
-      if (!response.ok) {
+    // Fetch both in parallel
+    setRevenueLoading(true);
+    setStatsLoading(true);
+
+    try {
+      const [revenueResponse, statsResponse] = await Promise.all([
+        fetch(`/api/dashboard/revenue-growth?${params}`),
+        fetch(`/api/dashboard/stats?${params}`),
+      ]);
+
+      if (revenueResponse.ok) {
+        const result = await revenueResponse.json();
+        setTodayRevenueData({
+          data: result.data || [],
+          granularity: result.granularity || 'hourly',
+        });
+      } else {
         console.error("Failed to fetch today's revenue");
-        return;
       }
 
-      const result = await response.json();
-      setTodayRevenueData({
-        data: result.data || [],
-        granularity: result.granularity || 'hourly',
-      });
+      if (statsResponse.ok) {
+        const data = await statsResponse.json();
+        setTodayStats(data);
+      } else {
+        console.error("Failed to fetch today's stats");
+      }
     } catch (error) {
-      console.error("Error fetching today's revenue:", error);
+      console.error("Error fetching today's data:", error);
     } finally {
       setRevenueLoading(false);
+      setStatsLoading(false);
     }
   }
 
@@ -190,9 +214,9 @@ export default function AdminPage() {
     fetchOrders(searchQuery);
   }, [currentPage, selectedStatuses]);
 
-  // Fetch today's revenue on mount
+  // Fetch today's data (revenue + stats) on mount
   useEffect(() => {
-    fetchTodayRevenue();
+    fetchTodayData();
   }, []);
 
   // Închide dropdown-ul când se face click în afara lui
@@ -942,13 +966,57 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Revenue Chart - Full Width */}
-          <div className="mb-4">
-            <CompactRevenueChart
-              data={todayRevenueData.data}
-              granularity={todayRevenueData.granularity}
-              loading={revenueLoading}
-            />
+          {/* KPI Card (1/3) + Revenue Chart (2/3) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            {/* KPI Card - Compact */}
+            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
+              <h3 className="text-[10px] font-medium text-zinc-400 mb-2">Today&apos;s Performance</h3>
+              {statsLoading ? (
+                <div className="text-center py-2">
+                  <p className="text-zinc-400 text-xs">Loading...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                  {/* Total Revenue */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500">Total</p>
+                    <p className="text-base font-bold text-emerald-500">
+                      {todayStats.totalRevenue.toFixed(0)}
+                      <span className="text-[9px] text-zinc-500 ml-0.5">RON</span>
+                    </p>
+                  </div>
+                  {/* Orders */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500">Orders</p>
+                    <p className="text-base font-bold text-white">{todayStats.orderCount}</p>
+                  </div>
+                  {/* Avg Value */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500">Avg. Value</p>
+                    <p className="text-base font-bold text-white">
+                      {todayStats.avgOrderValue.toFixed(0)}
+                      <span className="text-[9px] text-zinc-500 ml-0.5">RON</span>
+                    </p>
+                  </div>
+                  {/* Upsell Rate */}
+                  <div>
+                    <p className="text-[9px] text-zinc-500">Upsell</p>
+                    <p className="text-base font-bold text-white">
+                      {todayStats.upsellRate.toFixed(0)}%
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Revenue Chart - 2/3 */}
+            <div className="lg:col-span-2">
+              <CompactRevenueChart
+                data={todayRevenueData.data}
+                granularity={todayRevenueData.granularity}
+                loading={revenueLoading}
+              />
+            </div>
           </div>
 
           {/* Search and Filter Bar */}

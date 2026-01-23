@@ -21,8 +21,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: orderId } = await params;
-    const body = await request.json();
+    // PARALLELIZED: Run params and body parsing concurrently
+    const [{ id: orderId }, body] = await Promise.all([
+      params,
+      request.json(),
+    ]);
     const { note } = body;
 
     // Găsește comanda în DB

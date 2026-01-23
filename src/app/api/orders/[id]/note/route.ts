@@ -13,16 +13,22 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // PARALLELIZED: Run session, params, and body parsing concurrently
+    const [session, { id: orderId }, body] = await Promise.all([
+      getServerSession(authOptions),
+      params,
+      request.json(),
+    ]);
+
+    const { note } = body;
+
     // Verify authentication
-    const session = await getServerSession(authOptions);
     if (!session?.user?.activeOrganizationId) {
       return NextResponse.json(
         { error: "Unauthorized: Please log in" },
         { status: 401 },
       );
     }
-
-    const { id: orderId } = await params;
 
     // Verify order belongs to user's organization
     const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
@@ -32,9 +38,6 @@ export async function POST(
         { status: 403 },
       );
     }
-
-    const body = await request.json();
-    const { note } = body;
 
     // Validate note format (max 2 lines, 20 chars each)
     if (note) {

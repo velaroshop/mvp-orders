@@ -53,8 +53,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // PARALLELIZED: Run session and params concurrently
+    const [session, { id: orderId }] = await Promise.all([
+      getServerSession(authOptions),
+      params,
+    ]);
+
     // Verifică autentificarea
-    const session = await getServerSession(authOptions);
     if (!session?.user?.activeOrganizationId) {
       return NextResponse.json(
         { error: "Unauthorized: Please log in" },
@@ -62,10 +67,16 @@ export async function POST(
       );
     }
 
-    const { id: orderId } = await params;
+    // PARALLELIZED: Run ownership verification and order fetch concurrently
+    const [ownership, orderResult] = await Promise.all([
+      verifyOrderOwnership(orderId, session.user.activeOrganizationId),
+      supabaseAdmin
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single(),
+    ]);
 
-    // Verifică că comanda aparține organizației userului
-    const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
     if (!ownership.valid) {
       return NextResponse.json(
         { error: ownership.error || "Access denied" },
@@ -73,12 +84,7 @@ export async function POST(
       );
     }
 
-    // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabaseAdmin
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
+    const { data: order, error: fetchError } = orderResult;
 
     if (fetchError || !order) {
       return NextResponse.json(

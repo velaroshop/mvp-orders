@@ -54,8 +54,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // PARALLELIZED: Run session, params, and body parsing concurrently
+    const [session, { id: orderId }, bodyResult] = await Promise.all([
+      getServerSession(authOptions),
+      params,
+      request.json().catch(() => ({})), // Return empty object if body parsing fails
+    ]);
+
+    const cancelNote: string | null = bodyResult?.note || null;
+
     // Verifică autentificarea
-    const session = await getServerSession(authOptions);
     if (!session?.user?.activeOrganizationId) {
       return NextResponse.json(
         { error: "Unauthorized: Please log in" },
@@ -63,19 +71,16 @@ export async function POST(
       );
     }
 
-    const { id: orderId } = await params;
+    // PARALLELIZED: Run ownership verification and order fetch concurrently
+    const [ownership, orderResult] = await Promise.all([
+      verifyOrderOwnership(orderId, session.user.activeOrganizationId),
+      supabaseAdmin
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single(),
+    ]);
 
-    // Parse body pentru nota de anulare (opțională)
-    let cancelNote: string | null = null;
-    try {
-      const body = await request.json();
-      cancelNote = body.note || null;
-    } catch {
-      // Body gol sau invalid - nota rămâne null
-    }
-
-    // Verifică că comanda aparține organizației userului
-    const ownership = await verifyOrderOwnership(orderId, session.user.activeOrganizationId);
     if (!ownership.valid) {
       return NextResponse.json(
         { error: ownership.error || "Access denied" },
@@ -83,12 +88,7 @@ export async function POST(
       );
     }
 
-    // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabaseAdmin
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
+    const { data: order, error: fetchError } = orderResult;
 
     if (fetchError || !order) {
       return NextResponse.json(

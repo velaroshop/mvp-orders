@@ -14,11 +14,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user ? (session.user as any).id : undefined;
+    // PARALLELIZED: Run session, params, and body parsing concurrently
+    const [session, { id: orderId }, body] = await Promise.all([
+      getServerSession(authOptions),
+      params,
+      request.json(),
+    ]);
 
-    const { id: orderId } = await params;
-    const body = await request.json();
+    const userId = session?.user ? (session.user as any).id : undefined;
 
     // Datele actualizate din modal
     const {

@@ -241,70 +241,70 @@ export default function EditStorePage() {
                   <div className="text-[10px] text-zinc-500 text-center">Amazon style</div>
                 </button>
 
-                {/* Preset 2: Premium & Exclusivitate */}
+                {/* Preset 2: Roșu Pasional */}
                 <button
                   type="button"
                   onClick={() => setFormData({
                     ...formData,
-                    primary_color: "#ffc107",
-                    accent_color: "#00e5cc",
-                    background_color: "#0d0d0d",
-                    text_on_dark_color: "#ffffff"
+                    primary_color: "#dc2626",
+                    accent_color: "#16a34a",
+                    background_color: "#1c1917",
+                    text_on_dark_color: "#fafaf9"
                   })}
                   className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
                 >
-                  <div className="text-xs font-semibold text-white mb-2 text-center">Premium Gold</div>
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Roșu Pasional</div>
                   <div className="flex justify-center gap-1.5 mb-2">
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffc107" }} title="Buton"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#00e5cc" }} title="Accent"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#0d0d0d" }} title="Background"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffffff" }} title="Text"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#dc2626" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#16a34a" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#1c1917" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#fafaf9" }} title="Text"></div>
                   </div>
-                  <div className="text-[10px] text-zinc-500 text-center">Luxury brands</div>
+                  <div className="text-[10px] text-zinc-500 text-center">Vânzări agresive</div>
                 </button>
 
-                {/* Preset 3: Energie & Dinamism */}
+                {/* Preset 3: Albastru Încredere */}
                 <button
                   type="button"
                   onClick={() => setFormData({
                     ...formData,
-                    primary_color: "#e53935",
-                    accent_color: "#ffeb3b",
-                    background_color: "#212121",
-                    text_on_dark_color: "#fafafa"
+                    primary_color: "#2563eb",
+                    accent_color: "#f97316",
+                    background_color: "#0f172a",
+                    text_on_dark_color: "#f1f5f9"
                   })}
                   className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
                 >
-                  <div className="text-xs font-semibold text-white mb-2 text-center">Energie & Dinamism</div>
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Albastru Încredere</div>
                   <div className="flex justify-center gap-1.5 mb-2">
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#e53935" }} title="Buton"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffeb3b" }} title="Accent"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#212121" }} title="Background"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#fafafa" }} title="Text"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#2563eb" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#f97316" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#0f172a" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#f1f5f9" }} title="Text"></div>
                   </div>
-                  <div className="text-[10px] text-zinc-500 text-center">Flash sales</div>
+                  <div className="text-[10px] text-zinc-500 text-center">Tech & profesional</div>
                 </button>
 
-                {/* Preset 4: Natural & Sănătate */}
+                {/* Preset 4: Verde Sănătate */}
                 <button
                   type="button"
                   onClick={() => setFormData({
                     ...formData,
-                    primary_color: "#43a047",
-                    accent_color: "#26c6da",
-                    background_color: "#1b3a2f",
-                    text_on_dark_color: "#e8f5e9"
+                    primary_color: "#059669",
+                    accent_color: "#ea580c",
+                    background_color: "#14532d",
+                    text_on_dark_color: "#ecfdf5"
                   })}
                   className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
                 >
-                  <div className="text-xs font-semibold text-white mb-2 text-center">Natural & Fresh</div>
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Verde Sănătate</div>
                   <div className="flex justify-center gap-1.5 mb-2">
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#43a047" }} title="Buton"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#26c6da" }} title="Accent"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#1b3a2f" }} title="Background"></div>
-                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#e8f5e9" }} title="Text"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#059669" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ea580c" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#14532d" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ecfdf5" }} title="Text"></div>
                   </div>
-                  <div className="text-[10px] text-zinc-500 text-center">Health & wellness</div>
+                  <div className="text-[10px] text-zinc-500 text-center">Produse naturale</div>
                 </button>
               </div>
             </div>

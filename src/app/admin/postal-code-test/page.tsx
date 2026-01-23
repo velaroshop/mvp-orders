@@ -69,7 +69,7 @@ export default function PostalCodeTestPage() {
     }
   }
 
-  function loadExample(example: "1" | "2" | "3" | "4" | "5") {
+  function loadExample(example: "1" | "2" | "3" | "4" | "5" | "6") {
     const examples = {
       "1": {
         county: "vilcea",
@@ -95,6 +95,11 @@ export default function PostalCodeTestPage() {
         county: "Bucuresti",
         city: "Bucuresti",
         street: "Henri Coanda",
+      },
+      "6": {
+        county: "Iasi",
+        city: "Boureni",
+        street: "",
       },
     };
 
@@ -211,6 +216,12 @@ export default function PostalCodeTestPage() {
                 className="px-3 py-2 text-sm bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 font-medium"
               >
                 Ex 5: Nume inversat
+              </button>
+              <button
+                onClick={() => loadExample("6")}
+                className="px-3 py-2 text-sm bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 font-medium"
+              >
+                Ex 6: Sat în comune
               </button>
             </div>
           </div>

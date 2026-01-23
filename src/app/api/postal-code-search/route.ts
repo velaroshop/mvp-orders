@@ -195,8 +195,28 @@ export async function POST(request: NextRequest) {
       const countyScore = similarityScore(countyNorm, entry.county_normalized);
       if (countyScore < 0.7) continue; // Skip if county doesn't match well
 
-      // City matching
-      const cityScore = similarityScore(cityNorm, entry.city_normalized);
+      // City matching with parenthesis handling
+      // Example: "Boureni" should match "Boureni (Balş)"
+      let cityScore = 0;
+      const dbCityNorm = entry.city_normalized;
+
+      // Check if DB city has parenthesis (e.g., "boureni (bals)")
+      const hasParenthesis = dbCityNorm.includes('(');
+
+      if (hasParenthesis) {
+        // Extract city name before parenthesis
+        const dbCityBase = dbCityNorm.split('(')[0].trim();
+
+        // Try matching both the full name and the base name
+        const fullScore = similarityScore(cityNorm, dbCityNorm);
+        const baseScore = similarityScore(cityNorm, dbCityBase);
+
+        // Use the better score
+        cityScore = Math.max(fullScore, baseScore);
+      } else {
+        cityScore = similarityScore(cityNorm, dbCityNorm);
+      }
+
       if (cityScore < 0.6) continue; // Skip if city doesn't match well
 
       // Street matching (if provided and entry has street data)

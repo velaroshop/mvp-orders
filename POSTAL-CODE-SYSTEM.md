@@ -106,12 +106,19 @@ Abbreviated counties are expanded:
 - Matches words in any order with typo tolerance
 - Returns ratio of matched words
 
-### 4. Filtering Thresholds
+### 4. Parenthesis Handling for Cities
+- Handles villages in multiple communes (e.g., "Boureni" in "Boureni (Balş)" and "Boureni (Moţca)")
+- Extracts base city name before parenthesis
+- Matches against both full name and base name
+- Uses best score from both methods
+- Results preserve full city name with commune identifier
+
+### 5. Filtering Thresholds
 - County: ≥ 0.7 similarity required
 - City: ≥ 0.6 similarity required
 - Street: Partial matches preferred
 
-### 5. Scoring
+### 6. Scoring
 **With street:**
 - County: 20% weight
 - City: 30% weight
@@ -121,7 +128,7 @@ Abbreviated counties are expanded:
 - County: 30% weight
 - City: 70% weight
 
-### 6. Results
+### 7. Results
 - Returns top 3 matches
 - Sorted by confidence score (highest first)
 - Includes individual component scores
@@ -166,6 +173,11 @@ Located at: `/admin/postal-code-test`
    - County: "Bucuresti"
    - City: "Bucuresti"
    - Street: "Henri Coanda" (DB has "Coandă Henri")
+
+6. **Village in multiple communes**:
+   - County: "Iasi"
+   - City: "Boureni" (exists in both Balș and Moțca communes)
+   - Will return both: "Boureni (Balş)" and "Boureni (Moţca)"
 
 ## Files
 

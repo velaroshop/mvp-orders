@@ -66,6 +66,15 @@ export default function AdminPage() {
     message: "",
   });
 
+  // Helper function for optimistic local state updates
+  const updateOrderLocally = useCallback((orderId: string, updates: Partial<Order>) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId ? { ...order, ...updates } : order
+      )
+    );
+  }, []);
+
   // Revenue chart state (today only)
   const [todayRevenueData, setTodayRevenueData] = useState<{
     data: Array<{
@@ -277,10 +286,23 @@ export default function AdminPage() {
   async function handleHoldConfirm(note: string): Promise<void> {
     if (!holdOrderId) return;
 
-    setConfirming(holdOrderId);
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === holdOrderId);
+    if (!originalOrder) return;
+
+    // Optimistic update - immediately update UI
+    updateOrderLocally(holdOrderId, {
+      status: "hold",
+      orderNote: note || undefined,
+    });
+
+    // Close modal immediately for snappy UX
+    setIsHoldModalOpen(false);
+    const savedHoldOrderId = holdOrderId;
+    setHoldOrderId(null);
 
     try {
-      const response = await fetch(`/api/orders/${holdOrderId}/hold`, {
+      const response = await fetch(`/api/orders/${savedHoldOrderId}/hold`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -293,22 +315,47 @@ export default function AdminPage() {
         throw new Error(errorData.error || "Failed to hold order");
       }
 
-      await fetchOrders();
-      setIsHoldModalOpen(false);
-      setHoldOrderId(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Comanda a fost pusă în hold cu succes",
+      });
     } catch (error) {
       console.error("Error holding order:", error);
-      throw error; // Re-aruncă pentru a fi prins de modal
-    } finally {
-      setConfirming(null);
+      // Rollback on error
+      updateOrderLocally(savedHoldOrderId, {
+        status: originalOrder.status,
+        orderNote: originalOrder.orderNote,
+      });
+      const errorMessage = error instanceof Error ? error.message : "Eroare la punerea comenzii în hold";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     }
   }
 
   async function handleNoteConfirm(note: string): Promise<void> {
     if (!noteOrderId) return;
 
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === noteOrderId);
+    if (!originalOrder) return;
+
+    // Optimistic update - immediately update UI
+    updateOrderLocally(noteOrderId, {
+      orderNote: note || undefined,
+    });
+
+    // Close modal immediately for snappy UX
+    setIsNoteModalOpen(false);
+    const savedNoteOrderId = noteOrderId;
+    setNoteOrderId(null);
+    setNoteOrderCurrentNote("");
+
     try {
-      const response = await fetch(`/api/orders/${noteOrderId}/note`, {
+      const response = await fetch(`/api/orders/${savedNoteOrderId}/note`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -321,21 +368,46 @@ export default function AdminPage() {
         throw new Error(errorData.error || "Failed to save note");
       }
 
-      await fetchOrders();
-      setIsNoteModalOpen(false);
-      setNoteOrderId(null);
-      setNoteOrderCurrentNote("");
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Notița a fost salvată cu succes",
+      });
     } catch (error) {
       console.error("Error saving note:", error);
-      throw error;
+      // Rollback on error
+      updateOrderLocally(savedNoteOrderId, {
+        orderNote: originalOrder.orderNote,
+      });
+      const errorMessage = error instanceof Error ? error.message : "Eroare la salvarea notiței";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     }
   }
 
   async function handleCancelConfirm(note: string): Promise<void> {
     if (!cancelOrderId) return;
 
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === cancelOrderId);
+    if (!originalOrder) return;
+
+    // Optimistic update - immediately update UI
+    updateOrderLocally(cancelOrderId, {
+      status: "cancelled",
+      cancelledNote: note || undefined,
+    });
+
+    // Close modal immediately for snappy UX
+    setIsCancelModalOpen(false);
+    const savedCancelOrderId = cancelOrderId;
+    setCancelOrderId(null);
+
     try {
-      const response = await fetch(`/api/orders/${cancelOrderId}/cancel`, {
+      const response = await fetch(`/api/orders/${savedCancelOrderId}/cancel`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -348,9 +420,6 @@ export default function AdminPage() {
         throw new Error(errorData.error || "Failed to cancel order");
       }
 
-      await fetchOrders();
-      setIsCancelModalOpen(false);
-      setCancelOrderId(null);
       setToast({
         isOpen: true,
         type: "success",
@@ -358,18 +427,50 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("Error canceling order:", error);
-      throw error;
+      // Rollback on error
+      updateOrderLocally(savedCancelOrderId, {
+        status: originalOrder.status,
+        cancelledNote: originalOrder.cancelledNote,
+      });
+      const errorMessage = error instanceof Error ? error.message : "Eroare la anularea comenzii";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     }
   }
 
   async function handleModalConfirm(updatedOrder: Partial<Order>): Promise<void> {
     if (!selectedOrder) return;
 
-    setConfirming(selectedOrder.id);
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === selectedOrder.id);
+    if (!originalOrder) return;
+
+    // Optimistic update - update with new data and status
+    const optimisticUpdate: Partial<Order> = {
+      status: updatedOrder.scheduledDate ? "scheduled" : "confirmed",
+      fullName: updatedOrder.fullName,
+      phone: updatedOrder.phone,
+      county: updatedOrder.county,
+      city: updatedOrder.city,
+      address: updatedOrder.address,
+      postalCode: updatedOrder.postalCode,
+      scheduledDate: updatedOrder.scheduledDate,
+    };
+    updateOrderLocally(selectedOrder.id, optimisticUpdate);
+
+    // Close modal immediately for snappy UX
+    setIsModalOpen(false);
+    const savedSelectedOrder = selectedOrder;
+    setSelectedOrder(null);
+
+    setConfirming(savedSelectedOrder.id);
 
     try {
       // Trimite datele actualizate la endpoint-ul de confirmare
-      const response = await fetch(`/api/orders/${selectedOrder.id}/confirm`, {
+      const response = await fetch(`/api/orders/${savedSelectedOrder.id}/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -383,16 +484,30 @@ export default function AdminPage() {
         throw new Error(errorMessage);
       }
 
-      // Reîncarcă lista de comenzi
-      await fetchOrders();
-
-      setIsModalOpen(false);
-      setSelectedOrder(null);
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: updatedOrder.scheduledDate ? "Comanda a fost programată cu succes" : "Comanda a fost confirmată cu succes",
+      });
     } catch (error) {
       console.error("Error confirming order:", error);
-      // Eroarea va fi afișată în modal prin setSubmitError
-      // Re-aruncăm eroarea pentru a fi prinsă de modal
-      throw error;
+      // Rollback on error
+      updateOrderLocally(savedSelectedOrder.id, {
+        status: originalOrder.status,
+        fullName: originalOrder.fullName,
+        phone: originalOrder.phone,
+        county: originalOrder.county,
+        city: originalOrder.city,
+        address: originalOrder.address,
+        postalCode: originalOrder.postalCode,
+        scheduledDate: originalOrder.scheduledDate,
+      });
+      const errorMessage = error instanceof Error ? error.message : "Eroare la confirmarea comenzii";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     } finally {
       setConfirming(null);
     }
@@ -401,21 +516,36 @@ export default function AdminPage() {
   async function handleConfirmScheduledOrder(): Promise<void> {
     if (!scheduledOrderToConfirm) return;
 
-    setConfirming(scheduledOrderToConfirm.id);
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === scheduledOrderToConfirm.id);
+    if (!originalOrder) return;
+
+    // Optimistic update - change status to confirmed and clear scheduled date
+    updateOrderLocally(scheduledOrderToConfirm.id, {
+      status: "confirmed",
+      scheduledDate: undefined,
+    });
+
+    // Close modal immediately for snappy UX
+    setIsScheduledModalOpen(false);
+    const savedScheduledOrder = scheduledOrderToConfirm;
+    setScheduledOrderToConfirm(null);
+
+    setConfirming(savedScheduledOrder.id);
 
     try {
-      const response = await fetch(`/api/orders/${scheduledOrderToConfirm.id}/confirm`, {
+      const response = await fetch(`/api/orders/${savedScheduledOrder.id}/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fullName: scheduledOrderToConfirm.fullName,
-          phone: scheduledOrderToConfirm.phone,
-          county: scheduledOrderToConfirm.county,
-          city: scheduledOrderToConfirm.city,
-          address: scheduledOrderToConfirm.address,
-          postalCode: scheduledOrderToConfirm.postalCode,
+          fullName: savedScheduledOrder.fullName,
+          phone: savedScheduledOrder.phone,
+          county: savedScheduledOrder.county,
+          city: savedScheduledOrder.city,
+          address: savedScheduledOrder.address,
+          postalCode: savedScheduledOrder.postalCode,
           scheduledDate: "", // Empty to confirm immediately
         }),
       });
@@ -426,9 +556,6 @@ export default function AdminPage() {
         throw new Error(errorMessage);
       }
 
-      await fetchOrders();
-      setIsScheduledModalOpen(false);
-      setScheduledOrderToConfirm(null);
       setToast({
         isOpen: true,
         type: "success",
@@ -436,13 +563,17 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("Error confirming scheduled order:", error);
+      // Rollback on error
+      updateOrderLocally(savedScheduledOrder.id, {
+        status: originalOrder.status,
+        scheduledDate: originalOrder.scheduledDate,
+      });
       const errorMessage = error instanceof Error ? error.message : "Failed to confirm order";
       setToast({
         isOpen: true,
         type: "error",
         message: errorMessage,
       });
-      throw error;
     } finally {
       setConfirming(null);
     }
@@ -491,6 +622,21 @@ export default function AdminPage() {
     }
 
     if (action === "uncancel") {
+      // Save original state for rollback
+      const originalOrder = orders.find(o => o.id === orderId);
+      if (!originalOrder) {
+        setOpenDropdown(null);
+        return;
+      }
+
+      // Optimistic update - restore to pending (previous status stored on server)
+      updateOrderLocally(orderId, {
+        status: "pending",
+        cancelledNote: undefined,
+        cancellerName: undefined,
+      });
+      setOpenDropdown(null);
+
       try {
         const response = await fetch(`/api/orders/${orderId}/uncancel`, {
           method: "POST",
@@ -501,8 +647,6 @@ export default function AdminPage() {
           throw new Error(errorData.error || "Failed to uncancel order");
         }
 
-        // Reîncarcă lista de comenzi
-        await fetchOrders();
         setToast({
           isOpen: true,
           type: "success",
@@ -510,6 +654,12 @@ export default function AdminPage() {
         });
       } catch (error) {
         console.error("Error uncanceling order:", error);
+        // Rollback on error
+        updateOrderLocally(orderId, {
+          status: originalOrder.status,
+          cancelledNote: originalOrder.cancelledNote,
+          cancellerName: originalOrder.cancellerName,
+        });
         const errorMessage = error instanceof Error ? error.message : "Eroare la restabilirea comenzii";
         setToast({
           isOpen: true,
@@ -517,7 +667,6 @@ export default function AdminPage() {
           message: errorMessage,
         });
       }
-      setOpenDropdown(null);
       return;
     }
 
@@ -529,6 +678,20 @@ export default function AdminPage() {
     }
 
     if (action === "unhold") {
+      // Save original state for rollback
+      const originalOrder = orders.find(o => o.id === orderId);
+      if (!originalOrder) {
+        setOpenDropdown(null);
+        return;
+      }
+
+      // Optimistic update - restore to pending (previous status stored on server)
+      updateOrderLocally(orderId, {
+        status: "pending",
+        orderNote: undefined, // Hold note is cleared on unhold
+      });
+      setOpenDropdown(null);
+
       try {
         const response = await fetch(`/api/orders/${orderId}/unhold`, {
           method: "POST",
@@ -539,8 +702,6 @@ export default function AdminPage() {
           throw new Error(errorData.error || "Failed to unhold order");
         }
 
-        // Reîncarcă lista de comenzi
-        await fetchOrders();
         setToast({
           isOpen: true,
           type: "success",
@@ -548,6 +709,11 @@ export default function AdminPage() {
         });
       } catch (error) {
         console.error("Error unholding order:", error);
+        // Rollback on error
+        updateOrderLocally(orderId, {
+          status: originalOrder.status,
+          orderNote: originalOrder.orderNote,
+        });
         const errorMessage = error instanceof Error ? error.message : "Eroare la scoaterea comenzii din hold";
         setToast({
           isOpen: true,
@@ -555,7 +721,6 @@ export default function AdminPage() {
           message: errorMessage,
         });
       }
-      setOpenDropdown(null);
       return;
     }
 
@@ -564,6 +729,19 @@ export default function AdminPage() {
         setOpenDropdown(null);
         return;
       }
+
+      // Save original state for rollback
+      const originalOrder = orders.find(o => o.id === orderId);
+      if (!originalOrder) {
+        setOpenDropdown(null);
+        return;
+      }
+
+      // Optimistic update - change status to confirmed (assuming success)
+      updateOrderLocally(orderId, {
+        status: "confirmed",
+      });
+      setOpenDropdown(null);
 
       setConfirming(orderId);
       try {
@@ -578,8 +756,11 @@ export default function AdminPage() {
 
         const result = await response.json();
 
-        // Reîncarcă lista de comenzi
-        await fetchOrders();
+        // Update with actual helpshipOrderId from response
+        updateOrderLocally(orderId, {
+          helpshipOrderId: result.helpshipOrderId,
+        });
+
         setToast({
           isOpen: true,
           type: "success",
@@ -587,6 +768,10 @@ export default function AdminPage() {
         });
       } catch (error) {
         console.error("Error resyncing order:", error);
+        // Rollback on error
+        updateOrderLocally(orderId, {
+          status: originalOrder.status,
+        });
         const errorMessage = error instanceof Error ? error.message : "Eroare la re-sincronizarea comenzii";
         setToast({
           isOpen: true,
@@ -596,7 +781,6 @@ export default function AdminPage() {
       } finally {
         setConfirming(null);
       }
-      setOpenDropdown(null);
       return;
     }
 
@@ -630,9 +814,23 @@ export default function AdminPage() {
   async function handleFinalizeQueue() {
     if (!orderToFinalize) return;
 
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === orderToFinalize);
+    if (!originalOrder) return;
+
+    // Optimistic update - change status to pending
+    updateOrderLocally(orderToFinalize, {
+      status: "pending",
+    });
+
+    // Close modal immediately for snappy UX
+    setIsFinalizeModalOpen(false);
+    const savedOrderToFinalize = orderToFinalize;
+    setOrderToFinalize(null);
+
     setIsFinalizing(true);
     try {
-      const response = await fetch(`/api/orders/${orderToFinalize}/finalize`, {
+      const response = await fetch(`/api/orders/${savedOrderToFinalize}/finalize`, {
         method: "POST",
       });
 
@@ -640,13 +838,6 @@ export default function AdminPage() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to finalize order");
       }
-
-      const result = await response.json();
-
-      // Close modal and reload orders
-      setIsFinalizeModalOpen(false);
-      setOrderToFinalize(null);
-      await fetchOrders();
 
       // Show success toast
       setToast({
@@ -656,6 +847,10 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("Error finalizing order:", error);
+      // Rollback on error
+      updateOrderLocally(savedOrderToFinalize, {
+        status: originalOrder.status,
+      });
       const errorMessage = error instanceof Error ? error.message : "Failed to finalize order";
 
       // Show error toast
@@ -674,6 +869,16 @@ export default function AdminPage() {
       return;
     }
 
+    // Save original state for rollback
+    const originalOrder = orders.find(o => o.id === orderId);
+    if (!originalOrder) return;
+
+    // Optimistic update - change status to confirmed and mark as promoted
+    updateOrderLocally(orderId, {
+      status: "confirmed",
+      promotedFromTesting: true,
+    });
+
     try {
       const response = await fetch(`/api/orders/${orderId}/promote`, {
         method: "POST",
@@ -684,8 +889,6 @@ export default function AdminPage() {
         throw new Error(errorData.error || "Failed to promote order");
       }
 
-      await fetchOrders();
-
       setToast({
         isOpen: true,
         type: "success",
@@ -693,6 +896,11 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("Error promoting order:", error);
+      // Rollback on error
+      updateOrderLocally(orderId, {
+        status: originalOrder.status,
+        promotedFromTesting: originalOrder.promotedFromTesting,
+      });
       const errorMessage = error instanceof Error ? error.message : "Failed to promote order";
 
       setToast({

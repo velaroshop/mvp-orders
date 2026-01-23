@@ -7,9 +7,46 @@ import { authOptions } from "@/lib/auth";
 import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
+ * Background sync to Helpship - fire and forget
+ * Logs errors but doesn't block the response
+ */
+async function syncUncancelToHelpship(
+  helpshipOrderId: string,
+  organizationId: string,
+) {
+  try {
+    const credentials = await getHelpshipCredentials(organizationId);
+    const helpshipClient = new HelpshipClient(credentials);
+
+    // Verificăm statusul comenzii în Helpship
+    const orderStatus = await helpshipClient.getOrderStatus(helpshipOrderId);
+
+    if (!orderStatus) {
+      console.error(`[Uncancel Background] Failed to get order status from Helpship for ${helpshipOrderId}`);
+      return;
+    }
+
+    const statusName = orderStatus.statusName;
+    if (statusName !== "Archived") {
+      console.log(`[Uncancel Background] Order ${helpshipOrderId} not archived in Helpship (status: ${statusName}), no action needed`);
+      return;
+    }
+
+    console.log(`[Uncancel Background] Uncanceling order ${helpshipOrderId} in Helpship...`);
+    await helpshipClient.uncancelOrder(helpshipOrderId);
+    console.log(`[Uncancel Background] Order ${helpshipOrderId} uncanceled successfully in Helpship.`);
+  } catch (error) {
+    console.error(`[Uncancel Background] Failed to uncancel order ${helpshipOrderId} in Helpship:`, error);
+    // Don't throw - this is background processing
+  }
+}
+
+/**
  * Anulează anularea unei comenzi: schimbă status-ul din Archived în Pending în Helpship
  * Verifică mai întâi dacă comanda este anulată
  * SECURIZAT: Necesită autentificare și verifică ownership-ul
+ *
+ * OPTIMIZED: Updates DB first, returns immediately, syncs to Helpship in background
  */
 export async function POST(
   request: NextRequest,
@@ -58,37 +95,7 @@ export async function POST(
       );
     }
 
-    // Dacă comanda are helpshipOrderId, facem uncancel în Helpship
-    if (order.helpship_order_id) {
-      try {
-        // Obține credențialele Helpship pentru organizație
-        const credentials = await getHelpshipCredentials(order.organization_id);
-        const helpshipClient = new HelpshipClient(credentials);
-
-        // Verificăm statusul comenzii în Helpship
-        const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
-
-        if (orderStatus) {
-          const statusName = orderStatus.statusName;
-          if (statusName === "Archived") {
-            console.log(`[Uncancel] Uncanceling order ${order.helpship_order_id} in Helpship...`);
-            await helpshipClient.uncancelOrder(order.helpship_order_id);
-            console.log(`[Uncancel] Order ${order.helpship_order_id} uncanceled successfully in Helpship.`);
-          } else {
-            console.log(`[Uncancel] Order not archived in Helpship (status: ${statusName}), updating DB only`);
-          }
-        }
-      } catch (helpshipError) {
-        console.error("Failed to uncancel order in Helpship:", helpshipError);
-        const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea anulării comenzii în Helpship";
-        return NextResponse.json(
-          { error: errorMessage },
-          { status: 500 },
-        );
-      }
-    }
-
-    // Restabilim statusul inițial în DB și ștergem datele de anulare
+    // Restabilim statusul inițial în DB și ștergem datele de anulare FIRST (fast operation)
     const previousStatus = (order.cancelled_from_status as string) || "pending";
     const { error: updateError } = await supabaseAdmin
       .from("orders")
@@ -110,6 +117,13 @@ export async function POST(
     }
 
     console.log(`[Uncancel] Order ${orderId} restored to status: ${previousStatus}`);
+
+    // Start background sync to Helpship (fire and forget)
+    if (order.helpship_order_id) {
+      // Don't await - let it run in the background
+      syncUncancelToHelpship(order.helpship_order_id, order.organization_id);
+    }
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error uncanceling order", error);

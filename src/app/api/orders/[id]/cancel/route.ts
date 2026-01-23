@@ -7,10 +7,47 @@ import { authOptions } from "@/lib/auth";
 import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
+ * Background sync to Helpship - fire and forget
+ * Logs errors but doesn't block the response
+ */
+async function syncCancelToHelpship(
+  helpshipOrderId: string,
+  organizationId: string,
+) {
+  try {
+    const credentials = await getHelpshipCredentials(organizationId);
+    const helpshipClient = new HelpshipClient(credentials);
+
+    // Verificăm statusul comenzii în Helpship
+    const orderStatus = await helpshipClient.getOrderStatus(helpshipOrderId);
+
+    if (!orderStatus) {
+      console.error(`[Cancel Background] Failed to get order status from Helpship for ${helpshipOrderId}`);
+      return;
+    }
+
+    const statusName = orderStatus.statusName;
+    if (statusName === "Archived") {
+      console.log(`[Cancel Background] Order ${helpshipOrderId} already archived in Helpship`);
+      return;
+    }
+
+    console.log(`[Cancel Background] Canceling order ${helpshipOrderId} in Helpship (current status: ${statusName})...`);
+    await helpshipClient.cancelOrder(helpshipOrderId);
+    console.log(`[Cancel Background] Order ${helpshipOrderId} canceled successfully in Helpship.`);
+  } catch (error) {
+    console.error(`[Cancel Background] Failed to cancel order ${helpshipOrderId} in Helpship:`, error);
+    // Don't throw - this is background processing
+  }
+}
+
+/**
  * Anulează o comandă: schimbă status-ul în Archived în Helpship
  * Verifică mai întâi dacă comanda este deja anulată
  * Acceptă opțional o notă de anulare
  * SECURIZAT: Necesită autentificare și verifică ownership-ul
+ *
+ * OPTIMIZED: Updates DB first, returns immediately, syncs to Helpship in background
  */
 export async function POST(
   request: NextRequest,
@@ -68,48 +105,7 @@ export async function POST(
       );
     }
 
-    // Dacă comanda are helpshipOrderId, anulăm în Helpship
-    if (order.helpship_order_id) {
-      try {
-        // Obține credențialele Helpship pentru organizație
-        const credentials = await getHelpshipCredentials(order.organization_id);
-        const helpshipClient = new HelpshipClient(credentials);
-
-        // Verificăm statusul comenzii în Helpship
-        const orderStatus = await helpshipClient.getOrderStatus(order.helpship_order_id);
-
-        if (!orderStatus) {
-          return NextResponse.json(
-            { error: "Nu s-a putut verifica statusul comenzii în Helpship" },
-            { status: 500 },
-          );
-        }
-
-        // Verificăm dacă comanda este deja anulată (Archived)
-        const statusName = orderStatus.statusName;
-        if (statusName === "Archived") {
-          // E deja anulată în Helpship, actualizăm doar DB-ul
-          console.log(`[Cancel] Order already archived in Helpship, updating DB only`);
-        } else {
-          console.log(`[Cancel] Canceling order ${order.helpship_order_id} in Helpship (current status: ${statusName})...`);
-
-          // Folosim endpoint-ul specific pentru cancel
-          await helpshipClient.cancelOrder(order.helpship_order_id);
-
-          console.log(`[Cancel] Order ${order.helpship_order_id} canceled successfully in Helpship.`);
-        }
-      } catch (helpshipError) {
-        console.error("Failed to cancel order in Helpship:", helpshipError);
-        const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la anularea comenzii în Helpship";
-        return NextResponse.json(
-          { error: errorMessage },
-          { status: 500 },
-        );
-      }
-    }
-
-    // Actualizăm statusul în DB la "cancelled"
-    // Salvăm statusul curent în cancelled_from_status pentru a-l putea restabili la uncancel
+    // Actualizăm statusul în DB la "cancelled" FIRST (fast operation)
     const currentStatus = order.status;
     const cancellerName = session.user.name || session.user.email || "Unknown";
     console.log(`[Cancel] Current order status: ${currentStatus}, setting to cancelled by ${cancellerName}...`);
@@ -136,6 +132,12 @@ export async function POST(
     }
 
     console.log(`[Cancel] Order status updated successfully. New status: ${updatedOrder?.status}`);
+
+    // Start background sync to Helpship (fire and forget)
+    if (order.helpship_order_id) {
+      // Don't await - let it run in the background
+      syncCancelToHelpship(order.helpship_order_id, order.organization_id);
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

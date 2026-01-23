@@ -302,7 +302,7 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 }
 
 /**
- * Parses detail tokens (bl, sc, et, ap) into normalized format
+ * Parses detail tokens (bl, sc, et, ap) into normalized format with full words
  */
 function parseDetails(tokens: string[]): string {
   const details: { type: string; value: string }[] = [];
@@ -314,28 +314,28 @@ function parseDetails(tokens: string[]): string {
     let detailType = '';
     let detailValue = '';
 
-    // Match detail type
-    if (['bl', 'bloc'].includes(token)) {
-      detailType = 'bl.';
+    // Match detail type - recognize various abbreviations
+    if (['bl', 'blc', 'bloc'].includes(token)) {
+      detailType = 'bloc';
       // Next token is the value
       if (i + 1 < tokens.length) {
         detailValue = tokens[i + 1].toUpperCase(); // Uppercase for blocks
         i++;
       }
     } else if (['sc', 'scara'].includes(token)) {
-      detailType = 'sc.';
+      detailType = 'scara';
       if (i + 1 < tokens.length) {
         detailValue = tokens[i + 1].toUpperCase();
         i++;
       }
-    } else if (['et', 'etaj'].includes(token)) {
-      detailType = 'et.';
+    } else if (['et', 'etj', 'etaj'].includes(token)) {
+      detailType = 'etaj';
       if (i + 1 < tokens.length) {
         detailValue = tokens[i + 1];
         i++;
       }
-    } else if (['ap', 'apartament'].includes(token)) {
-      detailType = 'ap.';
+    } else if (['ap', 'apt', 'apart', 'apartament'].includes(token)) {
+      detailType = 'apartament';
       if (i + 1 < tokens.length) {
         detailValue = tokens[i + 1];
         i++;
@@ -355,11 +355,11 @@ function parseDetails(tokens: string[]): string {
     i++;
   }
 
-  // Build details string in standard order: sc -> bl -> et -> ap -> interfon
-  const order = ['sc.', 'bl.', 'et.', 'ap.', 'interfon'];
+  // Build details string in standard order: scara -> bloc -> etaj -> apartament -> interfon
+  const order = ['scara', 'bloc', 'etaj', 'apartament', 'interfon'];
   const sorted = details.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
-  return sorted.map(d => `${d.type} ${d.value}`).join(' ');
+  return sorted.map(d => `${d.type} ${d.value}`).join(', ');
 }
 
 // ============================================================================

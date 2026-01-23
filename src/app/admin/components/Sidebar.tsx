@@ -71,6 +71,13 @@ export default function Sidebar() {
     return allMenuItems.filter((item) => hasRoutePermission(item.href, userRole));
   }, [session]);
 
+  // Check if user should see SUPERADMIN link (OWNER from superadmin org)
+  const showSuperadminLink = useMemo(() => {
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    return userRole === "owner" && isSuperadminOrg === true;
+  }, [session]);
+
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
@@ -153,6 +160,29 @@ export default function Sidebar() {
               <span className="text-sm font-medium">{item.name}</span>
             </Link>
           ))}
+
+          {/* SUPERADMIN link - only for OWNER from superadmin organization */}
+          {showSuperadminLink && (
+            <>
+              <div className="my-2 border-t border-zinc-700" />
+              <Link
+                href="/admin/superadmin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`
+                  flex items-center gap-2 px-3 py-2 rounded-lg
+                  transition-all duration-200
+                  ${
+                    isActive("/admin/superadmin")
+                      ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
+                      : "text-amber-400 hover:bg-zinc-800 hover:text-amber-300"
+                  }
+                `}
+              >
+                <span className="text-base">👑</span>
+                <span className="text-sm font-medium">Superadmin</span>
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Footer */}

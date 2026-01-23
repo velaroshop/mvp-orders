@@ -213,6 +213,102 @@ export default function EditStorePage() {
               Color Scheme
             </h2>
 
+            {/* Color Presets */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-zinc-400 mb-3">
+                Palete predefinite (click pentru a aplica)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Preset 1: Urgență & Încredere */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    primary_color: "#ff6b35",
+                    accent_color: "#00d68f",
+                    background_color: "#1a1f36",
+                    text_on_dark_color: "#f8f9fa"
+                  })}
+                  className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
+                >
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Urgență & Încredere</div>
+                  <div className="flex justify-center gap-1.5 mb-2">
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ff6b35" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#00d68f" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#1a1f36" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#f8f9fa" }} title="Text"></div>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 text-center">Amazon style</div>
+                </button>
+
+                {/* Preset 2: Premium & Exclusivitate */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    primary_color: "#ffc107",
+                    accent_color: "#00e5cc",
+                    background_color: "#0d0d0d",
+                    text_on_dark_color: "#ffffff"
+                  })}
+                  className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
+                >
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Premium Gold</div>
+                  <div className="flex justify-center gap-1.5 mb-2">
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffc107" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#00e5cc" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#0d0d0d" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffffff" }} title="Text"></div>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 text-center">Luxury brands</div>
+                </button>
+
+                {/* Preset 3: Energie & Dinamism */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    primary_color: "#e53935",
+                    accent_color: "#ffeb3b",
+                    background_color: "#212121",
+                    text_on_dark_color: "#fafafa"
+                  })}
+                  className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
+                >
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Energie & Dinamism</div>
+                  <div className="flex justify-center gap-1.5 mb-2">
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#e53935" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#ffeb3b" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#212121" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#fafafa" }} title="Text"></div>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 text-center">Flash sales</div>
+                </button>
+
+                {/* Preset 4: Natural & Sănătate */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    primary_color: "#43a047",
+                    accent_color: "#26c6da",
+                    background_color: "#1b3a2f",
+                    text_on_dark_color: "#e8f5e9"
+                  })}
+                  className="group relative p-3 rounded-lg border border-zinc-600 hover:border-emerald-500 transition-all bg-zinc-900 hover:bg-zinc-800"
+                >
+                  <div className="text-xs font-semibold text-white mb-2 text-center">Natural & Fresh</div>
+                  <div className="flex justify-center gap-1.5 mb-2">
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#43a047" }} title="Buton"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#26c6da" }} title="Accent"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#1b3a2f" }} title="Background"></div>
+                    <div className="w-6 h-6 rounded-full border border-zinc-500" style={{ backgroundColor: "#e8f5e9" }} title="Text"></div>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 text-center">Health & wellness</div>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               {/* Primary Color */}
               <div>

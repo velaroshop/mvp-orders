@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { syncOrderToHelpship } from "@/lib/helpship-sync";
 import { sendMetaPurchaseEvent } from "@/lib/meta-tracking";
+import { checkRateLimit, getClientIP, getRateLimitHeaders } from "@/lib/rate-limit";
+
+// Rate limit config: 5 upsell requests per IP per minut
+const RATE_LIMIT_CONFIG = {
+  limit: 5,
+  windowSeconds: 60,
+};
 
 /**
  * POST /api/orders/[id]/add-postsale-upsell - Add a postsale upsell to an existing order
  * Public endpoint - used after order is placed
+ * SECURIZAT: Rate limiting + verificare status queue + expirare
  */
 export async function POST(
   request: NextRequest,
@@ -17,6 +25,21 @@ export async function POST(
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
+
+  // Rate limiting
+  const clientIP = getClientIP(request);
+  const rateLimitResult = checkRateLimit(`postsale:${clientIP}`, RATE_LIMIT_CONFIG);
+
+  if (!rateLimitResult.allowed) {
+    console.warn(`[Rate Limit] Blocked IP ${clientIP} - too many postsale requests`);
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { ...headers, ...getRateLimitHeaders(rateLimitResult) },
+      }
+    );
+  }
 
   try {
     const { id: orderId } = await params;

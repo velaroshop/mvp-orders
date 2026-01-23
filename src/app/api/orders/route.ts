@@ -5,9 +5,31 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { findOrCreateCustomer, updateCustomerStats } from "@/lib/customer";
 import { cleanupExpiredQueueOrders } from "@/lib/queue-cleanup";
+import { checkRateLimit, getClientIP, getRateLimitHeaders } from "@/lib/rate-limit";
 import type { OfferCode } from "@/lib/types";
 
+// Rate limit config: 10 comenzi per IP per minut
+const RATE_LIMIT_CONFIG = {
+  limit: 10,
+  windowSeconds: 60,
+};
+
 export async function POST(request: NextRequest) {
+  // Rate limiting - verifică înainte de orice procesare
+  const clientIP = getClientIP(request);
+  const rateLimitResult = checkRateLimit(`orders:${clientIP}`, RATE_LIMIT_CONFIG);
+
+  if (!rateLimitResult.allowed) {
+    console.warn(`[Rate Limit] Blocked IP ${clientIP} - too many order requests`);
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: getRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
   // Fire-and-forget: cleanup expired queue orders in background
   cleanupExpiredQueueOrders().catch((err) =>
     console.error("[Cleanup] Background cleanup failed:", err)

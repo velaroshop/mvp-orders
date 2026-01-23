@@ -90,8 +90,8 @@ export default function AdminPage() {
   });
   const [revenueLoading, setRevenueLoading] = useState(false);
 
-  // KPI state (today only)
-  const [todayStats, setTodayStats] = useState({
+  // KPI state
+  const [kpiStats, setKpiStats] = useState({
     totalRevenue: 0,
     avgOrderValue: 0,
     orderCount: 0,
@@ -100,6 +100,14 @@ export default function AdminPage() {
     ordersByStatus: {} as Record<string, number>,
   });
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // KPI Filters state
+  type QuickFilter = "today" | "yesterday" | "last3days" | "wtd" | "mtd" | "all";
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("today");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [selectedLandingPage, setSelectedLandingPage] = useState("all");
+  const [landingPages, setLandingPages] = useState<Array<{ id: string; name: string }>>([]);
 
   // Status configuration for Orders by Status card
   const statusConfig = [
@@ -112,6 +120,44 @@ export default function AdminPage() {
     { key: "testing", label: "Testing", color: "bg-blue-500" },
     { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
   ];
+
+  // Calculate date ranges for quick filters
+  const getDateRange = (filter: QuickFilter): { start: string; end: string } => {
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+
+    switch (filter) {
+      case "today":
+        return { start: todayStr, end: todayStr };
+      case "yesterday": {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+        return { start: yesterdayStr, end: yesterdayStr };
+      }
+      case "last3days": {
+        const threeDaysAgo = new Date(today);
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
+        const threeDaysAgoStr = threeDaysAgo.toISOString().split("T")[0];
+        return { start: threeDaysAgoStr, end: todayStr };
+      }
+      case "wtd": {
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        const weekStartStr = weekStart.toISOString().split("T")[0];
+        return { start: weekStartStr, end: todayStr };
+      }
+      case "mtd": {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthStartStr = monthStart.toISOString().split("T")[0];
+        return { start: monthStartStr, end: todayStr };
+      }
+      case "all":
+        return { start: "2000-01-01", end: todayStr };
+      default:
+        return { start: todayStr, end: todayStr };
+    }
+  };
 
   async function fetchOrders(query: string = "") {
     setIsSearching(true);
@@ -137,12 +183,16 @@ export default function AdminPage() {
     setIsSearching(false);
   }
 
-  // Fetch today's revenue data and stats in parallel
-  async function fetchTodayData() {
-    const today = new Date().toISOString().split("T")[0];
+  // Fetch KPI stats and revenue data
+  async function fetchKpiData(start?: string, end?: string, landingPage?: string) {
+    const startDate = start || filterStartDate || new Date().toISOString().split("T")[0];
+    const endDate = end || filterEndDate || new Date().toISOString().split("T")[0];
+    const lp = landingPage || selectedLandingPage;
+
     const params = new URLSearchParams({
-      startDate: today,
-      endDate: today,
+      startDate,
+      endDate,
+      landingPage: lp,
     });
 
     // Fetch both in parallel
@@ -162,21 +212,35 @@ export default function AdminPage() {
           granularity: result.granularity || 'hourly',
         });
       } else {
-        console.error("Failed to fetch today's revenue");
+        console.error("Failed to fetch revenue data");
       }
 
       if (statsResponse.ok) {
         const data = await statsResponse.json();
-        setTodayStats(data);
+        setKpiStats(data);
       } else {
-        console.error("Failed to fetch today's stats");
+        console.error("Failed to fetch stats");
       }
     } catch (error) {
-      console.error("Error fetching today's data:", error);
+      console.error("Error fetching KPI data:", error);
     } finally {
       setRevenueLoading(false);
       setStatsLoading(false);
     }
+  }
+
+  // Handle quick filter click
+  function handleQuickFilterClick(filter: QuickFilter) {
+    setQuickFilter(filter);
+    const { start, end } = getDateRange(filter);
+    setFilterStartDate(start);
+    setFilterEndDate(end);
+    fetchKpiData(start, end, selectedLandingPage);
+  }
+
+  // Handle Apply Filters button
+  function handleApplyFilters() {
+    fetchKpiData(filterStartDate, filterEndDate, selectedLandingPage);
   }
 
   // Debounced search
@@ -227,9 +291,28 @@ export default function AdminPage() {
     fetchOrders(searchQuery);
   }, [currentPage, selectedStatuses]);
 
-  // Fetch today's data (revenue + stats) on mount
+  // Fetch landing pages on mount
   useEffect(() => {
-    fetchTodayData();
+    const fetchLandingPages = async () => {
+      try {
+        const response = await fetch("/api/landing-pages");
+        if (response.ok) {
+          const data = await response.json();
+          setLandingPages(data.landingPages || []);
+        }
+      } catch (error) {
+        console.error("Error fetching landing pages:", error);
+      }
+    };
+    fetchLandingPages();
+  }, []);
+
+  // Initialize filters and fetch KPI data on mount
+  useEffect(() => {
+    const { start, end } = getDateRange("today");
+    setFilterStartDate(start);
+    setFilterEndDate(end);
+    fetchKpiData(start, end, "all");
   }, []);
 
   // Închide dropdown-ul când se face click în afara lui
@@ -981,49 +1064,137 @@ export default function AdminPage() {
 
           {/* KPI Card + Orders by Status + Revenue Chart */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-            {/* KPI Card - exact like dashboard but compact */}
+            {/* Filters & KPIs Card - exact like dashboard */}
             <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
-              <h3 className="text-[10px] font-medium text-zinc-400 mb-2">Key Performance Indicators</h3>
-              {statsLoading ? (
-                <div className="text-center py-3">
-                  <p className="text-zinc-400 text-xs">Loading stats...</p>
+              {/* Filters Section */}
+              <div className="mb-3">
+                <h3 className="text-xs font-medium text-zinc-400 mb-2">Filters</h3>
+
+                {/* Quick Filters */}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {[
+                    { key: "today", label: "Today" },
+                    { key: "yesterday", label: "Yesterday" },
+                    { key: "last3days", label: "Last Three Days" },
+                    { key: "wtd", label: "Week To Date" },
+                    { key: "mtd", label: "Month To Date" },
+                    { key: "all", label: "All Time" },
+                  ].map((filter) => (
+                    <button
+                      key={filter.key}
+                      onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
+                      className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
+                        quickFilter === filter.key
+                          ? "bg-emerald-600 text-white"
+                          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <div className="grid grid-cols-5 gap-2">
-                  {/* Total Revenue */}
+
+                {/* Manual Date & Landing Page Filters */}
+                <div className="grid grid-cols-3 gap-2 mb-2">
                   <div>
-                    <p className="text-[9px] text-zinc-400 mb-0.5">Total</p>
-                    <p className="text-sm font-bold text-emerald-500">
-                      {todayStats.totalRevenue.toFixed(2)}
-                    </p>
-                    <p className="text-[8px] text-zinc-500">RON</p>
+                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={filterStartDate}
+                      onChange={(e) => setFilterStartDate(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
+                    />
                   </div>
-                  {/* Average Order Value */}
                   <div>
-                    <p className="text-[9px] text-zinc-400 mb-0.5">Avg. Value</p>
-                    <p className="text-sm font-bold text-white">
-                      {todayStats.avgOrderValue.toFixed(2)} RON
-                    </p>
+                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={filterEndDate}
+                      onChange={(e) => setFilterEndDate(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
+                    />
                   </div>
-                  {/* Orders */}
                   <div>
-                    <p className="text-[9px] text-zinc-400 mb-0.5">Orders</p>
-                    <p className="text-sm font-bold text-white">{todayStats.orderCount}</p>
-                  </div>
-                  {/* Products Sold */}
-                  <div>
-                    <p className="text-[9px] text-zinc-400 mb-0.5">Products Sold</p>
-                    <p className="text-sm font-bold text-white">{todayStats.productsSold}</p>
-                  </div>
-                  {/* Upsell Rate */}
-                  <div>
-                    <p className="text-[9px] text-zinc-400 mb-0.5">Upsell Rate</p>
-                    <p className="text-sm font-bold text-white">
-                      {todayStats.upsellRate.toFixed(1)}%
-                    </p>
+                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">
+                      Landing Page
+                    </label>
+                    <select
+                      value={selectedLandingPage}
+                      onChange={(e) => setSelectedLandingPage(e.target.value)}
+                      className="w-full px-2 py-1 text-[10px] bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
+                    >
+                      <option value="all">All Landing Pages</option>
+                      {landingPages.map((lp) => (
+                        <option key={lp.id} value={lp.id}>
+                          {lp.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
+
+                {/* Apply Filters Button */}
+                <button
+                  onClick={handleApplyFilters}
+                  className="px-3 py-1 text-[10px] bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors font-medium"
+                >
+                  Apply Filters
+                </button>
+              </div>
+
+              {/* KPIs Section */}
+              <div className="border-t border-zinc-700 pt-3">
+                <h3 className="text-xs font-medium text-zinc-400 mb-2">Key Performance Indicators</h3>
+
+                {statsLoading ? (
+                  <div className="text-center py-4">
+                    <p className="text-zinc-400 text-sm">Loading stats...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-3">
+                    {/* Total Revenue */}
+                    <div>
+                      <p className="text-[10px] text-zinc-400 mb-0.5">Total</p>
+                      <p className="text-lg font-bold text-emerald-500">
+                        {kpiStats.totalRevenue.toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-zinc-500">RON</p>
+                    </div>
+
+                    {/* Average Order Value */}
+                    <div>
+                      <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Value</p>
+                      <p className="text-lg font-bold text-white">
+                        {kpiStats.avgOrderValue.toFixed(2)} RON
+                      </p>
+                    </div>
+
+                    {/* Orders */}
+                    <div>
+                      <p className="text-[10px] text-zinc-400 mb-0.5">Orders</p>
+                      <p className="text-lg font-bold text-white">{kpiStats.orderCount}</p>
+                    </div>
+
+                    {/* Products Sold */}
+                    <div>
+                      <p className="text-[10px] text-zinc-400 mb-0.5">Products Sold</p>
+                      <p className="text-lg font-bold text-white">{kpiStats.productsSold}</p>
+                    </div>
+
+                    {/* Upsell Rate */}
+                    <div>
+                      <p className="text-[10px] text-zinc-400 mb-0.5">Upsell Rate</p>
+                      <p className="text-lg font-bold text-white">
+                        {kpiStats.upsellRate.toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Orders by Status Card - exact like dashboard but compact */}
@@ -1042,7 +1213,7 @@ export default function AdminPage() {
                   </div>
                   {/* Status Rows */}
                   {statusConfig.map((status) => {
-                    const count = todayStats.ordersByStatus[status.key] || 0;
+                    const count = kpiStats.ordersByStatus[status.key] || 0;
                     if (count === 0) return null;
                     return (
                       <div key={status.key} className="grid grid-cols-2 gap-2 items-center">
@@ -1054,7 +1225,7 @@ export default function AdminPage() {
                       </div>
                     );
                   })}
-                  {Object.keys(todayStats.ordersByStatus).length === 0 && (
+                  {Object.keys(kpiStats.ordersByStatus).length === 0 && (
                     <p className="text-xs text-zinc-400 text-center py-2">No orders found</p>
                   )}
                 </div>

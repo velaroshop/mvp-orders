@@ -49,11 +49,6 @@ export default function Sidebar() {
       icon: "📄",
     },
     {
-      name: "Postal Code Test",
-      href: "/admin/postal-code-test",
-      icon: "📮",
-    },
-    {
       name: "Team",
       href: "/admin/settings/team",
       icon: "👨‍💼",

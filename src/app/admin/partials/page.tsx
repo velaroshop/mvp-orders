@@ -247,7 +247,7 @@ export default function PartialsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-full">
+      <div className="max-w-7xl">
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-white">Partial Orders</h1>
           <p className="text-zinc-400 text-sm mt-1">
@@ -263,7 +263,7 @@ export default function PartialsPage() {
 
   if (error) {
     return (
-      <div className="max-w-full">
+      <div className="max-w-7xl">
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-white">Partial Orders</h1>
         </div>
@@ -275,7 +275,7 @@ export default function PartialsPage() {
   }
 
   return (
-    <div className="max-w-full">
+    <div className="max-w-7xl">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-3">

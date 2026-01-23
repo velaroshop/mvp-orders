@@ -126,7 +126,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-7xl">
       {/* Header */}
       <div className="mb-8 flex justify-between items-center">
         <div>

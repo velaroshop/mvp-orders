@@ -158,7 +158,7 @@ export default function Sidebar() {
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-zinc-800">
           <p className="text-[10px] text-zinc-500 text-center">v1.0.0</p>
-          <p className="text-[10px] text-zinc-600 text-center mt-0.5">MVP Orders</p>
+          <p className="text-[10px] text-zinc-600 text-center mt-0.5">ECOM MADE SIMPLE</p>
         </div>
       </aside>
     </>

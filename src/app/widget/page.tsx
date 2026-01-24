@@ -704,13 +704,14 @@ function WidgetFormContent() {
       const orderId = orderData.orderId;
       setCreatedOrderId(orderId);
 
-      // Show success popup briefly
+      // Show processing popup
       setShowSuccessPopup(true);
 
       // Scroll parent page to widget so popup is visible
       scrollParentToWidget();
 
       // Send client-side Purchase event (deduplicated with server-side CAPI)
+      // Then redirect immediately after tracking completes
       try {
         await sendClientSidePurchaseEvent(orderId, getTotalPrice());
       } catch (err) {
@@ -718,37 +719,34 @@ function WidgetFormContent() {
         // Continue with redirect even if tracking fails
       }
 
-      // Redirect to thank you page immediately after brief success message
-      // The thank you page will handle postsale offers
-      setTimeout(() => {
-        if (landingPage.stores?.url) {
-          const thankYouSlug = landingPage.thank_you_path || "thank-you";
-          let storeUrl = landingPage.stores.url;
-          if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
-            storeUrl = `https://${storeUrl}`;
-          }
-          storeUrl = storeUrl.replace(/\/$/, '');
-          // Add order ID to URL for thank you page to process
-          const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
-
-          if (window.parent && window.parent !== window) {
-            window.parent.location.href = thankYouUrl;
-          } else {
-            window.location.href = thankYouUrl;
-          }
-        } else {
-          // Fallback to success message if no store URL
-          setSuccess(true);
-          setShowSuccessPopup(false);
-          // Reset form
-          setPhone("");
-          setFullName("");
-          setCounty("");
-          setCity("");
-          setAddress("");
-          setSelectedOffer("offer_1");
+      // Redirect to thank you page immediately after tracking
+      if (landingPage.stores?.url) {
+        const thankYouSlug = landingPage.thank_you_path || "thank-you";
+        let storeUrl = landingPage.stores.url;
+        if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+          storeUrl = `https://${storeUrl}`;
         }
-      }, 2000); // 2 seconds delay to show success message
+        storeUrl = storeUrl.replace(/\/$/, '');
+        // Add order ID to URL for thank you page to process
+        const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
+
+        if (window.parent && window.parent !== window) {
+          window.parent.location.href = thankYouUrl;
+        } else {
+          window.location.href = thankYouUrl;
+        }
+      } else {
+        // Fallback to success message if no store URL
+        setSuccess(true);
+        setShowSuccessPopup(false);
+        // Reset form
+        setPhone("");
+        setFullName("");
+        setCounty("");
+        setCity("");
+        setAddress("");
+        setSelectedOffer("offer_1");
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -1503,7 +1501,7 @@ function WidgetFormContent() {
                   </svg>
                 </div>
 
-                {/* Success Message */}
+                {/* Processing Message */}
                 <h2
                   className="text-2xl sm:text-3xl font-bold mb-3"
                   style={{ color: accentColor }}
@@ -1511,12 +1509,10 @@ function WidgetFormContent() {
                   FELICITĂRI!
                 </h2>
                 <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-4">
-                  COMANDA A FOST TRIMISĂ!
+                  COMANDA ESTE ÎN PROCESARE
                 </p>
                 <p className="text-sm sm:text-base text-zinc-600">
-                  {willShowPostsale
-                    ? "Așteaptă... Îți pregătim o surpriză!"
-                    : "Așteptați câteva secunde..."}
+                  Vă redirecționăm...
                 </p>
 
                 {/* Loading Spinner */}

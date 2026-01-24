@@ -25,10 +25,10 @@ export async function GET(
 
     const { id } = await params;
 
-    // Get the partial order to check
+    // Get the partial order to check (including landing_key for store lookup)
     const { data: partialOrder, error: partialError } = await supabaseAdmin
       .from("partial_orders")
-      .select("phone")
+      .select("phone, landing_key")
       .eq("id", id)
       .eq("organization_id", activeOrganizationId)
       .single();
@@ -51,14 +51,27 @@ export async function GET(
       });
     }
 
-    // Get organization settings for duplicate check days
-    const { data: org } = await supabaseAdmin
-      .from("organizations")
-      .select("duplicate_check_days")
-      .eq("id", activeOrganizationId)
-      .single();
+    // Get store settings for duplicate check days via landing page
+    let duplicateCheckDays = 14; // Default value
+    if (partialOrder.landing_key) {
+      const { data: landingPage } = await supabaseAdmin
+        .from("landing_pages")
+        .select("store_id")
+        .eq("slug", partialOrder.landing_key)
+        .single();
 
-    const duplicateCheckDays = org?.duplicate_check_days || 21;
+      if (landingPage?.store_id) {
+        const { data: store } = await supabaseAdmin
+          .from("stores")
+          .select("duplicate_order_days")
+          .eq("id", landingPage.store_id)
+          .single();
+
+        if (store?.duplicate_order_days) {
+          duplicateCheckDays = store.duplicate_order_days;
+        }
+      }
+    }
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - duplicateCheckDays);
 

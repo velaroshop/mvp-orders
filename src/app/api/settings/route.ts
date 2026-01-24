@@ -33,13 +33,6 @@ export async function GET() {
       throw new Error(`Failed to fetch settings: ${error.message}`);
     }
 
-    // Fetch duplicate_check_days from organizations table
-    const { data: org } = await supabaseAdmin
-      .from("organizations")
-      .select("duplicate_check_days")
-      .eq("id", activeOrganizationId)
-      .single();
-
     // Return settings or empty object if not found
     // Don't return the actual secret value for security
     const hasSecret = !!(data?.helpship_client_secret);
@@ -50,7 +43,6 @@ export async function GET() {
         helpship_client_secret: hasSecret ? "configured" : "", // Indicator that secret exists
         helpship_token_url: data?.helpship_token_url || "https://helpship-auth-develop.azurewebsites.net/connect/token",
         helpship_api_base_url: data?.helpship_api_base_url || "https://helpship-api-develop.azurewebsites.net",
-        duplicate_check_days: org?.duplicate_check_days || 21,
         meta_test_mode: data?.meta_test_mode || false,
         meta_test_event_code: data?.meta_test_event_code || "",
       },
@@ -83,24 +75,13 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { helpshipClientId, helpshipClientSecret, duplicateCheckDays } = body;
+    const { helpshipClientId, helpshipClientSecret } = body;
 
     if (!helpshipClientId || !helpshipClientSecret) {
       return NextResponse.json(
         { error: "Client ID and Client Secret are required" },
         { status: 400 },
       );
-    }
-
-    // Update duplicate_check_days in organizations table
-    if (duplicateCheckDays !== undefined) {
-      await supabaseAdmin
-        .from("organizations")
-        .update({
-          duplicate_check_days: duplicateCheckDays,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", activeOrganizationId);
     }
 
     // Check if settings exist

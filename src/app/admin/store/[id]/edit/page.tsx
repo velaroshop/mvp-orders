@@ -8,6 +8,7 @@ interface Store {
   id: string;
   url: string;
   order_series: string;
+  order_email: string | null;
   primary_color: string;
   accent_color: string;
   background_color: string;
@@ -75,6 +76,7 @@ export default function EditStorePage() {
         body: JSON.stringify({
           url: formData.url,
           orderSeries: formData.order_series,
+          orderEmail: formData.order_email,
           primaryColor: formData.primary_color,
           accentColor: formData.accent_color,
           backgroundColor: formData.background_color,
@@ -182,6 +184,23 @@ export default function EditStorePage() {
                 />
                 <p className="text-xs text-zinc-400 mt-1">
                   Specify the order series for this store (e.g., ECM). This will be used in order numbering.
+                </p>
+              </div>
+
+              {/* Order Email */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  E-mail comenzi
+                </label>
+                <input
+                  type="email"
+                  value={formData.order_email || ""}
+                  onChange={(e) => setFormData({ ...formData, order_email: e.target.value })}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  placeholder="e.g., comenzi@store.com"
+                />
+                <p className="text-xs text-zinc-400 mt-1">
+                  Adresa de email folosită la trimiterea comenzilor în Helpship.
                 </p>
               </div>
 

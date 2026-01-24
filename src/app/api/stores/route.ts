@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
     const {
       url,
       orderSeries = "VLR",
+      orderEmail,
       primaryColor = "#FF6B00",
       accentColor = "#00A854",
       backgroundColor = "#2C3E50",
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
         organization_id: organizationId,
         url,
         order_series: orderSeries,
+        order_email: orderEmail || null,
         primary_color: primaryColor,
         accent_color: accentColor,
         background_color: backgroundColor,

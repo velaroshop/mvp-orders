@@ -74,17 +74,21 @@ export async function POST(
       productName = product?.name || null;
     }
 
-    // Get order series from store
+    // Get order series and order email from store
     let orderSeries = "VLR";
+    let orderEmail: string | null = null;
     if (landingPage?.store_id) {
       const { data: store } = await supabaseAdmin
         .from("stores")
-        .select("order_series")
+        .select("order_series, order_email")
         .eq("id", landingPage.store_id)
         .single();
 
       if (store?.order_series) {
         orderSeries = store.order_series;
+      }
+      if (store?.order_email) {
+        orderEmail = store.order_email;
       }
     }
 
@@ -100,6 +104,7 @@ export async function POST(
         orderId: order.id,
         orderNumber: order.order_number || 0,
         orderSeries: orderSeries,
+        orderEmail: orderEmail, // Email from store settings
         customerName: order.full_name,
         customerPhone: order.phone,
         county: order.county,

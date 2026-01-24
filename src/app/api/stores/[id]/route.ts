@@ -61,6 +61,7 @@ export async function PUT(
     const updateData: any = {};
     if (body.url !== undefined) updateData.url = body.url;
     if (body.orderSeries !== undefined) updateData.order_series = body.orderSeries;
+    if (body.orderEmail !== undefined) updateData.order_email = body.orderEmail || null;
     if (body.primaryColor !== undefined) updateData.primary_color = body.primaryColor;
     if (body.accentColor !== undefined) updateData.accent_color = body.accentColor;
     if (body.backgroundColor !== undefined) updateData.background_color = body.backgroundColor;

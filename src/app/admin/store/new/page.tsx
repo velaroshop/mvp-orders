@@ -8,6 +8,7 @@ export default function NewStorePage() {
   const [formData, setFormData] = useState({
     url: "",
     orderSeries: "VLR",
+    orderEmail: "",
     primaryColor: "#FF6B00",
     accentColor: "#00A854",
     backgroundColor: "#2C3E50",
@@ -108,6 +109,23 @@ export default function NewStorePage() {
                 />
                 <p className="text-xs text-zinc-400 mt-1">
                   Specify the order series for this store (e.g., ECM). This will be used in order numbering.
+                </p>
+              </div>
+
+              {/* Order Email */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  E-mail comenzi
+                </label>
+                <input
+                  type="email"
+                  value={formData.orderEmail}
+                  onChange={(e) => setFormData({ ...formData, orderEmail: e.target.value })}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  placeholder="e.g., comenzi@store.com"
+                />
+                <p className="text-xs text-zinc-400 mt-1">
+                  Adresa de email folosită la trimiterea comenzilor în Helpship.
                 </p>
               </div>
 

@@ -123,6 +123,11 @@ function WidgetFormContent() {
     address?: string;
   }>({});
 
+  // Helper function to capitalize first letter of each word
+  function toTitleCase(str: string): string {
+    return str.replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
   useEffect(() => {
     if (slug) {
       fetchLandingPage();
@@ -954,7 +959,7 @@ function WidgetFormContent() {
                   type="text"
                   value={fullName}
                   onChange={(e) => {
-                    setFullName(e.target.value);
+                    setFullName(toTitleCase(e.target.value));
                     // Clear error when user starts typing
                     if (errors.fullName) {
                       setErrors((prev) => ({ ...prev, fullName: undefined }));
@@ -993,7 +998,7 @@ function WidgetFormContent() {
                     type="text"
                     value={county}
                     onChange={(e) => {
-                      setCounty(e.target.value);
+                      setCounty(toTitleCase(e.target.value));
                       // Clear error when user starts typing
                       if (errors.county) {
                         setErrors((prev) => ({ ...prev, county: undefined }));
@@ -1031,7 +1036,7 @@ function WidgetFormContent() {
                     type="text"
                     value={city}
                     onChange={(e) => {
-                      setCity(e.target.value);
+                      setCity(toTitleCase(e.target.value));
                       // Clear error when user starts typing
                       if (errors.city) {
                         setErrors((prev) => ({ ...prev, city: undefined }));
@@ -1070,7 +1075,7 @@ function WidgetFormContent() {
                   type="text"
                   value={address}
                   onChange={(e) => {
-                    setAddress(e.target.value);
+                    setAddress(toTitleCase(e.target.value));
                     // Clear error when user starts typing
                     if (errors.address) {
                       setErrors((prev) => ({ ...prev, address: undefined }));

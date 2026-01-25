@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [totalOrders, setTotalOrders] = useState(0);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searchDateRange, setSearchDateRange] = useState<30 | 60 | 90 | "all">(30);
 
   // Status filter state
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -173,6 +174,11 @@ export default function AdminPage() {
       params.append("statuses", selectedStatuses.join(","));
     }
 
+    // Add date range filter only when searching
+    if (query.trim() && searchDateRange !== "all") {
+      params.append("dateRange", searchDateRange.toString());
+    }
+
     const response = await fetch(`/api/orders/list?${params}`);
     if (!response.ok) {
       setIsSearching(false);
@@ -290,7 +296,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage, selectedStatuses]);
+  }, [currentPage, selectedStatuses, searchDateRange]);
 
   // Fetch landing pages on mount
   useEffect(() => {
@@ -1254,6 +1260,21 @@ export default function AdminPage() {
 
           {/* Search and Filter Bar */}
           <div className="flex gap-3">
+            {/* Search Period Dropdown */}
+            <select
+              value={searchDateRange}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearchDateRange(val === "all" ? "all" : parseInt(val) as 30 | 60 | 90);
+              }}
+              className="px-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value={30}>30 zile</option>
+              <option value={60}>60 zile</option>
+              <option value={90}>90 zile</option>
+              <option value="all">Toate</option>
+            </select>
+
             {/* Search Bar */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

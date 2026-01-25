@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get("q") || "";
     const statusesParam = searchParams.get("statuses") || "";
+    const dateRangeParam = searchParams.get("dateRange") || "";
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -44,9 +45,18 @@ export async function GET(request: Request) {
       }
     }
 
+    // Add date range filter when searching (for performance optimization)
+    if (searchQuery.trim() && dateRangeParam) {
+      const days = parseInt(dateRangeParam);
+      if (!isNaN(days) && days > 0) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        query = query.gte("created_at", cutoffDate.toISOString());
+      }
+    }
+
     // Add search filter if query provided
     if (searchQuery.trim()) {
-      const searchLower = searchQuery.toLowerCase();
       query = query.or(
         `phone.ilike.%${searchQuery}%,` +
         `full_name.ilike.%${searchQuery}%,` +

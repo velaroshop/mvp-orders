@@ -18,9 +18,34 @@ export default function NewStorePage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  // Email validation function
+  function isValidEmail(email: string): boolean {
+    if (!email) return true; // Empty is allowed (field is optional)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  // Validate email on change
+  function handleEmailChange(email: string) {
+    setFormData({ ...formData, orderEmail: email });
+    if (email && !isValidEmail(email)) {
+      setEmailError("Adresa de email nu este validă");
+    } else {
+      setEmailError(null);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Validate email before submit
+    if (formData.orderEmail && !isValidEmail(formData.orderEmail)) {
+      setEmailError("Adresa de email nu este validă");
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
@@ -120,13 +145,23 @@ export default function NewStorePage() {
                 <input
                   type="email"
                   value={formData.orderEmail}
-                  onChange={(e) => setFormData({ ...formData, orderEmail: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={`w-full max-w-md px-3 py-2 bg-zinc-900 border rounded-md focus:outline-none focus:ring-2 text-white placeholder:text-zinc-500 ${
+                    emailError
+                      ? "border-red-500 focus:ring-red-500"
+                      : formData.orderEmail && !emailError
+                      ? "border-emerald-500 focus:ring-emerald-500"
+                      : "border-zinc-600 focus:ring-emerald-500"
+                  }`}
                   placeholder="e.g., comenzi@store.com"
                 />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Adresa de email folosită la trimiterea comenzilor în Helpship.
-                </p>
+                {emailError ? (
+                  <p className="text-xs text-red-400 mt-1">{emailError}</p>
+                ) : (
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Adresa de email folosită la trimiterea comenzilor în Helpship.
+                  </p>
+                )}
               </div>
 
               {/* Duplicate Order Detection Days */}
@@ -273,7 +308,7 @@ export default function NewStorePage() {
             </button>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || !!emailError}
               className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSaving ? "Creating..." : "Create Store"}

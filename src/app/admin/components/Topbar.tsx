@@ -6,12 +6,15 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { getRoleDisplayName, getRoleBadgeColor } from "@/lib/permissions";
 import type { UserRole } from "@/lib/types";
 
+type HelpshipEnvironment = "development" | "production";
+
 export default function Topbar() {
   const { data: session } = useSession();
   const { organizations, activeOrganization, setActiveOrganization } = useOrganization();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [helpshipEnvironment, setHelpshipEnvironment] = useState<HelpshipEnvironment | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -23,6 +26,22 @@ export default function Topbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch helpship environment for DEV mode indicator
+  useEffect(() => {
+    async function fetchEnvironment() {
+      try {
+        const response = await fetch("/api/system-settings/environment");
+        if (response.ok) {
+          const data = await response.json();
+          setHelpshipEnvironment(data.environment);
+        }
+      } catch (error) {
+        console.error("Error fetching helpship environment:", error);
+      }
+    }
+    fetchEnvironment();
   }, []);
 
   if (!session?.user) return null;
@@ -52,6 +71,14 @@ export default function Topbar() {
             </div>
           )}
         </div>
+
+        {/* DEV Mode Indicator */}
+        {helpshipEnvironment === "development" && (
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-900/50 border border-amber-600 rounded-lg mr-4 animate-pulse">
+            <span className="text-amber-400 text-sm">🔧</span>
+            <span className="text-amber-300 text-xs font-semibold">DEV MODE</span>
+          </div>
+        )}
 
         {/* Right side - User menu */}
         <div className="relative shrink-0" ref={dropdownRef}>

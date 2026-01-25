@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+type HelpshipEnvironment = "development" | "production";
+
+interface SystemSettings {
+  id: string;
+  helpshipEnvironment: HelpshipEnvironment;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Organization {
   id: string;
   name: string;
@@ -24,6 +33,9 @@ export default function SuperadminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isTogglingEnvironment, setIsTogglingEnvironment] = useState(false);
 
   // Check access
   useEffect(() => {
@@ -37,9 +49,10 @@ export default function SuperadminPage() {
     }
   }, [session, status, router]);
 
-  // Load organizations
+  // Load organizations and system settings
   useEffect(() => {
     loadOrganizations();
+    loadSystemSettings();
   }, []);
 
   async function loadOrganizations() {
@@ -62,6 +75,60 @@ export default function SuperadminPage() {
       setMessage({ type: "error", text: "Failed to load organizations" });
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadSystemSettings() {
+    try {
+      setIsLoadingSettings(true);
+      const response = await fetch("/api/superadmin/system-settings");
+
+      if (!response.ok) {
+        console.error("Failed to load system settings");
+        return;
+      }
+
+      const data = await response.json();
+      setSystemSettings(data.settings);
+    } catch (error) {
+      console.error("Error loading system settings:", error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }
+
+  async function handleToggleEnvironment() {
+    if (!systemSettings) return;
+
+    const newEnvironment: HelpshipEnvironment =
+      systemSettings.helpshipEnvironment === "production" ? "development" : "production";
+
+    try {
+      setIsTogglingEnvironment(true);
+      const response = await fetch("/api/superadmin/system-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ helpshipEnvironment: newEnvironment }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update environment");
+      }
+
+      const data = await response.json();
+      setSystemSettings(data.settings);
+      setMessage({
+        type: "success",
+        text: `Helpship environment switched to ${newEnvironment.toUpperCase()}`,
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to update environment",
+      });
+    } finally {
+      setIsTogglingEnvironment(false);
     }
   }
 
@@ -151,6 +218,76 @@ export default function SuperadminPage() {
           </div>
         </div>
       )}
+
+      {/* Helpship Environment Setting */}
+      <div className="mb-8 bg-zinc-800 rounded-lg border border-zinc-700 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+              systemSettings?.helpshipEnvironment === "development"
+                ? "bg-amber-900/30"
+                : "bg-emerald-900/30"
+            }`}>
+              <span className="text-2xl">
+                {systemSettings?.helpshipEnvironment === "development" ? "🔧" : "🚀"}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                Helpship API Environment
+                {systemSettings?.helpshipEnvironment === "development" && (
+                  <span className="px-2 py-0.5 bg-amber-900/50 text-amber-300 text-xs rounded-full border border-amber-700 animate-pulse">
+                    DEV MODE
+                  </span>
+                )}
+              </h3>
+              <p className="text-sm text-zinc-400">
+                {systemSettings?.helpshipEnvironment === "development"
+                  ? "Orders are being sent to Helpship Development API (test environment)"
+                  : "Orders are being sent to Helpship Production API (live orders)"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {isLoadingSettings ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-zinc-500"></div>
+            ) : (
+              <>
+                <span className={`text-sm font-medium ${
+                  systemSettings?.helpshipEnvironment === "development"
+                    ? "text-amber-400"
+                    : "text-emerald-400"
+                }`}>
+                  {systemSettings?.helpshipEnvironment === "development" ? "DEVELOPMENT" : "PRODUCTION"}
+                </span>
+                <button
+                  onClick={handleToggleEnvironment}
+                  disabled={isTogglingEnvironment}
+                  className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    systemSettings?.helpshipEnvironment === "production"
+                      ? "bg-emerald-600"
+                      : "bg-amber-600"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      systemSettings?.helpshipEnvironment === "production"
+                        ? "translate-x-7"
+                        : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-zinc-900 rounded-md">
+          <p className="text-xs text-zinc-500">
+            <strong className="text-zinc-400">Warning:</strong> Switching to DEVELOPMENT mode will send all orders to the test API.
+            Switch back to PRODUCTION before going live. This setting affects ALL organizations.
+          </p>
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

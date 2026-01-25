@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getHelpshipEnvironment } from "@/lib/helpship-credentials";
+
+// Helpship API URLs by environment
+const HELPSHIP_AUTH_URLS = {
+  development: "https://helpship-auth-develop.azurewebsites.net/connect/token",
+  production: "https://helpship-auth.azurewebsites.net/connect/token",
+};
 
 // POST - Validate Helpship credentials by attempting to get an access token
 export async function POST(request: Request) {
@@ -21,9 +28,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Attempt to get an access token from Helpship
-    const tokenUrl = "https://helpship-auth-develop.azurewebsites.net/connect/token";
+    // Get current environment and use appropriate URL
+    const environment = await getHelpshipEnvironment();
+    const tokenUrl = HELPSHIP_AUTH_URLS[environment];
 
+    console.log(`[Validate Credentials] Using ${environment.toUpperCase()} environment`);
     console.log("[Validate Credentials] Attempting to validate Helpship credentials...");
 
     const response = await fetch(tokenUrl, {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { helpshipClient } from "@/lib/helpship";
+import { HelpshipClient } from "@/lib/helpship";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 
 /**
  * Obține datele comenzii din Helpship
@@ -28,6 +29,10 @@ export async function GET(
 
     // Dacă comanda are helpshipOrderId, obține datele din Helpship
     if (order.helpship_order_id) {
+      // Get credentials with correct environment from system_settings
+      const credentials = await getHelpshipCredentials(order.organization_id);
+      const helpshipClient = new HelpshipClient(credentials);
+
       const helpshipOrder = await helpshipClient.getOrder(order.helpship_order_id);
       
       if (!helpshipOrder) {

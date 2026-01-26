@@ -106,6 +106,11 @@ export async function GET(request: Request) {
         cancellerName: row.canceller_name ?? undefined,
         cancelledNote: row.cancelled_note ?? undefined,
         scheduledDate: row.scheduled_date ?? undefined,
+        // Tracking fields for traffic source attribution
+        fbclid: row.fbclid ?? undefined,
+        gclid: row.gclid ?? undefined,
+        ttclid: row.ttclid ?? undefined,
+        trackingData: row.tracking_data ?? undefined,
         createdAt: row.created_at,
       };
     });

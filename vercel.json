@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/confirm-scheduled",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/finalize-expired-queue",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

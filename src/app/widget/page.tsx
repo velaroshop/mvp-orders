@@ -687,7 +687,10 @@ function WidgetFormContent() {
       total: getTotalPrice(),
       // Meta tracking data
       tracking: trackingData,
-      eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+      // Use parent page URL (where widget is embedded) for accurate Meta CAPI attribution
+      eventSourceUrl: typeof window !== 'undefined'
+        ? (document.referrer || window.location.href)
+        : undefined,
     };
 
     try {

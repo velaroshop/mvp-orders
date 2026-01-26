@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
-import { helpshipClient } from "@/lib/helpship";
+import { HelpshipClient } from "@/lib/helpship";
+import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 
 // Use service role key for API routes to bypass RLS
 const supabase = createClient(
@@ -94,6 +95,10 @@ export async function GET(request: NextRequest) {
     // Fetch current stock from HelpShip if product has SKU
     if (product?.sku) {
       try {
+        // Get credentials with correct environment from system_settings
+        const credentials = await getHelpshipCredentials(organizationId);
+        const helpshipClient = new HelpshipClient(credentials);
+
         currentStock = await helpshipClient.getProductStock(product.sku);
 
         // Calculate how many days the stock will last

@@ -123,10 +123,18 @@ export default function AdminPage() {
     { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
   ];
 
-  // Calculate date ranges for quick filters
+  // Helper to format date in local timezone as YYYY-MM-DD
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Calculate date ranges for quick filters (using local timezone)
   const getDateRange = (filter: QuickFilter): { start: string; end: string } => {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = formatLocalDate(today);
 
     switch (filter) {
       case "today":
@@ -134,24 +142,24 @@ export default function AdminPage() {
       case "yesterday": {
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
+        const yesterdayStr = formatLocalDate(yesterday);
         return { start: yesterdayStr, end: yesterdayStr };
       }
       case "last3days": {
         const threeDaysAgo = new Date(today);
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
-        const threeDaysAgoStr = threeDaysAgo.toISOString().split("T")[0];
+        const threeDaysAgoStr = formatLocalDate(threeDaysAgo);
         return { start: threeDaysAgoStr, end: todayStr };
       }
       case "wtd": {
         const weekStart = new Date(today);
         weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-        const weekStartStr = weekStart.toISOString().split("T")[0];
+        const weekStartStr = formatLocalDate(weekStart);
         return { start: weekStartStr, end: todayStr };
       }
       case "mtd": {
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        const monthStartStr = monthStart.toISOString().split("T")[0];
+        const monthStartStr = formatLocalDate(monthStart);
         return { start: monthStartStr, end: todayStr };
       }
       case "all":
@@ -192,8 +200,8 @@ export default function AdminPage() {
 
   // Fetch KPI stats and revenue data
   async function fetchKpiData(start?: string, end?: string, landingPage?: string) {
-    const startDate = start || filterStartDate || new Date().toISOString().split("T")[0];
-    const endDate = end || filterEndDate || new Date().toISOString().split("T")[0];
+    const startDate = start || filterStartDate || formatLocalDate(new Date());
+    const endDate = end || filterEndDate || formatLocalDate(new Date());
     const lp = landingPage || selectedLandingPage;
 
     const params = new URLSearchParams({

@@ -162,42 +162,62 @@ function WidgetFormContent() {
   }, [landingPage]);
 
   // Extract tracking parameters from URL on mount
+  // First check iframe URL params (from embed.js), then fallback to parent page URL (document.referrer)
   useEffect(() => {
     const tracking: typeof trackingData = {};
 
+    // Helper to get param from searchParams first, then from referrer URL as fallback
+    const getParam = (name: string): string | null => {
+      // First try from iframe URL (set by embed.js)
+      const fromUrl = searchParams.get(name);
+      if (fromUrl) return fromUrl;
+
+      // Fallback: try to extract from parent page URL (document.referrer)
+      // This handles cases where widget is embedded with hardcoded iframe without embed.js
+      if (typeof window !== 'undefined' && document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer);
+          return referrerUrl.searchParams.get(name);
+        } catch {
+          // Invalid referrer URL, ignore
+        }
+      }
+      return null;
+    };
+
     // Facebook tracking
-    const fbclid = searchParams.get('fbclid');
+    const fbclid = getParam('fbclid');
     if (fbclid) tracking.fbclid = fbclid;
 
-    const fbp = searchParams.get('fbp');
+    const fbp = getParam('fbp');
     if (fbp) tracking.fbp = fbp;
 
     // UTM parameters
-    const utmSource = searchParams.get('utm_source');
+    const utmSource = getParam('utm_source');
     if (utmSource) tracking.utm_source = utmSource;
 
-    const utmMedium = searchParams.get('utm_medium');
+    const utmMedium = getParam('utm_medium');
     if (utmMedium) tracking.utm_medium = utmMedium;
 
-    const utmCampaign = searchParams.get('utm_campaign');
+    const utmCampaign = getParam('utm_campaign');
     if (utmCampaign) tracking.utm_campaign = utmCampaign;
 
-    const utmTerm = searchParams.get('utm_term');
+    const utmTerm = getParam('utm_term');
     if (utmTerm) tracking.utm_term = utmTerm;
 
-    const utmContent = searchParams.get('utm_content');
+    const utmContent = getParam('utm_content');
     if (utmContent) tracking.utm_content = utmContent;
 
     // Google Ads tracking
-    const gclid = searchParams.get('gclid');
+    const gclid = getParam('gclid');
     if (gclid) tracking.gclid = gclid;
 
     // TikTok tracking
-    const ttclid = searchParams.get('ttclid');
+    const ttclid = getParam('ttclid');
     if (ttclid) tracking.ttclid = ttclid;
 
-    // Landing page URL
-    const landingUrl = searchParams.get('landing_url');
+    // Landing page URL - prefer referrer as it's the actual parent page URL
+    const landingUrl = getParam('landing_url') || (typeof window !== 'undefined' ? document.referrer : null);
     if (landingUrl) tracking.landing_url = landingUrl;
 
     setTrackingData(tracking);

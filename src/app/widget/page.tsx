@@ -693,6 +693,38 @@ function WidgetFormContent() {
         type: "presale",
       }));
 
+    // Build complete event source URL for Meta CAPI attribution
+    // Priority: 1) landing_url from embed.js (has full URL with params)
+    //           2) Reconstruct from referrer + captured tracking params
+    //           3) Fallback to widget URL
+    const buildEventSourceUrl = (): string | undefined => {
+      if (typeof window === 'undefined') return undefined;
+
+      // If embed.js passed the full landing_url, use it
+      if (trackingData.landing_url) {
+        return trackingData.landing_url;
+      }
+
+      // Try to reconstruct from referrer + tracking params
+      if (document.referrer) {
+        try {
+          const url = new URL(document.referrer);
+          // Add tracking params that we captured (referrer often strips query string)
+          if (trackingData.fbclid) url.searchParams.set('fbclid', trackingData.fbclid);
+          if (trackingData.utm_source) url.searchParams.set('utm_source', trackingData.utm_source);
+          if (trackingData.utm_medium) url.searchParams.set('utm_medium', trackingData.utm_medium);
+          if (trackingData.utm_campaign) url.searchParams.set('utm_campaign', trackingData.utm_campaign);
+          if (trackingData.gclid) url.searchParams.set('gclid', trackingData.gclid);
+          if (trackingData.ttclid) url.searchParams.set('ttclid', trackingData.ttclid);
+          return url.toString();
+        } catch {
+          return document.referrer;
+        }
+      }
+
+      return window.location.href;
+    };
+
     const payload = {
       landingKey: landingPage.slug,
       offerCode: selectedOffer,
@@ -707,10 +739,8 @@ function WidgetFormContent() {
       total: getTotalPrice(),
       // Meta tracking data
       tracking: trackingData,
-      // Use parent page URL (where widget is embedded) for accurate Meta CAPI attribution
-      eventSourceUrl: typeof window !== 'undefined'
-        ? (document.referrer || window.location.href)
-        : undefined,
+      // Use complete parent page URL for accurate Meta CAPI attribution
+      eventSourceUrl: buildEventSourceUrl(),
     };
 
     try {

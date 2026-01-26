@@ -35,9 +35,14 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Build datetime range
-    const startDateTime = startDate ? `${startDate}T00:00:00.000Z` : `${new Date().toISOString().split("T")[0]}T00:00:00.000Z`;
-    const endDateTime = endDate ? `${endDate}T23:59:59.999Z` : `${new Date().toISOString().split("T")[0]}T23:59:59.999Z`;
+    // Build datetime range using Romania timezone (UTC+2 winter, UTC+3 summer)
+    // This ensures "Today" shows orders from 00:00 to 23:59 Romania time
+    const startDateTime = startDate
+      ? new Date(`${startDate}T00:00:00.000+02:00`).toISOString()
+      : new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
+    const endDateTime = endDate
+      ? new Date(`${endDate}T23:59:59.999+02:00`).toISOString()
+      : new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
     // Fetch all orders in the period (excluding cancelled and testing)
     const { data: orders, error } = await supabase

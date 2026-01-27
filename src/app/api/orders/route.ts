@@ -239,20 +239,16 @@ export async function POST(request: NextRequest) {
       }
 
       if (matchedPartialOrder) {
-        const { error: updateError } = await supabaseAdmin
+        // Delete the partial order - it's no longer needed since client completed the order
+        const { error: deleteError } = await supabaseAdmin
           .from("partial_orders")
-          .update({
-            status: "accepted",
-            converted_to_order_id: order.id,
-            converted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .delete()
           .eq("id", matchedPartialOrder.id);
 
-        if (updateError) {
-          console.error("❌ Failed to mark partial order as converted:", updateError);
+        if (deleteError) {
+          console.error("❌ Failed to delete partial order:", deleteError);
         } else {
-          console.log("✅ Marked partial order as converted:", {
+          console.log("✅ Deleted partial order (client completed order):", {
             partialId: matchedPartialOrder.id,
             partialPhone: matchedPartialOrder.phone,
             orderPhone: phone,

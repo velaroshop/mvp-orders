@@ -78,17 +78,26 @@ function getRoasBadge(roas: number | null): { text: string; className: string } 
   if (roas === null) return null;
   if (roas >= 5) {
     return {
-      text: "Exceptional",
+      text: "MONSTER",
       className: "bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-bold",
     };
   }
   if (roas >= 3.5) {
     return {
-      text: "Target",
+      text: "TARGET",
       className: "bg-emerald-600 text-white",
     };
   }
-  return null;
+  if (roas >= 2.5) {
+    return {
+      text: "MODERATE",
+      className: "bg-orange-600 text-white",
+    };
+  }
+  return {
+    text: "POOR",
+    className: "bg-red-600 text-white",
+  };
 }
 
 // Format currency
@@ -691,10 +700,17 @@ export default function RoasPage() {
                               <span>Ord: <span className="text-zinc-300">{roasData.orders}</span></span>
                             </div>
 
-                            {/* ROAS - bottom, larger, colored */}
-                            <span className={`font-bold text-base ${getRoasColor(roasData.roas)}`}>
-                              {formatRoas(roasData.roas)}
-                            </span>
+                            {/* ROAS + Status badge - bottom */}
+                            <div className="flex flex-col items-center">
+                              <span className={`font-bold text-base ${getRoasColor(roasData.roas)}`}>
+                                {formatRoas(roasData.roas)}
+                              </span>
+                              {getRoasBadge(roasData.roas) && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded mt-0.5 ${getRoasBadge(roasData.roas)!.className}`}>
+                                  {getRoasBadge(roasData.roas)!.text}
+                                </span>
+                              )}
+                            </div>
                           </>
                         ) : hasData && dateData ? (
                           <>
@@ -737,22 +753,22 @@ export default function RoasPage() {
               </div>
 
               {/* Legend */}
-              <div className="flex flex-wrap gap-3 mb-4 text-[10px]">
+              <div className="flex flex-wrap gap-4 mb-4 text-[10px]">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-red-900/40 border border-red-500/50"></span>
-                  <span className="text-zinc-400">&lt;2.5</span>
+                  <span className="w-3 h-3 rounded bg-red-900/50 border border-red-500/50"></span>
+                  <span className="text-zinc-400">POOR (&lt;2.5)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-orange-900/40 border border-orange-500/50"></span>
-                  <span className="text-zinc-400">2.5-3.5</span>
+                  <span className="w-3 h-3 rounded bg-orange-900/50 border border-orange-500/50"></span>
+                  <span className="text-zinc-400">MODERATE (2.5-3.5)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-emerald-900/40 border border-emerald-500/50"></span>
-                  <span className="text-zinc-400">3.5-5</span>
+                  <span className="w-3 h-3 rounded bg-emerald-900/50 border border-emerald-500/50"></span>
+                  <span className="text-zinc-400">TARGET (3.5-5)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded bg-gradient-to-br from-amber-900/40 to-yellow-900/30 border border-amber-500/50"></span>
-                  <span className="text-zinc-400">&gt;5</span>
+                  <span className="w-3 h-3 rounded bg-gradient-to-br from-amber-900/50 to-yellow-900/40 border border-amber-500/50"></span>
+                  <span className="text-zinc-400">MONSTER (&gt;5)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded bg-zinc-700/50 border border-zinc-600"></span>

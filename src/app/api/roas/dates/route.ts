@@ -107,6 +107,115 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * POST /api/roas/dates - Add or update ad spend data for a single date
+ * Body: JSON with 'productId', 'date', 'amountSpent', and optionally 'metaPurchases', 'metaPurchaseValue'
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.activeOrganizationId) {
+      return NextResponse.json(
+        { error: "Unauthorized - No active organization" },
+        { status: 401 }
+      );
+    }
+
+    const organizationId = session.user.activeOrganizationId;
+    const body = await request.json();
+    const { productId, date, amountSpent, metaPurchases, metaPurchaseValue } = body as {
+      productId?: string;
+      date?: string;
+      amountSpent?: number;
+      metaPurchases?: number;
+      metaPurchaseValue?: number;
+    };
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: "productId is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json(
+        { error: "Valid date (YYYY-MM-DD) is required" },
+        { status: 400 }
+      );
+    }
+
+    if (amountSpent === undefined || amountSpent < 0) {
+      return NextResponse.json(
+        { error: "amountSpent must be a non-negative number" },
+        { status: 400 }
+      );
+    }
+
+    // Verify product belongs to organization
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("id", productId)
+      .eq("organization_id", organizationId)
+      .single();
+
+    if (productError || !product) {
+      return NextResponse.json(
+        { error: "Product not found or access denied" },
+        { status: 404 }
+      );
+    }
+
+    // Upsert the ad spend data
+    const { data: upsertResult, error: upsertError } = await supabase
+      .from("ad_spend_data")
+      .upsert(
+        {
+          organization_id: organizationId,
+          product_id: productId,
+          date: date,
+          amount_spent: amountSpent,
+          meta_purchases: metaPurchases || 0,
+          meta_purchase_value: metaPurchaseValue || 0,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "organization_id,product_id,date",
+          ignoreDuplicates: false,
+        }
+      )
+      .select()
+      .single();
+
+    if (upsertError) {
+      console.error("Error upserting ad spend data:", upsertError);
+      return NextResponse.json(
+        { error: "Failed to save ad spend data" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        date: upsertResult.date,
+        amountSpent: parseFloat(upsertResult.amount_spent) || 0,
+        metaPurchases: upsertResult.meta_purchases || 0,
+        metaPurchaseValue: parseFloat(upsertResult.meta_purchase_value) || 0,
+        updatedAt: upsertResult.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error("Error in POST /api/roas/dates:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/roas/dates - Delete ad spend data for specific dates
  * Body: JSON with 'productId' and 'dates' (array of date strings)
  */

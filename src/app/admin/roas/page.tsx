@@ -49,6 +49,12 @@ interface UploadedDate {
   updatedAt: string;
 }
 
+interface ManualEntryModalData {
+  date: string;
+  amountSpent: string;
+  existingData?: UploadedDate;
+}
+
 type TabType = "upload" | "report";
 
 // ROAS color coding helper
@@ -160,6 +166,10 @@ export default function RoasPage() {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Manual entry modal state
+  const [manualEntryModal, setManualEntryModal] = useState<ManualEntryModalData | null>(null);
+  const [isSavingManual, setIsSavingManual] = useState(false);
+
   // Report tab state
   const [roasData, setRoasData] = useState<RoasResponse | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
@@ -256,6 +266,64 @@ export default function RoasPage() {
       setUploadResult({ success: false, message: err.message || "Upload failed" });
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  // Handle click on calendar day (open manual entry modal)
+  function handleDayClick(day: number) {
+    const dateStr = `${selectedMonth}-${String(day).padStart(2, "0")}`;
+    const existingData = uploadedDatesMap.get(dateStr);
+    setManualEntryModal({
+      date: dateStr,
+      amountSpent: existingData ? existingData.amountSpent.toString() : "",
+      existingData,
+    });
+  }
+
+  // Handle manual entry save
+  async function handleSaveManualEntry() {
+    if (!selectedProductId || !manualEntryModal) return;
+
+    const amountSpent = parseFloat(manualEntryModal.amountSpent);
+    if (isNaN(amountSpent) || amountSpent < 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    setIsSavingManual(true);
+    try {
+      const response = await fetch("/api/roas/dates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: selectedProductId,
+          date: manualEntryModal.date,
+          amountSpent,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save");
+      }
+
+      const result = await response.json();
+
+      // Update local state
+      setUploadedDates((prev) => {
+        const filtered = prev.filter((d) => d.date !== manualEntryModal.date);
+        return [...filtered, result.data].sort((a, b) => a.date.localeCompare(b.date));
+      });
+
+      setManualEntryModal(null);
+      setUploadResult({
+        success: true,
+        message: `Saved ${formatCurrency(amountSpent)} for ${formatFullDate(manualEntryModal.date)}`,
+      });
+    } catch (err: any) {
+      alert(err.message || "Failed to save ad spend");
+    } finally {
+      setIsSavingManual(false);
     }
   }
 
@@ -537,12 +605,13 @@ export default function RoasPage() {
                     return (
                       <div
                         key={day}
-                        className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs relative group cursor-pointer transition-colors ${
+                        onClick={() => handleDayClick(day)}
+                        className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs relative group cursor-pointer transition-colors hover:ring-2 hover:ring-emerald-400/50 ${
                           hasData
                             ? "bg-emerald-600/30 border border-emerald-500/50 text-emerald-300"
-                            : "bg-zinc-900 border border-zinc-700 text-zinc-500"
+                            : "bg-zinc-900 border border-zinc-700 text-zinc-500 hover:bg-zinc-800"
                         }`}
-                        title={hasData ? `${formatCurrency(dateData!.amountSpent)}` : "No data"}
+                        title={hasData ? `${formatCurrency(dateData!.amountSpent)} - Click to edit` : "Click to add ad spend"}
                       >
                         <span className="font-medium">{day}</span>
                         {hasData && (
@@ -552,7 +621,10 @@ export default function RoasPage() {
                             </span>
                             {/* Delete button on hover */}
                             <button
-                              onClick={() => handleDeleteDate(dateStr)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDate(dateStr);
+                              }}
                               className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                               title="Delete"
                             >
@@ -561,6 +633,11 @@ export default function RoasPage() {
                               </svg>
                             </button>
                           </>
+                        )}
+                        {!hasData && (
+                          <span className="text-[9px] mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity">
+                            + Add
+                          </span>
                         )}
                       </div>
                     );
@@ -797,6 +874,75 @@ export default function RoasPage() {
           <p className="text-zinc-400 text-sm">
             Choose a product from the dropdown to view or upload ROAS data.
           </p>
+        </div>
+      )}
+
+      {/* Manual Entry Modal */}
+      {manualEntryModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-6 w-full max-w-sm mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-white mb-1">
+              {manualEntryModal.existingData ? "Edit" : "Add"} Ad Spend
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              {formatFullDate(manualEntryModal.date)}
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-xs text-zinc-400 mb-1">
+                Amount Spent (RON)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={manualEntryModal.amountSpent}
+                onChange={(e) =>
+                  setManualEntryModal({ ...manualEntryModal, amountSpent: e.target.value })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveManualEntry();
+                  if (e.key === "Escape") setManualEntryModal(null);
+                }}
+                autoFocus
+                placeholder="0.00"
+                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setManualEntryModal(null)}
+                disabled={isSavingManual}
+                className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:bg-zinc-700 text-white rounded-md text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveManualEntry}
+                disabled={isSavingManual || !manualEntryModal.amountSpent}
+                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-600 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+              >
+                {isSavingManual ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </button>
+            </div>
+
+            {manualEntryModal.existingData && (
+              <p className="text-xs text-zinc-500 mt-3 text-center">
+                Current: {formatCurrency(manualEntryModal.existingData.amountSpent)}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

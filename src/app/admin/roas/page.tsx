@@ -636,10 +636,10 @@ export default function RoasPage() {
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-2">
                   {/* Empty cells for days before first day of month */}
                   {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                    <div key={`empty-${i}`} className="aspect-square" />
+                    <div key={`empty-${i}`} className="min-h-[100px]" />
                   ))}
                   {/* Days of month */}
                   {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -651,81 +651,84 @@ export default function RoasPage() {
 
                     // Determine cell background based on ROAS
                     let cellBgClass = "bg-zinc-900 border-zinc-700";
-                    let cellTextClass = "text-zinc-500";
 
                     if (hasData && roasData) {
                       if (roasData.roas !== null) {
                         if (roasData.roas >= 5) {
-                          cellBgClass = "bg-gradient-to-br from-amber-900/40 to-yellow-900/30 border-amber-500/50";
-                          cellTextClass = "text-amber-300";
+                          cellBgClass = "bg-gradient-to-br from-amber-900/50 to-yellow-900/40 border-amber-500/50";
                         } else if (roasData.roas >= 3.5) {
-                          cellBgClass = "bg-emerald-900/40 border-emerald-500/50";
-                          cellTextClass = "text-emerald-300";
+                          cellBgClass = "bg-emerald-900/50 border-emerald-500/50";
                         } else if (roasData.roas >= 2.5) {
-                          cellBgClass = "bg-orange-900/40 border-orange-500/50";
-                          cellTextClass = "text-orange-300";
+                          cellBgClass = "bg-orange-900/50 border-orange-500/50";
                         } else {
-                          cellBgClass = "bg-red-900/40 border-red-500/50";
-                          cellTextClass = "text-red-300";
+                          cellBgClass = "bg-red-900/50 border-red-500/50";
                         }
                       } else {
                         // Has ad spend but no orders yet
                         cellBgClass = "bg-zinc-700/50 border-zinc-600";
-                        cellTextClass = "text-zinc-400";
                       }
                     } else if (hasData) {
                       // Has ad spend data but no ROAS data loaded
-                      cellBgClass = "bg-emerald-600/30 border-emerald-500/50";
-                      cellTextClass = "text-emerald-300";
+                      cellBgClass = "bg-zinc-700/50 border-zinc-600";
                     }
-
-                    const tooltip = hasData
-                      ? `Ad Spend: ${formatCurrency(dateData!.amountSpent)}${roasData ? `\nRevenue: ${formatCurrency(roasData.revenue)}\nROAS: ${formatRoas(roasData.roas)}\nOrders: ${roasData.orders}` : ""}\n\nClick to edit`
-                      : "Click to add ad spend";
 
                     return (
                       <div
                         key={day}
                         onClick={() => handleDayClick(day)}
-                        className={`aspect-square rounded-md flex flex-col items-center justify-center text-[10px] relative group cursor-pointer transition-colors hover:ring-2 hover:ring-white/30 border ${cellBgClass} ${cellTextClass} hover:brightness-110`}
-                        title={tooltip}
+                        className={`min-h-[100px] rounded-lg flex flex-col items-center justify-between py-2 px-1 relative group cursor-pointer transition-colors hover:ring-2 hover:ring-white/30 border ${cellBgClass} hover:brightness-110`}
+                        title="Click to edit"
                       >
-                        <span className="font-semibold text-xs">{day}</span>
-                        {hasData && roasData && (
+                        {/* Day number - top */}
+                        <span className="font-bold text-sm text-white">{day}</span>
+
+                        {hasData && roasData ? (
                           <>
-                            {/* ROAS value - prominent */}
-                            <span className={`font-bold ${getRoasColor(roasData.roas)}`}>
+                            {/* Middle section: Spend, Rev, Ord */}
+                            <div className="flex flex-col items-center text-[9px] text-zinc-400 leading-tight">
+                              <span>Spend: <span className="text-zinc-300">{Math.round(roasData.adSpend)}</span></span>
+                              <span>Rev: <span className="text-zinc-300">{Math.round(roasData.revenue).toLocaleString("ro-RO")}</span></span>
+                              <span>Ord: <span className="text-zinc-300">{roasData.orders}</span></span>
+                            </div>
+
+                            {/* ROAS - bottom, larger, colored */}
+                            <span className={`font-bold text-base ${getRoasColor(roasData.roas)}`}>
                               {formatRoas(roasData.roas)}
                             </span>
-                            {/* Orders count - small */}
-                            <span className="opacity-70 text-[8px]">
-                              {roasData.orders} ord
+                          </>
+                        ) : hasData && dateData ? (
+                          <>
+                            {/* Only has ad spend, no ROAS data yet */}
+                            <div className="flex flex-col items-center text-[9px] text-zinc-400">
+                              <span>Spend: <span className="text-zinc-300">{Math.round(dateData.amountSpent)}</span></span>
+                              <span className="text-zinc-500">No orders</span>
+                            </div>
+                            <span className="text-zinc-600 text-sm">-</span>
+                          </>
+                        ) : (
+                          <>
+                            {/* Empty day */}
+                            <span className="text-zinc-600 text-[9px] opacity-0 group-hover:opacity-100 transition-opacity">
+                              + Add
                             </span>
+                            <span className="text-zinc-700 text-sm">-</span>
                           </>
                         )}
-                        {hasData && !roasData && (
-                          <span className="opacity-75 text-[9px]">
-                            {dateData!.amountSpent.toFixed(0)}
-                          </span>
-                        )}
+
+                        {/* Delete button on hover */}
                         {hasData && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteDate(dateStr);
                             }}
-                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                             title="Delete"
                           >
-                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        )}
-                        {!hasData && (
-                          <span className="text-[9px] mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity">
-                            + Add
-                          </span>
                         )}
                       </div>
                     );

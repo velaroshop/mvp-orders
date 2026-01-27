@@ -115,16 +115,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fill in actual order data
+    // Romania timezone offset (UTC+2 for winter, UTC+3 for summer)
+    const ROMANIA_OFFSET_HOURS = 2;
+
     filteredOrders.forEach((order: any) => {
       const createdAt = new Date(order.created_at);
+      // Convert to Romania time by adding the offset
+      const romaniaTime = new Date(createdAt.getTime() + ROMANIA_OFFSET_HOURS * 60 * 60 * 1000);
       let key: string;
 
       if (granularity === 'hourly') {
-        key = `${String(createdAt.getUTCHours()).padStart(2, '0')}:00`;
+        key = `${String(romaniaTime.getUTCHours()).padStart(2, '0')}:00`;
       } else if (granularity === 'daily') {
-        key = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}-${String(createdAt.getUTCDate()).padStart(2, '0')}`;
+        key = `${romaniaTime.getUTCFullYear()}-${String(romaniaTime.getUTCMonth() + 1).padStart(2, '0')}-${String(romaniaTime.getUTCDate()).padStart(2, '0')}`;
       } else {
-        key = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, '0')}`;
+        key = `${romaniaTime.getUTCFullYear()}-${String(romaniaTime.getUTCMonth() + 1).padStart(2, '0')}`;
       }
 
       if (revenueData[key]) {

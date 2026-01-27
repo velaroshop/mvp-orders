@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
       .eq("organization_id", organizationId)
       .neq("status", "cancelled")
       .neq("status", "testing")
-      .neq("status", "queue")
       .gte("created_at", startDateTime)
       .lte("created_at", endDateTime);
 

@@ -29,19 +29,29 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Build base query - filter non-converted orders in DATABASE, not JavaScript
+    // Parse statuses first to determine if we should show converted orders
+    const statuses = statusesParam.trim()
+      ? statusesParam.split(",").map(s => s.trim()).filter(Boolean)
+      : [];
+
+    // Check if user explicitly wants to see "accepted" (confirmed) partials
+    const includeConverted = statuses.includes("accepted");
+
+    // Build base query
     let query = supabaseAdmin
       .from("partial_orders")
       .select("*", { count: "exact" })
-      .eq("organization_id", activeOrganizationId)
-      .is("converted_to_order_id", null); // CRITICAL: Filter in DB, not JS
+      .eq("organization_id", activeOrganizationId);
+
+    // Only filter out converted orders if user is NOT filtering by "accepted" status
+    // This allows users to see confirmed partials when they explicitly filter for them
+    if (!includeConverted) {
+      query = query.is("converted_to_order_id", null);
+    }
 
     // Filter by statuses if provided
-    if (statusesParam.trim()) {
-      const statuses = statusesParam.split(",").map(s => s.trim()).filter(Boolean);
-      if (statuses.length > 0) {
-        query = query.in("status", statuses);
-      }
+    if (statuses.length > 0) {
+      query = query.in("status", statuses);
     }
 
     // Add date range filter when searching (for performance optimization)

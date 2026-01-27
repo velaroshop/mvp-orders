@@ -1495,9 +1495,12 @@ export default function AdminPage() {
                             )}
                           </span>
                         )}
-                        {order.status === "confirmed" && order.confirmerName && (
-                          <span className="text-[9px] text-zinc-400 hidden sm:inline-block truncate max-w-20">
+                        {order.status === "confirmed" && (
+                          <span className="text-[9px] text-zinc-400 hidden sm:inline-block truncate max-w-24">
                             {order.confirmerName}
+                            {(order.source === "partial" || order.fromPartialId) && (
+                              <span className="text-emerald-400 ml-0.5">(Partial)</span>
+                            )}
                           </span>
                         )}
                         {order.status === "cancelled" && order.cancellerName && (

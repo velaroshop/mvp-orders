@@ -427,6 +427,80 @@ export default function SettingsPage() {
         </form>
       </div>
 
+      {/* VAT Settings Section (Demo - Coming Soon) */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6 relative overflow-hidden">
+        {/* Coming Soon Overlay */}
+        <div className="absolute top-4 right-4 z-10">
+          <span className="px-3 py-1 bg-amber-600/20 border border-amber-500/50 text-amber-400 text-xs font-semibold rounded-full">
+            Coming Soon
+          </span>
+        </div>
+
+        <div className="p-6 border-b border-zinc-700">
+          <h2 className="text-xl font-semibold text-white mb-4">
+            VAT Settings
+          </h2>
+
+          <div className="space-y-6 opacity-60">
+            {/* VAT Payer Checkbox */}
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                id="vatPayer"
+                checked={true}
+                disabled
+                className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded cursor-not-allowed"
+              />
+              <label htmlFor="vatPayer" className="ml-3">
+                <span className="block text-sm font-medium text-white">
+                  Organizația este plătitoare de TVA
+                </span>
+                <span className="block text-sm text-zinc-400 mt-1">
+                  Activează această opțiune dacă organizația ta este înregistrată ca plătitor de TVA în România.
+                </span>
+              </label>
+            </div>
+
+            {/* VAT Rate Field */}
+            <div>
+              <label htmlFor="vatRate" className="block text-sm font-medium text-zinc-300 mb-1">
+                Cota TVA (%)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  id="vatRate"
+                  value={21}
+                  disabled
+                  className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white cursor-not-allowed"
+                />
+                <span className="text-sm text-zinc-400">
+                  Cota standard de TVA pentru România
+                </span>
+              </div>
+            </div>
+
+            {/* Info Note */}
+            <div className="p-4 bg-amber-900/20 border border-amber-700/50 rounded-md">
+              <p className="text-sm text-amber-300">
+                <strong>În dezvoltare:</strong> Această funcționalitate va permite configurarea setărilor de TVA pentru fiecare organizație. Momentan, cota de TVA de 21% este aplicată automat pentru toate comenzile trimise către Helpship.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Disabled Save Button */}
+        <div className="p-6 bg-zinc-800/50 flex justify-end">
+          <button
+            type="button"
+            disabled
+            className="px-6 py-2 bg-zinc-600 text-zinc-400 rounded-md cursor-not-allowed font-medium"
+          >
+            Save VAT Settings
+          </button>
+        </div>
+      </div>
+
       {/* Security Note */}
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-md">
         <p className="text-sm text-blue-300">

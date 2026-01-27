@@ -39,6 +39,11 @@ export default function Sidebar() {
       icon: "🏷️",
     },
     {
+      name: "ROAS",
+      href: "/admin/roas",
+      icon: "📈",
+    },
+    {
       name: "Store",
       href: "/admin/store",
       icon: "🏪",

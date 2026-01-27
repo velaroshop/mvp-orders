@@ -607,7 +607,7 @@ export default function PartialsPage() {
                           {openDropdown === partial.id && (
                             <div className={`absolute right-0 w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-50 ${
                               partialIndex < 3 ? 'top-full mt-1' : 'bottom-full mb-1'
-                            }`}
+                            }`}>
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "call_later")

@@ -24,9 +24,24 @@ export default function PartialsPage() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchDateRange, setSearchDateRange] = useState<number | "all">(30);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchPartialOrders();
-  }, [currentPage, selectedStatuses]);
+  }, [currentPage, selectedStatuses, debouncedSearch]);
 
   // Close status dropdown when clicking outside
   useEffect(() => {
@@ -47,6 +62,10 @@ export default function PartialsPage() {
 
   async function fetchPartialOrders() {
     try {
+      // Show searching indicator when searching
+      if (debouncedSearch) {
+        setIsSearching(true);
+      }
       setIsLoading(true);
       const offset = (currentPage - 1) * partialsPerPage;
       const params = new URLSearchParams({
@@ -57,6 +76,14 @@ export default function PartialsPage() {
       // Add status filters if any are selected
       if (selectedStatuses.length > 0) {
         params.append("statuses", selectedStatuses.join(","));
+      }
+
+      // Add search params if searching
+      if (debouncedSearch.trim()) {
+        params.append("q", debouncedSearch.trim());
+        if (searchDateRange !== "all") {
+          params.append("dateRange", searchDateRange.toString());
+        }
       }
 
       const response = await fetch(`/api/partial-orders/list?${params}`);
@@ -79,6 +106,7 @@ export default function PartialsPage() {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
   }
 
@@ -307,14 +335,66 @@ export default function PartialsPage() {
           </button>
         </div>
 
-        {/* Status Filter */}
-        <div className="relative status-filter-dropdown inline-block">
-          <button
-            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-            className={`px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-xs font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-1.5 ${
-              selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
-            }`}
-          >
+        {/* Search and Filters Row */}
+        <div className="flex items-center gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="Search phone, name, county, city, address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-xs placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {isSearching && (
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                <svg className="animate-spin h-3.5 w-3.5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Date Range for Search */}
+          {searchQuery && (
+            <select
+              value={searchDateRange}
+              onChange={(e) => {
+                const value = e.target.value === "all" ? "all" : parseInt(e.target.value);
+                setSearchDateRange(value);
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+              <option value="all">All time</option>
+            </select>
+          )}
+
+          {/* Status Filter */}
+          <div className="relative status-filter-dropdown">
+            <button
+              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+              className={`px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-white text-xs font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-1.5 ${
+                selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
+              }`}
+            >
             <svg
               className="w-4 h-4"
               fill="none"
@@ -378,12 +458,28 @@ export default function PartialsPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* Table */}
       {partialOrders.length === 0 ? (
         <div className="bg-zinc-800 rounded-md shadow-sm border border-zinc-700 p-4 text-center">
-          <p className="text-zinc-400 text-sm">No partial orders found.</p>
+          <p className="text-zinc-400 text-sm">
+            {debouncedSearch
+              ? `No partial orders found matching "${debouncedSearch}"${searchDateRange !== "all" ? ` in the last ${searchDateRange} days` : ""}.`
+              : "No partial orders found."}
+          </p>
+          {debouncedSearch && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSearchDateRange(30);
+              }}
+              className="mt-2 text-xs text-emerald-500 hover:text-emerald-400"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-zinc-800 rounded-md shadow-sm border border-zinc-700 overflow-hidden">

@@ -21,9 +21,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get query params for pagination
+    // Get query params for pagination and search
     const { searchParams } = new URL(request.url);
+    const searchQuery = searchParams.get("q") || "";
     const statusesParam = searchParams.get("statuses") || ""; // Multiple statuses filter
+    const dateRangeParam = searchParams.get("dateRange") || "";
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
@@ -32,9 +34,7 @@ export async function GET(request: Request) {
       .from("partial_orders")
       .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId)
-      .is("converted_to_order_id", null) // CRITICAL: Filter in DB, not JS
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1); // CRITICAL: Pagination in DB
+      .is("converted_to_order_id", null); // CRITICAL: Filter in DB, not JS
 
     // Filter by statuses if provided
     if (statusesParam.trim()) {
@@ -44,7 +44,31 @@ export async function GET(request: Request) {
       }
     }
 
-    const { data, error, count } = await query;
+    // Add date range filter when searching (for performance optimization)
+    if (searchQuery.trim() && dateRangeParam) {
+      const days = parseInt(dateRangeParam);
+      if (!isNaN(days) && days > 0) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        query = query.gte("created_at", cutoffDate.toISOString());
+      }
+    }
+
+    // Add search filter if query provided
+    if (searchQuery.trim()) {
+      query = query.or(
+        `phone.ilike.%${searchQuery}%,` +
+        `full_name.ilike.%${searchQuery}%,` +
+        `county.ilike.%${searchQuery}%,` +
+        `city.ilike.%${searchQuery}%,` +
+        `address.ilike.%${searchQuery}%`
+      );
+    }
+
+    // Add ordering and pagination
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("Error listing partial orders:", error);

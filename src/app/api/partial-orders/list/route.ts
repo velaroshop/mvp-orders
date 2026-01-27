@@ -29,45 +29,20 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Parse statuses first to determine if we should show converted orders
+    // Parse statuses for filtering
     const statuses = statusesParam.trim()
       ? statusesParam.split(",").map(s => s.trim()).filter(Boolean)
       : [];
 
-    // Check if user explicitly wants to see "accepted" (confirmed) partials
-    const includeConverted = statuses.includes("accepted");
-
-    console.log("[Partials List] Query params:", {
-      statuses,
-      includeConverted,
-      searchQuery: searchQuery.trim() || "(none)",
-    });
-
-    // Build base query
+    // Build base query - show ALL partials including converted/accepted ones
     let query = supabaseAdmin
       .from("partial_orders")
       .select("*", { count: "exact" })
       .eq("organization_id", activeOrganizationId);
 
-    // Only filter out converted orders if user is NOT filtering by "accepted" status
-    // This allows users to see confirmed partials when they explicitly filter for them
-    if (!includeConverted) {
-      query = query.is("converted_to_order_id", null);
-    }
-
     // Filter by statuses if provided
     if (statuses.length > 0) {
       query = query.in("status", statuses);
-    }
-
-    // Debug: count all accepted partials for this org
-    if (includeConverted) {
-      const { count: acceptedCount } = await supabaseAdmin
-        .from("partial_orders")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId)
-        .eq("status", "accepted");
-      console.log("[Partials List] Total accepted partials in DB:", acceptedCount);
     }
 
     // Add date range filter when searching (for performance optimization)

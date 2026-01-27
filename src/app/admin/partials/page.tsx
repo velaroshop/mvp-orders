@@ -418,7 +418,7 @@ export default function PartialsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-700">
-                {partialOrders.map((partial) => (
+                {partialOrders.map((partial, partialIndex) => (
                   <tr
                     key={partial.id}
                     className="hover:bg-zinc-700/50 transition-colors"
@@ -605,7 +605,9 @@ export default function PartialsPage() {
                           </button>
 
                           {openDropdown === partial.id && (
-                            <div className="absolute right-0 mt-1 w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-10">
+                            <div className={`absolute right-0 w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-50 ${
+                              partialIndex < 3 ? 'top-full mt-1' : 'bottom-full mb-1'
+                            }`}
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "call_later")

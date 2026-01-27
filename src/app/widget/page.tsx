@@ -556,16 +556,30 @@ function WidgetFormContent() {
 
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
-    const digitsOnly = value.replace(/\D/g, "");
+    let digitsOnly = value.replace(/\D/g, "");
 
-    if (digitsOnly.length > 0 && digitsOnly[0] !== "0") {
-      const withZero = "0" + digitsOnly;
-      const limited = withZero.slice(0, 10);
-      setPhone(limited);
-    } else {
-      const limited = digitsOnly.slice(0, 10);
-      setPhone(limited);
+    // Auto-correct international prefixes
+    // 00407xxxxxxx -> 07xxxxxxx (remove 0040)
+    // 407xxxxxxx -> 07xxxxxxx (remove 40)
+    // 0407xxxxxxx -> 07xxxxxxx (remove 040)
+    if (digitsOnly.startsWith("00407")) {
+      digitsOnly = digitsOnly.slice(4); // Remove "0040"
+    } else if (digitsOnly.startsWith("0040")) {
+      digitsOnly = digitsOnly.slice(4); // Remove "0040"
+    } else if (digitsOnly.startsWith("040") && digitsOnly.length > 3) {
+      digitsOnly = digitsOnly.slice(2); // Remove "04" -> keeps "0..."
+    } else if (digitsOnly.startsWith("407") && !digitsOnly.startsWith("4070")) {
+      digitsOnly = "0" + digitsOnly.slice(2); // Remove "40", add "0"
     }
+
+    // Ensure starts with 0
+    if (digitsOnly.length > 0 && digitsOnly[0] !== "0") {
+      digitsOnly = "0" + digitsOnly;
+    }
+
+    // Limit to 10 digits
+    const limited = digitsOnly.slice(0, 10);
+    setPhone(limited);
   }
 
   function getCurrentPrice() {
@@ -980,7 +994,7 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, phone: undefined }));
                     }
                   }}
-                  placeholder="Introduceți aici numărul de telefon"
+                  placeholder="Ex: 0722 123 456"
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.phone
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -1000,8 +1014,10 @@ function WidgetFormContent() {
                   }}
                   required
                 />
-                {errors.phone && (
+                {errors.phone ? (
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-zinc-400">Format: 10 cifre, fără prefix internațional</p>
                 )}
               </div>
               <div>

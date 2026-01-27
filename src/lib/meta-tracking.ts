@@ -254,6 +254,15 @@ export async function sendMetaPurchaseEvent(params: {
       contents: contents.length > 0 ? contents : undefined,
     });
 
+    // Log the value being sent to Meta for debugging
+    console.log('[Meta CAPI] Purchase value details:', {
+      orderId: order.id,
+      dbTotal: order.total,
+      sentValue: customData.value,
+      upsells: order.upsells,
+      presaleUpsellsTotal,
+    });
+
     // Build event payload
     const eventId = `purchase_${order.id}`;
     const eventTime = Math.floor(new Date(order.created_at).getTime() / 1000);

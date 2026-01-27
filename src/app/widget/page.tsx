@@ -1755,7 +1755,20 @@ function WidgetFormContent() {
 
                 {/* ACTION BUTTONS - Stacked vertically */}
                 <div className="flex-shrink-0 px-4 space-y-3">
-                  {/* ACCEPT BUTTON */}
+                  {/* DECLINE BUTTON - Now first */}
+                  <button
+                    onClick={finalizeOrderAndRedirect}
+                    disabled={postsaleProcessing}
+                    className={`w-full py-3 rounded-xl font-medium text-base transition-all ${
+                      postsaleProcessing
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : 'text-zinc-400 hover:text-zinc-300'
+                    }`}
+                  >
+                    NU MĂ INTERESEAZĂ
+                  </button>
+
+                  {/* ACCEPT BUTTON - Now second */}
                   <button
                     onClick={async () => {
                       if (postsaleProcessing) return;
@@ -1822,19 +1835,6 @@ function WidgetFormContent() {
                         }}
                       ></div>
                     )}
-                  </button>
-
-                  {/* DECLINE BUTTON */}
-                  <button
-                    onClick={finalizeOrderAndRedirect}
-                    disabled={postsaleProcessing}
-                    className={`w-full py-3 rounded-xl font-medium text-base transition-all ${
-                      postsaleProcessing
-                        ? 'text-zinc-600 cursor-not-allowed'
-                        : 'text-zinc-400 hover:text-zinc-300'
-                    }`}
-                  >
-                    NU MĂ INTERESEAZĂ
                   </button>
                 </div>
 

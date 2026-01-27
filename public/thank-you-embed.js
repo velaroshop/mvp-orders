@@ -265,20 +265,20 @@
           <!-- ACTION BUTTONS - Stacked -->
           <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
             <button
-              id="accept-postsale-btn"
-              style="width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4); transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;"
-              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 25px rgba(34, 197, 94, 0.5)';"
-              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.4)';"
-            >
-              DA, ADAUGĂ LA OFERTĂ
-            </button>
-            <button
               id="decline-postsale-btn"
               style="width: 100%; background: transparent; color: #64748b; border: 1px solid #334155; padding: 14px 24px; font-size: 14px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.3s;"
               onmouseover="this.style.borderColor='#475569'; this.style.color='#94a3b8';"
               onmouseout="this.style.borderColor='#334155'; this.style.color='#64748b';"
             >
               NU MĂ INTERESEAZĂ
+            </button>
+            <button
+              id="accept-postsale-btn"
+              style="width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4); transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;"
+              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 25px rgba(34, 197, 94, 0.5)';"
+              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.4)';"
+            >
+              DA, ADAUGĂ LA OFERTĂ
             </button>
           </div>
         </div>

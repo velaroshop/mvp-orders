@@ -166,6 +166,10 @@ export default function RoasPage() {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Calendar ROAS data (for Upload tab - shows ROAS in calendar cells)
+  const [calendarRoasData, setCalendarRoasData] = useState<RoasDataRow[]>([]);
+  const [isLoadingCalendarRoas, setIsLoadingCalendarRoas] = useState(false);
+
   // Manual entry modal state
   const [manualEntryModal, setManualEntryModal] = useState<ManualEntryModalData | null>(null);
   const [isSavingManual, setIsSavingManual] = useState(false);
@@ -202,7 +206,7 @@ export default function RoasPage() {
     fetchProducts();
   }, []);
 
-  // Fetch uploaded dates when product or month changes (for Upload tab)
+  // Fetch uploaded dates and ROAS data when product or month changes (for Upload tab)
   useEffect(() => {
     if (!selectedProductId || activeTab !== "upload") return;
 
@@ -223,7 +227,29 @@ export default function RoasPage() {
         setIsLoadingDates(false);
       }
     }
+
+    async function fetchCalendarRoasData() {
+      setIsLoadingCalendarRoas(true);
+      try {
+        const params = new URLSearchParams({
+          productId: selectedProductId,
+          month: selectedMonth,
+          includeUpsells: "true",
+        });
+        const response = await fetch(`/api/roas/data?${params}`);
+        if (!response.ok) throw new Error("Failed to fetch ROAS data");
+        const data = await response.json();
+        setCalendarRoasData(data.data || []);
+      } catch (err) {
+        console.error("Error fetching calendar ROAS data:", err);
+        setCalendarRoasData([]);
+      } finally {
+        setIsLoadingCalendarRoas(false);
+      }
+    }
+
     fetchUploadedDates();
+    fetchCalendarRoasData();
   }, [selectedProductId, selectedMonth, activeTab]);
 
   // Handle CSV upload
@@ -250,15 +276,22 @@ export default function RoasPage() {
         message: `Imported ${result.summary.rowsImported} days (${result.summary.dateRange.start} - ${result.summary.dateRange.end}). Total: ${formatCurrency(result.summary.totalSpent)}`,
       });
 
-      // Refresh dates
+      // Refresh dates and ROAS data
       const params = new URLSearchParams({
         productId: selectedProductId,
         month: selectedMonth,
       });
-      const datesResponse = await fetch(`/api/roas/dates?${params}`);
+      const [datesResponse, roasResponse] = await Promise.all([
+        fetch(`/api/roas/dates?${params}`),
+        fetch(`/api/roas/data?${params.toString()}&includeUpsells=true`),
+      ]);
       if (datesResponse.ok) {
         const datesData = await datesResponse.json();
         setUploadedDates(datesData.dates || []);
+      }
+      if (roasResponse.ok) {
+        const roasData = await roasResponse.json();
+        setCalendarRoasData(roasData.data || []);
       }
 
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -314,6 +347,18 @@ export default function RoasPage() {
         const filtered = prev.filter((d) => d.date !== manualEntryModal.date);
         return [...filtered, result.data].sort((a, b) => a.date.localeCompare(b.date));
       });
+
+      // Refresh calendar ROAS data
+      const params = new URLSearchParams({
+        productId: selectedProductId,
+        month: selectedMonth,
+        includeUpsells: "true",
+      });
+      const roasResponse = await fetch(`/api/roas/data?${params}`);
+      if (roasResponse.ok) {
+        const roasData = await roasResponse.json();
+        setCalendarRoasData(roasData.data || []);
+      }
 
       setManualEntryModal(null);
       setUploadResult({
@@ -391,6 +436,7 @@ export default function RoasPage() {
   const firstDayOfWeek = getFirstDayOfWeek(selectedMonth);
   const uploadedDatesSet = new Set(uploadedDates.map((d) => d.date));
   const uploadedDatesMap = new Map(uploadedDates.map((d) => [d.date, d]));
+  const calendarRoasMap = new Map(calendarRoasData.map((d) => [d.date, d]));
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
@@ -601,38 +647,80 @@ export default function RoasPage() {
                     const dateStr = `${selectedMonth}-${String(day).padStart(2, "0")}`;
                     const hasData = uploadedDatesSet.has(dateStr);
                     const dateData = uploadedDatesMap.get(dateStr);
+                    const roasData = calendarRoasMap.get(dateStr);
+
+                    // Determine cell background based on ROAS
+                    let cellBgClass = "bg-zinc-900 border-zinc-700";
+                    let cellTextClass = "text-zinc-500";
+
+                    if (hasData && roasData) {
+                      if (roasData.roas !== null) {
+                        if (roasData.roas >= 5) {
+                          cellBgClass = "bg-gradient-to-br from-amber-900/40 to-yellow-900/30 border-amber-500/50";
+                          cellTextClass = "text-amber-300";
+                        } else if (roasData.roas >= 3.5) {
+                          cellBgClass = "bg-emerald-900/40 border-emerald-500/50";
+                          cellTextClass = "text-emerald-300";
+                        } else if (roasData.roas >= 2.5) {
+                          cellBgClass = "bg-orange-900/40 border-orange-500/50";
+                          cellTextClass = "text-orange-300";
+                        } else {
+                          cellBgClass = "bg-red-900/40 border-red-500/50";
+                          cellTextClass = "text-red-300";
+                        }
+                      } else {
+                        // Has ad spend but no orders yet
+                        cellBgClass = "bg-zinc-700/50 border-zinc-600";
+                        cellTextClass = "text-zinc-400";
+                      }
+                    } else if (hasData) {
+                      // Has ad spend data but no ROAS data loaded
+                      cellBgClass = "bg-emerald-600/30 border-emerald-500/50";
+                      cellTextClass = "text-emerald-300";
+                    }
+
+                    const tooltip = hasData
+                      ? `Ad Spend: ${formatCurrency(dateData!.amountSpent)}${roasData ? `\nRevenue: ${formatCurrency(roasData.revenue)}\nROAS: ${formatRoas(roasData.roas)}\nOrders: ${roasData.orders}` : ""}\n\nClick to edit`
+                      : "Click to add ad spend";
 
                     return (
                       <div
                         key={day}
                         onClick={() => handleDayClick(day)}
-                        className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs relative group cursor-pointer transition-colors hover:ring-2 hover:ring-emerald-400/50 ${
-                          hasData
-                            ? "bg-emerald-600/30 border border-emerald-500/50 text-emerald-300"
-                            : "bg-zinc-900 border border-zinc-700 text-zinc-500 hover:bg-zinc-800"
-                        }`}
-                        title={hasData ? `${formatCurrency(dateData!.amountSpent)} - Click to edit` : "Click to add ad spend"}
+                        className={`aspect-square rounded-md flex flex-col items-center justify-center text-[10px] relative group cursor-pointer transition-colors hover:ring-2 hover:ring-white/30 border ${cellBgClass} ${cellTextClass} hover:brightness-110`}
+                        title={tooltip}
                       >
-                        <span className="font-medium">{day}</span>
-                        {hasData && (
+                        <span className="font-semibold text-xs">{day}</span>
+                        {hasData && roasData && (
                           <>
-                            <span className="text-[9px] mt-0.5 opacity-75">
-                              {dateData!.amountSpent.toFixed(0)}
+                            {/* ROAS value - prominent */}
+                            <span className={`font-bold ${getRoasColor(roasData.roas)}`}>
+                              {formatRoas(roasData.roas)}
                             </span>
-                            {/* Delete button on hover */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteDate(dateStr);
-                              }}
-                              className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                              title="Delete"
-                            >
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                            {/* Orders count - small */}
+                            <span className="opacity-70 text-[8px]">
+                              {roasData.orders} ord
+                            </span>
                           </>
+                        )}
+                        {hasData && !roasData && (
+                          <span className="opacity-75 text-[9px]">
+                            {dateData!.amountSpent.toFixed(0)}
+                          </span>
+                        )}
+                        {hasData && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDate(dateStr);
+                            }}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            title="Delete"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         )}
                         {!hasData && (
                           <span className="text-[9px] mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity">
@@ -645,17 +733,66 @@ export default function RoasPage() {
                 </div>
               </div>
 
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 mb-4 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-red-900/40 border border-red-500/50"></span>
+                  <span className="text-zinc-400">&lt;2.5</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-orange-900/40 border border-orange-500/50"></span>
+                  <span className="text-zinc-400">2.5-3.5</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-emerald-900/40 border border-emerald-500/50"></span>
+                  <span className="text-zinc-400">3.5-5</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-gradient-to-br from-amber-900/40 to-yellow-900/30 border border-amber-500/50"></span>
+                  <span className="text-zinc-400">&gt;5</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-zinc-700/50 border border-zinc-600"></span>
+                  <span className="text-zinc-400">No orders</span>
+                </div>
+              </div>
+
               {/* Summary */}
-              <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-md">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-900 rounded-md">
                 <div>
-                  <span className="text-zinc-400 text-sm">Days with data:</span>
-                  <span className="text-white font-medium ml-2">{uploadedDates.length} / {daysInMonth}</span>
+                  <span className="text-zinc-500 text-xs block">Days with data</span>
+                  <span className="text-white font-semibold">{uploadedDates.length} / {daysInMonth}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-400 text-sm">Total Ad Spend:</span>
-                  <span className="text-emerald-400 font-medium ml-2">
+                  <span className="text-zinc-500 text-xs block">Total Ad Spend</span>
+                  <span className="text-white font-semibold">
                     {formatCurrency(uploadedDates.reduce((sum, d) => sum + d.amountSpent, 0))}
                   </span>
+                </div>
+                <div>
+                  <span className="text-zinc-500 text-xs block">Total Revenue</span>
+                  <span className="text-white font-semibold">
+                    {isLoadingCalendarRoas ? (
+                      <span className="text-zinc-500">Loading...</span>
+                    ) : (
+                      formatCurrency(calendarRoasData.reduce((sum, d) => sum + d.revenue, 0))
+                    )}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-500 text-xs block">Month ROAS</span>
+                  {isLoadingCalendarRoas ? (
+                    <span className="text-zinc-500 font-semibold">Loading...</span>
+                  ) : (() => {
+                    const totalSpend = calendarRoasData.reduce((sum, d) => sum + d.adSpend, 0);
+                    const totalRevenue = calendarRoasData.reduce((sum, d) => sum + d.revenue, 0);
+                    const monthRoas = totalSpend > 0 ? totalRevenue / totalSpend : null;
+                    return (
+                      <span className={`font-bold ${getRoasColor(monthRoas)}`}>
+                        {formatRoas(monthRoas)}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 

@@ -37,6 +37,12 @@ export async function GET(request: Request) {
     // Check if user explicitly wants to see "accepted" (confirmed) partials
     const includeConverted = statuses.includes("accepted");
 
+    console.log("[Partials List] Query params:", {
+      statuses,
+      includeConverted,
+      searchQuery: searchQuery.trim() || "(none)",
+    });
+
     // Build base query
     let query = supabaseAdmin
       .from("partial_orders")
@@ -52,6 +58,16 @@ export async function GET(request: Request) {
     // Filter by statuses if provided
     if (statuses.length > 0) {
       query = query.in("status", statuses);
+    }
+
+    // Debug: count all accepted partials for this org
+    if (includeConverted) {
+      const { count: acceptedCount } = await supabaseAdmin
+        .from("partial_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", activeOrganizationId)
+        .eq("status", "accepted");
+      console.log("[Partials List] Total accepted partials in DB:", acceptedCount);
     }
 
     // Add date range filter when searching (for performance optimization)

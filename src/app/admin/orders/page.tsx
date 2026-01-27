@@ -1671,7 +1671,7 @@ export default function AdminPage() {
                             <span className="sm:hidden">⋮</span>
                           </button>
                           {openDropdown === order.id && (
-                            <div className="absolute right-0 mt-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-10">
+                            <div className="absolute right-0 bottom-full mb-1 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50">
                               <div className="py-1">
                                 {/* Hide Order Confirm for testing, cancelled, sync_error orders */}
                                 {order.status !== "testing" && order.status !== "cancelled" && order.status !== "sync_error" && (

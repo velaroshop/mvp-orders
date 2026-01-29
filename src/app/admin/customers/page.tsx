@@ -50,8 +50,10 @@ function CustomersPageContent() {
         offset: offset.toString(),
       });
 
-      if (searchQuery.trim()) {
-        params.append("q", searchQuery.trim());
+      // Use phoneFilter as search query if present, otherwise use manual search
+      const effectiveQuery = phoneFilter || searchQuery.trim();
+      if (effectiveQuery) {
+        params.append("q", effectiveQuery);
       }
 
       const response = await fetch(`/api/customers/list?${params.toString()}`);

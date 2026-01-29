@@ -190,15 +190,15 @@ export async function GET(request: NextRequest) {
         productsSold: 0,
       };
 
-      // Calculate revenue based on includeUpsells flag
-      let orderRevenue = order.subtotal || 0;
-      if (includeUpsells && order.upsells && Array.isArray(order.upsells)) {
+      // Use order.total directly (consistent with Dashboard KPI)
+      // order.total already includes: subtotal + upsells + shipping
+      // When includeUpsells is false, subtract upsell values from total
+      let orderRevenue = order.total || 0;
+      if (!includeUpsells && order.upsells && Array.isArray(order.upsells)) {
         order.upsells.forEach((upsell: any) => {
-          orderRevenue += (upsell.price || 0) * (upsell.quantity || 1);
+          orderRevenue -= (upsell.price || 0) * (upsell.quantity || 1);
         });
       }
-      // Add shipping cost
-      orderRevenue += order.shipping_cost || 0;
 
       existing.revenue += orderRevenue;
       existing.count += 1;

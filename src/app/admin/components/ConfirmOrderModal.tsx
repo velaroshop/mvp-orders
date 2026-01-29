@@ -594,9 +594,13 @@ export default function ConfirmOrderModal({
                 <input
                   type="text"
                   value={formData.postalCode}
-                  readOnly
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-700/50 px-2.5 py-1.5 text-sm text-white cursor-not-allowed"
-                  placeholder="Selectează din sugestii"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setFormData({ ...formData, postalCode: value });
+                  }}
+                  maxLength={6}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Introdu sau selectează din sugestii"
                 />
 
                 {/* Recommended postal codes */}

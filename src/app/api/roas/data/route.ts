@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const isAllProducts = productId === "all";
+
     // Parse month to get date range
     const [year, monthNum] = month.split("-").map(Number);
     const startDate = new Date(Date.UTC(year, monthNum - 1, 1));
@@ -72,14 +74,19 @@ export async function GET(request: NextRequest) {
     const endDateStr = endDate.toISOString().split("T")[0];
 
     // Fetch ad spend data for the month
-    const { data: adSpendData, error: adSpendError } = await supabase
+    let adSpendQuery = supabase
       .from("ad_spend_data")
       .select("*")
       .eq("organization_id", organizationId)
-      .eq("product_id", productId)
       .gte("date", startDateStr)
       .lte("date", endDateStr)
       .order("date", { ascending: true });
+
+    if (!isAllProducts) {
+      adSpendQuery = adSpendQuery.eq("product_id", productId);
+    }
+
+    const { data: adSpendData, error: adSpendError } = await adSpendQuery;
 
     if (adSpendError) {
       console.error("Error fetching ad spend data:", adSpendError);
@@ -89,35 +96,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch orders for the month (same logic as dashboard stats - exclude cancelled and testing)
-    // Filter by product_sku to match the product
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .select("id, name, sku")
-      .eq("id", productId)
-      .eq("organization_id", organizationId)
-      .single();
+    // When "all", aggregate ad spend by date (sum across all products)
+    let aggregatedAdSpend = adSpendData || [];
+    if (isAllProducts && aggregatedAdSpend.length > 0) {
+      const adSpendByDate: Map<string, { date: string; amount_spent: number; meta_purchases: number; meta_purchase_value: number }> = new Map();
+      aggregatedAdSpend.forEach((row: any) => {
+        const existing = adSpendByDate.get(row.date);
+        if (existing) {
+          existing.amount_spent += parseFloat(row.amount_spent) || 0;
+          existing.meta_purchases += row.meta_purchases || 0;
+          existing.meta_purchase_value += parseFloat(row.meta_purchase_value) || 0;
+        } else {
+          adSpendByDate.set(row.date, {
+            date: row.date,
+            amount_spent: parseFloat(row.amount_spent) || 0,
+            meta_purchases: row.meta_purchases || 0,
+            meta_purchase_value: parseFloat(row.meta_purchase_value) || 0,
+          });
+        }
+      });
+      aggregatedAdSpend = Array.from(adSpendByDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
 
-    if (productError || !product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      );
+    // Fetch product info (only for single product)
+    let product: { id: string; name: string; sku: string | null } = {
+      id: "all",
+      name: "All Products",
+      sku: null,
+    };
+
+    if (!isAllProducts) {
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("id, name, sku")
+        .eq("id", productId)
+        .eq("organization_id", organizationId)
+        .single();
+
+      if (productError || !productData) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          { status: 404 }
+        );
+      }
+      product = productData;
     }
 
     // Use Romania timezone for date filtering (UTC+2)
     const startDateTime = `${startDateStr}T00:00:00+02:00`;
     const endDateTime = `${endDateStr}T23:59:59+02:00`;
 
-    const { data: orders, error: ordersError } = await supabase
+    let ordersQuery = supabase
       .from("orders")
       .select("*")
       .eq("organization_id", organizationId)
-      .eq("product_sku", product.sku)
       .neq("status", "cancelled")
       .neq("status", "testing")
       .gte("created_at", new Date(startDateTime).toISOString())
       .lte("created_at", new Date(endDateTime).toISOString());
+
+    if (!isAllProducts && product.sku) {
+      ordersQuery = ordersQuery.eq("product_sku", product.sku);
+    }
+
+    const { data: orders, error: ordersError } = await ordersQuery;
 
     if (ordersError) {
       console.error("Error fetching orders:", ordersError);
@@ -166,7 +208,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Build ROAS data rows (only for days with ad spend data)
-    const roasData: RoasDataRow[] = (adSpendData || []).map((adRow: any) => {
+    const roasData: RoasDataRow[] = (aggregatedAdSpend).map((adRow: any) => {
       const orderData = ordersByDate.get(adRow.date) || {
         revenue: 0,
         count: 0,

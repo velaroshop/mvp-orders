@@ -156,9 +156,9 @@ function getFirstDayOfWeek(month: string): number {
 }
 
 export default function RoasPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("upload");
+  const [activeTab, setActiveTab] = useState<TabType>("report");
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProductId, setSelectedProductId] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -217,7 +217,7 @@ export default function RoasPage() {
 
   // Fetch uploaded dates and ROAS data when product or month changes (for Upload tab)
   useEffect(() => {
-    if (!selectedProductId || activeTab !== "upload") return;
+    if (!selectedProductId || selectedProductId === "all" || activeTab !== "upload") return;
 
     async function fetchUploadedDates() {
       setIsLoadingDates(true);
@@ -440,6 +440,15 @@ export default function RoasPage() {
     }
   }, [uploadResult]);
 
+  // Auto-show report on page load when Report tab is active
+  const hasAutoLoaded = useRef(false);
+  useEffect(() => {
+    if (activeTab === "report" && selectedMonth && !hasAutoLoaded.current && !isLoadingProducts) {
+      hasAutoLoaded.current = true;
+      handleShowReport();
+    }
+  }, [activeTab, selectedMonth, isLoadingProducts]);
+
   // Build calendar data
   const daysInMonth = getDaysInMonth(selectedMonth);
   const firstDayOfWeek = getFirstDayOfWeek(selectedMonth);
@@ -497,7 +506,7 @@ export default function RoasPage() {
               disabled={isLoadingProducts}
               className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="">Select a product...</option>
+              <option value="all">All Products</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name} {product.sku ? `(${product.sku})` : ""}

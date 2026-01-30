@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import type { Order } from "@/lib/types";
 import ConfirmOrderModal from "../components/ConfirmOrderModal";
 import HoldOrderModal from "../components/HoldOrderModal";
@@ -14,6 +15,13 @@ import Toast from "../components/Toast";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
 export default function AdminPage() {
+  const { data: session } = useSession();
+  const isSuperadmin = useMemo(() => {
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    return userRole === "owner" && isSuperadminOrg === true;
+  }, [session]);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -945,6 +953,51 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "mark-test") {
+      if (!confirm("Sigur vrei să marchezi această comandă ca test? Va fi anulată în Helpship.")) {
+        setOpenDropdown(null);
+        return;
+      }
+      const originalOrder = orders.find(o => o.id === orderId);
+      if (!originalOrder) { setOpenDropdown(null); return; }
+      updateOrderLocally(orderId, { status: "testing" as any });
+      setOpenDropdown(null);
+      try {
+        const response = await fetch(`/api/orders/${orderId}/mark-test`, { method: "POST" });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to mark as test");
+        }
+        setToast({ isOpen: true, type: "success", message: "Comanda a fost marcată ca test" });
+      } catch (error) {
+        updateOrderLocally(orderId, { status: originalOrder.status });
+        const msg = error instanceof Error ? error.message : "Eroare la marcarea ca test";
+        setToast({ isOpen: true, type: "error", message: msg });
+      }
+      return;
+    }
+
+    if (action === "delete-test") {
+      if (!confirm("Sigur vrei să ștergi permanent această comandă de test? Acțiunea este ireversibilă.")) {
+        setOpenDropdown(null);
+        return;
+      }
+      setOpenDropdown(null);
+      try {
+        const response = await fetch(`/api/orders/${orderId}/delete-test`, { method: "DELETE" });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Failed to delete test order");
+        }
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        setToast({ isOpen: true, type: "success", message: "Comanda de test a fost ștearsă" });
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Eroare la ștergerea comenzii";
+        setToast({ isOpen: true, type: "error", message: msg });
+      }
+      return;
+    }
+
     if (action === "note") {
       const order = orders.find((o) => o.id === orderId);
       setNoteOrderId(orderId);
@@ -1770,6 +1823,22 @@ export default function AdminPage() {
                                     className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
                                   >
                                     🔄 Resync to Helpship
+                                  </button>
+                                )}
+                                {isSuperadmin && order.status !== "testing" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "mark-test")}
+                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    🧪 Mark as Test
+                                  </button>
+                                )}
+                                {isSuperadmin && order.status === "testing" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "delete-test")}
+                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    🗑️ Delete Test Order
                                   </button>
                                 )}
                               </div>

@@ -43,6 +43,13 @@ export async function POST(
       return NextResponse.json({ error: "Order is already marked as test" }, { status: 400 });
     }
 
+    if (order.status === "confirmed") {
+      return NextResponse.json(
+        { error: "Cannot mark confirmed orders as test - they may already be processed in Helpship" },
+        { status: 400 }
+      );
+    }
+
     // Cancel in Helpship if synced
     if (order.helpship_order_id) {
       try {

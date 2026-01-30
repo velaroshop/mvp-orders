@@ -1852,7 +1852,7 @@ export default function AdminPage() {
                                     🔄 Resync to Helpship
                                   </button>
                                 )}
-                                {isSuperadmin && order.status !== "testing" && (
+                                {isSuperadmin && order.status !== "testing" && order.status !== "confirmed" && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "mark-test")}
                                     className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"

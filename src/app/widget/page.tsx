@@ -124,8 +124,9 @@ function WidgetFormContent() {
   }>({});
 
   // Helper function to capitalize first letter of each word
+  // Uses space/hyphen split instead of \b\w to handle Romanian diacritics (ă, ș, ț, î, â)
   function toTitleCase(str: string): string {
-    return str.replace(/\b\w/g, (char) => char.toUpperCase());
+    return str.replace(/(^|[\s-])(\S)/g, (match, separator, char) => separator + char.toUpperCase());
   }
 
   useEffect(() => {

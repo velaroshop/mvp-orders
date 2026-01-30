@@ -73,6 +73,14 @@ export default function AdminPage() {
   const [syncStatusOrderId, setSyncStatusOrderId] = useState<string | null>(null);
   const [isSyncStatusModalOpen, setIsSyncStatusModalOpen] = useState(false);
 
+  // Mark Test / Delete Test Modal state
+  const [isMarkTestModalOpen, setIsMarkTestModalOpen] = useState(false);
+  const [orderToMarkTest, setOrderToMarkTest] = useState<string | null>(null);
+  const [isMarkingTest, setIsMarkingTest] = useState(false);
+  const [isDeleteTestModalOpen, setIsDeleteTestModalOpen] = useState(false);
+  const [orderToDeleteTest, setOrderToDeleteTest] = useState<string | null>(null);
+  const [isDeletingTest, setIsDeletingTest] = useState(false);
+
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
     isOpen: false,
@@ -954,47 +962,16 @@ export default function AdminPage() {
     }
 
     if (action === "mark-test") {
-      if (!confirm("Sigur vrei să marchezi această comandă ca test? Va fi anulată în Helpship.")) {
-        setOpenDropdown(null);
-        return;
-      }
-      const originalOrder = orders.find(o => o.id === orderId);
-      if (!originalOrder) { setOpenDropdown(null); return; }
-      updateOrderLocally(orderId, { status: "testing" as any });
+      setOrderToMarkTest(orderId);
+      setIsMarkTestModalOpen(true);
       setOpenDropdown(null);
-      try {
-        const response = await fetch(`/api/orders/${orderId}/mark-test`, { method: "POST" });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to mark as test");
-        }
-        setToast({ isOpen: true, type: "success", message: "Comanda a fost marcată ca test" });
-      } catch (error) {
-        updateOrderLocally(orderId, { status: originalOrder.status });
-        const msg = error instanceof Error ? error.message : "Eroare la marcarea ca test";
-        setToast({ isOpen: true, type: "error", message: msg });
-      }
       return;
     }
 
     if (action === "delete-test") {
-      if (!confirm("Sigur vrei să ștergi permanent această comandă de test? Acțiunea este ireversibilă.")) {
-        setOpenDropdown(null);
-        return;
-      }
+      setOrderToDeleteTest(orderId);
+      setIsDeleteTestModalOpen(true);
       setOpenDropdown(null);
-      try {
-        const response = await fetch(`/api/orders/${orderId}/delete-test`, { method: "DELETE" });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to delete test order");
-        }
-        setOrders(prev => prev.filter(o => o.id !== orderId));
-        setToast({ isOpen: true, type: "success", message: "Comanda de test a fost ștearsă" });
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : "Eroare la ștergerea comenzii";
-        setToast({ isOpen: true, type: "error", message: msg });
-      }
       return;
     }
 
@@ -1061,6 +1038,56 @@ export default function AdminPage() {
       });
     } finally {
       setIsFinalizing(false);
+    }
+  }
+
+  async function handleMarkTest() {
+    if (!orderToMarkTest) return;
+    const originalOrder = orders.find(o => o.id === orderToMarkTest);
+    if (!originalOrder) return;
+
+    updateOrderLocally(orderToMarkTest, { status: "testing" as any });
+    setIsMarkTestModalOpen(false);
+    const savedId = orderToMarkTest;
+    setOrderToMarkTest(null);
+    setIsMarkingTest(true);
+
+    try {
+      const response = await fetch(`/api/orders/${savedId}/mark-test`, { method: "POST" });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to mark as test");
+      }
+      setToast({ isOpen: true, type: "success", message: "Comanda a fost marcată ca test" });
+    } catch (error) {
+      updateOrderLocally(savedId, { status: originalOrder.status });
+      const msg = error instanceof Error ? error.message : "Eroare la marcarea ca test";
+      setToast({ isOpen: true, type: "error", message: msg });
+    } finally {
+      setIsMarkingTest(false);
+    }
+  }
+
+  async function handleDeleteTest() {
+    if (!orderToDeleteTest) return;
+    setIsDeleteTestModalOpen(false);
+    const savedId = orderToDeleteTest;
+    setOrderToDeleteTest(null);
+    setIsDeletingTest(true);
+
+    try {
+      const response = await fetch(`/api/orders/${savedId}/delete-test`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete test order");
+      }
+      setOrders(prev => prev.filter(o => o.id !== savedId));
+      setToast({ isOpen: true, type: "success", message: "Comanda de test a fost ștearsă" });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Eroare la ștergerea comenzii";
+      setToast({ isOpen: true, type: "error", message: msg });
+    } finally {
+      setIsDeletingTest(false);
     }
   }
 
@@ -1957,6 +1984,38 @@ export default function AdminPage() {
                 cancelText="Cancel"
                 confirmButtonClass="bg-violet-600 hover:bg-violet-700"
                 isProcessing={isFinalizing}
+              />
+
+              {/* Mark as Test Modal */}
+              <ConfirmModal
+                isOpen={isMarkTestModalOpen}
+                onClose={() => {
+                  setIsMarkTestModalOpen(false);
+                  setOrderToMarkTest(null);
+                }}
+                onConfirm={handleMarkTest}
+                title="Mark as Test"
+                message="Sigur vrei să marchezi această comandă ca test? Va fi anulată în Helpship și nu va mai fi procesată."
+                confirmText="Mark as Test"
+                cancelText="Cancel"
+                confirmButtonClass="bg-red-600 hover:bg-red-700"
+                isProcessing={isMarkingTest}
+              />
+
+              {/* Delete Test Order Modal */}
+              <ConfirmModal
+                isOpen={isDeleteTestModalOpen}
+                onClose={() => {
+                  setIsDeleteTestModalOpen(false);
+                  setOrderToDeleteTest(null);
+                }}
+                onConfirm={handleDeleteTest}
+                title="Delete Test Order"
+                message="Sigur vrei să ștergi permanent această comandă de test? Acțiunea este ireversibilă."
+                confirmText="Delete"
+                cancelText="Cancel"
+                confirmButtonClass="bg-red-600 hover:bg-red-700"
+                isProcessing={isDeletingTest}
               />
 
               {/* Confirm Scheduled Order Modal */}

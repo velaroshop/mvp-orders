@@ -9,6 +9,7 @@ import CancelOrderModal from "../components/CancelOrderModal";
 import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
+import SyncStatusModal from "../components/SyncStatusModal";
 import Toast from "../components/Toast";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
@@ -59,6 +60,10 @@ export default function AdminPage() {
   // Confirm Scheduled Order Modal state
   const [isScheduledModalOpen, setIsScheduledModalOpen] = useState(false);
   const [scheduledOrderToConfirm, setScheduledOrderToConfirm] = useState<Order | null>(null);
+
+  // Sync Status Modal state
+  const [syncStatusOrderId, setSyncStatusOrderId] = useState<string | null>(null);
+  const [isSyncStatusModalOpen, setIsSyncStatusModalOpen] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
@@ -933,6 +938,13 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "sync-status") {
+      setSyncStatusOrderId(orderId);
+      setIsSyncStatusModalOpen(true);
+      setOpenDropdown(null);
+      return;
+    }
+
     if (action === "note") {
       const order = orders.find((o) => o.id === orderId);
       setNoteOrderId(orderId);
@@ -1728,6 +1740,14 @@ export default function AdminPage() {
                                 >
                                   Order Note
                                 </button>
+                                {order.helpshipOrderId && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "sync-status")}
+                                    className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-blue-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    Sync from Helpship
+                                  </button>
+                                )}
                                 {order.status === "queue" && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "finalize")}
@@ -1880,6 +1900,34 @@ export default function AdminPage() {
                 }}
                 onConfirm={handleConfirmScheduledOrder}
                 isConfirming={confirming === scheduledOrderToConfirm?.id}
+              />
+
+              {/* Sync Status Modal */}
+              <SyncStatusModal
+                isOpen={isSyncStatusModalOpen}
+                onClose={() => {
+                  setIsSyncStatusModalOpen(false);
+                  setSyncStatusOrderId(null);
+                }}
+                onSync={async (newStatus: string) => {
+                  if (!syncStatusOrderId) return;
+                  const response = await fetch(`/api/orders/${syncStatusOrderId}/sync-status`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ newStatus }),
+                  });
+                  if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || "Failed to sync status");
+                  }
+                  updateOrderLocally(syncStatusOrderId, { status: newStatus as any });
+                  setToast({
+                    isOpen: true,
+                    type: "success",
+                    message: `Status sincronizat cu succes: ${newStatus}`,
+                  });
+                }}
+                orderId={syncStatusOrderId || ""}
               />
 
               {/* Toast Notifications */}

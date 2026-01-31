@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { OrderStatus } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     // Obține session-ul utilizatorului

@@ -53,7 +53,7 @@ export default function FBSettingsPage() {
 
   // Test connection
   const [testingPageId, setTestingPageId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<Record<string, { success: boolean; message: string; permissions?: { granted: string[]; missing: string[] }; hint?: string } | null>>({});
+  const [testResult, setTestResult] = useState<Record<string, { success: boolean; message: string; checks?: { name: string; ok: boolean }[]; hint?: string } | null>>({});
   const [testingPostId, setTestingPostId] = useState<string | null>(null);
   const [postTestResult, setPostTestResult] = useState<Record<string, { success: boolean; message: string; hint?: string } | null>>({});
 
@@ -474,24 +474,13 @@ export default function FBSettingsPage() {
                       {testResult[page.id]!.hint && (
                         <p className="text-zinc-400">{testResult[page.id]!.hint}</p>
                       )}
-                      {testResult[page.id]!.permissions?.missing && testResult[page.id]!.permissions!.missing.length > 0 && (
-                        <div className="mt-1">
-                          <p className="text-red-400">Missing permissions:</p>
-                          <ul className="list-disc list-inside text-red-300/80">
-                            {testResult[page.id]!.permissions!.missing.map((p) => (
-                              <li key={p}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {testResult[page.id]!.permissions?.granted && testResult[page.id]!.permissions!.granted.length > 0 && (
-                        <div className="mt-1">
-                          <p className="text-emerald-400">Granted permissions:</p>
-                          <ul className="list-disc list-inside text-emerald-300/80">
-                            {testResult[page.id]!.permissions!.granted.map((p) => (
-                              <li key={p}>{p}</li>
-                            ))}
-                          </ul>
+                      {testResult[page.id]!.checks && testResult[page.id]!.checks!.length > 0 && (
+                        <div className="mt-1 flex items-center gap-3">
+                          {testResult[page.id]!.checks!.map((check) => (
+                            <span key={check.name} className={check.ok ? "text-emerald-400" : "text-red-400"}>
+                              {check.ok ? "\u2713" : "\u2717"} {check.name}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>

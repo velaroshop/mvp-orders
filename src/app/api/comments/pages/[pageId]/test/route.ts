@@ -82,45 +82,47 @@ export async function POST(
 
     const pageData = await tokenRes.json();
 
-    // Test 2: Check permissions by calling /me/permissions
-    const permUrl = `${META_GRAPH_API}/me/permissions?access_token=${page.page_access_token}`;
-    const permRes = await fetch(permUrl);
+    // Test 2: Try to fetch recent posts (proves read access works)
+    const postsUrl = `${META_GRAPH_API}/${page.page_id}/posts?fields=id&limit=1&access_token=${page.page_access_token}`;
+    const postsRes = await fetch(postsUrl);
+    const canReadPosts = postsRes.ok;
 
-    let permissions: { name: string; status: string }[] = [];
-    if (permRes.ok) {
-      const permData = await permRes.json();
-      permissions = (permData.data || []).map((p: any) => ({
-        name: p.permission,
-        status: p.status,
-      }));
+    // Test 3: Try to fetch comments on a post (if posts exist)
+    let canReadComments = false;
+    if (canReadPosts) {
+      const postsData = await postsRes.json();
+      if (postsData.data && postsData.data.length > 0) {
+        const testPostId = postsData.data[0].id;
+        const commentsUrl = `${META_GRAPH_API}/${testPostId}/comments?fields=id&limit=1&access_token=${page.page_access_token}`;
+        const commentsRes = await fetch(commentsUrl);
+        canReadComments = commentsRes.ok;
+      } else {
+        // No posts to test, assume comments would work if posts work
+        canReadComments = true;
+      }
     }
 
-    const requiredPerms = [
-      "pages_read_engagement",
-      "pages_read_user_content",
-      "pages_manage_engagement",
-      "pages_manage_metadata",
+    const checks = [
+      { name: "Page info", ok: true },
+      { name: "Read posts", ok: canReadPosts },
+      { name: "Read comments", ok: canReadComments },
     ];
 
-    const grantedPerms = permissions
-      .filter((p) => p.status === "granted")
-      .map((p) => p.name);
-
-    const missingPerms = requiredPerms.filter((p) => !grantedPerms.includes(p));
+    const allPassed = checks.every((c) => c.ok);
+    const failed = checks.filter((c) => !c.ok).map((c) => c.name);
 
     return NextResponse.json({
-      success: missingPerms.length === 0,
+      success: allPassed,
       test: "token",
       pageName: pageData.name,
       facebookPageId: pageData.id,
-      permissions: {
-        granted: grantedPerms.filter((p) => requiredPerms.includes(p)),
-        missing: missingPerms,
-      },
-      message:
-        missingPerms.length === 0
-          ? "Token is valid and all required permissions are granted"
-          : `Token is valid but missing permissions: ${missingPerms.join(", ")}`,
+      checks,
+      message: allPassed
+        ? `Connected to "${pageData.name}" - all checks passed`
+        : `Connected to "${pageData.name}" but failed: ${failed.join(", ")}`,
+      hint: !allPassed
+        ? "The Page Access Token may not have enough permissions. Re-generate it with pages_read_engagement, pages_read_user_content, pages_manage_engagement, pages_manage_metadata."
+        : undefined,
     });
   } catch (error: any) {
     console.error("[FB Test] Error testing connection:", error);

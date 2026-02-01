@@ -65,6 +65,20 @@ export default function Sidebar() {
     },
   ];
 
+  // Comments moderation module - separate section
+  const commentsMenuItems = [
+    {
+      name: "Comments",
+      href: "/admin/comments",
+      icon: "💬",
+    },
+    {
+      name: "FB Settings",
+      href: "/admin/comments/settings",
+      icon: "⚙️",
+    },
+  ];
+
   // Filter menu items based on user role
   const menuItems = useMemo(() => {
     const userRole = (session?.user as any)?.activeRole as UserRole;
@@ -74,6 +88,17 @@ export default function Sidebar() {
     }
 
     return allMenuItems.filter((item) => hasRoutePermission(item.href, userRole));
+  }, [session]);
+
+  // Filter comments module items based on user role
+  const filteredCommentsItems = useMemo(() => {
+    const userRole = (session?.user as any)?.activeRole as UserRole;
+
+    if (!userRole) {
+      return commentsMenuItems;
+    }
+
+    return commentsMenuItems.filter((item) => hasRoutePermission(item.href, userRole));
   }, [session]);
 
   // Check if user should see SUPERADMIN link (OWNER from superadmin org)
@@ -165,6 +190,32 @@ export default function Sidebar() {
               <span className="text-sm font-medium">{item.name}</span>
             </Link>
           ))}
+
+          {/* Comments moderation module - separate section */}
+          {filteredCommentsItems.length > 0 && (
+            <>
+              <div className="my-2 border-t border-zinc-700" />
+              {filteredCommentsItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`
+                    flex items-center gap-2 px-3 py-2 rounded-lg
+                    transition-all duration-200
+                    ${
+                      isActive(item.href)
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    }
+                  `}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm font-medium">{item.name}</span>
+                </Link>
+              ))}
+            </>
+          )}
 
           {/* SUPERADMIN link - only for OWNER from superadmin organization */}
           {showSuperadminLink && (

@@ -114,16 +114,21 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate revenue by product
-    const productRevenue: Record<string, number> = {};
+    const productRevenue: Record<string, { revenue: number; unitsSold: number }> = {};
     filteredOrders.forEach((order: any) => {
       const productName = order.product_name || "Unknown Product";
       const orderTotal = order.total || 0;
-      productRevenue[productName] = (productRevenue[productName] || 0) + orderTotal;
+      const quantity = order.product_quantity || 1;
+      if (!productRevenue[productName]) {
+        productRevenue[productName] = { revenue: 0, unitsSold: 0 };
+      }
+      productRevenue[productName].revenue += orderTotal;
+      productRevenue[productName].unitsSold += quantity;
     });
 
     // Convert to array and sort by revenue (descending)
     const revenueByProduct = Object.entries(productRevenue)
-      .map(([name, revenue]) => ({ name, revenue }))
+      .map(([name, data]) => ({ name, revenue: data.revenue, unitsSold: data.unitsSold }))
       .sort((a, b) => b.revenue - a.revenue);
 
     // Calculate product sales analysis (units sold per product)

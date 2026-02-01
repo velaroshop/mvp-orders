@@ -6,6 +6,7 @@ import RevenueGrowthChart from "../components/RevenueGrowthChart";
 interface ProductRevenue {
   name: string;
   revenue: number;
+  unitsSold: number;
 }
 
 interface UpsellSplit {
@@ -544,7 +545,10 @@ export default function DashboardPage() {
                   <div key={product.name} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-white truncate max-w-[60%]">{product.name}</span>
-                      <span className="text-white font-semibold">{product.revenue.toFixed(2)} RON</span>
+                      <span className="text-white font-semibold">
+                        {product.revenue.toFixed(2)} RON
+                        <span className="text-zinc-400 font-normal text-xs ml-1.5">({product.unitsSold} buc)</span>
+                      </span>
                     </div>
                     <div className="w-full bg-zinc-700 rounded-full h-2">
                       <div

@@ -19,7 +19,6 @@ interface AdPost {
   ad_account?: string;
   campaign?: string;
   adset?: string;
-  ad_name?: string;
   created_at: string;
 }
 
@@ -47,7 +46,7 @@ export default function FBSettingsPage() {
   // Ad modal state
   const [showAdModal, setShowAdModal] = useState(false);
   const [adModalPageId, setAdModalPageId] = useState<string | null>(null);
-  const [adFormData, setAdFormData] = useState({ postId: "", postName: "", adAccount: "", campaign: "", adset: "", adName: "" });
+  const [adFormData, setAdFormData] = useState({ postId: "", postName: "", adAccount: "", campaign: "", adset: "" });
   const [isSavingAd, setIsSavingAd] = useState(false);
   const [adFormError, setAdFormError] = useState<string | null>(null);
 
@@ -222,7 +221,7 @@ export default function FBSettingsPage() {
 
   const openAddAdModal = (pageId: string) => {
     setAdModalPageId(pageId);
-    setAdFormData({ postId: "", postName: "", adAccount: "", campaign: "", adset: "", adName: "" });
+    setAdFormData({ postId: "", postName: "", adAccount: "", campaign: "", adset: "" });
     setAdFormError(null);
     setShowAdModal(true);
   };
@@ -248,7 +247,6 @@ export default function FBSettingsPage() {
           adAccount: adFormData.adAccount || undefined,
           campaign: adFormData.campaign || undefined,
           adset: adFormData.adset || undefined,
-          adName: adFormData.adName || undefined,
         }),
       });
 
@@ -541,7 +539,7 @@ export default function FBSettingsPage() {
                               <div>
                                 <p className="text-sm text-white">{ad.post_name}</p>
                                 <p className="text-xs text-zinc-500 font-mono">{ad.post_id}</p>
-                                {(ad.ad_account || ad.campaign || ad.adset || ad.ad_name) && (
+                                {(ad.ad_account || ad.campaign || ad.adset) && (
                                   <div className="flex items-center gap-1 mt-1 flex-wrap">
                                     {ad.ad_account && (
                                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-700 text-zinc-400">{ad.ad_account}</span>
@@ -556,12 +554,6 @@ export default function FBSettingsPage() {
                                       <>
                                         <span className="text-zinc-600 text-[10px]">/</span>
                                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-400 border border-purple-800/50">{ad.adset}</span>
-                                      </>
-                                    )}
-                                    {ad.ad_name && (
-                                      <>
-                                        <span className="text-zinc-600 text-[10px]">/</span>
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/30 text-emerald-400 border border-emerald-800/50">{ad.ad_name}</span>
                                       </>
                                     )}
                                   </div>
@@ -748,7 +740,7 @@ export default function FBSettingsPage() {
 
               <div className="border-t border-zinc-700 pt-4 mt-2">
                 <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Hierarchy (optional)</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs text-zinc-400 mb-1">Ad Account</label>
                     <input
@@ -793,22 +785,6 @@ export default function FBSettingsPage() {
                     />
                     <datalist id="dl-adsets">
                       {[...new Set((adModalPageId && adPosts[adModalPageId] || []).map(a => a.adset).filter(Boolean))].map(v => (
-                        <option key={v} value={v!} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-zinc-400 mb-1">Ad Name</label>
-                    <input
-                      type="text"
-                      list="dl-adnames"
-                      value={adFormData.adName}
-                      onChange={(e) => setAdFormData({ ...adFormData, adName: e.target.value })}
-                      placeholder="e.g. Video 1"
-                      className="w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <datalist id="dl-adnames">
-                      {[...new Set((adModalPageId && adPosts[adModalPageId] || []).map(a => a.ad_name).filter(Boolean))].map(v => (
                         <option key={v} value={v!} />
                       ))}
                     </datalist>

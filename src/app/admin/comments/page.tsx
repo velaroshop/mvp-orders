@@ -19,7 +19,6 @@ interface AdPost {
   ad_account?: string;
   campaign?: string;
   adset?: string;
-  ad_name?: string;
 }
 
 interface Comment {
@@ -450,7 +449,7 @@ export default function CommentsPage() {
           />
           <div className="min-w-0">
             <span className="text-sm font-medium text-white truncate block">
-              {ad.ad_name || ad.post_name}
+              {ad.post_name}
             </span>
             <span className="text-xs text-zinc-500 truncate block">
               {ad.post_id}

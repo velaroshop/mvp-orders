@@ -39,7 +39,7 @@ export async function GET(
 
     const { data: ads, error } = await supabaseAdmin
       .from("facebook_ad_posts")
-      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, ad_name, created_at")
+      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, created_at")
       .eq("facebook_page_id", pageId)
       .order("created_at", { ascending: true });
 
@@ -92,7 +92,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { postId, postName, adAccount, campaign, adset, adName } = body;
+    const { postId, postName, adAccount, campaign, adset } = body;
 
     if (!postId || !postName) {
       return NextResponse.json(
@@ -124,12 +124,11 @@ export async function POST(
     if (adAccount) insertData.ad_account = adAccount;
     if (campaign) insertData.campaign = campaign;
     if (adset) insertData.adset = adset;
-    if (adName) insertData.ad_name = adName;
 
     const { data: newAd, error } = await supabaseAdmin
       .from("facebook_ad_posts")
       .insert(insertData)
-      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, ad_name, created_at")
+      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, created_at")
       .single();
 
     if (error) {

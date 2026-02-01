@@ -41,7 +41,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { postName, isActive, adAccount, campaign, adset, adName } = body;
+    const { postName, isActive, adAccount, campaign, adset } = body;
 
     const updateData: Record<string, any> = { updated_at: new Date().toISOString() };
     if (postName !== undefined) updateData.post_name = postName;
@@ -49,14 +49,13 @@ export async function PUT(
     if (adAccount !== undefined) updateData.ad_account = adAccount;
     if (campaign !== undefined) updateData.campaign = campaign;
     if (adset !== undefined) updateData.adset = adset;
-    if (adName !== undefined) updateData.ad_name = adName;
 
     const { data: updated, error } = await supabaseAdmin
       .from("facebook_ad_posts")
       .update(updateData)
       .eq("id", adId)
       .eq("facebook_page_id", pageId)
-      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, ad_name, created_at")
+      .select("id, post_id, post_name, is_active, ad_account, campaign, adset, created_at")
       .single();
 
     if (error) {

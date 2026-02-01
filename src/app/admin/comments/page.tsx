@@ -25,6 +25,7 @@ interface Comment {
   authorId: string;
   createdTime: string;
   isHidden: boolean;
+  replies?: Comment[];
 }
 
 type FilterType = "all" | "visible" | "hidden";
@@ -43,6 +44,9 @@ export default function CommentsPage() {
   // Comments
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [isLoadingComments, setIsLoadingComments] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState<string | null>(null);
+  const [cursors, setCursors] = useState<Record<string, string | null>>({});
+  const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<FilterType>("all");
 
   // Reply
@@ -117,7 +121,7 @@ export default function CommentsPage() {
     setIsLoadingComments(adPostId);
     try {
       const res = await fetch(
-        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments`
+        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=25`
       );
       if (!res.ok) {
         const data = await res.json();
@@ -125,10 +129,39 @@ export default function CommentsPage() {
       }
       const data = await res.json();
       setComments((prev) => ({ ...prev, [adPostId]: data.comments || [] }));
+      setCursors((prev) => ({ ...prev, [adPostId]: data.nextCursor }));
+      setHasMore((prev) => ({ ...prev, [adPostId]: data.hasMore }));
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoadingComments(null);
+    }
+  };
+
+  // Load more comments
+  const loadMoreComments = async (adPostId: string, fbPostId: string) => {
+    if (!selectedPageId || !cursors[adPostId]) return;
+
+    setIsLoadingMore(adPostId);
+    try {
+      const res = await fetch(
+        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=25&after=${cursors[adPostId]}`
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to fetch more comments");
+      }
+      const data = await res.json();
+      setComments((prev) => ({
+        ...prev,
+        [adPostId]: [...(prev[adPostId] || []), ...(data.comments || [])],
+      }));
+      setCursors((prev) => ({ ...prev, [adPostId]: data.nextCursor }));
+      setHasMore((prev) => ({ ...prev, [adPostId]: data.hasMore }));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoadingMore(null);
     }
   };
 
@@ -159,9 +192,18 @@ export default function CommentsPage() {
 
       setComments((prev) => ({
         ...prev,
-        [adId]: prev[adId].map((c) =>
-          c.id === comment.id ? { ...c, isHidden: !c.isHidden } : c
-        ),
+        [adId]: prev[adId].map((c) => {
+          if (c.id === comment.id) return { ...c, isHidden: !c.isHidden };
+          if (c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map((r) =>
+                r.id === comment.id ? { ...r, isHidden: !r.isHidden } : r
+              ),
+            };
+          }
+          return c;
+        }),
       }));
 
       showAction("success", comment.isHidden ? "Comment unhidden" : "Comment hidden");
@@ -221,7 +263,12 @@ export default function CommentsPage() {
       const adId = expandedAdId;
       setComments((prev) => ({
         ...prev,
-        [adId]: prev[adId].filter((c) => c.id !== deletingCommentId),
+        [adId]: prev[adId]
+          .filter((c) => c.id !== deletingCommentId)
+          .map((c) => c.replies
+            ? { ...c, replies: c.replies.filter((r) => r.id !== deletingCommentId) }
+            : c
+          ),
       }));
 
       setDeletingCommentId(null);
@@ -515,8 +562,72 @@ export default function CommentsPage() {
                               </button>
                             </div>
                           )}
+
+                          {/* Replies */}
+                          {comment.replies && comment.replies.length > 0 && (
+                            <div className="mt-3 ml-6 border-l-2 border-zinc-700 pl-4 space-y-3">
+                              {comment.replies.map((reply) => (
+                                <div
+                                  key={reply.id}
+                                  className={`${reply.isHidden ? "opacity-50" : ""}`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-medium text-blue-400">
+                                          {reply.authorName}
+                                        </span>
+                                        <span className="text-xs text-zinc-600">
+                                          {formatDate(reply.createdTime)}
+                                        </span>
+                                        {reply.isHidden && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
+                                            Hidden
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-zinc-400">
+                                        {reply.message}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      <button
+                                        onClick={() => handleToggleHide(reply, ad.id)}
+                                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                                          reply.isHidden
+                                            ? "text-emerald-400 hover:text-emerald-300 hover:bg-zinc-700"
+                                            : "text-amber-400 hover:text-amber-300 hover:bg-zinc-700"
+                                        }`}
+                                      >
+                                        {reply.isHidden ? "Unhide" : "Hide"}
+                                      </button>
+                                      <button
+                                        onClick={() => setDeletingCommentId(reply.id)}
+                                        className="px-2 py-1 text-xs text-red-400 hover:text-red-300 hover:bg-zinc-700 rounded transition-colors"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
+
+                      {/* Show more button */}
+                      {hasMore[ad.id] && (
+                        <div className="p-4 text-center">
+                          <button
+                            onClick={() => loadMoreComments(ad.id, ad.post_id)}
+                            disabled={isLoadingMore === ad.id}
+                            className="px-4 py-2 text-sm text-blue-400 hover:text-blue-300 hover:bg-zinc-700/50 rounded-md transition-colors disabled:opacity-50"
+                          >
+                            {isLoadingMore === ad.id ? "Loading..." : "Show more comments"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

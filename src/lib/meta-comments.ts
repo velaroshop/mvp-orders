@@ -38,6 +38,13 @@ export interface PostComment {
   authorId: string;
   createdTime: string;
   isHidden: boolean;
+  replies?: PostComment[];
+}
+
+export interface PaginatedComments {
+  comments: PostComment[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 /**
@@ -132,15 +139,18 @@ export async function getPageAdPosts(
 }
 
 /**
- * Fetch comments for a specific post
+ * Fetch comments for a specific post with pagination and replies
  */
 export async function getPostComments(
   postId: string,
   accessToken: string,
-  limit = 100,
-  filter: "stream" | "toplevel" = "toplevel"
-): Promise<PostComment[]> {
-  const url = `${META_GRAPH_API}/${postId}/comments?fields=id,message,from,created_time,is_hidden&limit=${limit}&filter=${filter}&access_token=${accessToken}`;
+  limit = 25,
+  after?: string
+): Promise<PaginatedComments> {
+  let url = `${META_GRAPH_API}/${postId}/comments?fields=id,message,from,created_time,is_hidden&order=reverse_chronological&limit=${limit}&filter=toplevel&access_token=${accessToken}`;
+  if (after) {
+    url += `&after=${after}`;
+  }
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -150,14 +160,55 @@ export async function getPostComments(
 
   const data: MetaPaginatedResponse<MetaComment> = await response.json();
 
-  return data.data.map((comment) => ({
-    id: comment.id,
-    message: comment.message,
-    authorName: comment.from?.name || "Unknown",
-    authorId: comment.from?.id || "",
-    createdTime: comment.created_time,
-    isHidden: comment.is_hidden,
-  }));
+  // Fetch replies for each comment in parallel
+  const comments = await Promise.all(
+    data.data.map(async (comment) => {
+      const replies = await fetchReplies(comment.id, accessToken);
+      return {
+        id: comment.id,
+        message: comment.message,
+        authorName: comment.from?.name || "Unknown",
+        authorId: comment.from?.id || "",
+        createdTime: comment.created_time,
+        isHidden: comment.is_hidden,
+        replies: replies.length > 0 ? replies : undefined,
+      };
+    })
+  );
+
+  return {
+    comments,
+    nextCursor: data.paging?.cursors?.after || null,
+    hasMore: !!data.paging?.next,
+  };
+}
+
+/**
+ * Fetch replies for a specific comment
+ */
+async function fetchReplies(
+  commentId: string,
+  accessToken: string
+): Promise<PostComment[]> {
+  const url = `${META_GRAPH_API}/${commentId}/comments?fields=id,message,from,created_time,is_hidden&limit=50&access_token=${accessToken}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+
+    const data: MetaPaginatedResponse<MetaComment> = await response.json();
+
+    return data.data.map((reply) => ({
+      id: reply.id,
+      message: reply.message,
+      authorName: reply.from?.name || "Unknown",
+      authorId: reply.from?.id || "",
+      createdTime: reply.created_time,
+      isHidden: reply.is_hidden,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /**

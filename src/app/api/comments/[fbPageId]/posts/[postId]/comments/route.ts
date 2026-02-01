@@ -42,9 +42,13 @@ export async function GET(
       return NextResponse.json({ error: "Facebook page is inactive" }, { status: 400 });
     }
 
-    const comments = await getPostComments(postId, page.page_access_token);
+    const { searchParams } = new URL(request.url);
+    const after = searchParams.get("after") || undefined;
+    const limit = Math.min(parseInt(searchParams.get("limit") || "25", 10), 50);
 
-    return NextResponse.json({ comments });
+    const result = await getPostComments(postId, page.page_access_token, limit, after);
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error("[Comments] Error fetching comments:", error);
     return NextResponse.json(

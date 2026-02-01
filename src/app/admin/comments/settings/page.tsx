@@ -51,6 +51,12 @@ export default function FBSettingsPage() {
   const [deleteAdInfo, setDeleteAdInfo] = useState<{ pageId: string; adId: string } | null>(null);
   const [isDeletingAd, setIsDeletingAd] = useState(false);
 
+  // Test connection
+  const [testingPageId, setTestingPageId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, { success: boolean; message: string; permissions?: { granted: string[]; missing: string[] }; hint?: string } | null>>({});
+  const [testingPostId, setTestingPostId] = useState<string | null>(null);
+  const [postTestResult, setPostTestResult] = useState<Record<string, { success: boolean; message: string; hint?: string } | null>>({});
+
   // ---- Pages ----
 
   const fetchPages = useCallback(async () => {
@@ -274,6 +280,68 @@ export default function FBSettingsPage() {
     }
   };
 
+  // ---- Test Connection ----
+
+  const handleTestPage = async (dbPageId: string) => {
+    setTestingPageId(dbPageId);
+    setTestResult((prev) => ({ ...prev, [dbPageId]: null }));
+
+    try {
+      const res = await fetch(`/api/comments/pages/${dbPageId}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setTestResult((prev) => ({ ...prev, [dbPageId]: data }));
+      } else {
+        setTestResult((prev) => ({
+          ...prev,
+          [dbPageId]: { success: false, message: data.error || "Test failed" },
+        }));
+      }
+    } catch (err: any) {
+      setTestResult((prev) => ({
+        ...prev,
+        [dbPageId]: { success: false, message: err.message },
+      }));
+    } finally {
+      setTestingPageId(null);
+    }
+  };
+
+  const handleTestPost = async (dbPageId: string, fbPostId: string, adId: string) => {
+    setTestingPostId(adId);
+    setPostTestResult((prev) => ({ ...prev, [adId]: null }));
+
+    try {
+      const res = await fetch(`/api/comments/pages/${dbPageId}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: fbPostId }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPostTestResult((prev) => ({ ...prev, [adId]: data }));
+      } else {
+        setPostTestResult((prev) => ({
+          ...prev,
+          [adId]: { success: false, message: data.error || "Test failed" },
+        }));
+      }
+    } catch (err: any) {
+      setPostTestResult((prev) => ({
+        ...prev,
+        [adId]: { success: false, message: err.message },
+      }));
+    } finally {
+      setTestingPostId(null);
+    }
+  };
+
   const toggleAdActive = async (pageId: string, ad: AdPost) => {
     try {
       const res = await fetch(`/api/comments/pages/${pageId}/ads/${ad.id}`, {
@@ -370,6 +438,13 @@ export default function FBSettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => handleTestPage(page.id)}
+                    disabled={testingPageId === page.id}
+                    className="text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 transition-colors"
+                  >
+                    {testingPageId === page.id ? "Testing..." : "Test"}
+                  </button>
+                  <button
                     onClick={() => openEditPageModal(page)}
                     className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                   >
@@ -383,6 +458,52 @@ export default function FBSettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Test result */}
+              {testResult[page.id] && (
+                <div
+                  className={`mx-6 mb-4 rounded-lg p-3 text-xs ${
+                    testResult[page.id]!.success
+                      ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
+                      : "bg-red-900/30 border border-red-700 text-red-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <p className="font-medium">{testResult[page.id]!.message}</p>
+                      {testResult[page.id]!.hint && (
+                        <p className="text-zinc-400">{testResult[page.id]!.hint}</p>
+                      )}
+                      {testResult[page.id]!.permissions?.missing && testResult[page.id]!.permissions!.missing.length > 0 && (
+                        <div className="mt-1">
+                          <p className="text-red-400">Missing permissions:</p>
+                          <ul className="list-disc list-inside text-red-300/80">
+                            {testResult[page.id]!.permissions!.missing.map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {testResult[page.id]!.permissions?.granted && testResult[page.id]!.permissions!.granted.length > 0 && (
+                        <div className="mt-1">
+                          <p className="text-emerald-400">Granted permissions:</p>
+                          <ul className="list-disc list-inside text-emerald-300/80">
+                            {testResult[page.id]!.permissions!.granted.map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setTestResult((prev) => ({ ...prev, [page.id]: null }))}
+                      className="text-zinc-500 hover:text-zinc-300 flex-shrink-0"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Expanded: Ad Posts */}
               {expandedPageId === page.id && (
@@ -414,32 +535,66 @@ export default function FBSettingsPage() {
                   ) : (
                     <div className="divide-y divide-zinc-700/50">
                       {adPosts[page.id].map((ad) => (
-                        <div
-                          key={ad.id}
-                          className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <p className="text-sm text-white">{ad.post_name}</p>
-                              <p className="text-xs text-zinc-500 font-mono">{ad.post_id}</p>
+                        <div key={ad.id}>
+                          <div className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <p className="text-sm text-white">{ad.post_name}</p>
+                                <p className="text-xs text-zinc-500 font-mono">{ad.post_id}</p>
+                              </div>
+                              <button
+                                onClick={() => toggleAdActive(page.id, ad)}
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium cursor-pointer transition-colors ${
+                                  ad.is_active
+                                    ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700 hover:bg-emerald-900/50"
+                                    : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:bg-zinc-600"
+                                }`}
+                              >
+                                {ad.is_active ? "Active" : "Inactive"}
+                              </button>
                             </div>
-                            <button
-                              onClick={() => toggleAdActive(page.id, ad)}
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium cursor-pointer transition-colors ${
-                                ad.is_active
-                                  ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700 hover:bg-emerald-900/50"
-                                  : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:bg-zinc-600"
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleTestPost(page.id, ad.post_id, ad.id)}
+                                disabled={testingPostId === ad.id}
+                                className="text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 transition-colors"
+                              >
+                                {testingPostId === ad.id ? "Testing..." : "Test"}
+                              </button>
+                              <button
+                                onClick={() => setDeleteAdInfo({ pageId: page.id, adId: ad.id })}
+                                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Post test result */}
+                          {postTestResult[ad.id] && (
+                            <div
+                              className={`mx-6 mb-3 rounded-md p-2 text-xs ${
+                                postTestResult[ad.id]!.success
+                                  ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
+                                  : "bg-red-900/30 border border-red-700 text-red-300"
                               }`}
                             >
-                              {ad.is_active ? "Active" : "Inactive"}
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => setDeleteAdInfo({ pageId: page.id, adId: ad.id })}
-                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                          >
-                            Delete
-                          </button>
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p>{postTestResult[ad.id]!.message}</p>
+                                  {postTestResult[ad.id]!.hint && (
+                                    <p className="text-zinc-400 mt-0.5">{postTestResult[ad.id]!.hint}</p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => setPostTestResult((prev) => ({ ...prev, [ad.id]: null }))}
+                                  className="text-zinc-500 hover:text-zinc-300 shrink-0"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getPostComments } from "@/lib/meta-comments";
-import { analyzeSentiments } from "@/lib/sentiment";
 
 export const dynamic = "force-dynamic";
 
@@ -45,32 +44,9 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const after = searchParams.get("after") || undefined;
-    const limit = Math.min(parseInt(searchParams.get("limit") || "25", 10), 50);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
 
     const result = await getPostComments(postId, page.page_access_token, limit, after);
-
-    // Analyze sentiment for all comments + replies in one batch
-    const allMessages: { id: string; message: string }[] = [];
-    for (const c of result.comments) {
-      allMessages.push({ id: c.id, message: c.message });
-      if (c.replies) {
-        for (const r of c.replies) {
-          allMessages.push({ id: r.id, message: r.message });
-        }
-      }
-    }
-
-    const sentiments = await analyzeSentiments(allMessages);
-
-    // Attach sentiment to comments and replies
-    for (const c of result.comments) {
-      c.sentiment = sentiments[c.id] || "neutral";
-      if (c.replies) {
-        for (const r of c.replies) {
-          r.sentiment = sentiments[r.id] || "neutral";
-        }
-      }
-    }
 
     return NextResponse.json(result);
   } catch (error: any) {

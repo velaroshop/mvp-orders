@@ -38,7 +38,6 @@ export interface PostComment {
   authorId: string;
   createdTime: string;
   isHidden: boolean;
-  sentiment?: "positive" | "negative" | "neutral";
   replies?: PostComment[];
 }
 

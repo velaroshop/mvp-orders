@@ -25,7 +25,6 @@ interface Comment {
   authorId: string;
   createdTime: string;
   isHidden: boolean;
-  sentiment?: "positive" | "negative" | "neutral";
   replies?: Comment[];
 }
 
@@ -58,6 +57,10 @@ export default function CommentsPage() {
   // Delete
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Bulk delete
+  const [bulkDeleting, setBulkDeleting] = useState<string | null>(null); // adId being bulk deleted
+  const [bulkProgress, setBulkProgress] = useState<{ deleted: number; total: number; failed: number } | null>(null);
 
   // Errors
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +125,7 @@ export default function CommentsPage() {
     setIsLoadingComments(adPostId);
     try {
       const res = await fetch(
-        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=25`
+        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=50`
       );
       if (!res.ok) {
         const data = await res.json();
@@ -146,7 +149,7 @@ export default function CommentsPage() {
     setIsLoadingMore(adPostId);
     try {
       const res = await fetch(
-        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=25&after=${cursors[adPostId]}`
+        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments?limit=50&after=${cursors[adPostId]}`
       );
       if (!res.ok) {
         const data = await res.json();
@@ -282,6 +285,74 @@ export default function CommentsPage() {
     }
   };
 
+  // Bulk delete hidden comments
+  const getHiddenCommentIds = (adId: string): string[] => {
+    const adComments = comments[adId] || [];
+    const ids: string[] = [];
+    for (const c of adComments) {
+      if (c.isHidden) ids.push(c.id);
+      if (c.replies) {
+        for (const r of c.replies) {
+          if (r.isHidden) ids.push(r.id);
+        }
+      }
+    }
+    return ids;
+  };
+
+  const handleBulkDeleteHidden = async (adId: string) => {
+    const hiddenIds = getHiddenCommentIds(adId);
+    if (hiddenIds.length === 0) return;
+
+    // Cap at 20 per batch (server also enforces this)
+    const batch = hiddenIds.slice(0, 20);
+
+    setBulkDeleting(adId);
+    setBulkProgress({ deleted: 0, total: batch.length, failed: 0 });
+
+    try {
+      const res = await fetch("/api/comments/actions/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fbPageId: selectedPageId, commentIds: batch }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Bulk delete failed");
+      }
+
+      const result: { deleted: string[]; failed: { id: string; error: string }[] } = await res.json();
+
+      // Remove deleted comments from state
+      const deletedSet = new Set(result.deleted);
+      setComments((prev) => ({
+        ...prev,
+        [adId]: prev[adId]
+          .filter((c) => !deletedSet.has(c.id))
+          .map((c) => c.replies
+            ? { ...c, replies: c.replies.filter((r) => !deletedSet.has(r.id)) }
+            : c
+          ),
+      }));
+
+      setBulkProgress({ deleted: result.deleted.length, total: batch.length, failed: result.failed.length });
+
+      if (result.failed.length > 0) {
+        showAction("error", `Deleted ${result.deleted.length}/${batch.length} - ${result.failed.length} failed`);
+      } else {
+        showAction("success", `Deleted ${result.deleted.length} hidden comments`);
+      }
+    } catch (err: any) {
+      showAction("error", err.message);
+    } finally {
+      setTimeout(() => {
+        setBulkDeleting(null);
+        setBulkProgress(null);
+      }, 2000);
+    }
+  };
+
   const showAction = (type: "success" | "error", text: string) => {
     setActionMessage({ type, text });
     setTimeout(() => setActionMessage(null), 3000);
@@ -303,6 +374,11 @@ export default function CommentsPage() {
     if (filter === "all") return adComments;
     if (filter === "visible") return adComments.filter((c) => !c.isHidden);
     return adComments.filter((c) => c.isHidden);
+  };
+
+  // Count hidden comments (from loaded)
+  const getHiddenCount = (adId: string): number => {
+    return getHiddenCommentIds(adId).length;
   };
 
   // No pages configured
@@ -423,7 +499,10 @@ export default function CommentsPage() {
       {/* Ad Posts list */}
       {!isLoadingAds && adPosts.length > 0 && (
         <div className="space-y-3">
-          {adPosts.map((ad) => (
+          {adPosts.map((ad) => {
+            const hiddenCount = comments[ad.id] ? getHiddenCount(ad.id) : 0;
+
+            return (
             <div
               key={ad.id}
               className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden"
@@ -447,11 +526,18 @@ export default function CommentsPage() {
                       </p>
                     </div>
                   </div>
-                  {comments[ad.id] && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-zinc-700 text-zinc-300">
-                      {comments[ad.id].length} comments
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {hiddenCount > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
+                        {hiddenCount} hidden
+                      </span>
+                    )}
+                    {comments[ad.id] && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-zinc-700 text-zinc-300">
+                        {comments[ad.id].length} comments
+                      </span>
+                    )}
+                  </div>
                 </div>
               </button>
 
@@ -471,10 +557,50 @@ export default function CommentsPage() {
                     </div>
                   ) : (
                     <div className="divide-y divide-zinc-700/50">
-                      {getFilteredComments(ad.id).map((comment) => (
+                      {/* Bulk delete hidden button */}
+                      {hiddenCount > 0 && (
+                        <div className="p-3 bg-amber-900/10 border-b border-amber-700/30 flex items-center justify-between gap-3">
+                          <div className="text-sm text-amber-400">
+                            {bulkDeleting === ad.id && bulkProgress ? (
+                              <div className="flex items-center gap-3">
+                                <div className="animate-spin w-4 h-4 border-2 border-amber-700 border-t-amber-400 rounded-full"></div>
+                                <span>
+                                  Deleting... {bulkProgress.deleted}/{bulkProgress.total}
+                                  {bulkProgress.failed > 0 && ` (${bulkProgress.failed} failed)`}
+                                </span>
+                                <div className="w-32 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                                    style={{ width: `${((bulkProgress.deleted + bulkProgress.failed) / bulkProgress.total) * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <span>{hiddenCount} hidden comment{hiddenCount !== 1 ? "s" : ""} loaded</span>
+                            )}
+                          </div>
+                          {!bulkDeleting && (
+                            <button
+                              onClick={() => handleBulkDeleteHidden(ad.id)}
+                              className="px-3 py-1.5 text-xs font-medium bg-red-600/80 text-white rounded hover:bg-red-600 transition-colors"
+                            >
+                              Delete hidden ({Math.min(hiddenCount, 20)}{hiddenCount > 20 ? " of " + hiddenCount : ""})
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {getFilteredComments(ad.id).map((comment) => {
+                        const hasNoReplies = !comment.replies || comment.replies.length === 0;
+
+                        return (
                         <div
                           key={comment.id}
-                          className={`p-4 ${comment.isHidden ? "bg-zinc-900/50" : ""}`}
+                          className={`p-4 ${
+                            comment.isHidden
+                              ? "bg-amber-950/20 border-l-2 border-l-amber-600/50"
+                              : ""
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
@@ -485,25 +611,23 @@ export default function CommentsPage() {
                                 <span className="text-xs text-zinc-600">
                                   {formatDate(comment.createdTime)}
                                 </span>
-                                {comment.sentiment && comment.sentiment !== "neutral" && (
-                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                    comment.sentiment === "positive"
-                                      ? "bg-emerald-900/30 text-emerald-400 border border-emerald-700/50"
-                                      : "bg-red-900/30 text-red-400 border border-red-700/50"
-                                  }`}>
-                                    {comment.sentiment === "positive" ? "+" : "-"}
-                                  </span>
-                                )}
                                 {comment.isHidden && (
                                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
                                     Hidden
                                   </span>
                                 )}
+                                {hasNoReplies && !comment.isHidden && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-900/30 text-blue-400 border border-blue-700/50">
+                                    Needs reply
+                                  </span>
+                                )}
                               </div>
                               <p className={`text-sm ${
-                                comment.sentiment === "positive" ? "text-emerald-300" :
-                                comment.sentiment === "negative" ? "text-red-300" :
-                                "text-zinc-300"
+                                hasNoReplies && !comment.isHidden
+                                  ? "text-white font-semibold"
+                                  : comment.isHidden
+                                    ? "text-amber-200/70"
+                                    : "text-zinc-300"
                               }`}>
                                 {comment.message}
                               </p>
@@ -583,7 +707,7 @@ export default function CommentsPage() {
                               {comment.replies.map((reply) => (
                                 <div
                                   key={reply.id}
-                                  className={`${reply.isHidden ? "opacity-50" : ""}`}
+                                  className={`${reply.isHidden ? "bg-amber-950/20 rounded px-2 py-1 -mx-2" : ""}`}
                                 >
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
@@ -594,15 +718,6 @@ export default function CommentsPage() {
                                         <span className="text-xs text-zinc-600">
                                           {formatDate(reply.createdTime)}
                                         </span>
-                                        {reply.sentiment && reply.sentiment !== "neutral" && (
-                                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                            reply.sentiment === "positive"
-                                              ? "bg-emerald-900/30 text-emerald-400 border border-emerald-700/50"
-                                              : "bg-red-900/30 text-red-400 border border-red-700/50"
-                                          }`}>
-                                            {reply.sentiment === "positive" ? "+" : "-"}
-                                          </span>
-                                        )}
                                         {reply.isHidden && (
                                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
                                             Hidden
@@ -610,9 +725,7 @@ export default function CommentsPage() {
                                         )}
                                       </div>
                                       <p className={`text-sm ${
-                                        reply.sentiment === "positive" ? "text-emerald-400" :
-                                        reply.sentiment === "negative" ? "text-red-400" :
-                                        "text-zinc-400"
+                                        reply.isHidden ? "text-amber-200/70" : "text-zinc-400"
                                       }`}>
                                         {reply.message}
                                       </p>
@@ -641,7 +754,8 @@ export default function CommentsPage() {
                             </div>
                           )}
                         </div>
-                      ))}
+                      );
+                      })}
 
                       {/* Show more button */}
                       {hasMore[ad.id] && (
@@ -670,7 +784,8 @@ export default function CommentsPage() {
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 

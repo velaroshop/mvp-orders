@@ -25,6 +25,7 @@ interface Comment {
   authorId: string;
   createdTime: string;
   isHidden: boolean;
+  sentiment?: "positive" | "negative" | "neutral";
   replies?: Comment[];
 }
 
@@ -484,13 +485,26 @@ export default function CommentsPage() {
                                 <span className="text-xs text-zinc-600">
                                   {formatDate(comment.createdTime)}
                                 </span>
+                                {comment.sentiment && comment.sentiment !== "neutral" && (
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                    comment.sentiment === "positive"
+                                      ? "bg-emerald-900/30 text-emerald-400 border border-emerald-700/50"
+                                      : "bg-red-900/30 text-red-400 border border-red-700/50"
+                                  }`}>
+                                    {comment.sentiment === "positive" ? "+" : "-"}
+                                  </span>
+                                )}
                                 {comment.isHidden && (
                                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
                                     Hidden
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-zinc-300">
+                              <p className={`text-sm ${
+                                comment.sentiment === "positive" ? "text-emerald-300" :
+                                comment.sentiment === "negative" ? "text-red-300" :
+                                "text-zinc-300"
+                              }`}>
                                 {comment.message}
                               </p>
                             </div>
@@ -580,13 +594,26 @@ export default function CommentsPage() {
                                         <span className="text-xs text-zinc-600">
                                           {formatDate(reply.createdTime)}
                                         </span>
+                                        {reply.sentiment && reply.sentiment !== "neutral" && (
+                                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                            reply.sentiment === "positive"
+                                              ? "bg-emerald-900/30 text-emerald-400 border border-emerald-700/50"
+                                              : "bg-red-900/30 text-red-400 border border-red-700/50"
+                                          }`}>
+                                            {reply.sentiment === "positive" ? "+" : "-"}
+                                          </span>
+                                        )}
                                         {reply.isHidden && (
                                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-900/30 text-amber-400 border border-amber-700/50">
                                             Hidden
                                           </span>
                                         )}
                                       </div>
-                                      <p className="text-sm text-zinc-400">
+                                      <p className={`text-sm ${
+                                        reply.sentiment === "positive" ? "text-emerald-400" :
+                                        reply.sentiment === "negative" ? "text-red-400" :
+                                        "text-zinc-400"
+                                      }`}>
                                         {reply.message}
                                       </p>
                                     </div>

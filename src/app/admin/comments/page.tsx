@@ -11,12 +11,11 @@ interface FacebookPage {
   is_active: boolean;
 }
 
-interface Post {
+interface AdPost {
   id: string;
-  message: string;
-  createdTime: string;
-  fullPicture?: string;
-  commentsCount: number;
+  post_id: string;
+  post_name: string;
+  is_active: boolean;
 }
 
 interface Comment {
@@ -36,10 +35,10 @@ export default function CommentsPage() {
   const [selectedPageId, setSelectedPageId] = useState<string>("");
   const [isLoadingPages, setIsLoadingPages] = useState(true);
 
-  // Posts
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
-  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  // Ad Posts
+  const [adPosts, setAdPosts] = useState<AdPost[]>([]);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
+  const [expandedAdId, setExpandedAdId] = useState<string | null>(null);
 
   // Comments
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
@@ -82,50 +81,50 @@ export default function CommentsPage() {
     loadPages();
   }, []);
 
-  // Fetch posts when page changes
-  const fetchPosts = useCallback(async () => {
+  // Fetch ad posts when page changes
+  const fetchAdPosts = useCallback(async () => {
     if (!selectedPageId) return;
 
-    setIsLoadingPosts(true);
+    setIsLoadingAds(true);
     setError(null);
-    setPosts([]);
-    setExpandedPostId(null);
+    setAdPosts([]);
+    setExpandedAdId(null);
     setComments({});
 
     try {
-      const res = await fetch(`/api/comments/${selectedPageId}/posts`);
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to fetch posts");
-      }
+      const res = await fetch(`/api/comments/pages/${selectedPageId}/ads`);
+      if (!res.ok) throw new Error("Failed to fetch ad posts");
       const data = await res.json();
-      setPosts(data.posts || []);
+      const activeAds = (data.ads || []).filter((a: AdPost) => a.is_active);
+      setAdPosts(activeAds);
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setIsLoadingPosts(false);
+      setIsLoadingAds(false);
     }
   }, [selectedPageId]);
 
   useEffect(() => {
     if (selectedPageId) {
-      fetchPosts();
+      fetchAdPosts();
     }
-  }, [selectedPageId, fetchPosts]);
+  }, [selectedPageId, fetchAdPosts]);
 
-  // Fetch comments for a post
-  const fetchComments = async (postId: string) => {
+  // Fetch comments for an ad post
+  const fetchComments = async (adPostId: string, fbPostId: string) => {
     if (!selectedPageId) return;
 
-    setIsLoadingComments(postId);
+    setIsLoadingComments(adPostId);
     try {
-      const res = await fetch(`/api/comments/${selectedPageId}/posts/${postId}/comments`);
+      const res = await fetch(
+        `/api/comments/${selectedPageId}/posts/${encodeURIComponent(fbPostId)}/comments`
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to fetch comments");
       }
       const data = await res.json();
-      setComments((prev) => ({ ...prev, [postId]: data.comments || [] }));
+      setComments((prev) => ({ ...prev, [adPostId]: data.comments || [] }));
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -133,19 +132,19 @@ export default function CommentsPage() {
     }
   };
 
-  const togglePost = (postId: string) => {
-    if (expandedPostId === postId) {
-      setExpandedPostId(null);
+  const toggleAd = (ad: AdPost) => {
+    if (expandedAdId === ad.id) {
+      setExpandedAdId(null);
     } else {
-      setExpandedPostId(postId);
-      if (!comments[postId]) {
-        fetchComments(postId);
+      setExpandedAdId(ad.id);
+      if (!comments[ad.id]) {
+        fetchComments(ad.id, ad.post_id);
       }
     }
   };
 
   // Hide/Unhide
-  const handleToggleHide = async (comment: Comment, postId: string) => {
+  const handleToggleHide = async (comment: Comment, adId: string) => {
     try {
       const res = await fetch(`/api/comments/actions/${comment.id}/hide`, {
         method: "POST",
@@ -158,10 +157,9 @@ export default function CommentsPage() {
         throw new Error(data.error || "Failed to update comment");
       }
 
-      // Update local state
       setComments((prev) => ({
         ...prev,
-        [postId]: prev[postId].map((c) =>
+        [adId]: prev[adId].map((c) =>
           c.id === comment.id ? { ...c, isHidden: !c.isHidden } : c
         ),
       }));
@@ -173,7 +171,7 @@ export default function CommentsPage() {
   };
 
   // Reply
-  const handleReply = async (commentId: string, postId: string) => {
+  const handleReply = async (commentId: string, adId: string) => {
     if (!replyText.trim()) return;
 
     setIsSendingReply(true);
@@ -193,8 +191,9 @@ export default function CommentsPage() {
       setReplyText("");
       showAction("success", "Reply sent");
 
-      // Refresh comments
-      fetchComments(postId);
+      // Refresh comments for this ad
+      const ad = adPosts.find((a) => a.id === adId);
+      if (ad) fetchComments(adId, ad.post_id);
     } catch (err: any) {
       showAction("error", err.message);
     } finally {
@@ -204,7 +203,7 @@ export default function CommentsPage() {
 
   // Delete
   const handleDelete = async () => {
-    if (!deletingCommentId || !expandedPostId) return;
+    if (!deletingCommentId || !expandedAdId) return;
 
     setIsDeleting(true);
     try {
@@ -219,11 +218,10 @@ export default function CommentsPage() {
         throw new Error(data.error || "Failed to delete comment");
       }
 
-      // Remove from local state
-      const postId = expandedPostId;
+      const adId = expandedAdId;
       setComments((prev) => ({
         ...prev,
-        [postId]: prev[postId].filter((c) => c.id !== deletingCommentId),
+        [adId]: prev[adId].filter((c) => c.id !== deletingCommentId),
       }));
 
       setDeletingCommentId(null);
@@ -252,11 +250,11 @@ export default function CommentsPage() {
   };
 
   // Filter comments
-  const getFilteredComments = (postId: string) => {
-    const postComments = comments[postId] || [];
-    if (filter === "all") return postComments;
-    if (filter === "visible") return postComments.filter((c) => !c.isHidden);
-    return postComments.filter((c) => c.isHidden);
+  const getFilteredComments = (adId: string) => {
+    const adComments = comments[adId] || [];
+    if (filter === "all") return adComments;
+    if (filter === "visible") return adComments.filter((c) => !c.isHidden);
+    return adComments.filter((c) => c.isHidden);
   };
 
   // No pages configured
@@ -313,8 +311,8 @@ export default function CommentsPage() {
 
           {/* Refresh */}
           <button
-            onClick={fetchPosts}
-            disabled={isLoadingPosts}
+            onClick={fetchAdPosts}
+            disabled={isLoadingAds}
             className="px-3 py-2 bg-zinc-700 text-zinc-200 rounded-lg hover:bg-zinc-600 disabled:opacity-50 transition-colors text-sm"
           >
             Refresh
@@ -349,76 +347,86 @@ export default function CommentsPage() {
       )}
 
       {/* Loading */}
-      {(isLoadingPages || isLoadingPosts) && (
+      {(isLoadingPages || isLoadingAds) && (
         <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-12 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-zinc-600 border-t-blue-500 rounded-full mx-auto"></div>
           <p className="text-zinc-400 mt-4 text-sm">
-            {isLoadingPages ? "Loading pages..." : "Loading posts..."}
+            {isLoadingPages ? "Loading pages..." : "Loading ads..."}
           </p>
         </div>
       )}
 
-      {/* Posts list */}
-      {!isLoadingPosts && posts.length === 0 && !error && (
+      {/* No ads configured */}
+      {!isLoadingAds && adPosts.length === 0 && !error && !isLoadingPages && (
         <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-12 text-center">
-          <p className="text-zinc-400">No posts found for this page</p>
+          <p className="text-zinc-400 text-lg mb-2">No ad posts configured</p>
+          <p className="text-zinc-500 text-sm mb-6">
+            Add ad posts in FB Settings to start moderating their comments
+          </p>
+          <Link
+            href="/admin/comments/settings"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            Go to FB Settings
+          </Link>
         </div>
       )}
 
-      {!isLoadingPosts && posts.length > 0 && (
+      {/* Ad Posts list */}
+      {!isLoadingAds && adPosts.length > 0 && (
         <div className="space-y-3">
-          {posts.map((post) => (
+          {adPosts.map((ad) => (
             <div
-              key={post.id}
+              key={ad.id}
               className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden"
             >
-              {/* Post header - clickable */}
+              {/* Ad header - clickable */}
               <button
-                onClick={() => togglePost(post.id)}
+                onClick={() => toggleAd(ad)}
                 className="w-full text-left p-4 hover:bg-zinc-750 transition-colors"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white line-clamp-2">
-                      {post.message}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      {formatDate(post.createdTime)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-zinc-700 text-zinc-300">
-                      {post.commentsCount} comments
-                    </span>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
                     <span className="text-zinc-500 text-sm">
-                      {expandedPostId === post.id ? "▲" : "▼"}
+                      {expandedAdId === ad.id ? "▼" : "▶"}
                     </span>
+                    <div>
+                      <p className="text-sm text-white font-medium">
+                        {ad.post_name}
+                      </p>
+                      <p className="text-xs text-zinc-500 font-mono">
+                        {ad.post_id}
+                      </p>
+                    </div>
                   </div>
+                  {comments[ad.id] && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-zinc-700 text-zinc-300">
+                      {comments[ad.id].length} comments
+                    </span>
+                  )}
                 </div>
               </button>
 
               {/* Expanded comments */}
-              {expandedPostId === post.id && (
+              {expandedAdId === ad.id && (
                 <div className="border-t border-zinc-700">
-                  {isLoadingComments === post.id ? (
+                  {isLoadingComments === ad.id ? (
                     <div className="p-6 text-center">
                       <div className="animate-spin w-6 h-6 border-2 border-zinc-600 border-t-blue-500 rounded-full mx-auto"></div>
                       <p className="text-zinc-400 mt-2 text-xs">Loading comments...</p>
                     </div>
-                  ) : getFilteredComments(post.id).length === 0 ? (
+                  ) : getFilteredComments(ad.id).length === 0 ? (
                     <div className="p-6 text-center text-zinc-500 text-sm">
                       {filter !== "all"
                         ? `No ${filter} comments`
-                        : "No comments on this post"}
+                        : "No comments on this ad"}
                     </div>
                   ) : (
                     <div className="divide-y divide-zinc-700/50">
-                      {getFilteredComments(post.id).map((comment) => (
+                      {getFilteredComments(ad.id).map((comment) => (
                         <div
                           key={comment.id}
-                          className={`p-4 ${
-                            comment.isHidden ? "bg-zinc-900/50" : ""
-                          }`}
+                          className={`p-4 ${comment.isHidden ? "bg-zinc-900/50" : ""}`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
@@ -450,25 +458,22 @@ export default function CommentsPage() {
                                   setReplyText("");
                                 }}
                                 className="px-2 py-1 text-xs text-blue-400 hover:text-blue-300 hover:bg-zinc-700 rounded transition-colors"
-                                title="Reply"
                               >
                                 Reply
                               </button>
                               <button
-                                onClick={() => handleToggleHide(comment, post.id)}
+                                onClick={() => handleToggleHide(comment, ad.id)}
                                 className={`px-2 py-1 text-xs rounded transition-colors ${
                                   comment.isHidden
                                     ? "text-emerald-400 hover:text-emerald-300 hover:bg-zinc-700"
                                     : "text-amber-400 hover:text-amber-300 hover:bg-zinc-700"
                                 }`}
-                                title={comment.isHidden ? "Unhide" : "Hide"}
                               >
                                 {comment.isHidden ? "Unhide" : "Hide"}
                               </button>
                               <button
                                 onClick={() => setDeletingCommentId(comment.id)}
                                 className="px-2 py-1 text-xs text-red-400 hover:text-red-300 hover:bg-zinc-700 rounded transition-colors"
-                                title="Delete"
                               >
                                 Delete
                               </button>
@@ -485,7 +490,7 @@ export default function CommentsPage() {
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
-                                    handleReply(comment.id, post.id);
+                                    handleReply(comment.id, ad.id);
                                   }
                                 }}
                                 placeholder="Write a reply..."
@@ -493,7 +498,7 @@ export default function CommentsPage() {
                                 autoFocus
                               />
                               <button
-                                onClick={() => handleReply(comment.id, post.id)}
+                                onClick={() => handleReply(comment.id, ad.id)}
                                 disabled={isSendingReply || !replyText.trim()}
                                 className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                               >
@@ -518,7 +523,7 @@ export default function CommentsPage() {
                   {/* Refresh comments button */}
                   <div className="p-3 border-t border-zinc-700/50 text-center">
                     <button
-                      onClick={() => fetchComments(post.id)}
+                      onClick={() => fetchComments(ad.id, ad.post_id)}
                       className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                     >
                       Refresh comments

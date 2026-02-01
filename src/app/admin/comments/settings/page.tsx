@@ -11,21 +11,47 @@ interface FacebookPage {
   created_at: string;
 }
 
+interface AdPost {
+  id: string;
+  post_id: string;
+  post_name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function FBSettingsPage() {
   const [pages, setPages] = useState<FacebookPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Add/Edit modal state
-  const [showModal, setShowModal] = useState(false);
+  // Page modal state
+  const [showPageModal, setShowPageModal] = useState(false);
   const [editingPage, setEditingPage] = useState<FacebookPage | null>(null);
-  const [formData, setFormData] = useState({ pageName: "", pageId: "", pageAccessToken: "" });
-  const [isSaving, setIsSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [pageFormData, setPageFormData] = useState({ pageName: "", pageId: "", pageAccessToken: "" });
+  const [isSavingPage, setIsSavingPage] = useState(false);
+  const [pageFormError, setPageFormError] = useState<string | null>(null);
 
-  // Delete modal state
+  // Delete page modal
   const [deletePageId, setDeletePageId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingPage, setIsDeletingPage] = useState(false);
+
+  // Expanded page (show ads)
+  const [expandedPageId, setExpandedPageId] = useState<string | null>(null);
+  const [adPosts, setAdPosts] = useState<Record<string, AdPost[]>>({});
+  const [isLoadingAds, setIsLoadingAds] = useState<string | null>(null);
+
+  // Ad modal state
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [adModalPageId, setAdModalPageId] = useState<string | null>(null);
+  const [adFormData, setAdFormData] = useState({ postId: "", postName: "" });
+  const [isSavingAd, setIsSavingAd] = useState(false);
+  const [adFormError, setAdFormError] = useState<string | null>(null);
+
+  // Delete ad modal
+  const [deleteAdInfo, setDeleteAdInfo] = useState<{ pageId: string; adId: string } | null>(null);
+  const [isDeletingAd, setIsDeletingAd] = useState(false);
+
+  // ---- Pages ----
 
   const fetchPages = useCallback(async () => {
     try {
@@ -46,44 +72,43 @@ export default function FBSettingsPage() {
     fetchPages();
   }, [fetchPages]);
 
-  const openAddModal = () => {
+  const openAddPageModal = () => {
     setEditingPage(null);
-    setFormData({ pageName: "", pageId: "", pageAccessToken: "" });
-    setFormError(null);
-    setShowModal(true);
+    setPageFormData({ pageName: "", pageId: "", pageAccessToken: "" });
+    setPageFormError(null);
+    setShowPageModal(true);
   };
 
-  const openEditModal = (page: FacebookPage) => {
+  const openEditPageModal = (page: FacebookPage) => {
     setEditingPage(page);
-    setFormData({
+    setPageFormData({
       pageName: page.page_name,
       pageId: page.page_id,
       pageAccessToken: "",
     });
-    setFormError(null);
-    setShowModal(true);
+    setPageFormError(null);
+    setShowPageModal(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.pageName.trim() || !formData.pageId.trim()) {
-      setFormError("Page name and Page ID are required");
+  const handleSavePage = async () => {
+    if (!pageFormData.pageName.trim() || !pageFormData.pageId.trim()) {
+      setPageFormError("Page name and Page ID are required");
       return;
     }
 
-    if (!editingPage && !formData.pageAccessToken.trim()) {
-      setFormError("Access token is required for new pages");
+    if (!editingPage && !pageFormData.pageAccessToken.trim()) {
+      setPageFormError("Access token is required for new pages");
       return;
     }
 
-    setIsSaving(true);
-    setFormError(null);
+    setIsSavingPage(true);
+    setPageFormError(null);
 
     try {
       if (editingPage) {
-        // Update
-        const body: Record<string, any> = { pageName: formData.pageName };
-        if (formData.pageAccessToken.trim()) {
-          body.pageAccessToken = formData.pageAccessToken;
+        const body: Record<string, any> = { pageName: pageFormData.pageName };
+        if (pageFormData.pageAccessToken.trim()) {
+          body.pageAccessToken = pageFormData.pageAccessToken;
         }
 
         const res = await fetch(`/api/comments/pages/${editingPage.id}`, {
@@ -97,11 +122,10 @@ export default function FBSettingsPage() {
           throw new Error(data.error || "Failed to update page");
         }
       } else {
-        // Create
         const res = await fetch("/api/comments/pages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(pageFormData),
         });
 
         if (!res.ok) {
@@ -110,19 +134,19 @@ export default function FBSettingsPage() {
         }
       }
 
-      setShowModal(false);
+      setShowPageModal(false);
       fetchPages();
     } catch (err: any) {
-      setFormError(err.message);
+      setPageFormError(err.message);
     } finally {
-      setIsSaving(false);
+      setIsSavingPage(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeletePage = async () => {
     if (!deletePageId) return;
 
-    setIsDeleting(true);
+    setIsDeletingPage(true);
     try {
       const res = await fetch(`/api/comments/pages/${deletePageId}`, {
         method: "DELETE",
@@ -134,16 +158,17 @@ export default function FBSettingsPage() {
       }
 
       setDeletePageId(null);
+      if (expandedPageId === deletePageId) setExpandedPageId(null);
       fetchPages();
     } catch (err: any) {
       setError(err.message);
       setDeletePageId(null);
     } finally {
-      setIsDeleting(false);
+      setIsDeletingPage(false);
     }
   };
 
-  const toggleActive = async (page: FacebookPage) => {
+  const togglePageActive = async (page: FacebookPage) => {
     try {
       const res = await fetch(`/api/comments/pages/${page.id}`, {
         method: "PUT",
@@ -158,6 +183,112 @@ export default function FBSettingsPage() {
     }
   };
 
+  // ---- Ad Posts ----
+
+  const fetchAds = useCallback(async (pageId: string) => {
+    setIsLoadingAds(pageId);
+    try {
+      const res = await fetch(`/api/comments/pages/${pageId}/ads`);
+      if (!res.ok) throw new Error("Failed to fetch ad posts");
+      const data = await res.json();
+      setAdPosts((prev) => ({ ...prev, [pageId]: data.ads }));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoadingAds(null);
+    }
+  }, []);
+
+  const toggleExpandPage = (pageId: string) => {
+    if (expandedPageId === pageId) {
+      setExpandedPageId(null);
+    } else {
+      setExpandedPageId(pageId);
+      if (!adPosts[pageId]) {
+        fetchAds(pageId);
+      }
+    }
+  };
+
+  const openAddAdModal = (pageId: string) => {
+    setAdModalPageId(pageId);
+    setAdFormData({ postId: "", postName: "" });
+    setAdFormError(null);
+    setShowAdModal(true);
+  };
+
+  const handleSaveAd = async () => {
+    if (!adModalPageId) return;
+
+    if (!adFormData.postId.trim() || !adFormData.postName.trim()) {
+      setAdFormError("Post ID and name are required");
+      return;
+    }
+
+    setIsSavingAd(true);
+    setAdFormError(null);
+
+    try {
+      const res = await fetch(`/api/comments/pages/${adModalPageId}/ads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adFormData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to add ad post");
+      }
+
+      setShowAdModal(false);
+      fetchAds(adModalPageId);
+    } catch (err: any) {
+      setAdFormError(err.message);
+    } finally {
+      setIsSavingAd(false);
+    }
+  };
+
+  const handleDeleteAd = async () => {
+    if (!deleteAdInfo) return;
+
+    setIsDeletingAd(true);
+    try {
+      const res = await fetch(
+        `/api/comments/pages/${deleteAdInfo.pageId}/ads/${deleteAdInfo.adId}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete ad post");
+      }
+
+      setDeleteAdInfo(null);
+      fetchAds(deleteAdInfo.pageId);
+    } catch (err: any) {
+      setError(err.message);
+      setDeleteAdInfo(null);
+    } finally {
+      setIsDeletingAd(false);
+    }
+  };
+
+  const toggleAdActive = async (pageId: string, ad: AdPost) => {
+    try {
+      const res = await fetch(`/api/comments/pages/${pageId}/ads/${ad.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !ad.is_active }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update ad post");
+      fetchAds(pageId);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -165,11 +296,11 @@ export default function FBSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Facebook Pages</h1>
           <p className="text-sm text-zinc-400 mt-1">
-            Configure Facebook pages for comment moderation
+            Configure Facebook pages and ad posts for comment moderation
           </p>
         </div>
         <button
-          onClick={openAddModal}
+          onClick={openAddPageModal}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           + Add Page
@@ -180,6 +311,9 @@ export default function FBSettingsPage() {
       {error && (
         <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-300 text-sm">
           {error}
+          <button onClick={() => setError(null)} className="ml-2 underline text-red-400 hover:text-red-300">
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -196,78 +330,129 @@ export default function FBSettingsPage() {
             Add a Facebook page to start moderating comments
           </p>
           <button
-            onClick={openAddModal}
+            onClick={openAddPageModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             + Add Your First Page
           </button>
         </div>
       ) : (
-        /* Pages Table */
-        <div className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-zinc-700">
-                <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider px-6 py-3">
-                  Page Name
-                </th>
-                <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider px-6 py-3">
-                  Page ID
-                </th>
-                <th className="text-left text-xs font-medium text-zinc-400 uppercase tracking-wider px-6 py-3">
-                  Status
-                </th>
-                <th className="text-right text-xs font-medium text-zinc-400 uppercase tracking-wider px-6 py-3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-700">
-              {pages.map((page) => (
-                <tr key={page.id} className="hover:bg-zinc-750">
-                  <td className="px-6 py-4 text-sm text-white font-medium">
-                    {page.page_name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-zinc-400 font-mono">
-                    {page.page_id}
-                  </td>
-                  <td className="px-6 py-4">
+        /* Pages List */
+        <div className="space-y-4">
+          {pages.map((page) => (
+            <div
+              key={page.id}
+              className="bg-zinc-800 rounded-lg border border-zinc-700 overflow-hidden"
+            >
+              {/* Page header */}
+              <div className="flex items-center justify-between px-6 py-4">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => toggleExpandPage(page.id)}
+                    className="text-zinc-400 hover:text-white transition-colors"
+                  >
+                    {expandedPageId === page.id ? "▼" : "▶"}
+                  </button>
+                  <div>
+                    <h3 className="text-sm font-medium text-white">{page.page_name}</h3>
+                    <p className="text-xs text-zinc-500 font-mono">{page.page_id}</p>
+                  </div>
+                  <button
+                    onClick={() => togglePageActive(page)}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                      page.is_active
+                        ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700 hover:bg-emerald-900/50"
+                        : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:bg-zinc-600"
+                    }`}
+                  >
+                    {page.is_active ? "Active" : "Inactive"}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openEditPageModal(page)}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setDeletePageId(page.id)}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded: Ad Posts */}
+              {expandedPageId === page.id && (
+                <div className="border-t border-zinc-700 bg-zinc-850">
+                  <div className="px-6 py-3 flex items-center justify-between border-b border-zinc-700/50">
+                    <h4 className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                      Ad Posts / Reclame
+                    </h4>
                     <button
-                      onClick={() => toggleActive(page)}
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                        page.is_active
-                          ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700 hover:bg-emerald-900/50"
-                          : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:bg-zinc-600"
-                      }`}
+                      onClick={() => openAddAdModal(page.id)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-xs font-medium"
                     >
-                      {page.is_active ? "Active" : "Inactive"}
+                      + Add Ad
                     </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(page)}
-                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeletePageId(page.id)}
-                        className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Delete
-                      </button>
+                  </div>
+
+                  {isLoadingAds === page.id ? (
+                    <div className="p-6 text-center">
+                      <div className="animate-spin w-6 h-6 border-2 border-zinc-600 border-t-blue-500 rounded-full mx-auto"></div>
+                      <p className="text-zinc-500 mt-2 text-xs">Loading ads...</p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ) : !adPosts[page.id] || adPosts[page.id].length === 0 ? (
+                    <div className="p-6 text-center">
+                      <p className="text-zinc-500 text-sm">No ad posts configured</p>
+                      <p className="text-zinc-600 text-xs mt-1">
+                        Add ad post IDs to monitor their comments
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-700/50">
+                      {adPosts[page.id].map((ad) => (
+                        <div
+                          key={ad.id}
+                          className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className="text-sm text-white">{ad.post_name}</p>
+                              <p className="text-xs text-zinc-500 font-mono">{ad.post_id}</p>
+                            </div>
+                            <button
+                              onClick={() => toggleAdActive(page.id, ad)}
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium cursor-pointer transition-colors ${
+                                ad.is_active
+                                  ? "bg-emerald-900/30 text-emerald-300 border border-emerald-700 hover:bg-emerald-900/50"
+                                  : "bg-zinc-700 text-zinc-400 border border-zinc-600 hover:bg-zinc-600"
+                              }`}
+                            >
+                              {ad.is_active ? "Active" : "Inactive"}
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => setDeleteAdInfo({ pageId: page.id, adId: ad.id })}
+                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Add/Edit Modal */}
-      {showModal && (
+      {/* Add/Edit Page Modal */}
+      {showPageModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 max-w-md w-full">
             <div className="p-6 border-b border-zinc-700">
@@ -277,34 +462,30 @@ export default function FBSettingsPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              {formError && (
+              {pageFormError && (
                 <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
-                  {formError}
+                  {pageFormError}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Page Name
-                </label>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Page Name</label>
                 <input
                   type="text"
-                  value={formData.pageName}
-                  onChange={(e) => setFormData({ ...formData, pageName: e.target.value })}
-                  placeholder="e.g. My Business Page"
+                  value={pageFormData.pageName}
+                  onChange={(e) => setPageFormData({ ...pageFormData, pageName: e.target.value })}
+                  placeholder="e.g. Ofertio"
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Facebook Page ID
-                </label>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Facebook Page ID</label>
                 <input
                   type="text"
-                  value={formData.pageId}
-                  onChange={(e) => setFormData({ ...formData, pageId: e.target.value })}
-                  placeholder="e.g. 123456789012345"
+                  value={pageFormData.pageId}
+                  onChange={(e) => setPageFormData({ ...pageFormData, pageId: e.target.value })}
+                  placeholder="e.g. 556795054194964"
                   disabled={!!editingPage}
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 />
@@ -314,52 +495,120 @@ export default function FBSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Page Access Token
-                </label>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Page Access Token</label>
                 <textarea
-                  value={formData.pageAccessToken}
-                  onChange={(e) => setFormData({ ...formData, pageAccessToken: e.target.value })}
+                  value={pageFormData.pageAccessToken}
+                  onChange={(e) => setPageFormData({ ...pageFormData, pageAccessToken: e.target.value })}
                   placeholder={editingPage ? "Leave empty to keep current token" : "Paste your Page Access Token here"}
                   rows={3}
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-xs"
                 />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Generate from Facebook Business Settings or Graph API Explorer
-                </p>
               </div>
             </div>
 
             <div className="p-6 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
               <button
-                onClick={() => setShowModal(false)}
-                disabled={isSaving}
+                onClick={() => setShowPageModal(false)}
+                disabled={isSavingPage}
                 className="px-4 py-2 bg-zinc-700 text-zinc-200 rounded-md hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSave}
-                disabled={isSaving}
+                onClick={handleSavePage}
+                disabled={isSavingPage}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
-                {isSaving ? "Saving..." : editingPage ? "Update" : "Add Page"}
+                {isSavingPage ? "Saving..." : editingPage ? "Update" : "Add Page"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation */}
+      {/* Add Ad Modal */}
+      {showAdModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 max-w-md w-full">
+            <div className="p-6 border-b border-zinc-700">
+              <h3 className="text-lg font-semibold text-white">Add Ad Post</h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {adFormError && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+                  {adFormError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Ad Name</label>
+                <input
+                  type="text"
+                  value={adFormData.postName}
+                  onChange={(e) => setAdFormData({ ...adFormData, postName: e.target.value })}
+                  placeholder="e.g. Promo Vara 2025"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">Post ID</label>
+                <input
+                  type="text"
+                  value={adFormData.postId}
+                  onChange={(e) => setAdFormData({ ...adFormData, postId: e.target.value })}
+                  placeholder="e.g. 556795054194964_123456789"
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                />
+                <p className="text-xs text-zinc-500 mt-1">
+                  Find in Ads Manager: click ad → Preview → copy Post ID from URL
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 bg-zinc-800/50 border-t border-zinc-700 flex justify-end gap-3">
+              <button
+                onClick={() => setShowAdModal(false)}
+                disabled={isSavingAd}
+                className="px-4 py-2 bg-zinc-700 text-zinc-200 rounded-md hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAd}
+                disabled={isSavingAd}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {isSavingAd ? "Saving..." : "Add Ad"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Page Confirmation */}
       <ConfirmModal
         isOpen={!!deletePageId}
         onClose={() => setDeletePageId(null)}
-        onConfirm={handleDelete}
+        onConfirm={handleDeletePage}
         title="Delete Facebook Page"
-        message="Are you sure you want to delete this Facebook page? You will no longer be able to moderate comments from this page."
+        message="Are you sure you want to delete this Facebook page and all its configured ads? You will no longer be able to moderate comments from this page."
         confirmText="Delete"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
-        isProcessing={isDeleting}
+        isProcessing={isDeletingPage}
+      />
+
+      {/* Delete Ad Confirmation */}
+      <ConfirmModal
+        isOpen={!!deleteAdInfo}
+        onClose={() => setDeleteAdInfo(null)}
+        onConfirm={handleDeleteAd}
+        title="Delete Ad Post"
+        message="Are you sure you want to remove this ad post? You will no longer see its comments in the moderation page."
+        confirmText="Delete"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+        isProcessing={isDeletingAd}
       />
     </div>
   );

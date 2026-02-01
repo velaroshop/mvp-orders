@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import ConfirmModal from "../../components/ConfirmModal";
 
 interface FacebookPage {
@@ -23,6 +25,19 @@ interface AdPost {
 }
 
 export default function FBSettingsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Superadmin access check
+  useEffect(() => {
+    if (status === "loading") return;
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    if (userRole !== "owner" || !isSuperadminOrg) {
+      router.push("/admin/orders");
+    }
+  }, [session, status, router]);
+
   const [pages, setPages] = useState<FacebookPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -19,8 +19,9 @@ export async function PUT(
     }
 
     const userRole = (session.user as any).activeRole;
-    if (userRole !== "owner") {
-      return NextResponse.json({ error: "Owner access required" }, { status: 403 });
+    const isSuperadminOrg = (session.user as any).isSuperadminOrg;
+    if (userRole !== "owner" || !isSuperadminOrg) {
+      return NextResponse.json({ error: "Access denied. Superadmin privileges required." }, { status: 403 });
     }
 
     const activeOrganizationId = (session.user as any).activeOrganizationId;
@@ -89,8 +90,9 @@ export async function DELETE(
     }
 
     const userRole = (session.user as any).activeRole;
-    if (userRole !== "owner") {
-      return NextResponse.json({ error: "Owner access required" }, { status: 403 });
+    const isSuperadminOrg = (session.user as any).isSuperadminOrg;
+    if (userRole !== "owner" || !isSuperadminOrg) {
+      return NextResponse.json({ error: "Access denied. Superadmin privileges required." }, { status: 403 });
     }
 
     const activeOrganizationId = (session.user as any).activeOrganizationId;

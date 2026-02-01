@@ -191,8 +191,8 @@ export default function Sidebar() {
             </Link>
           ))}
 
-          {/* Comments moderation module - separate section */}
-          {filteredCommentsItems.length > 0 && (
+          {/* Comments moderation module - superadmin only */}
+          {showSuperadminLink && filteredCommentsItems.length > 0 && (
             <>
               <div className="my-2 border-t border-zinc-700" />
               {filteredCommentsItems.map((item) => (

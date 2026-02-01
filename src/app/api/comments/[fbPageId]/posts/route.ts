@@ -21,6 +21,11 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const isSuperadminOrg = (session.user as any).isSuperadminOrg;
+    if (!isSuperadminOrg) {
+      return NextResponse.json({ error: "Access denied. Superadmin privileges required." }, { status: 403 });
+    }
+
     const activeOrganizationId = (session.user as any).activeOrganizationId;
     if (!activeOrganizationId) {
       return NextResponse.json({ error: "No active organization" }, { status: 400 });

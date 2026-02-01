@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -34,6 +36,19 @@ interface Comment {
 type FilterType = "all" | "visible" | "hidden";
 
 export default function CommentsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Superadmin access check
+  useEffect(() => {
+    if (status === "loading") return;
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    if (userRole !== "owner" || !isSuperadminOrg) {
+      router.push("/admin/orders");
+    }
+  }, [session, status, router]);
+
   // Pages
   const [pages, setPages] = useState<FacebookPage[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string>("");

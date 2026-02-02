@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { deleteComment } from "@/lib/meta-comments";
 
-const MAX_BATCH_SIZE = 20;
+const MAX_BATCH_SIZE = 10;
 const DELAY_MS = 4000;
 
 /**
@@ -54,12 +54,25 @@ export async function POST(request: NextRequest) {
 
     const deleted: string[] = [];
     const failed: { id: string; error: string }[] = [];
+    let rateLimited = false;
+    const skipped: string[] = [];
 
     for (let i = 0; i < batch.length; i++) {
       try {
         await deleteComment(batch[i], page.page_access_token);
         deleted.push(batch[i]);
       } catch (err: any) {
+        const msg = (err.message || "Delete failed").toLowerCase();
+        // Detect Facebook rate limiting - stop immediately to avoid wasting calls
+        if (msg.includes("request limit") || msg.includes("rate limit") || msg.includes("too many calls") || msg.includes("#4")) {
+          failed.push({ id: batch[i], error: err.message || "Rate limited" });
+          rateLimited = true;
+          // Skip remaining comments
+          for (let j = i + 1; j < batch.length; j++) {
+            skipped.push(batch[j]);
+          }
+          break;
+        }
         failed.push({ id: batch[i], error: err.message || "Delete failed" });
       }
 
@@ -69,7 +82,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ deleted, failed });
+    return NextResponse.json({ deleted, failed, rateLimited, skipped });
   } catch (error: any) {
     console.error("[Comments] Error bulk deleting:", error);
     return NextResponse.json(

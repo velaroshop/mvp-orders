@@ -323,8 +323,8 @@ export default function CommentsPage() {
     const hiddenIds = getHiddenCommentIds(adId);
     if (hiddenIds.length === 0) return;
 
-    // Cap at 20 per batch (server also enforces this)
-    const batch = hiddenIds.slice(0, 20);
+    // Cap at 10 per batch (server also enforces this)
+    const batch = hiddenIds.slice(0, 10);
 
     setBulkDeleting(adId);
     setBulkProgress({ deleted: 0, total: batch.length, failed: 0 });
@@ -341,7 +341,7 @@ export default function CommentsPage() {
         throw new Error(data.error || "Bulk delete failed");
       }
 
-      const result: { deleted: string[]; failed: { id: string; error: string }[] } = await res.json();
+      const result: { deleted: string[]; failed: { id: string; error: string }[]; rateLimited?: boolean; skipped?: string[] } = await res.json();
 
       // Remove deleted comments from state
       const deletedSet = new Set(result.deleted);
@@ -357,7 +357,10 @@ export default function CommentsPage() {
 
       setBulkProgress({ deleted: result.deleted.length, total: batch.length, failed: result.failed.length });
 
-      if (result.failed.length > 0) {
+      if (result.rateLimited) {
+        const skippedCount = result.skipped?.length || 0;
+        showAction("error", `Rate limit Facebook! ${result.deleted.length} deleted, ${skippedCount} skipped. Asteapta ~1 ora inainte sa incerci din nou.`);
+      } else if (result.failed.length > 0) {
         showAction("error", `Deleted ${result.deleted.length}/${batch.length} - ${result.failed.length} failed`);
       } else {
         showAction("success", `Deleted ${result.deleted.length} hidden comments`);
@@ -533,7 +536,7 @@ export default function CommentsPage() {
                       onClick={() => handleBulkDeleteHidden(ad.id)}
                       className="px-3 py-1.5 text-xs font-medium bg-red-600/80 text-white rounded hover:bg-red-600 transition-colors"
                     >
-                      Delete hidden ({Math.min(hiddenCount, 20)}{hiddenCount > 20 ? " of " + hiddenCount : ""})
+                      Delete hidden ({Math.min(hiddenCount, 10)}{hiddenCount > 10 ? " of " + hiddenCount : ""})
                     </button>
                   )}
                 </div>

@@ -234,13 +234,26 @@ export function sanitizeStreet(raw: string): SanitizeResult {
     }
   }
 
-  // Step 6: If no explicit number marker found, check if a token before details is a number
+  // Step 6: If no explicit number marker found, look for a numeric token in streetNameTokens
   if (!foundNumber && streetNameTokens.length > 0) {
     const lastToken = streetNameTokens[streetNameTokens.length - 1];
-    // Check if it's a number (digits, optionally with letter: 8, 12A, 12-14)
+    // Check if last token is a number (simplest case: "str florilor 8")
     if (/^\d+[A-Za-z]?$/.test(lastToken) || /^\d+-\d+$/.test(lastToken)) {
       numberToken = lastToken;
       streetNameTokens.pop();
+    } else {
+      // Scan for a numeric token followed by non-numeric text (e.g. "florilor 12 Medicaltest")
+      // The numeric token is the street number, and everything after is extra info
+      for (let i = 0; i < streetNameTokens.length; i++) {
+        const t = streetNameTokens[i];
+        if (/^\d+[A-Za-z]?$/.test(t) || /^\d+-\d+$/.test(t)) {
+          numberToken = t;
+          // Everything after the number goes to details (will be captured as extra notes)
+          detailsTokens = [...streetNameTokens.slice(i + 1), ...detailsTokens];
+          streetNameTokens = streetNameTokens.slice(0, i);
+          break;
+        }
+      }
     }
   }
 
@@ -252,12 +265,35 @@ export function sanitizeStreet(raw: string): SanitizeResult {
     numberToken = numberToken.replace(/([0-9])([a-z])$/i, (_, num, letter) => num + letter.toUpperCase());
   }
 
-  // Step 8: Parse details (bl, sc, et, ap)
-  const details = parseDetails(detailsTokens);
+  // Step 8: Parse details (bl, sc, et, ap) and collect unrecognized tokens
+  const { details, extraNotes } = parseDetails(detailsTokens);
 
   // Step 8.5: Extract parenthetical notes from original input (e.g., "(Scoala Spectrum)")
   const parenthesesMatch = raw.match(/\(([^)]+)\)/);
   const parenthesesNote = parenthesesMatch ? parenthesesMatch[0] : '';
+
+  // Combine extra notes from details parsing with parenthetical notes
+  // Extra notes are unrecognized tokens after the number (e.g. company names, landmarks)
+  // Filter out tokens that are part of parenthetical content (already captured above)
+  const cleanedExtraNotes = extraNotes
+    .map(t => t.replace(/[()]/g, '').trim())
+    .filter(t => t.length > 0);
+  // Remove tokens that were part of the parenthetical content to avoid duplication
+  const parenthesesWords = parenthesesMatch
+    ? parenthesesMatch[1].toLowerCase().split(/\s+/)
+    : [];
+  const filteredExtraNotes = parenthesesWords.length > 0
+    ? cleanedExtraNotes.filter(t => !parenthesesWords.includes(t.toLowerCase()))
+    : cleanedExtraNotes;
+
+  const allNotes: string[] = [];
+  if (filteredExtraNotes.length > 0) {
+    allNotes.push(titleCaseStreetName(filteredExtraNotes.join(' ')));
+  }
+  if (parenthesesMatch) {
+    allNotes.push(parenthesesMatch[1]);
+  }
+  const combinedNote = allNotes.length > 0 ? `(${allNotes.join(' - ')})` : '';
 
   // Step 9: Build output
   const parts: string[] = [];
@@ -275,8 +311,8 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 
   // Add number to street address (keeping it in both places)
   if (numberToken) {
-    // Add comma after number if we have details or parentheses note
-    if (details || parenthesesNote) {
+    // Add comma after number if we have details or notes
+    if (details || combinedNote) {
       parts.push('nr. ' + numberToken + ',');
     } else {
       parts.push('nr. ' + numberToken);
@@ -288,9 +324,9 @@ export function sanitizeStreet(raw: string): SanitizeResult {
     parts.push(details);
   }
 
-  // Add parentheses note at the end
-  if (parenthesesNote) {
-    parts.push(parenthesesNote);
+  // Add notes at the end in parentheses
+  if (combinedNote) {
+    parts.push(combinedNote);
   }
 
   const street = parts.join(' ') || raw.trim();
@@ -304,8 +340,14 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 /**
  * Parses detail tokens (bl, sc, et, ap) into normalized format with full words
  */
-function parseDetails(tokens: string[]): string {
+interface ParseDetailsResult {
+  details: string;
+  extraNotes: string[];
+}
+
+function parseDetails(tokens: string[]): ParseDetailsResult {
   const details: { type: string; value: string }[] = [];
+  const extraNotes: string[] = [];
 
   let i = 0;
   while (i < tokens.length) {
@@ -346,6 +388,9 @@ function parseDetails(tokens: string[]): string {
         detailValue = tokens[i + 1];
         i++;
       }
+    } else {
+      // Unrecognized token - preserve as extra note (e.g. company name, landmark)
+      extraNotes.push(tokens[i]);
     }
 
     if (detailType && detailValue) {
@@ -359,7 +404,10 @@ function parseDetails(tokens: string[]): string {
   const order = ['scara', 'bloc', 'etaj', 'apartament', 'interfon'];
   const sorted = details.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
 
-  return sorted.map(d => `${d.type} ${d.value}`).join(', ');
+  return {
+    details: sorted.map(d => `${d.type} ${d.value}`).join(', '),
+    extraNotes,
+  };
 }
 
 // ============================================================================
@@ -425,6 +473,11 @@ const TEST_CASES: TestCase[] = [
 
   // No number
   { input: 'str florilor', expectedStreet: 'Strada Florilor', expectedNumber: '', description: 'No number at all' },
+
+  // Extra notes (company name, landmark) preserved in parentheses
+  { input: 'Spiru Haret Nr 8 Medicaltest', expectedStreet: 'Spiru Haret nr. 8, (Medicaltest)', expectedNumber: '8', description: 'Company name after number preserved' },
+  { input: 'str florilor 8 bl a Medicaltest', expectedStreet: 'Strada Florilor nr. 8, bloc A (Medicaltest)', expectedNumber: '8', description: 'Landmark after details preserved' },
+  { input: 'str florilor 12 Magazin Central', expectedStreet: 'Strada Florilor nr. 12, (Magazin Central)', expectedNumber: '12', description: 'Extra text after implicit number' },
 
   // Edge cases
   { input: '', expectedStreet: '', expectedNumber: '', description: 'Empty string' },

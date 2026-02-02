@@ -234,6 +234,53 @@ function normalizeStreetType(dbType: string): string {
   return normalize(dbType);
 }
 
+// Extract street number from user input
+// Examples: "splaiul unirii 165" → 165, "str mihai eminescu nr 42" → 42, "unirii nr. 10A" → 10
+function extractStreetNumber(streetNorm: string): number | null {
+  // Try "nr" / "nr." / "numar" followed by a number
+  const nrMatch = streetNorm.match(/(?:nr\.?|numar|no\.?)\s*(\d+)/i);
+  if (nrMatch) return parseInt(nrMatch[1], 10);
+
+  // Try a standalone number at the end of the string (e.g., "unirii 165")
+  const endMatch = streetNorm.match(/\s(\d+)\s*$/);
+  if (endMatch) return parseInt(endMatch[1], 10);
+
+  // Try a standalone number anywhere (last resort, pick last number that's not a street type word neighbor)
+  const allNumbers = [...streetNorm.matchAll(/(?:^|\s)(\d+)(?:\s|$)/g)];
+  if (allNumbers.length > 0) {
+    return parseInt(allNumbers[allNumbers.length - 1][1], 10);
+  }
+
+  return null;
+}
+
+// Parse DB number field into a numeric range
+// Formats: "nr. 159-171" → {min:159, max:171}, "nr. 8" → {min:8, max:8},
+//          "nr. 633-T" → {min:633, max:Infinity} (open-ended)
+function parseNumberRange(numberField: string): { min: number; max: number } | null {
+  if (!numberField) return null;
+
+  // Match "nr. X-Y" or "nr. X - Y" (standard range)
+  const rangeMatch = numberField.match(/(\d+)\s*-\s*(\d+)/);
+  if (rangeMatch) {
+    return { min: parseInt(rangeMatch[1], 10), max: parseInt(rangeMatch[2], 10) };
+  }
+
+  // Match "nr. X-T" (open-ended, T = terminus)
+  const openEndMatch = numberField.match(/(\d+)\s*-\s*T/i);
+  if (openEndMatch) {
+    return { min: parseInt(openEndMatch[1], 10), max: Infinity };
+  }
+
+  // Match single number "nr. X"
+  const singleMatch = numberField.match(/(\d+)/);
+  if (singleMatch) {
+    return { min: parseInt(singleMatch[1], 10), max: parseInt(singleMatch[1], 10) };
+  }
+
+  return null;
+}
+
 // Check if street names match with word order flexibility
 // Example: "henri coanda" matches "coanda henri"
 function streetWordsMatch(userStreet: string, dbStreet: string): number {
@@ -305,9 +352,12 @@ export async function POST(request: NextRequest) {
     // Extract street type from user input (e.g., "splaiul" -> "splai")
     const { userType: userStreetType, cleanedStreet: streetWithoutType } = extractStreetType(streetNorm);
 
+    // Extract street number from user input (e.g., "splaiul unirii 165" -> 165)
+    const userStreetNumber = extractStreetNumber(streetNorm);
+
     console.log('Search params:', { county, city, street });
     console.log('Cleaned city:', cityClean);
-    console.log('Normalized:', { countyNorm, cityNorm, streetNorm, userStreetType });
+    console.log('Normalized:', { countyNorm, cityNorm, streetNorm, userStreetType, userStreetNumber });
 
     const data = postalCodesData as PostalCodeEntry[];
     const matches: Array<{
@@ -430,6 +480,26 @@ export async function POST(request: NextRequest) {
           } else {
             // Type mismatch: penalize significantly
             streetScore = streetScore * 0.5;
+          }
+        }
+
+        // Street number matching: boost entries where user's number falls within the DB range
+        if (userStreetNumber && entry.number) {
+          const range = parseNumberRange(entry.number);
+          if (range) {
+            if (userStreetNumber >= range.min && userStreetNumber <= range.max) {
+              // Number falls within range: significant boost
+              streetScore = Math.min(streetScore * 1.4, 1.0);
+            } else {
+              // Number doesn't match range: slight penalty to push non-matching ranges down
+              const distance = Math.min(
+                Math.abs(userStreetNumber - range.min),
+                Math.abs(userStreetNumber - (range.max === Infinity ? range.min : range.max))
+              );
+              // Penalty scales with distance: nearby ranges penalized less
+              const penalty = Math.max(0.7, 1 - distance / 1000);
+              streetScore = streetScore * penalty;
+            }
           }
         }
       } else if (streetNorm && !entry.street_normalized) {

@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { deleteComment } from "@/lib/meta-comments";
 
 const MAX_BATCH_SIZE = 20;
-const DELAY_MS = 2000;
+const DELAY_MS = 4000;
 
 /**
  * POST /api/comments/actions/bulk-delete

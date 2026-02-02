@@ -78,6 +78,9 @@ export default function LandingPagesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [deleteUpsellModal, setDeleteUpsellModal] = useState<Upsell | null>(null);
   const [isDeletingUpsell, setIsDeletingUpsell] = useState(false);
+  const [copyUpsellModal, setCopyUpsellModal] = useState<Upsell | null>(null);
+  const [isCopyingUpsell, setIsCopyingUpsell] = useState(false);
+  const [selectedCopyTargets, setSelectedCopyTargets] = useState<string[]>([]);
 
   useEffect(() => {
     fetchLandingPages();
@@ -260,6 +263,61 @@ export default function LandingPagesPage() {
       alert(err instanceof Error ? err.message : "Failed to delete upsell");
     } finally {
       setIsDeletingUpsell(false);
+    }
+  }
+
+  async function handleCopyUpsell() {
+    if (!copyUpsellModal || selectedCopyTargets.length === 0) return;
+
+    try {
+      setIsCopyingUpsell(true);
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const targetLpId of selectedCopyTargets) {
+        try {
+          const response = await fetch("/api/upsells", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              landing_page_id: targetLpId,
+              type: copyUpsellModal.type,
+              product_id: copyUpsellModal.product_id,
+              title: copyUpsellModal.title,
+              description: copyUpsellModal.description || undefined,
+              quantity: copyUpsellModal.quantity,
+              srp: copyUpsellModal.srp,
+              price: copyUpsellModal.price,
+              media_url: copyUpsellModal.media_url || undefined,
+              active: copyUpsellModal.active,
+              display_order: copyUpsellModal.display_order,
+            }),
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      }
+
+      setCopyUpsellModal(null);
+      setSelectedCopyTargets([]);
+      fetchAllUpsells();
+
+      if (failCount === 0) {
+        alert(`Upsell copiat cu succes în ${successCount} landing page${successCount > 1 ? "s" : ""}`);
+      } else {
+        alert(`Copiat: ${successCount} reușite, ${failCount} eșuate`);
+      }
+    } catch (err) {
+      console.error("Error copying upsell:", err);
+      alert("Eroare la copierea upsell-ului");
+    } finally {
+      setIsCopyingUpsell(false);
     }
   }
 
@@ -594,18 +652,45 @@ export default function LandingPagesPage() {
                                               </p>
                                             </div>
                                           </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openEditUpsellModal(upsell);
-                                            }}
-                                            className="ml-2 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
-                                            title="Editează upsell"
-                                          >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                          </button>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openEditUpsellModal(upsell);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
+                                              title="Editează upsell"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                              </svg>
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCopyUpsellModal(upsell);
+                                                setSelectedCopyTargets([]);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-900/20 rounded transition-colors"
+                                              title="Copiază în alt LP"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                              </svg>
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteUpsellModal(upsell);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
+                                              title="Șterge upsell"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                              </svg>
+                                            </button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -690,6 +775,19 @@ export default function LandingPagesPage() {
                                             >
                                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                              </svg>
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCopyUpsellModal(upsell);
+                                                setSelectedCopyTargets([]);
+                                              }}
+                                              className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-900/20 rounded transition-colors"
+                                              title="Copiază în alt LP"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                               </svg>
                                             </button>
                                             <button
@@ -1117,6 +1215,110 @@ export default function LandingPagesPage() {
                   {isDeletingUpsell ? "Se șterge..." : "Șterge"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Upsell Modal */}
+      {copyUpsellModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-700 max-w-lg w-full max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-zinc-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                  Copiază {copyUpsellModal.type === "presale" ? "presale" : "postsale"} upsell
+                </h3>
+                <button
+                  onClick={() => { setCopyUpsellModal(null); setSelectedCopyTargets([]); }}
+                  className="text-zinc-400 hover:text-zinc-300 transition-colors"
+                  disabled={isCopyingUpsell}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-zinc-400 mt-1">
+                Copiază <strong className="text-white">{copyUpsellModal.title}</strong> în alte landing pages
+              </p>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {(() => {
+                const otherPages = landingPages.filter(lp => lp.id !== copyUpsellModal.landing_page_id);
+                if (otherPages.length === 0) {
+                  return <p className="text-sm text-zinc-400 italic">Nu există alte landing pages disponibile</p>;
+                }
+
+                const isPostsale = copyUpsellModal.type === "postsale";
+
+                return (
+                  <div className="space-y-1">
+                    {otherPages.map((lp) => {
+                      const lpUpsells = upsellsByLandingPage[lp.id] || [];
+                      const hasPostsale = lpUpsells.some(u => u.type === "postsale");
+                      const disabled = isPostsale && hasPostsale;
+                      const checked = selectedCopyTargets.includes(lp.id);
+
+                      return (
+                        <label
+                          key={lp.id}
+                          className={`flex items-center gap-3 p-2.5 rounded border transition-colors cursor-pointer ${
+                            disabled
+                              ? "border-zinc-800 bg-zinc-900/30 opacity-50 cursor-not-allowed"
+                              : checked
+                                ? "border-cyan-700 bg-cyan-900/20"
+                                : "border-zinc-700/30 bg-zinc-800/30 hover:bg-zinc-800/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={(e) => {
+                              if (disabled) return;
+                              if (e.target.checked) {
+                                setSelectedCopyTargets(prev => [...prev, lp.id]);
+                              } else {
+                                setSelectedCopyTargets(prev => prev.filter(id => id !== lp.id));
+                              }
+                            }}
+                            className="rounded border-zinc-600 bg-zinc-800 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">{lp.name}</p>
+                            <p className="text-xs text-zinc-500 truncate">{lp.slug}</p>
+                          </div>
+                          {disabled && (
+                            <span className="text-[10px] px-2 py-0.5 bg-zinc-700 text-zinc-400 rounded shrink-0">
+                              Are deja postsale
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="p-6 border-t border-zinc-700 flex gap-3 justify-end">
+              <button
+                onClick={() => { setCopyUpsellModal(null); setSelectedCopyTargets([]); }}
+                disabled={isCopyingUpsell}
+                className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={handleCopyUpsell}
+                disabled={isCopyingUpsell || selectedCopyTargets.length === 0}
+                className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCopyingUpsell
+                  ? "Se copiază..."
+                  : `Copiază în ${selectedCopyTargets.length} LP${selectedCopyTargets.length !== 1 ? "s" : ""}`
+                }
+              </button>
             </div>
           </div>
         </div>

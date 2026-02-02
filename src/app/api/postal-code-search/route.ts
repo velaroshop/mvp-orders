@@ -170,26 +170,88 @@ function similarityScore(str1: string, str2: string): number {
   return 1 - distance / maxLen;
 }
 
+// Map user input street type words (normalized, no diacritics) to DB street_type values
+// DB uses: Stradă, Bulevard, Splai, Aleea, Şosea/Șosea, Calea, Piaţă/Piață, Intrare, Prelungire, Drum, Fundătură
+const streetTypeMap: Record<string, string> = {
+  // Stradă
+  'strada': 'strada', 'str': 'strada', 'strad': 'strada', 'strd': 'strada',
+  // Bulevard
+  'bulevardul': 'bulevard', 'bulevard': 'bulevard', 'blvd': 'bulevard', 'blv': 'bulevard',
+  'bld': 'bulevard', 'bul': 'bulevard', 'bd': 'bulevard',
+  // Splai
+  'splaiul': 'splai', 'splai': 'splai',
+  // Aleea
+  'aleea': 'aleea', 'alee': 'aleea',
+  // Șosea
+  'soseaua': 'sosea', 'sosea': 'sosea', 'sos': 'sosea',
+  // Calea
+  'calea': 'calea', 'cal': 'calea',
+  // Piața
+  'piata': 'piata', 'p-ta': 'piata',
+  // Intrarea
+  'intrarea': 'intrare', 'intr': 'intrare',
+  // Prelungirea
+  'prelungirea': 'prelungire', 'prel': 'prelungire',
+  // Drumul
+  'drumul': 'drum', 'drum': 'drum',
+  // Fundătura
+  'fundatura': 'fundatura', 'fund': 'fundatura',
+};
+
+// All street type words to ignore in word matching (after type has been extracted)
+const streetTypeWords = new Set(Object.keys(streetTypeMap));
+
+// Extract street type from normalized user input and return { type, cleanedStreet }
+// Handles cases like "Strada Splaiul Unirii" where the real type is "Splaiul" (2nd word)
+function extractStreetType(streetNorm: string): { userType: string | null; cleanedStreet: string } {
+  const words = streetNorm.split(/\s+/);
+  if (words.length === 0) return { userType: null, cleanedStreet: streetNorm };
+
+  const firstType = streetTypeMap[words[0]];
+
+  // If first word is "strada" and second word is a more specific type (splai, bulevard, etc.),
+  // use the second word as the real type. "Strada Splaiul Unirii" -> type = "splai"
+  if (firstType === 'strada' && words.length > 1 && streetTypeMap[words[1]] && streetTypeMap[words[1]] !== 'strada') {
+    return {
+      userType: streetTypeMap[words[1]],
+      cleanedStreet: words.slice(2).join(' '),
+    };
+  }
+
+  // Standard case: first word is the type
+  if (firstType) {
+    return {
+      userType: firstType,
+      cleanedStreet: words.slice(1).join(' '),
+    };
+  }
+
+  return { userType: null, cleanedStreet: streetNorm };
+}
+
+// Normalize a DB street_type for comparison (remove diacritics, lowercase)
+function normalizeStreetType(dbType: string): string {
+  return normalize(dbType);
+}
+
 // Check if street names match with word order flexibility
 // Example: "henri coanda" matches "coanda henri"
 function streetWordsMatch(userStreet: string, dbStreet: string): number {
-  // Split into words and filter out common street type words and number markers
-  const ignoreWords = [
-    // Street types
-    'strada', 'str', 'stradă', 'sosea', 'şosea', 'șosea', 'calea', 'bulevardul', 'bd', 'aleea',
+  // Split into words and filter out street type words and number markers
+  const ignoreWords = new Set([
     // Number markers
-    'nr', 'nr.', 'numar', 'număr', 'no',
+    'nr', 'nr.', 'numar', 'numar', 'no',
     // Block/apartment markers (sometimes included in address)
     'bl', 'bloc', 'sc', 'scara', 'et', 'etaj', 'ap', 'apartament',
-  ];
+  ]);
 
   const userWords = userStreet
     .split(/\s+/)
-    .filter(w => w.length > 2 && !ignoreWords.includes(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
+    .filter(w => w.length > 2 && !ignoreWords.has(w) && !streetTypeWords.has(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
 
   const dbWords = dbStreet
     .split(/\s+/)
-    .filter(w => w.length > 2 && !ignoreWords.includes(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
+    .filter(w => w.length > 2 && !ignoreWords.has(w) && !streetTypeWords.has(w) && !/^\d+[-]?\d*[a-z]?$/i.test(w));
 
   if (userWords.length === 0 || dbWords.length === 0) {
     return 0;
@@ -240,9 +302,12 @@ export async function POST(request: NextRequest) {
       countyNorm = countyAbbrevMap[countyNorm];
     }
 
+    // Extract street type from user input (e.g., "splaiul" -> "splai")
+    const { userType: userStreetType, cleanedStreet: streetWithoutType } = extractStreetType(streetNorm);
+
     console.log('Search params:', { county, city, street });
     console.log('Cleaned city:', cityClean);
-    console.log('Normalized:', { countyNorm, cityNorm, streetNorm });
+    console.log('Normalized:', { countyNorm, cityNorm, streetNorm, userStreetType });
 
     const data = postalCodesData as PostalCodeEntry[];
     const matches: Array<{
@@ -333,18 +398,39 @@ export async function POST(request: NextRequest) {
       // Street matching (if provided and entry has street data)
       let streetScore = 1.0;
       if (streetNorm && entry.street_normalized) {
-        // Method 1: Check if street is contained or vice versa
-        if (entry.street_normalized.includes(streetNorm) || streetNorm.includes(entry.street_normalized)) {
+        // Compare street name (without type) against DB street_normalized
+        const streetToCompare = streetWithoutType || streetNorm;
+
+        // Method 1: Check if street name is contained or vice versa
+        if (entry.street_normalized.includes(streetToCompare) || streetToCompare.includes(entry.street_normalized)) {
           streetScore = 0.95; // High score for partial match
         } else {
           // Method 2: Try word-by-word matching (handles reversed names like "henri coanda" vs "coanda henri")
           const wordMatchScore = streetWordsMatch(streetNorm, entry.street_normalized);
 
-          // Method 3: Full string similarity
-          const fullSimilarity = similarityScore(streetNorm, entry.street_normalized);
+          // Method 3: Full string similarity (use cleaned street without type for better comparison)
+          const fullSimilarity = Math.max(
+            similarityScore(streetNorm, entry.street_normalized),
+            similarityScore(streetToCompare, entry.street_normalized)
+          );
 
           // Use the best score from both methods
           streetScore = Math.max(wordMatchScore, fullSimilarity);
+        }
+
+        // Street type comparison: boost matching types, penalize mismatches
+        if (userStreetType && entry.street_type) {
+          const dbTypeNorm = normalizeStreetType(entry.street_type);
+          // Check if user's street type matches DB street_type
+          // e.g., userStreetType="splai" vs dbTypeNorm="splai" → match
+          // e.g., userStreetType="splai" vs dbTypeNorm="bulevard" → mismatch
+          if (dbTypeNorm.includes(userStreetType) || userStreetType.includes(dbTypeNorm)) {
+            // Type matches: boost score
+            streetScore = Math.min(streetScore * 1.3, 1.0);
+          } else {
+            // Type mismatch: penalize significantly
+            streetScore = streetScore * 0.5;
+          }
         }
       } else if (streetNorm && !entry.street_normalized) {
         // User provided street but entry has no street data (small city)

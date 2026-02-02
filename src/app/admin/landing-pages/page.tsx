@@ -289,7 +289,7 @@ export default function LandingPagesPage() {
               srp: copyUpsellModal.srp,
               price: copyUpsellModal.price,
               media_url: copyUpsellModal.media_url || undefined,
-              active: copyUpsellModal.active,
+              active: false,
               display_order: copyUpsellModal.display_order,
             }),
           });
@@ -629,9 +629,13 @@ export default function LandingPagesPage() {
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                               <p className="text-sm font-medium text-white">{upsell.title}</p>
-                                              {!upsell.active && (
-                                                <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-[10px] rounded uppercase">
-                                                  Inactiv
+                                              {upsell.active ? (
+                                                <span className="px-2 py-0.5 bg-emerald-600/20 text-emerald-400 text-[10px] rounded uppercase font-medium">
+                                                  Active
+                                                </span>
+                                              ) : (
+                                                <span className="px-2 py-0.5 bg-red-600/20 text-red-400 text-[10px] rounded uppercase font-medium">
+                                                  Inactive
                                                 </span>
                                               )}
                                               {upsell.product?.status === "inactive" && (
@@ -741,9 +745,13 @@ export default function LandingPagesPage() {
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                               <p className="text-sm font-medium text-white">{upsell.title}</p>
-                                              {!upsell.active && (
-                                                <span className="px-2 py-0.5 bg-zinc-700 text-zinc-400 text-[10px] rounded uppercase">
-                                                  Inactiv
+                                              {upsell.active ? (
+                                                <span className="px-2 py-0.5 bg-emerald-600/20 text-emerald-400 text-[10px] rounded uppercase font-medium">
+                                                  Active
+                                                </span>
+                                              ) : (
+                                                <span className="px-2 py-0.5 bg-red-600/20 text-red-400 text-[10px] rounded uppercase font-medium">
+                                                  Inactive
                                                 </span>
                                               )}
                                               {upsell.product?.status === "inactive" && (

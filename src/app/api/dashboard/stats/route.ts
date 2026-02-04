@@ -37,11 +37,21 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
     const landingPageId = searchParams.get("landingPage");
 
+    // If filtering by landing page, get the slug first (orders use landing_key, not landing_page_id)
+    let landingPageSlug: string | null = null;
+    if (landingPageId && landingPageId !== "all") {
+      const { data: landingPage } = await supabase
+        .from("landing_pages")
+        .select("slug")
+        .eq("id", landingPageId)
+        .single();
+      landingPageSlug = landingPage?.slug || null;
+    }
+
     // Build the query - filter by organization first
     // Exclude cancelled and testing orders
     // Use Romania timezone offset (UTC+2 winter, UTC+3 summer) for proper local date filtering
     // This ensures "Today" shows orders from 00:00 to 23:59 Romania time
-    const romaniaOffsetHours = -2; // UTC+2 for Romania (winter time)
     const startDateTime = startDate
       ? new Date(`${startDate}T00:00:00.000+02:00`).toISOString()
       : new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
@@ -58,9 +68,9 @@ export async function GET(request: NextRequest) {
       .gte("created_at", startDateTime)
       .lte("created_at", endDateTime);
 
-    // Filter by landing page if specified
-    if (landingPageId && landingPageId !== "all") {
-      query = query.eq("landing_page_id", landingPageId);
+    // Filter by landing page slug if specified
+    if (landingPageSlug) {
+      query = query.eq("landing_key", landingPageSlug);
     }
 
     const { data: orders, error } = await query;
@@ -80,6 +90,7 @@ export async function GET(request: NextRequest) {
       startDateTime,
       endDateTime,
       landingPageId,
+      landingPageSlug,
       ordersCount: orders?.length || 0,
     });
 

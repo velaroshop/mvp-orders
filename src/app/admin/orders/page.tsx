@@ -1590,11 +1590,19 @@ export default function AdminPage() {
                                 ? "bg-green-900/50 text-green-300 border border-green-700"
                                 : order.trackingStatus === "InTransit"
                                 ? "bg-blue-900/50 text-blue-300 border border-blue-700"
+                                : order.trackingStatus === "OnDelivery"
+                                ? "bg-cyan-900/50 text-cyan-300 border border-cyan-700"
                                 : order.trackingStatus === "Returned"
                                 ? "bg-red-900/50 text-red-300 border border-red-700"
+                                : order.trackingStatus === "Returning"
+                                ? "bg-orange-900/50 text-orange-300 border border-orange-700"
+                                : order.trackingStatus === "WrongAddress"
+                                ? "bg-amber-900/50 text-amber-300 border border-amber-700"
+                                : order.trackingStatus === "Disruptions"
+                                ? "bg-rose-900/50 text-rose-300 border border-rose-700"
                                 : order.trackingStatus === "Cancelled"
                                 ? "bg-zinc-800 text-zinc-400 border border-zinc-600"
-                                : "bg-zinc-800 text-zinc-400 border border-zinc-600"
+                                : "bg-purple-900/50 text-purple-300 border border-purple-700"
                             }`}
                             title={order.trackingUpdatedAt ? `Actualizat: ${new Date(order.trackingUpdatedAt).toLocaleString("ro-RO")}` : ""}
                           >

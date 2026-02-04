@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/finalize-expired-queue",
       "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/sync-tracking",
-      "schedule": "0 * * * *"
     }
   ]
 }

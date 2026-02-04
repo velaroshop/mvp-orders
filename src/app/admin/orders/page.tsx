@@ -56,9 +56,15 @@ export default function AdminPage() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
-  // Tracking status filter state
-  const [selectedTrackingStatuses, setSelectedTrackingStatuses] = useState<string[]>([]);
-  const [isTrackingStatusDropdownOpen, setIsTrackingStatusDropdownOpen] = useState(false);
+  // Tracking Details Modal state
+  const [trackingModalOrder, setTrackingModalOrder] = useState<Order | null>(null);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+  const [trackingModalLoading, setTrackingModalLoading] = useState(false);
+  const [trackingModalData, setTrackingModalData] = useState<{
+    trackingStatus: string | null;
+    trackingNumber: string | null;
+    deliveryService: string | null;
+  } | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -207,11 +213,6 @@ export default function AdminPage() {
       params.append("statuses", selectedStatuses.join(","));
     }
 
-    // Add tracking status filters if any are selected
-    if (selectedTrackingStatuses.length > 0) {
-      params.append("trackingStatuses", selectedTrackingStatuses.join(","));
-    }
-
     // Add date range filter only when searching
     if (query.trim() && searchDateRange !== "all") {
       params.append("dateRange", searchDateRange.toString());
@@ -332,25 +333,41 @@ export default function AdminPage() {
     setCurrentPage(1);
   }
 
-  function toggleTrackingStatus(status: string) {
-    setSelectedTrackingStatuses((prev) => {
-      if (prev.includes(status)) {
-        return prev.filter((s) => s !== status);
-      } else {
-        return [...prev, status];
-      }
-    });
-    setCurrentPage(1);
-  }
+  // Open tracking details modal
+  async function openTrackingModal(order: Order) {
+    setTrackingModalOrder(order);
+    setIsTrackingModalOpen(true);
+    setTrackingModalLoading(true);
+    setTrackingModalData(null);
 
-  function clearTrackingStatusFilters() {
-    setSelectedTrackingStatuses([]);
-    setCurrentPage(1);
+    try {
+      // Fetch live tracking data from Helpship
+      const response = await fetch(`/api/orders/${order.id}/sync-tracking`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setTrackingModalData({
+          trackingStatus: result.trackingStatus,
+          trackingNumber: result.trackingNumber,
+          deliveryService: result.deliveryService,
+        });
+        // Update local order state if status changed
+        if (result.updated) {
+          updateOrderLocally(order.id, { trackingStatus: result.trackingStatus });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching tracking data:", error);
+    } finally {
+      setTrackingModalLoading(false);
+    }
   }
 
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage, selectedStatuses, selectedTrackingStatuses, searchDateRange]);
+  }, [currentPage, selectedStatuses, searchDateRange]);
 
   // Fetch landing pages on mount
   useEffect(() => {
@@ -409,23 +426,6 @@ export default function AdminPage() {
       };
     }
   }, [isStatusDropdownOpen]);
-
-  // Close tracking status dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".tracking-status-filter-dropdown")) {
-        setIsTrackingStatusDropdownOpen(false);
-      }
-    }
-
-    if (isTrackingStatusDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isTrackingStatusDropdownOpen]);
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
@@ -1582,80 +1582,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Tracking Status Filter Dropdown */}
-            <div className="relative tracking-status-filter-dropdown">
-              <button
-                onClick={() => setIsTrackingStatusDropdownOpen(!isTrackingStatusDropdownOpen)}
-                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 ${
-                  selectedTrackingStatuses.length > 0 ? "ring-2 ring-cyan-500" : ""
-                }`}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                  />
-                </svg>
-                Tracking
-                {selectedTrackingStatuses.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-cyan-600 text-white text-xs rounded-full">
-                    {selectedTrackingStatuses.length}
-                  </span>
-                )}
-              </button>
-
-              {isTrackingStatusDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
-                  <div className="p-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-white">Filtrează după tracking</span>
-                      {selectedTrackingStatuses.length > 0 && (
-                        <button
-                          onClick={clearTrackingStatusFilters}
-                          className="text-xs text-cyan-500 hover:text-cyan-400"
-                        >
-                          Șterge toate
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      {[
-                        { value: "InTransit", label: "In Transit", color: "bg-blue-500" },
-                        { value: "OnDelivery", label: "On Delivery", color: "bg-cyan-500" },
-                        { value: "Delivered", label: "Delivered", color: "bg-green-500" },
-                        { value: "Returning", label: "Returning", color: "bg-orange-500" },
-                        { value: "Returned", label: "Returned", color: "bg-red-500" },
-                        { value: "WrongAddress", label: "Wrong Address", color: "bg-amber-500" },
-                        { value: "Disruptions", label: "Disruptions", color: "bg-rose-500" },
-                        { value: "Cancelled", label: "Cancelled", color: "bg-zinc-500" },
-                        { value: "NULL", label: "Fără tracking", color: "bg-purple-500" },
-                      ].map((status) => (
-                        <label
-                          key={status.value}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTrackingStatuses.includes(status.value)}
-                            onChange={() => toggleTrackingStatus(status.value)}
-                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-cyan-600 focus:ring-cyan-500"
-                          />
-                          <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
-                          <span className="text-sm text-white">{status.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
@@ -1699,10 +1625,11 @@ export default function AdminPage() {
                     {/* Status */}
                     <td className="px-2 py-1.5">
                       <div className="flex flex-col gap-0.5">
-                        {/* Tracking Status - shown for confirmed orders */}
-                        {order.status === "confirmed" && order.trackingStatus && (
-                          <span
-                            className={`inline-flex w-fit rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-tight whitespace-nowrap cursor-help ${
+                        {/* Tracking Status - shown for confirmed orders, clickable */}
+                        {order.status === "confirmed" && order.helpshipOrderId && (
+                          <button
+                            onClick={() => openTrackingModal(order)}
+                            className={`inline-flex w-fit rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-tight whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${
                               order.trackingStatus === "Delivered"
                                 ? "bg-green-900/50 text-green-300 border border-green-700"
                                 : order.trackingStatus === "InTransit"
@@ -1721,14 +1648,16 @@ export default function AdminPage() {
                                 ? "bg-zinc-800 text-zinc-400 border border-zinc-600"
                                 : "bg-purple-900/50 text-purple-300 border border-purple-700"
                             }`}
-                            title={order.trackingUpdatedAt ? `Actualizat: ${new Date(order.trackingUpdatedAt).toLocaleString("ro-RO")}` : ""}
+                            title="Click pentru detalii tracking"
                           >
-                            {order.trackingStatus === "InTransit" ? "In Transit" :
-                             order.trackingStatus === "Delivered" ? "Delivered" :
-                             order.trackingStatus === "Returned" ? "Returned" :
-                             order.trackingStatus === "Cancelled" ? "Cancelled" :
-                             order.trackingStatus}
-                          </span>
+                            {order.trackingStatus
+                              ? (order.trackingStatus === "InTransit" ? "In Transit" :
+                                 order.trackingStatus === "Delivered" ? "Delivered" :
+                                 order.trackingStatus === "Returned" ? "Returned" :
+                                 order.trackingStatus === "Cancelled" ? "Cancelled" :
+                                 order.trackingStatus)
+                              : "📦 Tracking"}
+                          </button>
                         )}
                         <span
                           className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${
@@ -2255,6 +2184,107 @@ export default function AdminPage() {
                 }}
                 orderId={syncStatusOrderId || ""}
               />
+
+              {/* Tracking Details Modal */}
+              {isTrackingModalOpen && trackingModalOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-md mx-4">
+                    <div className="flex items-center justify-between p-4 border-b border-zinc-700">
+                      <h3 className="text-lg font-semibold text-white">Detalii Tracking</h3>
+                      <button
+                        onClick={() => {
+                          setIsTrackingModalOpen(false);
+                          setTrackingModalOrder(null);
+                          setTrackingModalData(null);
+                        }}
+                        className="text-zinc-400 hover:text-white transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      {/* Order Info */}
+                      <div className="text-sm text-zinc-400">
+                        Comandă: <span className="text-white font-medium">{formatOrderNumber(trackingModalOrder.orderNumber, trackingModalOrder.orderSeries, trackingModalOrder.id)}</span>
+                      </div>
+
+                      {trackingModalLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                          <span className="ml-3 text-zinc-400">Se încarcă...</span>
+                        </div>
+                      ) : trackingModalData ? (
+                        <div className="space-y-3">
+                          {/* Tracking Status */}
+                          <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                            <span className="text-zinc-400 text-sm">Status</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${
+                              trackingModalData.trackingStatus === "Delivered"
+                                ? "bg-green-900/50 text-green-300"
+                                : trackingModalData.trackingStatus === "InTransit"
+                                ? "bg-blue-900/50 text-blue-300"
+                                : trackingModalData.trackingStatus === "OnDelivery"
+                                ? "bg-cyan-900/50 text-cyan-300"
+                                : trackingModalData.trackingStatus === "Returned"
+                                ? "bg-red-900/50 text-red-300"
+                                : trackingModalData.trackingStatus === "Returning"
+                                ? "bg-orange-900/50 text-orange-300"
+                                : trackingModalData.trackingStatus === "WrongAddress"
+                                ? "bg-amber-900/50 text-amber-300"
+                                : trackingModalData.trackingStatus === "Disruptions"
+                                ? "bg-rose-900/50 text-rose-300"
+                                : "bg-zinc-700 text-zinc-300"
+                            }`}>
+                              {trackingModalData.trackingStatus || "Necunoscut"}
+                            </span>
+                          </div>
+
+                          {/* Tracking Number */}
+                          <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                            <span className="text-zinc-400 text-sm">AWB / Tracking</span>
+                            <span className="text-white font-mono text-sm">
+                              {trackingModalData.trackingNumber || "-"}
+                            </span>
+                          </div>
+
+                          {/* Delivery Service */}
+                          <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                            <span className="text-zinc-400 text-sm">Curier</span>
+                            <span className="text-white text-sm">
+                              {trackingModalData.deliveryService || "-"}
+                            </span>
+                          </div>
+
+                          {/* Last Updated */}
+                          {trackingModalOrder.trackingUpdatedAt && (
+                            <div className="text-xs text-zinc-500 text-center pt-2">
+                              Ultima actualizare în DB: {new Date(trackingModalOrder.trackingUpdatedAt).toLocaleString("ro-RO")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-zinc-400">
+                          Nu s-au putut obține datele de tracking
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2 p-4 border-t border-zinc-700">
+                      <button
+                        onClick={() => {
+                          setIsTrackingModalOpen(false);
+                          setTrackingModalOrder(null);
+                          setTrackingModalData(null);
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-600 rounded-lg hover:bg-zinc-700 transition-colors"
+                      >
+                        Închide
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Toast Notifications */}
               <Toast

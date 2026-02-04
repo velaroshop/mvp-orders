@@ -27,14 +27,19 @@ export async function GET(request: NextRequest) {
 
     // Găsește toate comenzile confirmate cu helpship_order_id din ultimele 14 zile
     // Excludem comenzile care au deja tracking_status "Delivered" sau "Returned" (statusuri finale)
-    const { data: orders, error: fetchError } = await supabaseAdmin
+    // Note: We filter out final statuses in code since Supabase .not("in") excludes NULLs
+    const { data: allOrders, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("id, helpship_order_id, organization_id, tracking_status")
       .eq("status", "confirmed")
       .not("helpship_order_id", "is", null)
       .gte("created_at", cutoffDate)
-      .not("tracking_status", "in", '("Delivered","Returned")')
       .order("created_at", { ascending: false });
+
+    // Filter out final statuses in code (Delivered, Returned) to properly handle NULLs
+    const orders = (allOrders || []).filter(
+      (o) => o.tracking_status !== "Delivered" && o.tracking_status !== "Returned"
+    );
 
     if (fetchError) {
       console.error("[Cron Tracking] Error fetching orders:", fetchError);

@@ -106,28 +106,38 @@ export async function GET(request: Request) {
       totalCount = count || 0;
     }
 
-    // Get latest order name for customers in current page (batch query)
+    // Get latest order name and calculate confirmed totals for customers in current page (batch query)
     const customerIds = customersData.map(c => c.id);
     const customerNames = new Map<string, string>();
+    const customerConfirmedTotals = new Map<string, number>();
 
     if (customerIds.length > 0) {
-      // Efficient query: get only latest order per customer using DISTINCT ON (PostgreSQL)
-      // Fallback: get all and dedupe in memory (current approach works fine for small batches)
-      const { data: latestOrders } = await supabaseAdmin
+      // Get all orders for these customers to calculate confirmed totals and get names
+      const { data: customerOrders } = await supabaseAdmin
         .from("orders")
-        .select("customer_id, full_name")
+        .select("customer_id, full_name, total, status, created_at")
         .in("customer_id", customerIds)
         .order("created_at", { ascending: false });
 
-      // Map customer_id -> name (first occurrence is latest due to ORDER BY)
-      latestOrders?.forEach(order => {
+      // Process orders: get latest name and sum confirmed totals
+      customerOrders?.forEach(order => {
+        // Map customer_id -> name (first occurrence is latest due to ORDER BY)
         if (!customerNames.has(order.customer_id)) {
           customerNames.set(order.customer_id, order.full_name);
+        }
+
+        // Sum only confirmed orders for totalSpent
+        if (order.status === "confirmed") {
+          const currentTotal = customerConfirmedTotals.get(order.customer_id) || 0;
+          customerConfirmedTotals.set(
+            order.customer_id,
+            currentTotal + parseFloat(order.total?.toString() || "0")
+          );
         }
       });
     }
 
-    // Map to Customer type with names
+    // Map to Customer type with names and confirmed-only totals
     const mappedCustomers = customersData.map((row) => ({
       id: row.id,
       organizationId: row.organization_id,
@@ -136,7 +146,7 @@ export async function GET(request: Request) {
       firstOrderDate: row.first_order_date,
       lastOrderDate: row.last_order_date,
       totalOrders: row.total_orders || 0,
-      totalSpent: parseFloat(row.total_spent?.toString() || "0"),
+      totalSpent: customerConfirmedTotals.get(row.id) || 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));

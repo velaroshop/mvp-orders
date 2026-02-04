@@ -56,6 +56,10 @@ export default function AdminPage() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
+  // Tracking status filter state
+  const [selectedTrackingStatuses, setSelectedTrackingStatuses] = useState<string[]>([]);
+  const [isTrackingStatusDropdownOpen, setIsTrackingStatusDropdownOpen] = useState(false);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 25;
@@ -203,6 +207,11 @@ export default function AdminPage() {
       params.append("statuses", selectedStatuses.join(","));
     }
 
+    // Add tracking status filters if any are selected
+    if (selectedTrackingStatuses.length > 0) {
+      params.append("trackingStatuses", selectedTrackingStatuses.join(","));
+    }
+
     // Add date range filter only when searching
     if (query.trim() && searchDateRange !== "all") {
       params.append("dateRange", searchDateRange.toString());
@@ -323,9 +332,25 @@ export default function AdminPage() {
     setCurrentPage(1);
   }
 
+  function toggleTrackingStatus(status: string) {
+    setSelectedTrackingStatuses((prev) => {
+      if (prev.includes(status)) {
+        return prev.filter((s) => s !== status);
+      } else {
+        return [...prev, status];
+      }
+    });
+    setCurrentPage(1);
+  }
+
+  function clearTrackingStatusFilters() {
+    setSelectedTrackingStatuses([]);
+    setCurrentPage(1);
+  }
+
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage, selectedStatuses, searchDateRange]);
+  }, [currentPage, selectedStatuses, selectedTrackingStatuses, searchDateRange]);
 
   // Fetch landing pages on mount
   useEffect(() => {
@@ -384,6 +409,23 @@ export default function AdminPage() {
       };
     }
   }, [isStatusDropdownOpen]);
+
+  // Close tracking status dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".tracking-status-filter-dropdown")) {
+        setIsTrackingStatusDropdownOpen(false);
+      }
+    }
+
+    if (isTrackingStatusDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isTrackingStatusDropdownOpen]);
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
@@ -1529,6 +1571,81 @@ export default function AdminPage() {
                             checked={selectedStatuses.includes(status.value)}
                             onChange={() => toggleStatus(status.value)}
                             className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
+                          <span className="text-sm text-white">{status.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tracking Status Filter Dropdown */}
+            <div className="relative tracking-status-filter-dropdown">
+              <button
+                onClick={() => setIsTrackingStatusDropdownOpen(!isTrackingStatusDropdownOpen)}
+                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors flex items-center gap-2 ${
+                  selectedTrackingStatuses.length > 0 ? "ring-2 ring-cyan-500" : ""
+                }`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+                Tracking
+                {selectedTrackingStatuses.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 bg-cyan-600 text-white text-xs rounded-full">
+                    {selectedTrackingStatuses.length}
+                  </span>
+                )}
+              </button>
+
+              {isTrackingStatusDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-white">Filtrează după tracking</span>
+                      {selectedTrackingStatuses.length > 0 && (
+                        <button
+                          onClick={clearTrackingStatusFilters}
+                          className="text-xs text-cyan-500 hover:text-cyan-400"
+                        >
+                          Șterge toate
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { value: "InTransit", label: "In Transit", color: "bg-blue-500" },
+                        { value: "OnDelivery", label: "On Delivery", color: "bg-cyan-500" },
+                        { value: "Delivered", label: "Delivered", color: "bg-green-500" },
+                        { value: "Returning", label: "Returning", color: "bg-orange-500" },
+                        { value: "Returned", label: "Returned", color: "bg-red-500" },
+                        { value: "WrongAddress", label: "Wrong Address", color: "bg-amber-500" },
+                        { value: "Disruptions", label: "Disruptions", color: "bg-rose-500" },
+                        { value: "Cancelled", label: "Cancelled", color: "bg-zinc-500" },
+                        { value: "NULL", label: "Fără tracking", color: "bg-purple-500" },
+                      ].map((status) => (
+                        <label
+                          key={status.value}
+                          className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedTrackingStatuses.includes(status.value)}
+                            onChange={() => toggleTrackingStatus(status.value)}
+                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-cyan-600 focus:ring-cyan-500"
                           />
                           <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
                           <span className="text-sm text-white">{status.label}</span>

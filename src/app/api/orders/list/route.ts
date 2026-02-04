@@ -29,6 +29,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get("q") || "";
     const statusesParam = searchParams.get("statuses") || "";
+    const trackingStatusesParam = searchParams.get("trackingStatuses") || "";
     const dateRangeParam = searchParams.get("dateRange") || "";
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
@@ -36,6 +37,11 @@ export async function GET(request: Request) {
     // Parse statuses
     const statuses = statusesParam.trim()
       ? statusesParam.split(",").map(s => s.trim()).filter(Boolean)
+      : null;
+
+    // Parse tracking statuses
+    const trackingStatuses = trackingStatusesParam.trim()
+      ? trackingStatusesParam.split(",").map(s => s.trim()).filter(Boolean)
       : null;
 
     // Calculate date cutoff if searching with date range
@@ -66,17 +72,37 @@ export async function GET(request: Request) {
         activeOrganizationId,
         searchQuery,
         statuses,
+        trackingStatuses,
         dateCutoff,
         limit,
         offset
       );
     }
 
-    // Get total count from first row (all rows have same total_count)
-    const totalCount = data && data.length > 0 ? Number(data[0].total_count) : 0;
+    // Filter by tracking status if specified (done in JS since RPC doesn't support it yet)
+    // Note: This may result in fewer results per page when filtering
+    let filteredData = data || [];
+    if (trackingStatuses && trackingStatuses.length > 0) {
+      filteredData = filteredData.filter((row: any) => {
+        // Handle special "NULL" value for orders without tracking status
+        if (trackingStatuses.includes("NULL")) {
+          if (row.tracking_status === null || row.tracking_status === undefined) {
+            return true;
+          }
+        }
+        // Check if the tracking status matches any of the selected ones
+        return trackingStatuses.includes(row.tracking_status);
+      });
+    }
+
+    // Get total count - if filtering by tracking status, count filtered results
+    // Note: When filtering by tracking status, total count is approximate
+    const totalCount = trackingStatuses && trackingStatuses.length > 0
+      ? filteredData.length
+      : (data && data.length > 0 ? Number(data[0].total_count) : 0);
 
     // Map rows to Order type
-    const orders = (data || []).map((row: any) => ({
+    const orders = filteredData.map((row: any) => ({
       id: row.id,
       customerId: row.customer_id,
       landingKey: row.landing_key,
@@ -136,6 +162,7 @@ async function fallbackSearch(
   organizationId: string,
   searchQuery: string,
   statuses: string[] | null,
+  trackingStatuses: string[] | null,
   dateCutoff: string | null,
   limit: number,
   offset: number
@@ -147,6 +174,24 @@ async function fallbackSearch(
 
   if (statuses && statuses.length > 0) {
     query = query.in("status", statuses);
+  }
+
+  // Filter by tracking status
+  if (trackingStatuses && trackingStatuses.length > 0) {
+    // Handle special "NULL" case for orders without tracking status
+    const hasNull = trackingStatuses.includes("NULL");
+    const nonNullStatuses = trackingStatuses.filter(s => s !== "NULL");
+
+    if (hasNull && nonNullStatuses.length > 0) {
+      // Both NULL and other statuses selected
+      query = query.or(`tracking_status.is.null,tracking_status.in.(${nonNullStatuses.join(",")})`);
+    } else if (hasNull) {
+      // Only NULL selected
+      query = query.is("tracking_status", null);
+    } else {
+      // Only non-NULL statuses selected
+      query = query.in("tracking_status", nonNullStatuses);
+    }
   }
 
   if (dateCutoff) {

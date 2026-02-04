@@ -89,6 +89,52 @@ const cityAbbrevMap: Record<string, string> = {
   'turnu': 'turnu',
 };
 
+// Parse village/commune from input like "Sat.candesti Com. Dumbrăveni" or "Candesti, Dumbraveni"
+// Returns { village, commune } where village is the main locality name and commune is optional context
+interface VillageCommuneParsed {
+  village: string;      // The main locality name (sat/oraș)
+  commune: string | null; // The commune name if provided
+}
+
+function parseVillageCommune(text: string): VillageCommuneParsed {
+  if (!text) return { village: '', commune: null };
+
+  const normalized = text.toLowerCase().trim();
+
+  // Pattern 1: "sat.X com.Y" or "sat X com Y" or "satul X comuna Y"
+  // Matches: "sat.candesti com. dumbraveni", "sat candesti com dumbraveni", "satul boureni comuna bals"
+  const satComMatch = normalized.match(/(?:sat(?:ul)?\.?\s*)([^,]+?)(?:\s+com(?:una)?\.?\s*)(.+)/i);
+  if (satComMatch) {
+    return {
+      village: satComMatch[1].trim(),
+      commune: satComMatch[2].trim(),
+    };
+  }
+
+  // Pattern 2: "X, Y" (comma separated) - first is village, second is commune
+  if (normalized.includes(',')) {
+    const parts = normalized.split(',').map(p => p.trim());
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return {
+        village: parts[0],
+        commune: parts[1],
+      };
+    }
+  }
+
+  // Pattern 3: "X (Y)" - village with commune in parentheses
+  const parenMatch = normalized.match(/^([^(]+)\s*\(([^)]+)\)/);
+  if (parenMatch) {
+    return {
+      village: parenMatch[1].trim(),
+      commune: parenMatch[2].trim(),
+    };
+  }
+
+  // No commune info detected - return just the cleaned village name
+  return { village: normalized, commune: null };
+}
+
 // Clean city input by removing common locality prefixes
 // Examples: "sat boureni" -> "boureni", "com. motca" -> "motca"
 // Also expands abbreviations: "rm valcea" -> "ramnicu valcea"
@@ -344,6 +390,11 @@ export async function POST(request: NextRequest) {
     const cityNorm = normalize(cityClean);
     const streetNorm = street ? normalize(street) : '';
 
+    // Parse village/commune from city input (handles "Sat.X Com.Y", "X, Y", "X (Y)" formats)
+    const parsedCity = parseVillageCommune(city);
+    const userVillage = normalize(parsedCity.village);
+    const userCommune = parsedCity.commune ? normalize(parsedCity.commune) : null;
+
     // Check if county is abbreviated and expand it
     if (countyAbbrevMap[countyNorm]) {
       countyNorm = countyAbbrevMap[countyNorm];
@@ -357,6 +408,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Search params:', { county, city, street });
     console.log('Cleaned city:', cityClean);
+    console.log('Parsed village/commune:', { village: userVillage, commune: userCommune });
     console.log('Normalized:', { countyNorm, cityNorm, streetNorm, userStreetType, userStreetNumber });
 
     const data = postalCodesData as PostalCodeEntry[];
@@ -374,73 +426,68 @@ export async function POST(request: NextRequest) {
       const countyScore = similarityScore(countyNorm, entry.county_normalized);
       if (countyScore < 0.7) continue; // Skip if county doesn't match well
 
-      // City matching with parenthesis handling
-      // Example: "Boureni" should match "Boureni (Balş)"
-      // Also handles: "Boureni, Bals" or "Boureni Bals" to prioritize specific commune
+      // City matching with village/commune handling
+      // Uses parseVillageCommune() to handle formats like:
+      // - "Sat.candesti Com. Dumbrăveni" → village="candesti", commune="dumbraveni"
+      // - "Candesti, Dumbraveni" → village="candesti", commune="dumbraveni"
+      // - "Candesti" → village="candesti", commune=null
+      //
+      // DB format note: "Village (Commune)" only when village exists in multiple communes
+      // If village is unique in Romania, it's stored as just "Village"
       let cityScore = 0;
       const dbCityNorm = entry.city_normalized;
 
-      // Check if user included commune info (comma or space separated)
-      // Examples: "boureni, bals", "boureni bals", "boureni(bals)"
-      const hasCommaSeparator = cityNorm.includes(',');
-      const hasParenthesisInInput = cityNorm.includes('(');
+      // Check if DB city has parenthesis (e.g., "candesti (dumbraveni)")
+      // This means the village name exists in multiple communes
+      const dbHasParenthesis = dbCityNorm.includes('(');
 
-      let userCityBase = cityNorm;
-      let userCommune = '';
-
-      if (hasCommaSeparator) {
-        // Split by comma: "boureni, bals" -> ["boureni", "bals"]
-        const parts = cityNorm.split(',').map(p => p.trim());
-        userCityBase = parts[0];
-        userCommune = parts[1] || '';
-      } else if (hasParenthesisInInput) {
-        // Split by parenthesis: "boureni(bals)" -> ["boureni", "bals"]
-        const parts = cityNorm.split('(');
-        userCityBase = parts[0].trim();
-        userCommune = parts[1] ? parts[1].replace(')', '').trim() : '';
-      } else if (cityNorm.includes(' ')) {
-        // Check if last word might be commune (heuristic: if 2-3 words)
-        const words = cityNorm.split(/\s+/);
-        if (words.length === 2 || words.length === 3) {
-          // Try treating last word as commune
-          userCityBase = words.slice(0, -1).join(' ');
-          userCommune = words[words.length - 1];
-        }
-      }
-
-      // Check if DB city has parenthesis (e.g., "boureni (bals)")
-      const hasParenthesis = dbCityNorm.includes('(');
-
-      if (hasParenthesis) {
-        // Extract city name and commune from DB
-        const dbCityBase = dbCityNorm.split('(')[0].trim();
+      if (dbHasParenthesis) {
+        // Extract village and commune from DB: "candesti (dumbraveni)" -> "candesti", "dumbraveni"
+        const dbVillage = dbCityNorm.split('(')[0].trim();
         const dbCommune = dbCityNorm.split('(')[1]?.replace(')', '').trim() || '';
 
-        // Try matching both the full name and the base name
-        const fullScore = similarityScore(cityNorm, dbCityNorm);
-        const baseScore = similarityScore(userCityBase, dbCityBase);
+        // Match village name
+        const villageScore = similarityScore(userVillage, dbVillage);
 
-        // If user provided commune info, check if it matches
         if (userCommune) {
+          // User provided commune info - check if it matches DB commune
           const communeScore = similarityScore(userCommune, dbCommune);
 
-          // If commune matches well, give huge boost
           if (communeScore >= 0.7) {
-            cityScore = Math.max(baseScore * 0.5 + communeScore * 0.5, 0.95);
+            // Commune matches: high priority - this is THE village we want
+            // Weight village 50%, commune 50%, ensure minimum 0.95 if both match well
+            cityScore = Math.max(villageScore * 0.5 + communeScore * 0.5, villageScore >= 0.7 ? 0.95 : 0.8);
           } else {
-            // Commune doesn't match, use base score but penalize
-            cityScore = baseScore * 0.8;
+            // Commune doesn't match: PENALIZE - this is a different village with same name
+            // Even if village name matches perfectly, wrong commune is bad
+            cityScore = villageScore * 0.5;
           }
         } else {
-          // No commune provided, use the better score
-          cityScore = Math.max(fullScore, baseScore);
+          // No commune in user input - match on village name only
+          // Can't verify which commune, so use village match score
+          cityScore = villageScore;
         }
       } else {
-        // No parenthesis in DB, standard matching
-        // Try both full city name AND base city name (in case user split wrongly)
-        const fullCityScore = similarityScore(cityNorm, dbCityNorm);
-        const baseCityScore = userCityBase ? similarityScore(userCityBase, dbCityNorm) : 0;
-        cityScore = Math.max(fullCityScore, baseCityScore);
+        // DB has no parenthesis - village name is unique in Romania
+        // Standard matching: just compare against the village name
+        const villageScore = similarityScore(userVillage, dbCityNorm);
+
+        // Also try full normalized city input in case parsing removed something
+        const fullScore = similarityScore(cityNorm, dbCityNorm);
+
+        // If user provided commune, check if it appears in DB city (some entries might be communes)
+        let communeBonus = 0;
+        if (userCommune) {
+          // Check if user's commune is contained in or matches the DB entry
+          const communeMatch = similarityScore(userCommune, dbCityNorm);
+          if (communeMatch >= 0.7) {
+            // The DB entry might be the commune itself
+            communeBonus = 0.1;
+          }
+        }
+
+        cityScore = Math.max(villageScore, fullScore) + communeBonus;
+        cityScore = Math.min(cityScore, 1.0);
       }
 
       if (cityScore < 0.6) continue; // Skip if city doesn't match well
@@ -512,17 +559,17 @@ export async function POST(request: NextRequest) {
         ? (countyScore * 0.2 + cityScore * 0.3 + streetScore * 0.5)
         : (countyScore * 0.3 + cityScore * 0.7);
 
-      // BOOST/PENALIZE: Prioritize results where the city matches exactly the user's input
+      // BOOST/PENALIZE: Prioritize results where the village matches exactly the user's input
       // This fixes the issue where "Baia Mare" (big city with many streets) ranks higher
       // than "Baia Sprie" (the actual city from the order) due to better street matches
-      const dbCityBase = entry.city_normalized.split('(')[0].trim();
-      const exactCityMatch = dbCityBase === userCityBase || dbCityBase === cityNorm;
-      if (exactCityMatch) {
-        // Give a 25% boost for exact city match
+      const dbVillageBase = entry.city_normalized.split('(')[0].trim();
+      const exactVillageMatch = dbVillageBase === userVillage || dbVillageBase === cityNorm;
+      if (exactVillageMatch) {
+        // Give a 25% boost for exact village match
         overallScore = Math.min(overallScore * 1.25, 1.0);
       } else {
-        // Penalize results from different cities by 20%
-        // This ensures the order's actual city always ranks higher
+        // Penalize results from different villages by 20%
+        // This ensures the order's actual village always ranks higher
         overallScore = overallScore * 0.80;
       }
 

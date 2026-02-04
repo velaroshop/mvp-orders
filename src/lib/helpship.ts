@@ -888,6 +888,88 @@ class HelpshipClient {
       console.log("[Helpship] This should not happen if status: 'PENDING' was passed in updates");
     }
   }
+
+  /**
+   * Obține tracking status pentru o comandă din Helpship
+   * Tracking status este separat de order status și indică stadiul livrării
+   * Posibile valori: Unknown, InTransit, Delivered, Returned, Cancelled, etc.
+   */
+  async getTrackingStatus(helpshipOrderId: string): Promise<{
+    trackingStatus: string | null;
+    trackingNumber: string | null;
+    deliveryService: string | null;
+  } | null> {
+    try {
+      console.log(`[Helpship] Getting tracking status for order ${helpshipOrderId}...`);
+      const response = await this.makeAuthenticatedRequest(`/api/Order/${helpshipOrderId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Helpship] Failed to get tracking status: ${response.status} ${errorText}`);
+        return null;
+      }
+
+      const order = await response.json();
+
+      // Tracking status poate fi în câmpuri diferite
+      // trackingStatus, deliveryStatus, sau ca parte din shipping info
+      const trackingStatus = order.trackingStatus ?? order.deliveryStatus ?? order.trackingStatusName ?? null;
+      const trackingNumber = order.trackingNumber ?? order.awb ?? order.trackingCode ?? null;
+      const deliveryService = order.deliveryServiceName ?? order.deliveryService ?? null;
+
+      console.log(`[Helpship] Order ${helpshipOrderId} tracking: status=${trackingStatus}, tracking#=${trackingNumber}, service=${deliveryService}`);
+
+      return {
+        trackingStatus,
+        trackingNumber,
+        deliveryService,
+      };
+    } catch (err) {
+      console.error(`[Helpship] Error getting tracking status:`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Obține tracking status pentru mai multe comenzi (batch)
+   * Mai eficient pentru cron job decât apeluri individuale
+   */
+  async getTrackingStatusBatch(helpshipOrderIds: string[]): Promise<Map<string, {
+    trackingStatus: string | null;
+    trackingNumber: string | null;
+    deliveryService: string | null;
+  }>> {
+    const results = new Map<string, {
+      trackingStatus: string | null;
+      trackingNumber: string | null;
+      deliveryService: string | null;
+    }>();
+
+    // Helpship nu pare să aibă endpoint batch, deci facem apeluri individuale
+    // Dar le facem în paralel pentru eficiență (max 10 simultan pentru a evita rate limiting)
+    const batchSize = 10;
+
+    for (let i = 0; i < helpshipOrderIds.length; i += batchSize) {
+      const batch = helpshipOrderIds.slice(i, i + batchSize);
+      const promises = batch.map(async (orderId) => {
+        const tracking = await this.getTrackingStatus(orderId);
+        if (tracking) {
+          results.set(orderId, tracking);
+        }
+      });
+
+      await Promise.all(promises);
+
+      // Small delay between batches to avoid rate limiting
+      if (i + batchSize < helpshipOrderIds.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    return results;
+  }
 }
 
 // Exportăm clasa pentru a putea crea instanțe cu credențiale custom

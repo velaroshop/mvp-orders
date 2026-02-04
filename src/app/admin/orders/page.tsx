@@ -961,6 +961,46 @@ export default function AdminPage() {
       return;
     }
 
+    if (action === "sync-tracking") {
+      setOpenDropdown(null);
+      // Sync tracking status from Helpship
+      try {
+        const response = await fetch(`/api/orders/${orderId}/sync-tracking`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to sync tracking");
+        }
+
+        const result = await response.json();
+
+        // Update local state with new tracking status
+        updateOrderLocally(orderId, {
+          trackingStatus: result.trackingStatus,
+          trackingUpdatedAt: new Date().toISOString(),
+        });
+
+        setToast({
+          isOpen: true,
+          type: result.changed ? "success" : "info",
+          message: result.changed
+            ? `Tracking actualizat: ${result.trackingStatus || "Unknown"}`
+            : `Tracking neschimbat: ${result.trackingStatus || "Unknown"}`,
+        });
+      } catch (error) {
+        console.error("Error syncing tracking:", error);
+        const errorMessage = error instanceof Error ? error.message : "Eroare la sincronizarea tracking-ului";
+        setToast({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
+      }
+      return;
+    }
+
     if (action === "mark-test") {
       setOrderToMarkTest(orderId);
       setIsMarkTestModalOpen(true);
@@ -1542,6 +1582,29 @@ export default function AdminPage() {
                     {/* Status */}
                     <td className="px-2 py-1.5">
                       <div className="flex flex-col gap-0.5">
+                        {/* Tracking Status - shown for confirmed orders */}
+                        {order.status === "confirmed" && order.trackingStatus && (
+                          <span
+                            className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-tight whitespace-nowrap cursor-help ${
+                              order.trackingStatus === "Delivered"
+                                ? "bg-green-900/50 text-green-300 border border-green-700"
+                                : order.trackingStatus === "InTransit"
+                                ? "bg-blue-900/50 text-blue-300 border border-blue-700"
+                                : order.trackingStatus === "Returned"
+                                ? "bg-red-900/50 text-red-300 border border-red-700"
+                                : order.trackingStatus === "Cancelled"
+                                ? "bg-zinc-800 text-zinc-400 border border-zinc-600"
+                                : "bg-zinc-800 text-zinc-400 border border-zinc-600"
+                            }`}
+                            title={order.trackingUpdatedAt ? `Actualizat: ${new Date(order.trackingUpdatedAt).toLocaleString("ro-RO")}` : ""}
+                          >
+                            {order.trackingStatus === "InTransit" ? "📦 In Transit" :
+                             order.trackingStatus === "Delivered" ? "✅ Delivered" :
+                             order.trackingStatus === "Returned" ? "↩️ Returned" :
+                             order.trackingStatus === "Cancelled" ? "✕ Cancelled" :
+                             `📦 ${order.trackingStatus}`}
+                          </span>
+                        )}
                         <span
                           className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${
                             order.status === "queue"
@@ -1821,12 +1884,22 @@ export default function AdminPage() {
                                   Order Note
                                 </button>
                                 {order.helpshipOrderId && (
-                                  <button
-                                    onClick={() => handleActionClick(order.id, "sync-status")}
-                                    className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-blue-900/30 font-medium border-t border-zinc-600"
-                                  >
-                                    Sync from Helpship
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => handleActionClick(order.id, "sync-status")}
+                                      className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-blue-900/30 font-medium border-t border-zinc-600"
+                                    >
+                                      Sync from Helpship
+                                    </button>
+                                    {order.status === "confirmed" && (
+                                      <button
+                                        onClick={() => handleActionClick(order.id, "sync-tracking")}
+                                        className="w-full text-left px-3 py-2 text-xs text-cyan-400 hover:bg-cyan-900/30 font-medium"
+                                      >
+                                        📦 Sync Tracking
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                                 {order.status === "queue" && (
                                   <button

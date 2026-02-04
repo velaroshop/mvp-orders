@@ -113,6 +113,9 @@ export async function GET(request: Request) {
         gclid: row.gclid ?? undefined,
         ttclid: row.ttclid ?? undefined,
         trackingData: row.tracking_data ?? undefined,
+        // Helpship tracking status
+        trackingStatus: row.tracking_status ?? undefined,
+        trackingUpdatedAt: row.tracking_updated_at ?? undefined,
         createdAt: row.created_at,
       };
     });

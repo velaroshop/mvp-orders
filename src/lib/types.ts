@@ -88,6 +88,9 @@ export interface Order {
   metaPurchaseEventId?: string; // Event ID for deduplication
   metaPurchaseSentAt?: string; // Timestamp when Purchase event was sent
   metaPurchaseLastError?: string; // Last error message if failed
+  // Tracking status from Helpship
+  trackingStatus?: string; // InTransit, Delivered, Returned, Cancelled, etc.
+  trackingUpdatedAt?: string; // Last sync timestamp
   createdAt: string;
 }
 

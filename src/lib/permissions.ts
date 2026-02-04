@@ -15,10 +15,6 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
 
   // Route accessible to owner only
   "/admin/settings/team": ["owner"],
-
-  // Comments moderation module
-  "/admin/comments": ["owner", "admin"],
-  "/admin/comments/settings": ["owner"],
 };
 
 // Check if user has permission to access a route

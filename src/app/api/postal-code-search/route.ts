@@ -535,16 +535,16 @@ export async function POST(request: NextRequest) {
           const range = parseNumberRange(entry.number);
           if (range) {
             if (userStreetNumber >= range.min && userStreetNumber <= range.max) {
-              // Number falls within range: significant boost
-              streetScore = Math.min(streetScore * 1.4, 1.0);
+              // Number falls within range: significant boost (1.8x)
+              streetScore = Math.min(streetScore * 1.8, 1.0);
             } else {
-              // Number doesn't match range: slight penalty to push non-matching ranges down
+              // Number doesn't match range: stronger penalty to push non-matching ranges down
               const distance = Math.min(
                 Math.abs(userStreetNumber - range.min),
                 Math.abs(userStreetNumber - (range.max === Infinity ? range.min : range.max))
               );
-              // Penalty scales with distance: nearby ranges penalized less
-              const penalty = Math.max(0.7, 1 - distance / 1000);
+              // Penalty scales with distance: min 0.4 for far ranges, max 0.85 for nearby
+              const penalty = Math.max(0.4, 0.85 - distance / 200);
               streetScore = streetScore * penalty;
             }
           }

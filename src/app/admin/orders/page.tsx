@@ -437,11 +437,13 @@ export default function AdminPage() {
       return;
     }
 
-    // For other orders, proceed with duplicate check and modal
+    // Open modal immediately for snappy UX
+    setIsModalOpen(true);
+
+    // Check duplicates in parallel (non-blocking)
     setIsCheckingDuplicates(true);
 
     try {
-      // Check for duplicate orders
       const params = new URLSearchParams({
         customerId: order.customerId,
         currentOrderId: order.id,
@@ -449,27 +451,21 @@ export default function AdminPage() {
 
       const response = await fetch(`/api/orders/check-duplicates?${params.toString()}`);
 
-      if (!response.ok) {
-        console.error("Failed to check duplicates, proceeding with confirmation");
-        setIsModalOpen(true);
-        return;
-      }
+      if (response.ok) {
+        const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.hasDuplicates && data.orders.length > 0) {
-        // Show duplicate warning modal
-        setDuplicateOrders(data.orders);
-        setDuplicateOrderDays(data.duplicateOrderDays);
-        setIsDuplicateWarningOpen(true);
-      } else {
-        // No duplicates, proceed with confirmation
-        setIsModalOpen(true);
+        if (data.hasDuplicates && data.orders.length > 0) {
+          // Close confirm modal and show duplicate warning instead
+          setIsModalOpen(false);
+          setDuplicateOrders(data.orders);
+          setDuplicateOrderDays(data.duplicateOrderDays);
+          setIsDuplicateWarningOpen(true);
+        }
+        // If no duplicates, modal is already open - nothing to do
       }
     } catch (error) {
       console.error("Error checking duplicates:", error);
-      // On error, proceed with confirmation anyway
-      setIsModalOpen(true);
+      // On error, modal is already open - proceed with confirmation
     } finally {
       setIsCheckingDuplicates(false);
     }

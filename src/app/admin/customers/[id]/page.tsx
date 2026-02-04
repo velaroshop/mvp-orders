@@ -388,14 +388,12 @@ export default function CustomerDetailsPage() {
         </div>
       )}
 
-      {/* Tracking Modal */}
+      {/* Tracking Details Modal */}
       {isTrackingModalOpen && trackingModalOrder && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">
-                Detalii Tracking
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-700">
+              <h3 className="text-lg font-semibold text-white">Detalii Tracking</h3>
               <button
                 onClick={closeTrackingModal}
                 className="text-zinc-400 hover:text-white transition-colors"
@@ -405,88 +403,112 @@ export default function CustomerDetailsPage() {
                 </svg>
               </button>
             </div>
-
-            <div className="text-sm text-zinc-400 mb-4">
-              Comandă #{trackingModalOrder.orderNumber || trackingModalOrder.id.substring(0, 8)}
-            </div>
-
-            {trackingModalLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-                <span className="ml-3 text-zinc-400">Se încarcă datele...</span>
+            <div className="p-4 space-y-4">
+              {/* Order Info */}
+              <div className="text-sm text-zinc-400">
+                Comandă: <span className="text-white font-medium">{trackingModalOrder.orderNumber || trackingModalOrder.id.substring(0, 8)}</span>
               </div>
-            ) : trackingModalData ? (
-              <div className="space-y-4">
-                {/* Tracking Status */}
-                <div className="flex items-center justify-between py-3 border-b border-zinc-700">
-                  <span className="text-zinc-400 text-sm">Status Tracking</span>
-                  <span className={`inline-flex rounded px-2 py-1 text-xs font-medium ${getTrackingStatusColor(trackingModalData.trackingStatus)}`}>
-                    {getTrackingStatusLabel(trackingModalData.trackingStatus)}
-                  </span>
-                </div>
 
-                {/* AWB / Tracking Number */}
-                <div className="flex items-center justify-between py-3 border-b border-zinc-700">
-                  <span className="text-zinc-400 text-sm">Nr. AWB</span>
-                  {trackingModalData.trackingNumber ? (
-                    <a
-                      href={`https://gls-group.eu/RO/ro/urmarire-colet?match=${trackingModalData.trackingNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 font-mono text-sm flex items-center gap-1 transition-colors"
-                    >
-                      {trackingModalData.trackingNumber}
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  ) : (
-                    <span className="text-zinc-500 text-sm">-</span>
+              {trackingModalLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                  <span className="ml-3 text-zinc-400">Se încarcă...</span>
+                </div>
+              ) : trackingModalData ? (
+                <div className="space-y-3">
+                  {/* Tracking Status */}
+                  <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                    <span className="text-zinc-400 text-sm">Status</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${
+                      trackingModalData.trackingStatus === "Delivered"
+                        ? "bg-green-900/50 text-green-300"
+                        : trackingModalData.trackingStatus === "InTransit"
+                        ? "bg-blue-900/50 text-blue-300"
+                        : trackingModalData.trackingStatus === "OnDelivery"
+                        ? "bg-cyan-900/50 text-cyan-300"
+                        : trackingModalData.trackingStatus === "Returned"
+                        ? "bg-red-900/50 text-red-300"
+                        : trackingModalData.trackingStatus === "Returning"
+                        ? "bg-orange-900/50 text-orange-300"
+                        : trackingModalData.trackingStatus === "WrongAddress"
+                        ? "bg-amber-900/50 text-amber-300"
+                        : trackingModalData.trackingStatus === "Disruptions"
+                        ? "bg-rose-900/50 text-rose-300"
+                        : "bg-zinc-700 text-zinc-300"
+                    }`}>
+                      {trackingModalData.trackingStatus || "Necunoscut"}
+                    </span>
+                  </div>
+
+                  {/* Tracking Number */}
+                  <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                    <span className="text-zinc-400 text-sm">AWB / Tracking</span>
+                    {trackingModalData.trackingNumber ? (
+                      <a
+                        href={`https://gls-group.eu/RO/ro/urmarire-colet?match=${trackingModalData.trackingNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyan-400 hover:text-cyan-300 font-mono text-sm flex items-center gap-1 transition-colors"
+                      >
+                        {trackingModalData.trackingNumber}
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="text-white font-mono text-sm">-</span>
+                    )}
+                  </div>
+
+                  {/* Postal Code */}
+                  {trackingModalOrder.postalCode && (
+                    <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                      <span className="text-zinc-400 text-sm">Cod poștal</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(trackingModalOrder.postalCode || "");
+                          setToast({
+                            isOpen: true,
+                            type: "success",
+                            message: "Cod poștal copiat!",
+                          });
+                        }}
+                        className="text-white font-mono text-sm hover:text-cyan-400 transition-colors cursor-pointer flex items-center gap-1"
+                        title="Click pentru a copia"
+                      >
+                        {trackingModalOrder.postalCode}
+                        <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Delivery Service */}
+                  <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                    <span className="text-zinc-400 text-sm">Curier</span>
+                    <span className="text-white text-sm">
+                      {trackingModalData.deliveryService || "-"}
+                    </span>
+                  </div>
+
+                  {/* Last Updated */}
+                  {trackingModalOrder.trackingUpdatedAt && (
+                    <div className="text-xs text-zinc-500 text-center pt-2">
+                      Ultima actualizare în DB: {new Date(trackingModalOrder.trackingUpdatedAt).toLocaleString("ro-RO")}
+                    </div>
                   )}
                 </div>
-
-                {/* Courier */}
-                <div className="flex items-center justify-between py-3 border-b border-zinc-700">
-                  <span className="text-zinc-400 text-sm">Curier</span>
-                  <span className="text-white text-sm">
-                    {trackingModalData.deliveryService || "-"}
-                  </span>
+              ) : (
+                <div className="text-center py-8 text-zinc-400">
+                  Nu s-au putut obține datele de tracking
                 </div>
-
-                {/* Postal Code */}
-                {trackingModalOrder.postalCode && (
-                  <div className="flex items-center justify-between py-3 border-b border-zinc-700">
-                    <span className="text-zinc-400 text-sm">Cod Poștal</span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(trackingModalOrder.postalCode || "");
-                        setToast({
-                          isOpen: true,
-                          type: "success",
-                          message: "Cod poștal copiat!",
-                        });
-                      }}
-                      className="text-white font-mono text-sm hover:text-cyan-400 transition-colors cursor-pointer flex items-center gap-1"
-                      title="Click pentru a copia"
-                    >
-                      {trackingModalOrder.postalCode}
-                      <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-zinc-400">
-                Nu s-au putut obține datele de tracking.
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end">
+              )}
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-zinc-700">
               <button
                 onClick={closeTrackingModal}
-                className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors text-sm"
+                className="px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-600 rounded-lg hover:bg-zinc-700 transition-colors"
               >
                 Închide
               </button>

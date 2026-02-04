@@ -913,22 +913,11 @@ class HelpshipClient {
 
       const order = await response.json();
 
-      // Log all order fields to find the correct tracking field name
-      console.log(`[Helpship] Order ${helpshipOrderId} full response:`, JSON.stringify(order, null, 2));
-
-      // Tracking status poate fi în câmpuri diferite
-      // Verificăm toate variantele posibile (camelCase și snake_case)
-      const trackingStatus = order.trackingStatus
-        ?? order.tracking_status
-        ?? order.deliveryStatus
-        ?? order.delivery_status
-        ?? order.trackingStatusName
-        ?? order.tracking_status_name
-        ?? order.shippingStatus
-        ?? order.shipping_status
-        ?? null;
-      const trackingNumber = order.trackingNumber ?? order.tracking_number ?? order.awb ?? order.trackingCode ?? order.tracking_code ?? null;
-      const deliveryService = order.deliveryServiceName ?? order.delivery_service_name ?? order.deliveryService ?? order.delivery_service ?? null;
+      // trackingStatusName contains the human-readable status: "InTransit", "Delivered", etc.
+      // trackingStatus contains the numeric enum value (0=Unknown, 1=InTransit, 2=Delivered, etc.)
+      const trackingStatus = order.trackingStatusName ?? null;
+      const trackingNumber = order.trackingNumber ?? null;
+      const deliveryService = order.deliveryServiceName ?? null;
 
       console.log(`[Helpship] Order ${helpshipOrderId} tracking: status=${trackingStatus}, tracking#=${trackingNumber}, service=${deliveryService}`);
 

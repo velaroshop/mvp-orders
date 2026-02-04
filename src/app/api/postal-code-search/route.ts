@@ -531,21 +531,29 @@ export async function POST(request: NextRequest) {
         }
 
         // Street number matching: boost entries where user's number falls within the DB range
+        // IMPORTANT: Only boost if street name already matches well (>= 0.6)
+        // This prevents wrong streets with right number ranges from ranking high
         if (userStreetNumber && entry.number) {
           const range = parseNumberRange(entry.number);
           if (range) {
             if (userStreetNumber >= range.min && userStreetNumber <= range.max) {
-              // Number falls within range: significant boost (1.8x)
-              streetScore = Math.min(streetScore * 1.8, 1.0);
+              // Number falls within range: boost only if street name similarity is decent
+              if (streetScore >= 0.6) {
+                streetScore = Math.min(streetScore * 1.8, 1.0);
+              }
+              // If streetScore < 0.6, don't boost - wrong street name even with right number
             } else {
-              // Number doesn't match range: stronger penalty to push non-matching ranges down
-              const distance = Math.min(
-                Math.abs(userStreetNumber - range.min),
-                Math.abs(userStreetNumber - (range.max === Infinity ? range.min : range.max))
-              );
-              // Penalty scales with distance: min 0.4 for far ranges, max 0.85 for nearby
-              const penalty = Math.max(0.4, 0.85 - distance / 200);
-              streetScore = streetScore * penalty;
+              // Number doesn't match range: penalty to push non-matching ranges down
+              // Only penalize if the street name already matched somewhat (otherwise it's irrelevant)
+              if (streetScore >= 0.5) {
+                const distance = Math.min(
+                  Math.abs(userStreetNumber - range.min),
+                  Math.abs(userStreetNumber - (range.max === Infinity ? range.min : range.max))
+                );
+                // Penalty scales with distance: min 0.4 for far ranges, max 0.85 for nearby
+                const penalty = Math.max(0.4, 0.85 - distance / 200);
+                streetScore = streetScore * penalty;
+              }
             }
           }
         }

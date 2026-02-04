@@ -25,6 +25,10 @@ export default function CustomerDetailsPage() {
     deliveryService: string | null;
   } | null>(null);
 
+  // Order Details Modal state
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error"; message: string }>({
     isOpen: false,
@@ -77,6 +81,17 @@ export default function CustomerDetailsPage() {
 
   function formatPrice(price: number) {
     return price.toFixed(2);
+  }
+
+  function formatOrderNumber(
+    orderNumber: number | string | undefined | null,
+    orderSeries: string | undefined | null,
+    orderId: string
+  ): string {
+    if (orderNumber && orderSeries) {
+      return `${orderSeries}-${String(orderNumber).padStart(5, "0")}`;
+    }
+    return orderId.substring(0, 8);
   }
 
   function getStatusColor(status: string) {
@@ -287,7 +302,7 @@ export default function CustomerDetailsPage() {
               <thead className="bg-zinc-900 border-b border-zinc-700">
                 <tr>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                    Nr.
+                    Order ID
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                     Nume
@@ -307,20 +322,21 @@ export default function CustomerDetailsPage() {
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                     Dată
                   </th>
-                  <th className="px-3 py-2 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                    Acțiuni
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-700">
                 {orders.map((order) => (
                   <tr
                     key={order.id}
-                    className="hover:bg-zinc-700/50 transition-colors"
+                    className="hover:bg-zinc-700/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setIsOrderModalOpen(true);
+                    }}
                   >
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <div className="text-xs font-medium text-white">
-                        {order.orderNumber || order.id.substring(0, 8)}
+                      <div className="text-xs font-medium text-cyan-400">
+                        {formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
                       </div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
@@ -351,7 +367,10 @@ export default function CustomerDetailsPage() {
                     <td className="px-3 py-3 whitespace-nowrap">
                       {order.status === "confirmed" && order.helpshipOrderId ? (
                         <button
-                          onClick={() => openTrackingModal(order)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openTrackingModal(order);
+                          }}
                           className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-tight whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${getTrackingStatusColor(order.trackingStatus)}`}
                           title="Click pentru detalii tracking"
                         >
@@ -371,14 +390,6 @@ export default function CustomerDetailsPage() {
                       <div className="text-xs text-zinc-300">
                         {formatDate(order.createdAt)}
                       </div>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right text-xs font-medium">
-                      <Link
-                        href={`/admin/orders`}
-                        className="text-emerald-400 hover:text-emerald-300 text-xs"
-                      >
-                        Vezi
-                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -508,6 +519,148 @@ export default function CustomerDetailsPage() {
             <div className="flex justify-end gap-2 p-4 border-t border-zinc-700">
               <button
                 onClick={closeTrackingModal}
+                className="px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-600 rounded-lg hover:bg-zinc-700 transition-colors"
+              >
+                Închide
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Details Modal */}
+      {isOrderModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-700 sticky top-0 bg-zinc-900">
+              <h3 className="text-lg font-semibold text-white">
+                Comandă {formatOrderNumber(selectedOrder.orderNumber, selectedOrder.orderSeries, selectedOrder.id)}
+              </h3>
+              <button
+                onClick={() => {
+                  setIsOrderModalOpen(false);
+                  setSelectedOrder(null);
+                }}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Status & Date */}
+              <div className="flex items-center justify-between">
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
+                  {getStatusLabel(selectedOrder.status)}
+                </span>
+                <span className="text-xs text-zinc-400">
+                  {formatDate(selectedOrder.createdAt)}
+                </span>
+              </div>
+
+              {/* Customer Info */}
+              <div className="p-3 bg-zinc-800 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Nume</span>
+                  <span className="text-white text-sm font-medium">{selectedOrder.fullName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Telefon</span>
+                  <span className="text-white text-sm font-mono">{selectedOrder.phone}</span>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="p-3 bg-zinc-800 rounded-lg space-y-2">
+                <div className="text-zinc-400 text-sm mb-1">Adresă</div>
+                <div className="text-white text-sm">{selectedOrder.address}</div>
+                <div className="text-zinc-300 text-sm">
+                  {selectedOrder.city}, {selectedOrder.county}
+                </div>
+                {selectedOrder.postalCode && (
+                  <div className="text-zinc-400 text-sm">
+                    Cod poștal: <span className="text-white font-mono">{selectedOrder.postalCode}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Products */}
+              <div className="p-3 bg-zinc-800 rounded-lg space-y-2">
+                <div className="text-zinc-400 text-sm mb-1">Produse</div>
+                {selectedOrder.productName && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm">
+                      {selectedOrder.productName}
+                      {selectedOrder.productQuantity && selectedOrder.productQuantity > 1 && (
+                        <span className="text-zinc-400"> x{selectedOrder.productQuantity}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {selectedOrder.upsells && selectedOrder.upsells.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-zinc-700">
+                    <div className="text-zinc-500 text-xs mb-1">Upsells:</div>
+                    {selectedOrder.upsells.map((upsell: any, idx: number) => (
+                      <div key={idx} className="text-zinc-300 text-sm">
+                        {upsell.name || upsell.productName}
+                        {upsell.quantity && upsell.quantity > 1 && (
+                          <span className="text-zinc-400"> x{upsell.quantity}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Totals */}
+              <div className="p-3 bg-zinc-800 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Subtotal</span>
+                  <span className="text-white text-sm">{formatPrice(selectedOrder.subtotal)} RON</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Transport</span>
+                  <span className="text-white text-sm">{formatPrice(selectedOrder.shippingCost)} RON</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-700">
+                  <span className="text-white text-sm font-medium">Total</span>
+                  <span className="text-emerald-400 text-sm font-semibold">{formatPrice(selectedOrder.total)} RON</span>
+                </div>
+              </div>
+
+              {/* Order Note */}
+              {selectedOrder.orderNote && (
+                <div className="p-3 bg-zinc-800 rounded-lg">
+                  <div className="text-zinc-400 text-sm mb-1">Notă comandă</div>
+                  <div className="text-white text-sm">{selectedOrder.orderNote}</div>
+                </div>
+              )}
+
+              {/* Tracking - if confirmed */}
+              {selectedOrder.status === "confirmed" && selectedOrder.helpshipOrderId && (
+                <div className="p-3 bg-zinc-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-400 text-sm">Tracking</span>
+                    <button
+                      onClick={() => {
+                        setIsOrderModalOpen(false);
+                        openTrackingModal(selectedOrder);
+                      }}
+                      className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium uppercase cursor-pointer hover:opacity-80 transition-opacity ${getTrackingStatusColor(selectedOrder.trackingStatus)}`}
+                    >
+                      📦 {selectedOrder.trackingStatus ? getTrackingStatusLabel(selectedOrder.trackingStatus) : "Vezi tracking"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-zinc-700">
+              <button
+                onClick={() => {
+                  setIsOrderModalOpen(false);
+                  setSelectedOrder(null);
+                }}
                 className="px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 border border-zinc-600 rounded-lg hover:bg-zinc-700 transition-colors"
               >
                 Închide

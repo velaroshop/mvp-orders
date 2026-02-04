@@ -59,7 +59,7 @@ export async function GET(
       throw new Error(`Failed to fetch orders: ${ordersError.message}`);
     }
 
-    // Map customer data
+    // Map customer data - we'll override totalSpent with confirmed-only calculation later
     const customer = {
       id: customerData.id,
       organizationId: customerData.organization_id,
@@ -67,10 +67,20 @@ export async function GET(
       firstOrderDate: customerData.first_order_date,
       lastOrderDate: customerData.last_order_date,
       totalOrders: customerData.total_orders || 0,
-      totalSpent: parseFloat(customerData.total_spent?.toString() || "0"),
+      totalSpent: 0, // Will be calculated from confirmed orders
       createdAt: customerData.created_at,
       updatedAt: customerData.updated_at,
     };
+
+    // Calculate totalSpent only from confirmed orders
+    const confirmedTotal = (ordersData || [])
+      .filter((row) => row.status === "confirmed")
+      .reduce((sum, row) => sum + parseFloat(row.total?.toString() || "0"), 0);
+
+    // Count confirmed orders
+    const confirmedOrdersCount = (ordersData || []).filter(
+      (row) => row.status === "confirmed"
+    ).length;
 
     // Map orders data
     const orders = (ordersData || []).map((row) => ({
@@ -94,14 +104,21 @@ export async function GET(
       status: row.status as OrderStatus,
       helpshipOrderId: row.helpship_order_id ?? undefined,
       orderNumber: row.order_number ?? undefined,
+      orderSeries: row.order_series ?? undefined,
       orderNote: row.order_note ?? undefined,
+      trackingStatus: row.tracking_status ?? undefined,
+      trackingUpdatedAt: row.tracking_updated_at ?? undefined,
       createdAt: row.created_at,
     }));
+
+    // Set confirmed-only totals
+    customer.totalSpent = confirmedTotal;
 
     return NextResponse.json({
       customer,
       orders,
       total: count || 0,
+      confirmedOrdersCount,
       limit,
       offset,
     });

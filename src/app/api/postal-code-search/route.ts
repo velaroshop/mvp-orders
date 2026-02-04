@@ -508,9 +508,19 @@ export async function POST(request: NextRequest) {
       }
 
       // Calculate overall score (weighted average)
-      const overallScore = streetNorm
+      let overallScore = streetNorm
         ? (countyScore * 0.2 + cityScore * 0.3 + streetScore * 0.5)
         : (countyScore * 0.3 + cityScore * 0.7);
+
+      // BOOST: Prioritize results where the city matches exactly the user's input
+      // This fixes the issue where "Baia Mare" (big city with many streets) ranks higher
+      // than "Baia Sprie" (the actual city from the order) due to better street matches
+      const dbCityBase = entry.city_normalized.split('(')[0].trim();
+      const exactCityMatch = dbCityBase === userCityBase || dbCityBase === cityNorm;
+      if (exactCityMatch) {
+        // Give a 15% boost for exact city match
+        overallScore = Math.min(overallScore * 1.15, 1.0);
+      }
 
       matches.push({
         entry,

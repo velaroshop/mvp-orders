@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- Create an immutable wrapper function for unaccent (needed for indexes)
 CREATE OR REPLACE FUNCTION immutable_unaccent(text)
 RETURNS text AS $$
-  SELECT unaccent('unaccent', $1)
+  SELECT public.unaccent($1)
 $$ LANGUAGE sql IMMUTABLE PARALLEL SAFE;
 
 -- Create indexes for faster diacritics-insensitive search on orders

@@ -1585,7 +1585,7 @@ export default function AdminPage() {
                         {/* Tracking Status - shown for confirmed orders */}
                         {order.status === "confirmed" && order.trackingStatus && (
                           <span
-                            className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-tight whitespace-nowrap cursor-help ${
+                            className={`inline-flex w-fit rounded px-1 py-0.5 text-[9px] font-medium uppercase tracking-tight whitespace-nowrap cursor-help ${
                               order.trackingStatus === "Delivered"
                                 ? "bg-green-900/50 text-green-300 border border-green-700"
                                 : order.trackingStatus === "InTransit"
@@ -1598,11 +1598,11 @@ export default function AdminPage() {
                             }`}
                             title={order.trackingUpdatedAt ? `Actualizat: ${new Date(order.trackingUpdatedAt).toLocaleString("ro-RO")}` : ""}
                           >
-                            {order.trackingStatus === "InTransit" ? "📦 In Transit" :
-                             order.trackingStatus === "Delivered" ? "✅ Delivered" :
-                             order.trackingStatus === "Returned" ? "↩️ Returned" :
-                             order.trackingStatus === "Cancelled" ? "✕ Cancelled" :
-                             `📦 ${order.trackingStatus}`}
+                            {order.trackingStatus === "InTransit" ? "In Transit" :
+                             order.trackingStatus === "Delivered" ? "Delivered" :
+                             order.trackingStatus === "Returned" ? "Returned" :
+                             order.trackingStatus === "Cancelled" ? "Cancelled" :
+                             order.trackingStatus}
                           </span>
                         )}
                         <span

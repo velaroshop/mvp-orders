@@ -15,6 +15,12 @@ export default function Topbar() {
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [helpshipEnvironment, setHelpshipEnvironment] = useState<HelpshipEnvironment | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,6 +49,54 @@ export default function Topbar() {
     }
     fetchEnvironment();
   }, []);
+
+  async function handleChangePassword() {
+    setPasswordMessage(null);
+
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage({ type: "error", text: "Completează toate câmpurile." });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordMessage({ type: "error", text: "Parola nouă trebuie să aibă minim 8 caractere." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: "error", text: "Parolele noi nu coincid." });
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Eroare la schimbarea parolei.");
+      }
+
+      setPasswordMessage({ type: "success", text: data.message });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setPasswordMessage(null);
+      }, 2000);
+    } catch (error) {
+      setPasswordMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Eroare la schimbarea parolei.",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   if (!session?.user) return null;
 
@@ -191,6 +245,63 @@ export default function Topbar() {
                   )}
                 </div>
               )}
+
+              {/* Change Password */}
+              <div className="border-t border-zinc-700">
+                <button
+                  onClick={() => {
+                    setShowChangePassword(!showChangePassword);
+                    setPasswordMessage(null);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Schimbă parola
+                </button>
+
+                {showChangePassword && (
+                  <div className="px-4 py-3 space-y-2 bg-zinc-900 border-t border-zinc-700">
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Parola curentă"
+                      className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Parola nouă (min. 8 caractere)"
+                      className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirmă parola nouă"
+                      className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                    {passwordMessage && (
+                      <div className={`text-xs px-2 py-1 rounded ${passwordMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                        {passwordMessage.text}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={isChangingPassword}
+                      className="w-full px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isChangingPassword ? "Se schimbă..." : "Salvează"}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Sign Out */}
               <button

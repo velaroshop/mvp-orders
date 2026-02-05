@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -36,6 +36,9 @@ export default function SuperadminPage() {
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isTogglingEnvironment, setIsTogglingEnvironment] = useState(false);
+  const [resetPasswordOrgId, setResetPasswordOrgId] = useState<string | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Check access
   useEffect(() => {
@@ -159,6 +162,39 @@ export default function SuperadminPage() {
       });
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleResetPassword(orgId: string) {
+    if (!resetPasswordValue || resetPasswordValue.length < 8) {
+      setMessage({ type: "error", text: "Parola trebuie să aibă minim 8 caractere." });
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      const response = await fetch(`/api/superadmin/organizations/${orgId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: resetPasswordValue }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reset password");
+      }
+
+      const data = await response.json();
+      setMessage({ type: "success", text: data.message });
+      setResetPasswordOrgId(null);
+      setResetPasswordValue("");
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to reset password",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   }
 
@@ -420,7 +456,8 @@ export default function SuperadminPage() {
               </thead>
               <tbody>
                 {organizations.map((org) => (
-                  <tr key={org.id} className="border-b border-zinc-700 hover:bg-zinc-700/30 transition-colors">
+                  <React.Fragment key={org.id}>
+                  <tr className="border-b border-zinc-700 hover:bg-zinc-700/30 transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
@@ -471,36 +508,77 @@ export default function SuperadminPage() {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
                         {org.isSuperadmin ? (
                           <span className="text-sm text-zinc-500 italic">Protected</span>
                         ) : (
-                          <button
-                            onClick={() => handleToggleActive(org.id)}
-                            disabled={togglingId === org.id}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                              org.isActive
-                                ? "bg-red-900/50 text-red-300 hover:bg-red-900/70 border border-red-700"
-                                : "bg-emerald-600 text-white hover:bg-emerald-700"
-                            }`}
-                          >
-                            {togglingId === org.id ? (
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            ) : org.isActive ? (
-                              "Suspend"
-                            ) : org.isPending ? (
-                              "Activate"
-                            ) : (
-                              "Reactivate"
-                            )}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setResetPasswordOrgId(resetPasswordOrgId === org.id ? null : org.id);
+                                setResetPasswordValue("");
+                              }}
+                              className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-zinc-700 text-zinc-300 hover:bg-zinc-600 border border-zinc-600"
+                            >
+                              Reset parolă
+                            </button>
+                            <button
+                              onClick={() => handleToggleActive(org.id)}
+                              disabled={togglingId === org.id}
+                              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                org.isActive
+                                  ? "bg-red-900/50 text-red-300 hover:bg-red-900/70 border border-red-700"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                              }`}
+                            >
+                              {togglingId === org.id ? (
+                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                              ) : org.isActive ? (
+                                "Suspend"
+                              ) : org.isPending ? (
+                                "Activate"
+                              ) : (
+                                "Reactivate"
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
                   </tr>
+                  {resetPasswordOrgId === org.id && (
+                    <tr className="border-b border-zinc-700 bg-zinc-800/50">
+                      <td colSpan={6} className="py-3 px-6">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-zinc-400">Parolă nouă pentru {org.name}:</span>
+                          <input
+                            type="password"
+                            value={resetPasswordValue}
+                            onChange={(e) => setResetPasswordValue(e.target.value)}
+                            placeholder="Minim 8 caractere"
+                            className="px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm w-56 focus:outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            onClick={() => handleResetPassword(org.id)}
+                            disabled={isResettingPassword || resetPasswordValue.length < 8}
+                            className="px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {isResettingPassword ? "Se resetează..." : "Confirmă"}
+                          </button>
+                          <button
+                            onClick={() => { setResetPasswordOrgId(null); setResetPasswordValue(""); }}
+                            className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm transition-colors"
+                          >
+                            Anulează
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

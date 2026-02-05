@@ -39,6 +39,39 @@ export default function SuperadminPage() {
   const [resetPasswordOrgId, setResetPasswordOrgId] = useState<string | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  function generatePassword() {
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const digits = "0123456789";
+    const symbols = "!@#$%&*";
+    const all = upper + lower + digits + symbols;
+    // Ensure at least one of each type
+    let pw = [
+      upper[Math.floor(Math.random() * upper.length)],
+      lower[Math.floor(Math.random() * lower.length)],
+      digits[Math.floor(Math.random() * digits.length)],
+      symbols[Math.floor(Math.random() * symbols.length)],
+    ];
+    for (let i = pw.length; i < 16; i++) {
+      pw.push(all[Math.floor(Math.random() * all.length)]);
+    }
+    // Shuffle
+    for (let i = pw.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pw[i], pw[j]] = [pw[j], pw[i]];
+    }
+    return pw.join("");
+  }
+
+  async function handleGenerateAndCopy() {
+    const pw = generatePassword();
+    setResetPasswordValue(pw);
+    await navigator.clipboard.writeText(pw);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+  }
 
   // Check access
   useEffect(() => {
@@ -552,15 +585,25 @@ export default function SuperadminPage() {
                   {resetPasswordOrgId === org.id && (
                     <tr className="border-b border-zinc-700 bg-zinc-800/50">
                       <td colSpan={6} className="py-3 px-6">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm text-zinc-400">Parolă nouă pentru {org.name}:</span>
                           <input
-                            type="password"
+                            type="text"
                             value={resetPasswordValue}
                             onChange={(e) => setResetPasswordValue(e.target.value)}
                             placeholder="Minim 8 caractere"
-                            className="px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm w-56 focus:outline-none focus:border-emerald-500"
+                            className="px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm w-56 font-mono focus:outline-none focus:border-emerald-500"
                           />
+                          <button
+                            onClick={handleGenerateAndCopy}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                              copiedPassword
+                                ? "bg-emerald-900/50 text-emerald-300 border-emerald-700"
+                                : "bg-zinc-600 text-zinc-200 hover:bg-zinc-500 border-zinc-500"
+                            }`}
+                          >
+                            {copiedPassword ? "Copiat!" : "Generează"}
+                          </button>
                           <button
                             onClick={() => handleResetPassword(org.id)}
                             disabled={isResettingPassword || resetPasswordValue.length < 8}
@@ -569,7 +612,7 @@ export default function SuperadminPage() {
                             {isResettingPassword ? "Se resetează..." : "Confirmă"}
                           </button>
                           <button
-                            onClick={() => { setResetPasswordOrgId(null); setResetPasswordValue(""); }}
+                            onClick={() => { setResetPasswordOrgId(null); setResetPasswordValue(""); setCopiedPassword(false); }}
                             className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm transition-colors"
                           >
                             Anulează

@@ -102,7 +102,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       .eq("organization_id", landingPage.organization_id)
       .single();
 
-    const vatPercentage = (settings?.vat_enabled ?? true) ? 21 : 0;
+    const vatPercentage = (settings?.vat_enabled ?? false) ? 21 : 0;
 
     // Get Helpship credentials and create client
     const credentials = await getHelpshipCredentials(landingPage.organization_id);

@@ -179,10 +179,11 @@ export default function SignUpPage() {
                 className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
+                maxLength={64}
                 disabled={isLoading}
               />
               <p className="text-xs text-zinc-700 mt-1">
-                At least 8 characters
+                8-64 characters
               </p>
             </div>
 
@@ -204,6 +205,7 @@ export default function SignUpPage() {
                 className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
+                maxLength={64}
                 disabled={isLoading}
               />
             </div>

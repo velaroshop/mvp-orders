@@ -591,7 +591,8 @@ export default function SuperadminPage() {
                             type="text"
                             value={resetPasswordValue}
                             onChange={(e) => setResetPasswordValue(e.target.value)}
-                            placeholder="Minim 8 caractere"
+                            placeholder="8-64 caractere"
+                            maxLength={64}
                             className="px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm w-56 font-mono focus:outline-none focus:border-emerald-500"
                           />
                           <button

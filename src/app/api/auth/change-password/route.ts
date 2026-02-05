@@ -29,9 +29,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 8 || newPassword.length > 64) {
       return NextResponse.json(
-        { error: "Parola nouă trebuie să aibă minim 8 caractere." },
+        { error: "Parola nouă trebuie să aibă între 8 și 64 de caractere." },
         { status: 400 }
       );
     }

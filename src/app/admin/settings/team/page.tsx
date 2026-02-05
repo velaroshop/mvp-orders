@@ -456,11 +456,12 @@ function AddUserModal({ onClose, onSuccess, onError }: AddUserModalProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="Minimum 8 characters"
+                placeholder="8-64 characters"
                 minLength={8}
+                maxLength={64}
                 required
               />
-              <p className="text-xs text-zinc-400 mt-1">Minimum 8 characters</p>
+              <p className="text-xs text-zinc-400 mt-1">8-64 characters</p>
             </div>
 
             {/* Role Select */}
@@ -623,6 +624,7 @@ function EditUserModal({ member, onClose, onSuccess, onError }: EditUserModalPro
                 className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
                 placeholder="Leave blank to keep current password"
                 minLength={8}
+                maxLength={64}
               />
               <p className="text-xs text-zinc-400 mt-1">Leave blank to keep current password</p>
             </div>

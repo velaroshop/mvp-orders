@@ -128,9 +128,9 @@ export async function POST(request: Request) {
     }
 
     // Validate password length
-    if (password.length < 8) {
+    if (password.length < 8 || password.length > 64) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: "Password must be between 8 and 64 characters" },
         { status: 400 }
       );
     }

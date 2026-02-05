@@ -95,6 +95,7 @@ export default function SignInPage() {
                 className="w-full px-3 py-2 border border-zinc-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 placeholder:text-zinc-700"
                 placeholder="••••••••"
                 required
+                maxLength={64}
                 disabled={isLoading}
               />
             </div>

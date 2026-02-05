@@ -271,13 +271,15 @@ export default function Topbar() {
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Parola curentă"
+                      maxLength={64}
                       className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
                     />
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Parola nouă (min. 8 caractere)"
+                      placeholder="Parola nouă (8-64 caractere)"
+                      maxLength={64}
                       className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
                     />
                     <input
@@ -285,6 +287,7 @@ export default function Topbar() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirmă parola nouă"
+                      maxLength={64}
                       className="w-full px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-white text-sm focus:outline-none focus:border-emerald-500"
                     />
                     {passwordMessage && (

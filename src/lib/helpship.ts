@@ -198,6 +198,7 @@ class HelpshipClient {
         productSku?: string | null;
         productName?: string;
       }>;
+      vatPercentage?: number; // 21 for VAT payers, 0 for non-VAT payers
     },
   ): Promise<{ orderId: string; rawResponse?: any }> {
     // Separăm numele în firstName și lastName
@@ -235,7 +236,7 @@ class HelpshipClient {
       totalPrice: orderData.total,
       discountPrice: 0, // TODO: calculați dacă există discount
       shippingPrice: orderData.shippingCost,
-      shippingVatPercentage: 21, // TVA standard România
+      shippingVatPercentage: orderData.vatPercentage ?? 21,
       currency: "RON",
       mailingAddress: {
         addressLine1: orderData.address,
@@ -273,7 +274,7 @@ class HelpshipClient {
           price: (orderData.productQuantity || 1) > 0
             ? orderData.subtotal / (orderData.productQuantity || 1)
             : orderData.subtotal, // Preț per bucată (subtotal împărțit la cantitate)
-          vatPercentage: 21, // TVA standard România
+          vatPercentage: orderData.vatPercentage ?? 21,
           externalSku: orderData.productSku || undefined, // SKU-ul produsului (același pentru toate ofertele)
           // accountId, variantName, vatName, externalId - opționale
         },
@@ -282,7 +283,7 @@ class HelpshipClient {
           name: upsell.productName || upsell.title, // Use product name from products table, fallback to upsell title
           quantity: upsell.quantity,
           price: upsell.price,
-          vatPercentage: 21, // TVA standard România
+          vatPercentage: orderData.vatPercentage ?? 21,
           externalSku: upsell.productSku || undefined,
         })),
       ],

@@ -45,6 +45,7 @@ export async function GET() {
         helpship_api_base_url: data?.helpship_api_base_url || "https://helpship-api-develop.azurewebsites.net",
         meta_test_mode: data?.meta_test_mode || false,
         meta_test_event_code: data?.meta_test_event_code || "",
+        vat_enabled: data?.vat_enabled ?? true,
       },
     });
   } catch (error) {

@@ -8,8 +8,11 @@ export default function SettingsPage() {
   const [hasExistingSecret, setHasExistingSecret] = useState(false);
   const [metaTestMode, setMetaTestMode] = useState(false);
   const [metaTestEventCode, setMetaTestEventCode] = useState("");
+  const [vatEnabled, setVatEnabled] = useState(true);
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
   const [isSavingMetaTest, setIsSavingMetaTest] = useState(false);
+  const [isSavingVat, setIsSavingVat] = useState(false);
+  const [vatMessage, setVatMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isValidatingCredentials, setIsValidatingCredentials] = useState(false);
   const [credentialsMessage, setCredentialsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [metaTestMessage, setMetaTestMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -26,6 +29,7 @@ export default function SettingsPage() {
         setHelpshipClientId(data.settings.helpship_client_id || "");
         setMetaTestMode(data.settings.meta_test_mode || false);
         setMetaTestEventCode(data.settings.meta_test_event_code || "");
+        setVatEnabled(data.settings.vat_enabled ?? true);
         // Check if secret exists but don't show it
         setHasExistingSecret(!!data.settings.helpship_client_secret);
         setHelpshipClientSecret("");
@@ -427,78 +431,98 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      {/* VAT Settings Section (Demo - Coming Soon) */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6 relative overflow-hidden">
-        {/* Coming Soon Overlay */}
-        <div className="absolute top-4 right-4 z-10">
-          <span className="px-3 py-1 bg-amber-600/20 border border-amber-500/50 text-amber-400 text-xs font-semibold rounded-full">
-            Coming Soon
-          </span>
-        </div>
+      {/* VAT Settings Section */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6">
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setIsSavingVat(true);
+          setVatMessage(null);
+          try {
+            const response = await fetch("/api/settings/vat", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ vatEnabled: vatEnabled }),
+            });
+            if (!response.ok) throw new Error("Failed to save VAT settings");
+            setVatMessage({ type: "success", text: "Setările TVA au fost salvate." });
+          } catch (error) {
+            console.error("Error saving VAT settings:", error);
+            setVatMessage({ type: "error", text: "Eroare la salvarea setărilor TVA." });
+          } finally {
+            setIsSavingVat(false);
+          }
+        }}>
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              VAT Settings
+            </h2>
 
-        <div className="p-6 border-b border-zinc-700">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            VAT Settings
-          </h2>
-
-          <div className="space-y-6 opacity-60">
-            {/* VAT Payer Checkbox */}
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="vatPayer"
-                checked={true}
-                disabled
-                className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded cursor-not-allowed"
-              />
-              <label htmlFor="vatPayer" className="ml-3">
-                <span className="block text-sm font-medium text-white">
-                  Organizația este plătitoare de TVA
-                </span>
-                <span className="block text-sm text-zinc-400 mt-1">
-                  Activează această opțiune dacă organizația ta este înregistrată ca plătitor de TVA în România.
-                </span>
-              </label>
-            </div>
-
-            {/* VAT Rate Field */}
-            <div>
-              <label htmlFor="vatRate" className="block text-sm font-medium text-zinc-300 mb-1">
-                Cota TVA (%)
-              </label>
-              <div className="flex items-center gap-3">
+            <div className="space-y-6">
+              {/* VAT Payer Checkbox */}
+              <div className="flex items-start">
                 <input
-                  type="number"
-                  id="vatRate"
-                  value={21}
-                  disabled
-                  className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white cursor-not-allowed"
+                  type="checkbox"
+                  id="vatPayer"
+                  checked={vatEnabled}
+                  onChange={(e) => setVatEnabled(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-zinc-700 rounded"
                 />
-                <span className="text-sm text-zinc-400">
-                  Cota standard de TVA pentru România
-                </span>
+                <label htmlFor="vatPayer" className="ml-3">
+                  <span className="block text-sm font-medium text-white">
+                    Organizația este plătitoare de TVA
+                  </span>
+                  <span className="block text-sm text-zinc-400 mt-1">
+                    Activează această opțiune dacă organizația ta este înregistrată ca plătitor de TVA în România. Comenzile trimise către Helpship vor include TVA de 21%.
+                  </span>
+                </label>
               </div>
-            </div>
 
-            {/* Info Note */}
-            <div className="p-4 bg-amber-900/20 border border-amber-700/50 rounded-md">
-              <p className="text-sm text-amber-300">
-                <strong>În dezvoltare:</strong> Această funcționalitate va permite configurarea setărilor de TVA pentru fiecare organizație. Momentan, cota de TVA de 21% este aplicată automat pentru toate comenzile trimise către Helpship.
-              </p>
+              {/* VAT Rate Field - always disabled, fixed at 21% */}
+              <div>
+                <label htmlFor="vatRate" className="block text-sm font-medium text-zinc-300 mb-1">
+                  Cota TVA (%)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    id="vatRate"
+                    value={21}
+                    disabled
+                    className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white cursor-not-allowed opacity-60"
+                  />
+                  <span className="text-sm text-zinc-400">
+                    Cota standard de TVA pentru România (fixă)
+                  </span>
+                </div>
+              </div>
+
+              {/* Status info */}
+              <div className={`p-4 rounded-md ${vatEnabled ? 'bg-emerald-900/20 border border-emerald-700/50' : 'bg-zinc-700/50 border border-zinc-600'}`}>
+                <p className={`text-sm ${vatEnabled ? 'text-emerald-300' : 'text-zinc-400'}`}>
+                  {vatEnabled
+                    ? 'Comenzile trimise către Helpship vor include TVA de 21% pe produse și livrare.'
+                    : 'Comenzile trimise către Helpship NU vor include TVA (0%).'}
+                </p>
+              </div>
+
+              {vatMessage && (
+                <div className={`p-3 rounded-md text-sm ${vatMessage.type === "success" ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300" : "bg-red-900/20 border border-red-700 text-red-300"}`}>
+                  {vatMessage.text}
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Disabled Save Button */}
-        <div className="p-6 bg-zinc-800/50 flex justify-end">
-          <button
-            type="button"
-            disabled
-            className="px-6 py-2 bg-zinc-600 text-zinc-400 rounded-md cursor-not-allowed font-medium"
-          >
-            Save VAT Settings
-          </button>
-        </div>
+          <div className="p-6 bg-zinc-800/50 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSavingVat}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              {isSavingVat ? "Se salvează..." : "Save VAT Settings"}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Security Note */}

@@ -95,6 +95,15 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       originalTotal: Number(order.total),
     });
 
+    // Get VAT settings for this organization
+    const { data: settings } = await supabaseAdmin
+      .from("settings")
+      .select("vat_enabled")
+      .eq("organization_id", landingPage.organization_id)
+      .single();
+
+    const vatPercentage = (settings?.vat_enabled ?? true) ? 21 : 0;
+
     // Get Helpship credentials and create client
     const credentials = await getHelpshipCredentials(landingPage.organization_id);
     const helpshipClient = new HelpshipClient(credentials);
@@ -118,6 +127,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       shippingCost: Number(order.shipping_cost) || 0,
       total: actualTotal, // Use calculated total including all upsells
       upsells: upsellsWithProductNames,
+      vatPercentage,
     });
 
     console.log("[Helpship Sync] Order created successfully:", helpshipResult);

@@ -122,12 +122,13 @@ export async function POST(
 
       console.log(`[Resync] Order synced successfully:`, helpshipResult);
 
-      // Update order with helpship_order_id and change status to pending
+      // Update order with helpship_order_id and change status to pending, clear any previous error
       const { error: updateError } = await supabaseAdmin
         .from("orders")
         .update({
           helpship_order_id: helpshipResult.orderId,
           status: "pending",
+          sync_error_message: null,
         })
         .eq("id", orderId);
 
@@ -144,11 +145,21 @@ export async function POST(
     } catch (err) {
       console.error("[Resync] Failed to sync order:", err);
 
-      // Keep the sync_error status since resync failed
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      // Update the error message on the order
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          sync_error_message: errorMessage,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+
       return NextResponse.json(
         {
           error: "Failed to sync with Helpship",
-          details: err instanceof Error ? err.message : String(err),
+          details: errorMessage,
         },
         { status: 500 }
       );

@@ -1969,12 +1969,19 @@ export default function AdminPage() {
                                   </button>
                                 )}
                                 {order.status === "sync_error" && (
-                                  <button
-                                    onClick={() => handleActionClick(order.id, "resync")}
-                                    className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
-                                  >
-                                    🔄 Resync to Helpship
-                                  </button>
+                                  <>
+                                    {order.syncErrorMessage && (
+                                      <div className="px-3 py-2 text-xs text-rose-400 bg-rose-900/20 border-t border-zinc-600">
+                                        <span className="font-medium">Eroare:</span> {order.syncErrorMessage}
+                                      </div>
+                                    )}
+                                    <button
+                                      onClick={() => handleActionClick(order.id, "resync")}
+                                      className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
+                                    >
+                                      🔄 Resync to Helpship
+                                    </button>
+                                  </>
                                 )}
                                 {isSuperadmin && order.status !== "testing" && order.status !== "confirmed" && (
                                   <button

@@ -158,12 +158,15 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
   } catch (error) {
     console.error("[Helpship Sync] Failed to sync order:", error);
 
-    // Update order status to 'sync_error'
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Update order status to 'sync_error' and store the error message
     try {
       await supabaseAdmin
         .from("orders")
         .update({
           status: "sync_error",
+          sync_error_message: errorMessage,
           updated_at: new Date().toISOString(),
         })
         .eq("id", orderId);
@@ -173,7 +176,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
 
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
     };
   }
 }

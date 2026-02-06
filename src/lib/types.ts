@@ -91,6 +91,8 @@ export interface Order {
   // Tracking status from Helpship
   trackingStatus?: string; // InTransit, Delivered, Returned, Cancelled, etc.
   trackingUpdatedAt?: string; // Last sync timestamp
+  // Sync error info
+  syncErrorMessage?: string; // Error message when sync to Helpship fails
   createdAt: string;
 }
 

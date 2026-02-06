@@ -932,9 +932,10 @@ export default function AdminPage() {
         return;
       }
 
-      // Optimistic update - change status to confirmed (assuming success)
+      // Optimistic update - change status to pending (synced but not confirmed yet)
       updateOrderLocally(orderId, {
-        status: "confirmed",
+        status: "pending",
+        syncErrorMessage: undefined,
       });
       setOpenDropdown(null);
 
@@ -953,7 +954,9 @@ export default function AdminPage() {
 
         // Update with actual helpshipOrderId from response
         updateOrderLocally(orderId, {
+          status: "pending",
           helpshipOrderId: result.helpshipOrderId,
+          syncErrorMessage: undefined,
         });
 
         setToast({

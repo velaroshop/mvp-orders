@@ -158,7 +158,7 @@ function getFirstDayOfWeek(month: string): number {
 export default function RoasPage() {
   const [activeTab, setActiveTab] = useState<TabType>("report");
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>("all");
+  const [selectedProductId, setSelectedProductId] = useState<string>("all"); // "all" for Report tab, "" for Upload tab
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -471,7 +471,12 @@ export default function RoasPage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-zinc-800 p-1 rounded-lg w-fit border border-zinc-700">
         <button
-          onClick={() => setActiveTab("upload")}
+          onClick={() => {
+            setActiveTab("upload");
+            if (selectedProductId === "all") {
+              setSelectedProductId("");
+            }
+          }}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === "upload"
               ? "bg-emerald-600 text-white"
@@ -481,7 +486,12 @@ export default function RoasPage() {
           Upload
         </button>
         <button
-          onClick={() => setActiveTab("report")}
+          onClick={() => {
+            setActiveTab("report");
+            if (!selectedProductId) {
+              setSelectedProductId("all");
+            }
+          }}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === "report"
               ? "bg-emerald-600 text-white"
@@ -506,7 +516,11 @@ export default function RoasPage() {
               disabled={isLoadingProducts}
               className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="all">All Products</option>
+              {activeTab === "upload" ? (
+                <option value="">Select product</option>
+              ) : (
+                <option value="all">All Products</option>
+              )}
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name} {product.sku ? `(${product.sku})` : ""}
@@ -629,7 +643,20 @@ export default function RoasPage() {
         </div>
       )}
 
-      {/* UPLOAD TAB CONTENT */}
+      {/* UPLOAD TAB CONTENT - No product selected */}
+      {activeTab === "upload" && !selectedProductId && (
+        <div className="bg-zinc-800 rounded-lg p-8 border border-zinc-700 text-center">
+          <svg className="w-12 h-12 mx-auto text-zinc-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <h3 className="text-lg font-medium text-white mb-2">Select a product</h3>
+          <p className="text-zinc-400 text-sm">
+            Choose a product from the dropdown to upload ad spend data.
+          </p>
+        </div>
+      )}
+
+      {/* UPLOAD TAB CONTENT - Product selected */}
       {activeTab === "upload" && selectedProductId && (
         <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">
@@ -1029,18 +1056,6 @@ export default function RoasPage() {
         </>
       )}
 
-      {/* No Product Selected */}
-      {!selectedProductId && (
-        <div className="bg-zinc-800 rounded-lg p-8 border border-zinc-700 text-center">
-          <svg className="w-12 h-12 mx-auto text-zinc-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          <h3 className="text-lg font-medium text-white mb-2">Select a product</h3>
-          <p className="text-zinc-400 text-sm">
-            Choose a product from the dropdown to view or upload ROAS data.
-          </p>
-        </div>
-      )}
 
       {/* Manual Entry Modal */}
       {manualEntryModal && (

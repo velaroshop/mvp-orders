@@ -35,6 +35,18 @@ export async function POST(
       scheduledDate,
     } = body;
 
+    // Log pentru debugging - ce primim din modal
+    console.log(`[Confirm] Order ${orderId} - Received from modal:`, {
+      fullName: fullName || '(empty)',
+      phone: phone || '(empty)',
+      county: county || '(empty)',
+      city: city || '(empty)',
+      address: address || '(empty)',
+      streetNumber: streetNumber || '(empty)',
+      postalCode: postalCode || '(empty)',
+      scheduledDate: scheduledDate || '(empty)',
+    });
+
     // Validare cod poștal: maxim 6 cifre
     if (postalCode && (!/^\d{1,6}$/.test(postalCode))) {
       return NextResponse.json(
@@ -130,13 +142,13 @@ export async function POST(
         // Dacă statusul este Pending, facem doar update la adresă (fără unhold)
         const shouldUnhold = statusName === "OnHold";
 
-        // Actualizăm datele în Helpship
-        await helpshipClient.updateOrder(order.helpship_order_id, {
+        // Construim payload-ul pentru Helpship
+        const helpshipUpdatePayload = {
           // Doar dacă e OnHold, setăm status la PENDING (va face unhold)
           // Dacă e deja Pending, nu setăm status (doar update la adresă)
-          status: shouldUnhold ? "PENDING" : undefined,
-          paymentStatus: "Pending",
-          customerName: fullName || order.fullName,
+          status: shouldUnhold ? "PENDING" as const : undefined,
+          paymentStatus: "Pending" as const,
+          customerName: fullName || order.full_name,
           customerPhone: phone || order.phone,
           postalCode: postalCode,
           shippingAddress: {
@@ -146,7 +158,13 @@ export async function POST(
             addressLine2: streetNumber || undefined,
             zip: postalCode,
           },
-        });
+        };
+
+        // Log pentru debugging - ce trimitem la Helpship
+        console.log(`[Confirm] Order ${orderId} - Sending to Helpship:`, JSON.stringify(helpshipUpdatePayload, null, 2));
+
+        // Actualizăm datele în Helpship
+        await helpshipClient.updateOrder(order.helpship_order_id, helpshipUpdatePayload);
         
         console.log(`[Helpship] Order ${order.helpship_order_id} updated successfully.`);
       } catch (helpshipError) {
@@ -169,6 +187,9 @@ export async function POST(
     if (city) updateData.city = city;
     if (address) updateData.address = address;
     if (postalCode) updateData.postal_code = postalCode;
+
+    // Log pentru debugging - ce salvăm în DB
+    console.log(`[Confirm] Order ${orderId} - Saving to DB:`, JSON.stringify(updateData, null, 2));
 
     // Actualizează status-ul și datele în DB
     const { error: updateError } = await supabaseAdmin

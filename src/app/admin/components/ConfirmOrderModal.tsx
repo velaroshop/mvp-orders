@@ -560,7 +560,7 @@ export default function ConfirmOrderModal({
 
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Street
+                  Street / Nr. <span className="text-red-400">*</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -578,8 +578,12 @@ export default function ConfirmOrderModal({
                     onChange={(e) =>
                       setFormData({ ...formData, streetNumber: e.target.value })
                     }
-                    className="w-20 rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Number"
+                    className={`w-20 rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 ${
+                      formData.streetNumber.trim()
+                        ? 'border-zinc-700 focus:ring-emerald-500'
+                        : 'border-red-500 focus:ring-red-500'
+                    }`}
+                    placeholder="Nr. *"
                   />
                 </div>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -589,7 +593,7 @@ export default function ConfirmOrderModal({
 
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Post Code
+                  Post Code <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -599,7 +603,11 @@ export default function ConfirmOrderModal({
                     setFormData({ ...formData, postalCode: value });
                   }}
                   maxLength={6}
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`w-full rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 ${
+                    formData.postalCode.trim()
+                      ? 'border-zinc-700 focus:ring-emerald-500'
+                      : 'border-red-500 focus:ring-red-500'
+                  }`}
                   placeholder="Introdu sau selectează din sugestii"
                 />
 
@@ -698,6 +706,19 @@ export default function ConfirmOrderModal({
                    </div>
                  )}
 
+                 {/* Required fields warning */}
+                 {(!formData.postalCode.trim() || !formData.streetNumber.trim()) && (
+                   <div className="mt-3 p-2 bg-amber-900/20 border border-amber-700 rounded-md">
+                     <p className="text-xs text-amber-400">
+                       <span className="font-medium">Câmpuri obligatorii lipsă:</span>{' '}
+                       {[
+                         !formData.streetNumber.trim() && 'Număr stradă',
+                         !formData.postalCode.trim() && 'Cod poștal',
+                       ].filter(Boolean).join(', ')}
+                     </p>
+                   </div>
+                 )}
+
                  {/* Footer Buttons */}
                  <div className="mt-4 flex justify-end gap-2">
                    <button
@@ -709,8 +730,8 @@ export default function ConfirmOrderModal({
                    </button>
                    <button
                      type="submit"
-                     disabled={isSubmitting}
-                     className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                     disabled={isSubmitting || !formData.postalCode.trim() || !formData.streetNumber.trim()}
+                     className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      {isSubmitting ? "Se salvează..." : "Save & Send"}
                    </button>

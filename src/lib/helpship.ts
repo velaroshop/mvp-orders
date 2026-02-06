@@ -214,9 +214,12 @@ class HelpshipClient {
 
     // Parsăm adresa pentru a extrage street, number, etc.
     // Pentru MVP, punem tot în addressLine1 și street
-    const addressParts = orderData.address.match(/^(.+?)\s+(\d+.*)$/);
+    // Extract just the street number (first number sequence), not everything after it
+    const addressParts = orderData.address.match(/^(.+?)\s+(\d+[A-Za-z]?)(?:\s|,|$)/);
     const street = addressParts ? addressParts[1].trim() : orderData.address;
-    const number = addressParts ? addressParts[2].trim() : "";
+    // Limit number to 50 chars max (Helpship API limit)
+    const rawNumber = addressParts ? addressParts[2].trim() : "";
+    const number = rawNumber.substring(0, 50);
 
     // Obține GUID-ul pentru România (sau folosește null dacă nu se găsește)
     let countryId: string | null = null;

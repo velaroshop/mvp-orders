@@ -1036,6 +1036,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Introduceți aici numele complet"
+                  maxLength={100}
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.fullName
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -1075,6 +1076,7 @@ function WidgetFormContent() {
                       }
                     }}
                     placeholder="Introduceți aici județul"
+                    maxLength={50}
                     className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.county
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -1113,6 +1115,7 @@ function WidgetFormContent() {
                       }
                     }}
                     placeholder="Introduceți aici localitatea / comuna / satul"
+                    maxLength={100}
                     className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.city
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
@@ -1152,6 +1155,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Introduceți aici adresa completă"
+                  maxLength={200}
                   className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.address
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'

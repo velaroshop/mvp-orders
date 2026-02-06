@@ -5,7 +5,10 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS sync_error_message TEXT;
 
 COMMENT ON COLUMN orders.sync_error_message IS 'Error message when order sync to Helpship fails (status = sync_error)';
 
--- Update RPC function to include sync_error_message in results
+-- Drop existing function first (required when changing return type)
+DROP FUNCTION IF EXISTS search_orders(UUID, TEXT, TEXT[], TIMESTAMPTZ, INT, INT);
+
+-- Recreate RPC function with sync_error_message in results
 CREATE OR REPLACE FUNCTION search_orders(
   p_organization_id UUID,
   p_search_query TEXT,

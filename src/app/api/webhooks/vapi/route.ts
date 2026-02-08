@@ -180,32 +180,6 @@ function analyzeTranscript(transcript: string): string {
     if (lower.includes(pattern)) return "cancelled";
   }
 
-  // Check for address correction signals
-  const addressCorrectionPatterns = [
-    "nu e greșită",
-    "nu e gresita",
-    "e greșită",
-    "e gresita",
-    "greșită adresa",
-    "gresita adresa",
-    "adresa e greșită",
-    "adresa e gresita",
-    "nu e corectă adresa",
-    "nu e corecta adresa",
-    "trebuie județul",
-    "trebuie judetul",
-    "trebuie orașul",
-    "trebuie orasul",
-    "trebuie strada",
-    "nu acolo",
-    "nu e acolo",
-    "altă adresă",
-    "alta adresa",
-  ];
-  const hasAddressCorrection = addressCorrectionPatterns.some((p) =>
-    lower.includes(p),
-  );
-
   // Extract user lines only
   const userLines = transcript
     .split("\n")
@@ -214,27 +188,56 @@ function analyzeTranscript(transcript: string): string {
 
   if (userLines.length === 0) return "needs_review";
 
-  // Count affirmative vs negative user responses
-  const affirmatives = ["da", "da,", "da.", "sigur", "corect", "exact", "ok", "bine", "în regulă", "in regula"];
-  const negatives = ["nu", "nu,", "nu.", "nu e corect", "greșit", "gresit"];
+  // Tokenize each line into words (strip punctuation from each word)
+  function getWords(line: string): string[] {
+    return line.split(/[\s,;.!?]+/).filter(Boolean);
+  }
+
+  // Count affirmative vs negative responses by checking individual words
+  const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine"]);
+  const negativeWords = new Set(["nu"]);
 
   let yesCount = 0;
   let noCount = 0;
 
   for (const line of userLines) {
-    const trimmed = line.replace(/[.,!?]+$/, "").trim();
-    if (affirmatives.some((a) => trimmed === a || trimmed.startsWith(a + " "))) {
-      yesCount++;
-    }
-    if (negatives.some((n) => trimmed === n || trimmed.startsWith(n + " "))) {
-      noCount++;
-    }
+    const words = getWords(line);
+    const hasYes = words.some((w) => affirmativeWords.has(w));
+    const hasNo = words.some((w) => negativeWords.has(w));
+    if (hasYes) yesCount++;
+    if (hasNo) noCount++;
   }
 
-  // Address was corrected but customer confirmed the order
-  if (hasAddressCorrection && yesCount >= 2) return "address_corrected";
+  // Detect address correction: user provides address components
+  // Look for patterns like "strada X", "numărul Y", "din Z", "județul W"
+  const addressCorrectionPatterns = [
+    "altă adresă", "alta adresa", "arta este adres",
+    "e greșită", "e gresita", "nu e corect",
+    "altă stradă", "alta strada",
+  ];
+  const hasExplicitCorrection = addressCorrectionPatterns.some((p) =>
+    lower.includes(p),
+  );
 
-  // If customer mostly said yes and the call ended normally → confirmed
+  // Detect user giving a new address (street, number, city, county in user lines)
+  const addressGivingPatterns = [
+    /strada\s+\w/i,
+    /str\.\s*\w/i,
+    /num[aă]rul\s+\d/i,
+    /nr\.\s*\d/i,
+    /jude[tț]ul\s+\w/i,
+    /din\s+\w+.*jude[tț]/i,
+  ];
+  const userGaveAddress = userLines.some((line) =>
+    addressGivingPatterns.some((rx) => rx.test(line)),
+  );
+
+  const hasAddressCorrection = hasExplicitCorrection || userGaveAddress;
+
+  // Address was corrected and customer confirmed at the end
+  if (hasAddressCorrection && yesCount >= 1) return "address_corrected";
+
+  // If customer mostly said yes → confirmed
   if (yesCount >= 2 && noCount === 0) return "confirmed";
   if (yesCount > noCount && yesCount >= 2) return "confirmed";
 

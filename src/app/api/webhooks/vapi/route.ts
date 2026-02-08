@@ -83,17 +83,28 @@ export async function POST(request: NextRequest) {
       // Call connected - determine result from structuredData
       callStatus = "completed";
 
-      if (structuredData.orderConfirmed === true) {
-        if (
-          structuredData.addressCorrect === false &&
-          structuredData.correctedAddress
-        ) {
-          callResult = "address_corrected";
+      const hasStructuredData = Object.keys(structuredData).length > 0;
+
+      if (hasStructuredData) {
+        // Use structured data when available
+        if (structuredData.orderConfirmed === true) {
+          if (
+            structuredData.addressCorrect === false &&
+            structuredData.correctedAddress
+          ) {
+            callResult = "address_corrected";
+          } else {
+            callResult = "confirmed";
+          }
+        } else if (structuredData.wantsToCancel === true) {
+          callResult = "cancelled";
         } else {
-          callResult = "confirmed";
+          callResult = "needs_review";
         }
-      } else if (structuredData.wantsToCancel === true) {
-        callResult = "cancelled";
+      } else if (transcript) {
+        // Fallback: analyze transcript when structured data is empty
+        callResult = analyzeTranscript(transcript);
+        console.log(`[Vapi Webhook] Transcript fallback result: ${callResult}`);
       } else {
         callResult = "needs_review";
       }
@@ -146,4 +157,57 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+/**
+ * Fallback transcript analysis when Vapi structured outputs are empty.
+ * Parses user responses to determine if order was confirmed or cancelled.
+ */
+function analyzeTranscript(transcript: string): string {
+  const lower = transcript.toLowerCase();
+
+  // Check for cancellation signals
+  const cancelPatterns = [
+    "vreau să anulez",
+    "vreau sa anulez",
+    "anulez comanda",
+    "nu mai vreau",
+    "renunț",
+    "renunt",
+    "nu doresc",
+  ];
+  for (const pattern of cancelPatterns) {
+    if (lower.includes(pattern)) return "cancelled";
+  }
+
+  // Extract user lines only
+  const userLines = transcript
+    .split("\n")
+    .filter((line) => line.startsWith("User:"))
+    .map((line) => line.replace("User:", "").trim().toLowerCase());
+
+  if (userLines.length === 0) return "needs_review";
+
+  // Count affirmative vs negative user responses
+  const affirmatives = ["da", "da,", "da.", "sigur", "corect", "exact", "ok", "bine", "în regulă", "in regula"];
+  const negatives = ["nu", "nu,", "nu.", "nu e corect", "greșit", "gresit"];
+
+  let yesCount = 0;
+  let noCount = 0;
+
+  for (const line of userLines) {
+    const trimmed = line.replace(/[.,!?]+$/, "").trim();
+    if (affirmatives.some((a) => trimmed === a || trimmed.startsWith(a + " "))) {
+      yesCount++;
+    }
+    if (negatives.some((n) => trimmed === n || trimmed.startsWith(n + " "))) {
+      noCount++;
+    }
+  }
+
+  // If customer mostly said yes and the call ended normally → confirmed
+  if (yesCount >= 2 && noCount === 0) return "confirmed";
+  if (yesCount > noCount && yesCount >= 2) return "confirmed";
+
+  return "needs_review";
 }

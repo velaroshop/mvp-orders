@@ -101,7 +101,14 @@ export async function POST(
       .single();
 
     const brandName = store?.order_series?.replace(/-$/, "") || "Magazin";
-    const attemptNumber = (order.call_attempts || 0) + 1;
+
+    // Count existing calls for this order to determine attempt number
+    const { count: existingCalls } = await supabaseAdmin
+      .from("phone_calls")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", orderId);
+
+    const attemptNumber = (existingCalls || 0) + 1;
 
     // Create Vapi call
     const vapiClient = new VapiClient({ apiKey: settings.vapi_api_key });

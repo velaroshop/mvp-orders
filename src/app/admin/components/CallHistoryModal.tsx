@@ -305,36 +305,31 @@ export default function CallHistoryModal({
                           </div>
                         )}
 
-                        {/* Info row */}
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <p className="text-[10px] text-zinc-400 uppercase">
-                              Durată
-                            </p>
-                            <p className="text-xs text-white">
-                              {formatDuration(call.duration_seconds)}
-                            </p>
+                        {/* Info row - only show fields that have data */}
+                        {(call.duration_seconds || call.cost != null) && (
+                          <div className="flex items-center gap-4">
+                            {call.duration_seconds && (
+                              <div>
+                                <p className="text-[10px] text-zinc-400 uppercase">
+                                  Durată
+                                </p>
+                                <p className="text-xs text-white">
+                                  {formatDuration(call.duration_seconds)}
+                                </p>
+                              </div>
+                            )}
+                            {call.cost != null && (
+                              <div>
+                                <p className="text-[10px] text-zinc-400 uppercase">
+                                  Cost
+                                </p>
+                                <p className="text-xs text-white">
+                                  ${call.cost.toFixed(3)}
+                                </p>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <p className="text-[10px] text-zinc-400 uppercase">
-                              Cost
-                            </p>
-                            <p className="text-xs text-white">
-                              {call.cost != null
-                                ? `$${call.cost.toFixed(3)}`
-                                : "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-zinc-400 uppercase">
-                              Status
-                            </p>
-                            <p className="text-xs text-white">
-                              {call.status}
-                              {call.result ? ` / ${call.result}` : ""}
-                            </p>
-                          </div>
-                        </div>
+                        )}
 
                         {/* Recording */}
                         {call.recording_url && (

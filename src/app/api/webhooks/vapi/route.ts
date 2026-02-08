@@ -180,6 +180,32 @@ function analyzeTranscript(transcript: string): string {
     if (lower.includes(pattern)) return "cancelled";
   }
 
+  // Check for address correction signals
+  const addressCorrectionPatterns = [
+    "nu e greșită",
+    "nu e gresita",
+    "e greșită",
+    "e gresita",
+    "greșită adresa",
+    "gresita adresa",
+    "adresa e greșită",
+    "adresa e gresita",
+    "nu e corectă adresa",
+    "nu e corecta adresa",
+    "trebuie județul",
+    "trebuie judetul",
+    "trebuie orașul",
+    "trebuie orasul",
+    "trebuie strada",
+    "nu acolo",
+    "nu e acolo",
+    "altă adresă",
+    "alta adresa",
+  ];
+  const hasAddressCorrection = addressCorrectionPatterns.some((p) =>
+    lower.includes(p),
+  );
+
   // Extract user lines only
   const userLines = transcript
     .split("\n")
@@ -204,6 +230,9 @@ function analyzeTranscript(transcript: string): string {
       noCount++;
     }
   }
+
+  // Address was corrected but customer confirmed the order
+  if (hasAddressCorrection && yesCount >= 2) return "address_corrected";
 
   // If customer mostly said yes and the call ended normally → confirmed
   if (yesCount >= 2 && noCount === 0) return "confirmed";

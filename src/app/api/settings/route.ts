@@ -37,6 +37,8 @@ export async function GET() {
     // Don't return the actual secret value for security
     const hasSecret = !!(data?.helpship_client_secret);
 
+    const hasVapiKey = !!(data?.vapi_api_key);
+
     return NextResponse.json({
       settings: {
         helpship_client_id: data?.helpship_client_id || "",
@@ -46,6 +48,9 @@ export async function GET() {
         meta_test_mode: data?.meta_test_mode || false,
         meta_test_event_code: data?.meta_test_event_code || "",
         vat_enabled: data?.vat_enabled ?? false,
+        vapi_api_key: hasVapiKey ? "configured" : "",
+        vapi_phone_number_id: data?.vapi_phone_number_id || "",
+        vapi_assistant_id: data?.vapi_assistant_id || "",
       },
     });
   } catch (error) {
@@ -76,14 +81,34 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { helpshipClientId, helpshipClientSecret } = body;
+    const { helpshipClientId, helpshipClientSecret, vapiApiKey, vapiPhoneNumberId, vapiAssistantId } = body;
 
-    if (!helpshipClientId || !helpshipClientSecret) {
+    // Require at least one set of credentials
+    const hasHelpshipFields = helpshipClientId && helpshipClientSecret;
+    const hasVapiFields = vapiApiKey !== undefined || vapiPhoneNumberId !== undefined || vapiAssistantId !== undefined;
+
+    if (!hasHelpshipFields && !hasVapiFields) {
       return NextResponse.json(
         { error: "Client ID and Client Secret are required" },
         { status: 400 },
       );
     }
+
+    // Build update object conditionally
+    const updateFields: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (hasHelpshipFields) {
+      updateFields.helpship_client_id = helpshipClientId;
+      updateFields.helpship_client_secret = helpshipClientSecret;
+      updateFields.helpship_token_url = "https://helpship-auth-develop.azurewebsites.net/connect/token";
+      updateFields.helpship_api_base_url = "https://helpship-api-develop.azurewebsites.net";
+    }
+
+    if (vapiApiKey !== undefined) updateFields.vapi_api_key = vapiApiKey;
+    if (vapiPhoneNumberId !== undefined) updateFields.vapi_phone_number_id = vapiPhoneNumberId;
+    if (vapiAssistantId !== undefined) updateFields.vapi_assistant_id = vapiAssistantId;
 
     // Check if settings exist
     const { data: existingSettings } = await supabaseAdmin
@@ -96,13 +121,7 @@ export async function PUT(request: Request) {
       // Update existing settings
       const { error } = await supabaseAdmin
         .from("settings")
-        .update({
-          helpship_client_id: helpshipClientId,
-          helpship_client_secret: helpshipClientSecret,
-          helpship_token_url: "https://helpship-auth-develop.azurewebsites.net/connect/token",
-          helpship_api_base_url: "https://helpship-api-develop.azurewebsites.net",
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateFields)
         .eq("organization_id", activeOrganizationId);
 
       if (error) {
@@ -114,10 +133,7 @@ export async function PUT(request: Request) {
         .from("settings")
         .insert({
           organization_id: activeOrganizationId,
-          helpship_client_id: helpshipClientId,
-          helpship_client_secret: helpshipClientSecret,
-          helpship_token_url: "https://helpship-auth-develop.azurewebsites.net/connect/token",
-          helpship_api_base_url: "https://helpship-api-develop.azurewebsites.net",
+          ...updateFields,
         });
 
       if (error) {

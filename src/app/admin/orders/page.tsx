@@ -12,6 +12,7 @@ import DuplicateOrderWarningModal from "../components/DuplicateOrderWarningModal
 import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
 import SyncStatusModal from "../components/SyncStatusModal";
+import CallOrderModal from "../components/CallOrderModal";
 import Toast from "../components/Toast";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
@@ -91,6 +92,10 @@ export default function AdminPage() {
   const [isDeleteTestModalOpen, setIsDeleteTestModalOpen] = useState(false);
   const [orderToDeleteTest, setOrderToDeleteTest] = useState<string | null>(null);
   const [isDeletingTest, setIsDeletingTest] = useState(false);
+
+  // Call Order Modal state
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [callOrderSelected, setCallOrderSelected] = useState<Order | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
@@ -708,6 +713,38 @@ export default function AdminPage() {
     }
   }
 
+  async function handleCallOrder(orderId: string): Promise<void> {
+    // Optimistic update
+    updateOrderLocally(orderId, { callStatus: "calling" });
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/call`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Rollback
+        updateOrderLocally(orderId, { callStatus: undefined });
+        throw new Error(data.error || "Eroare la inițierea apelului");
+      }
+
+      setToast({
+        isOpen: true,
+        type: "success",
+        message: "Apelul a fost inițiat cu succes",
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Eroare la inițierea apelului";
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
+    }
+  }
+
   async function handleConfirmScheduledOrder(): Promise<void> {
     if (!scheduledOrderToConfirm) return;
 
@@ -804,6 +841,16 @@ export default function AdminPage() {
       const order = orders.find((o) => o.id === orderId);
       if (order) {
         handleConfirmClick(order);
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
+    if (action === "call") {
+      const order = orders.find((o) => o.id === orderId);
+      if (order) {
+        setCallOrderSelected(order);
+        setIsCallModalOpen(true);
       }
       setOpenDropdown(null);
       return;
@@ -1725,6 +1772,37 @@ export default function AdminPage() {
                       <div>
                         <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
+                        {order.callStatus && (
+                          <span className={`inline-flex items-center gap-0.5 text-[9px] mt-0.5 ${
+                            order.callStatus === "confirmed" ? "text-emerald-400" :
+                            order.callStatus === "address_corrected" ? "text-blue-400" :
+                            order.callStatus === "cancelled" ? "text-red-400" :
+                            order.callStatus === "no_answer" ? "text-orange-400" :
+                            order.callStatus === "needs_review" ? "text-yellow-400" :
+                            order.callStatus === "calling" ? "text-blue-400" :
+                            order.callStatus === "failed" ? "text-red-400" :
+                            "text-zinc-400"
+                          }`}>
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+                              order.callStatus === "confirmed" ? "bg-emerald-400" :
+                              order.callStatus === "address_corrected" ? "bg-blue-400" :
+                              order.callStatus === "cancelled" ? "bg-red-400" :
+                              order.callStatus === "no_answer" ? "bg-orange-400" :
+                              order.callStatus === "needs_review" ? "bg-yellow-400" :
+                              order.callStatus === "calling" ? "bg-blue-400 animate-pulse" :
+                              order.callStatus === "failed" ? "bg-red-400" :
+                              "bg-zinc-400"
+                            }`} />
+                            {order.callStatus === "confirmed" ? "Confirmat tel." :
+                             order.callStatus === "address_corrected" ? "Adresă corectată" :
+                             order.callStatus === "cancelled" ? "Anulat tel." :
+                             order.callStatus === "no_answer" ? `Nu răspunde (${order.callAttempts || 0}/3)` :
+                             order.callStatus === "needs_review" ? "Necesită review" :
+                             order.callStatus === "calling" ? "Se apelează..." :
+                             order.callStatus === "failed" ? "Apel eșuat" :
+                             order.callStatus}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -1895,6 +1973,14 @@ export default function AdminPage() {
                                     className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
+                                  </button>
+                                )}
+                                {order.status === "pending" && order.callStatus !== "calling" && order.callStatus !== "confirmed" && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "call")}
+                                    className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-blue-900/30 font-medium"
+                                  >
+                                    Suna clientul
                                   </button>
                                 )}
                                 <button
@@ -2190,6 +2276,17 @@ export default function AdminPage() {
                   });
                 }}
                 orderId={syncStatusOrderId || ""}
+              />
+
+              {/* Call Order Modal */}
+              <CallOrderModal
+                isOpen={isCallModalOpen}
+                onClose={() => {
+                  setIsCallModalOpen(false);
+                  setCallOrderSelected(null);
+                }}
+                onCall={handleCallOrder}
+                order={callOrderSelected}
               />
 
               {/* Tracking Details Modal */}

@@ -112,6 +112,9 @@ export async function GET(request: Request) {
       trackingStatus: row.tracking_status ?? undefined,
       trackingUpdatedAt: row.tracking_updated_at ?? undefined,
       syncErrorMessage: row.sync_error_message ?? undefined,
+      callStatus: row.call_status ?? undefined,
+      callAttempts: row.call_attempts ?? 0,
+      lastCallAt: row.last_call_at ?? undefined,
       createdAt: row.created_at,
     }));
 
@@ -208,6 +211,9 @@ async function fallbackSearch(
     trackingStatus: row.tracking_status ?? undefined,
     trackingUpdatedAt: row.tracking_updated_at ?? undefined,
     syncErrorMessage: row.sync_error_message ?? undefined,
+    callStatus: row.call_status ?? undefined,
+    callAttempts: row.call_attempts ?? 0,
+    lastCallAt: row.last_call_at ?? undefined,
     createdAt: row.created_at,
   }));
 

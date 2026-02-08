@@ -93,6 +93,10 @@ export interface Order {
   trackingUpdatedAt?: string; // Last sync timestamp
   // Sync error info
   syncErrorMessage?: string; // Error message when sync to Helpship fails
+  // AI Phone Call fields
+  callStatus?: string;
+  callAttempts?: number;
+  lastCallAt?: string;
   createdAt: string;
 }
 

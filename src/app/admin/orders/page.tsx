@@ -13,6 +13,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
 import SyncStatusModal from "../components/SyncStatusModal";
 import CallOrderModal from "../components/CallOrderModal";
+import CallHistoryModal from "../components/CallHistoryModal";
 import Toast from "../components/Toast";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
@@ -96,6 +97,10 @@ export default function AdminPage() {
   // Call Order Modal state
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [callOrderSelected, setCallOrderSelected] = useState<Order | null>(null);
+
+  // Call History Modal state
+  const [isCallHistoryOpen, setIsCallHistoryOpen] = useState(false);
+  const [callHistoryOrder, setCallHistoryOrder] = useState<Order | null>(null);
 
   // Toast state
   const [toast, setToast] = useState<{ isOpen: boolean; type: "success" | "error" | "info"; message: string }>({
@@ -1773,7 +1778,13 @@ export default function AdminPage() {
                         <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
                         {order.callStatus && (
-                          <span className={`inline-flex items-center gap-0.5 text-[9px] mt-0.5 ${
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCallHistoryOrder(order);
+                              setIsCallHistoryOpen(true);
+                            }}
+                            className={`inline-flex items-center gap-0.5 text-[9px] mt-0.5 hover:underline cursor-pointer ${
                             order.callStatus === "confirmed" ? "text-emerald-400" :
                             order.callStatus === "address_corrected" ? "text-blue-400" :
                             order.callStatus === "cancelled" ? "text-red-400" :
@@ -1801,7 +1812,7 @@ export default function AdminPage() {
                              order.callStatus === "calling" ? "Se apelează..." :
                              order.callStatus === "failed" ? "Apel eșuat" :
                              order.callStatus}
-                          </span>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -2287,6 +2298,16 @@ export default function AdminPage() {
                 }}
                 onCall={handleCallOrder}
                 order={callOrderSelected}
+              />
+
+              {/* Call History Modal */}
+              <CallHistoryModal
+                isOpen={isCallHistoryOpen}
+                onClose={() => {
+                  setIsCallHistoryOpen(false);
+                  setCallHistoryOrder(null);
+                }}
+                order={callHistoryOrder}
               />
 
               {/* Tracking Details Modal */}

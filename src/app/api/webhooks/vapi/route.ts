@@ -225,6 +225,20 @@ function determineCallResult(
   transcript: string | null,
   structuredData: Record<string, unknown>,
 ): string {
+  // 0. NO USER PARTICIPATION - customer hung up without speaking
+  if (transcript) {
+    const userLines = transcript
+      .split("\n")
+      .filter((line) => line.startsWith("User:"))
+      .map((line) => line.replace("User:", "").trim())
+      .filter((text) => text.length > 0);
+
+    if (userLines.length === 0) {
+      console.log("[Vapi Webhook] No user lines in transcript - customer hung up");
+      return "no_answer";
+    }
+  }
+
   // 1. CANCELLED - highest priority, checked on full transcript (including AI lines)
   if (transcript && hasSignal(transcript, CANCEL_PATTERNS)) {
     return "cancelled";

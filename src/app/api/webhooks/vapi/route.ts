@@ -81,40 +81,10 @@ export async function POST(request: NextRequest) {
       callStatus = "failed";
     } else {
       // Call connected - determine result
+      // Priority: cancelled > wrong_number > address_corrected > confirmed > needs_review
       callStatus = "completed";
-
-      // ALWAYS check transcript for cancellation first (overrides structuredData)
-      // Customer may confirm initially then change their mind later in the call
-      const transcriptCancelled = transcript ? hasCancellationSignal(transcript) : false;
-
-      if (transcriptCancelled) {
-        callResult = "cancelled";
-        console.log(`[Vapi Webhook] Cancellation detected in transcript`);
-      } else {
-        const hasStructuredData = Object.keys(structuredData).length > 0;
-
-        if (hasStructuredData) {
-          if (structuredData.orderConfirmed === true) {
-            if (
-              structuredData.addressCorrect === false &&
-              structuredData.correctedAddress
-            ) {
-              callResult = "address_corrected";
-            } else {
-              callResult = "confirmed";
-            }
-          } else if (structuredData.wantsToCancel === true) {
-            callResult = "cancelled";
-          } else {
-            callResult = "needs_review";
-          }
-        } else if (transcript) {
-          callResult = analyzeTranscript(transcript);
-          console.log(`[Vapi Webhook] Transcript fallback result: ${callResult}`);
-        } else {
-          callResult = "needs_review";
-        }
-      }
+      callResult = determineCallResult(transcript, structuredData);
+      console.log(`[Vapi Webhook] Call result: ${callResult}`);
     }
 
     // Update phone_calls record
@@ -166,104 +136,136 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// ─── Transcript signal detection ────────────────────────────────────
+// Priority order: cancelled > wrong_number > address_corrected > confirmed
+
+/** Cancellation: customer wants to cancel, changed their mind, AI confirms cancellation */
 const CANCEL_PATTERNS = [
-  "vreau să anulez",
-  "vreau sa anulez",
-  "să anulez",
-  "sa anulez",
+  "vreau să anulez", "vreau sa anulez",
+  "să anulez", "sa anulez",
   "anulez comanda",
-  "am anulat comanda",
-  "am anulat",
+  "am anulat comanda", "am anulat",
   "nu mai vreau",
-  "renunț",
-  "renunt",
-  "am răzgândit",
-  "am razgandit",
-  "m-am răzgândit",
-  "m-am razgandit",
+  "renunț", "renunt",
+  "am răzgândit", "am razgandit",
+  "m-am răzgândit", "m-am razgandit",
   "nu doresc",
 ];
 
-/**
- * Check if transcript contains cancellation signals.
- * Runs BEFORE structured data check to catch cases where customer
- * initially confirms but then changes their mind later in the call.
- */
-function hasCancellationSignal(transcript: string): boolean {
+/** Wrong number: customer doesn't recognize order, wrong person, didn't order */
+const WRONG_NUMBER_PATTERNS = [
+  "nu am comandat", "n-am comandat",
+  "nu am făcut", "n-am facut",
+  "nicio comandă", "nicio comanda",
+  "ați greșit", "ati gresit",
+  "greșit numărul", "gresit numarul",
+  "număr greșit", "numar gresit",
+  "nu e comanda mea",
+  "nu sunt eu",
+  "nu recunosc",
+  "nu știu despre ce", "nu stiu despre ce",
+  "nu am cumpărat", "nu am cumparat",
+  "n-am cumpărat", "n-am cumparat",
+];
+
+/** Address correction: customer mentions wrong address, gives new address */
+const ADDRESS_CORRECTION_PATTERNS = [
+  "altă adresă", "alta adresa", "arta este adres",
+  "e greșită", "e gresita", "nu e corect",
+  "altă stradă", "alta strada",
+  "schimb adresa", "modific adresa",
+  "adresa e greșită", "adresa e gresita",
+];
+
+/** Regex patterns for user giving a new address */
+const ADDRESS_GIVING_REGEXES = [
+  /strada\s+\w/i,
+  /str\.\s*\w/i,
+  /num[aă]rul\s+\d/i,
+  /nr\.\s*\d/i,
+  /jude[tț]ul\s+\w/i,
+  /din\s+\w+.*jude[tț]/i,
+];
+
+function hasSignal(transcript: string, patterns: string[]): boolean {
   const lower = transcript.toLowerCase();
-  return CANCEL_PATTERNS.some((pattern) => lower.includes(pattern));
+  return patterns.some((p) => lower.includes(p));
 }
 
 /**
- * Fallback transcript analysis when Vapi structured outputs are empty.
- * Parses user responses to determine if order was confirmed or cancelled.
+ * Determine call result from transcript and structured data.
+ * Priority: cancelled > wrong_number > address_corrected > confirmed > needs_review
+ *
+ * Transcript signals ALWAYS override structured data because:
+ * - Customer may confirm initially then cancel later
+ * - Structured data captures early responses, not final intent
  */
-function analyzeTranscript(transcript: string): string {
-  const lower = transcript.toLowerCase();
-
-  // Check for cancellation signals
-  if (hasCancellationSignal(transcript)) return "cancelled";
-
-  // Extract user lines only
-  const userLines = transcript
-    .split("\n")
-    .filter((line) => line.startsWith("User:"))
-    .map((line) => line.replace("User:", "").trim().toLowerCase());
-
-  if (userLines.length === 0) return "needs_review";
-
-  // Tokenize each line into words (strip punctuation from each word)
-  function getWords(line: string): string[] {
-    return line.split(/[\s,;.!?]+/).filter(Boolean);
+function determineCallResult(
+  transcript: string | null,
+  structuredData: Record<string, unknown>,
+): string {
+  // 1. CANCELLED - highest priority, checked on full transcript (including AI lines)
+  if (transcript && hasSignal(transcript, CANCEL_PATTERNS)) {
+    return "cancelled";
+  }
+  if (structuredData.wantsToCancel === true) {
+    return "cancelled";
   }
 
-  // Count affirmative vs negative responses by checking individual words
-  const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine"]);
-  const negativeWords = new Set(["nu"]);
-
-  let yesCount = 0;
-  let noCount = 0;
-
-  for (const line of userLines) {
-    const words = getWords(line);
-    const hasYes = words.some((w) => affirmativeWords.has(w));
-    const hasNo = words.some((w) => negativeWords.has(w));
-    if (hasYes) yesCount++;
-    if (hasNo) noCount++;
+  // 2. WRONG NUMBER - customer doesn't recognize order or wrong person
+  if (transcript && hasSignal(transcript, WRONG_NUMBER_PATTERNS)) {
+    return "wrong_number";
   }
 
-  // Detect address correction: user provides address components
-  // Look for patterns like "strada X", "numărul Y", "din Z", "județul W"
-  const addressCorrectionPatterns = [
-    "altă adresă", "alta adresa", "arta este adres",
-    "e greșită", "e gresita", "nu e corect",
-    "altă stradă", "alta strada",
-  ];
-  const hasExplicitCorrection = addressCorrectionPatterns.some((p) =>
-    lower.includes(p),
-  );
+  // 3. ADDRESS CORRECTED - customer wants to change delivery address
+  if (transcript) {
+    const hasExplicitCorrection = hasSignal(transcript, ADDRESS_CORRECTION_PATTERNS);
+    const userLines = transcript
+      .split("\n")
+      .filter((line) => line.startsWith("User:"))
+      .map((line) => line.replace("User:", "").trim().toLowerCase());
+    const userGaveAddress = userLines.some((line) =>
+      ADDRESS_GIVING_REGEXES.some((rx) => rx.test(line)),
+    );
 
-  // Detect user giving a new address (street, number, city, county in user lines)
-  const addressGivingPatterns = [
-    /strada\s+\w/i,
-    /str\.\s*\w/i,
-    /num[aă]rul\s+\d/i,
-    /nr\.\s*\d/i,
-    /jude[tț]ul\s+\w/i,
-    /din\s+\w+.*jude[tț]/i,
-  ];
-  const userGaveAddress = userLines.some((line) =>
-    addressGivingPatterns.some((rx) => rx.test(line)),
-  );
+    if (hasExplicitCorrection || userGaveAddress) {
+      return "address_corrected";
+    }
+  }
+  if (
+    structuredData.addressCorrect === false ||
+    structuredData.correctedAddress
+  ) {
+    return "address_corrected";
+  }
 
-  const hasAddressCorrection = hasExplicitCorrection || userGaveAddress;
+  // 4. CONFIRMED - customer confirmed order and address
+  if (structuredData.orderConfirmed === true) {
+    return "confirmed";
+  }
+  if (transcript) {
+    const userLines = transcript
+      .split("\n")
+      .filter((line) => line.startsWith("User:"))
+      .map((line) => line.replace("User:", "").trim().toLowerCase());
 
-  // Address was corrected and customer confirmed at the end
-  if (hasAddressCorrection && yesCount >= 1) return "address_corrected";
+    if (userLines.length > 0) {
+      const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine"]);
+      const negativeWords = new Set(["nu"]);
+      let yesCount = 0;
+      let noCount = 0;
 
-  // If customer mostly said yes → confirmed
-  if (yesCount >= 2 && noCount === 0) return "confirmed";
-  if (yesCount > noCount && yesCount >= 2) return "confirmed";
+      for (const line of userLines) {
+        const words = line.split(/[\s,;.!?]+/).filter(Boolean);
+        if (words.some((w) => affirmativeWords.has(w))) yesCount++;
+        if (words.some((w) => negativeWords.has(w))) noCount++;
+      }
 
+      if (yesCount >= 2 && noCount === 0) return "confirmed";
+      if (yesCount > noCount && yesCount >= 2) return "confirmed";
+    }
+  }
+
+  // 5. NEEDS REVIEW - fallback
   return "needs_review";
 }

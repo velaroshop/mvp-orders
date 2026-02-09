@@ -1788,6 +1788,7 @@ export default function AdminPage() {
                             order.callStatus === "confirmed" ? "text-emerald-400" :
                             order.callStatus === "address_corrected" ? "text-blue-400" :
                             order.callStatus === "cancelled" ? "text-red-400" :
+                            order.callStatus === "wrong_number" ? "text-rose-400" :
                             order.callStatus === "no_answer" ? "text-orange-400" :
                             order.callStatus === "needs_review" ? "text-yellow-400" :
                             order.callStatus === "calling" ? "text-blue-400" :
@@ -1798,6 +1799,7 @@ export default function AdminPage() {
                               order.callStatus === "confirmed" ? "bg-emerald-400" :
                               order.callStatus === "address_corrected" ? "bg-blue-400" :
                               order.callStatus === "cancelled" ? "bg-red-400" :
+                              order.callStatus === "wrong_number" ? "bg-rose-400" :
                               order.callStatus === "no_answer" ? "bg-orange-400" :
                               order.callStatus === "needs_review" ? "bg-yellow-400" :
                               order.callStatus === "calling" ? "bg-blue-400 animate-pulse" :
@@ -1807,6 +1809,7 @@ export default function AdminPage() {
                             {order.callStatus === "confirmed" ? "Confirmat tel." :
                              order.callStatus === "address_corrected" ? "Adresă corectată" :
                              order.callStatus === "cancelled" ? "Anulat tel." :
+                             order.callStatus === "wrong_number" ? "Nr. greșit" :
                              order.callStatus === "no_answer" ? `Nu răspunde (${order.callAttempts || 0}/3)` :
                              order.callStatus === "needs_review" ? "Necesită review" :
                              order.callStatus === "calling" ? "Se apelează..." :

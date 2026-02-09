@@ -62,6 +62,8 @@ function getStatusColor(status: string, result: string | null) {
       return "bg-blue-500/20 text-blue-400 border-blue-500/50";
     case "cancelled":
       return "bg-red-500/20 text-red-400 border-red-500/50";
+    case "wrong_number":
+      return "bg-rose-500/20 text-rose-400 border-rose-500/50";
     case "no_answer":
       return "bg-orange-500/20 text-orange-400 border-orange-500/50";
     case "needs_review":
@@ -84,6 +86,8 @@ function getStatusLabel(status: string, result: string | null) {
       return "Adresă corectată";
     case "cancelled":
       return "Anulat";
+    case "wrong_number":
+      return "Nr. greșit";
     case "no_answer":
       return "Nu răspunde";
     case "needs_review":
@@ -350,6 +354,18 @@ export default function CallHistoryModal({
                             </p>
                             <p className="text-xs text-red-200">
                               {cancellationReason || "Verifică transcriptul"}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Wrong number */}
+                        {call.result === "wrong_number" && (
+                          <div className="bg-rose-900/20 border border-rose-700/50 rounded p-2">
+                            <p className="text-[10px] text-rose-400 uppercase font-medium mb-1">
+                              Număr greșit / Nu recunoaște comanda
+                            </p>
+                            <p className="text-xs text-rose-200">
+                              Clientul nu recunoaște comanda sau numărul este greșit. Verifică datele comenzii.
                             </p>
                           </div>
                         )}

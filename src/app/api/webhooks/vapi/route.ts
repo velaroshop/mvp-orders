@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       console.log(`[Vapi Webhook] No transcript/duration - marking as failed (invalid number)`);
     } else {
       // Call connected - determine result
-      // Priority: cancelled > wrong_number > address_corrected > confirmed > needs_review
+      // Priority: cancelled > wrong_number > confirmed > needs_review
       callStatus = "completed";
       callResult = determineCallResult(transcript, structuredData);
       console.log(`[Vapi Webhook] Call result: ${callResult}`);
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ─── Transcript signal detection ────────────────────────────────────
-// Priority order: cancelled > wrong_number > address_corrected > confirmed
+// Priority order: cancelled > wrong_number > confirmed > needs_review
 
 /** Cancellation: customer wants to cancel, changed their mind, AI confirms cancellation */
 const CANCEL_PATTERNS = [
@@ -172,15 +172,6 @@ const WRONG_NUMBER_PATTERNS = [
   "n-am cumpărat", "n-am cumparat",
 ];
 
-/** Address correction: customer mentions wrong address, gives new address */
-const ADDRESS_CORRECTION_PATTERNS = [
-  "altă adresă", "alta adresa", "arta este adres",
-  "e greșită", "e gresita", "nu e corect",
-  "altă stradă", "alta strada",
-  "schimb adresa", "modific adresa",
-  "adresa e greșită", "adresa e gresita",
-];
-
 /** Hesitancy / soft refusal: customer is unsure or doesn't really want the order */
 const HESITANCY_PATTERNS = [
   "mă mai gândesc", "ma mai gandesc",
@@ -198,16 +189,6 @@ const HESITANCY_PATTERNS = [
   "nu aș vrea", "nu as vrea",
 ];
 
-/** Regex patterns for user giving a new address */
-const ADDRESS_GIVING_REGEXES = [
-  /strada\s+\w/i,
-  /str\.\s*\w/i,
-  /num[aă]rul\s+\d/i,
-  /nr\.\s*\d/i,
-  /jude[tț]ul\s+\w/i,
-  /din\s+\w+.*jude[tț]/i,
-];
-
 function hasSignal(transcript: string, patterns: string[]): boolean {
   const lower = transcript.toLowerCase();
   return patterns.some((p) => lower.includes(p));
@@ -215,7 +196,7 @@ function hasSignal(transcript: string, patterns: string[]): boolean {
 
 /**
  * Determine call result from transcript and structured data.
- * Priority: cancelled > wrong_number > address_corrected > confirmed > needs_review
+ * Priority: cancelled > wrong_number > confirmed > needs_review
  *
  * Transcript signals ALWAYS override structured data because:
  * - Customer may confirm initially then cancel later
@@ -251,30 +232,11 @@ function determineCallResult(
   if (transcript && hasSignal(transcript, WRONG_NUMBER_PATTERNS)) {
     return "wrong_number";
   }
-
-  // 3. ADDRESS CORRECTED - customer wants to change delivery address
-  if (transcript) {
-    const hasExplicitCorrection = hasSignal(transcript, ADDRESS_CORRECTION_PATTERNS);
-    const userLines = transcript
-      .split("\n")
-      .filter((line) => line.startsWith("User:"))
-      .map((line) => line.replace("User:", "").trim().toLowerCase());
-    const userGaveAddress = userLines.some((line) =>
-      ADDRESS_GIVING_REGEXES.some((rx) => rx.test(line)),
-    );
-
-    if (hasExplicitCorrection || userGaveAddress) {
-      return "address_corrected";
-    }
-  }
-  if (
-    structuredData.addressCorrect === false ||
-    structuredData.correctedAddress
-  ) {
-    return "address_corrected";
+  if (structuredData.orderPlaced === false) {
+    return "wrong_number";
   }
 
-  // 4. CONFIRMED - customer confirmed order and address
+  // 3. CONFIRMED - customer confirmed order
   // BUT: if customer shows ANY hesitancy, skip confirmation → needs_review
   const hasHesitancy = transcript && hasSignal(transcript, HESITANCY_PATTERNS);
 
@@ -309,6 +271,6 @@ function determineCallResult(
     }
   }
 
-  // 5. NEEDS REVIEW - fallback
+  // 4. NEEDS REVIEW - fallback
   return "needs_review";
 }

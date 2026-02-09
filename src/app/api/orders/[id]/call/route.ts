@@ -113,6 +113,11 @@ export async function POST(
     // Create Vapi call
     const vapiClient = new VapiClient({ apiKey: settings.vapi_api_key });
 
+    const qty = order.product_quantity || 1;
+    const productName = order.product_name || "produsul comandat";
+    const productDescription =
+      qty === 1 ? productName : `${qty} bucăți ${productName}`;
+
     const vapiCall = await vapiClient.createOutboundCall({
       phoneNumberId: settings.vapi_phone_number_id,
       assistantId: settings.vapi_assistant_id,
@@ -120,8 +125,9 @@ export async function POST(
       assistantOverrides: {
         variableValues: {
           customerName: order.full_name || "",
-          productName: order.product_name || "produsul comandat",
-          quantity: String(order.product_quantity || 1),
+          productName: productName,
+          productDescription: productDescription,
+          quantity: String(qty),
           total: String(order.total || 0),
           address: order.address || "",
           streetNumber: order.street_number || "",

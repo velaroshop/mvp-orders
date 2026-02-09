@@ -142,6 +142,37 @@ export default function CallHistoryModal({
 
   if (!isOpen || !order) return null;
 
+  // Extract cancellation reason from transcript
+  function getCancellationReason(call: PhoneCall): string | null {
+    if (call.result !== "cancelled" || !call.transcript) return null;
+
+    // Try structured_data.customerNotes first
+    if (call.structured_data?.customerNotes) {
+      return call.structured_data.customerNotes as string;
+    }
+
+    // Try summary
+    if (call.summary) return call.summary;
+
+    // Extract from transcript: find the user line with cancellation signal
+    const lines = call.transcript.split("\n");
+    const cancelKeywords = [
+      "răzgândit", "razgandit", "anulez", "anulat",
+      "nu mai vreau", "renunț", "renunt", "nu doresc",
+    ];
+
+    for (const line of lines) {
+      if (!line.startsWith("User:")) continue;
+      const text = line.replace("User:", "").trim();
+      const lower = text.toLowerCase();
+      if (cancelKeywords.some((kw) => lower.includes(kw))) {
+        return text;
+      }
+    }
+
+    return null;
+  }
+
   // Extract corrected address from the latest call's structured_data
   function getCorrectedAddress(call: PhoneCall): string | null {
     const sd = call.structured_data;
@@ -229,6 +260,7 @@ export default function CallHistoryModal({
               {calls.map((call) => {
                 const isExpanded = expandedCall === call.id;
                 const correctedAddress = getCorrectedAddress(call);
+                const cancellationReason = getCancellationReason(call);
 
                 return (
                   <div
@@ -289,6 +321,18 @@ export default function CallHistoryModal({
                             </p>
                             <p className="text-xs text-blue-200">
                               {correctedAddress || "Verifică transcriptul"}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Cancellation reason */}
+                        {call.result === "cancelled" && (
+                          <div className="bg-red-900/20 border border-red-700/50 rounded p-2">
+                            <p className="text-[10px] text-red-400 uppercase font-medium mb-1">
+                              Motiv anulare
+                            </p>
+                            <p className="text-xs text-red-200">
+                              {cancellationReason || "Verifică transcriptul"}
                             </p>
                           </div>
                         )}

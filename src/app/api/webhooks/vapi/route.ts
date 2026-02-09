@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
       callStatus = "failed";
     } else if (endedReason === "assistant-error") {
       callStatus = "failed";
+    } else if (!transcript && !durationSeconds) {
+      // Call "completed" but no transcript and no duration → invalid/unreachable number
+      callStatus = "failed";
+      console.log(`[Vapi Webhook] No transcript/duration - marking as failed (invalid number)`);
     } else {
       // Call connected - determine result
       // Priority: cancelled > wrong_number > address_corrected > confirmed > needs_review

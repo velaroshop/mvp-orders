@@ -166,14 +166,22 @@ export async function POST(request: NextRequest) {
 function analyzeTranscript(transcript: string): string {
   const lower = transcript.toLowerCase();
 
-  // Check for cancellation signals
+  // Check for cancellation signals (checked against full transcript including AI lines)
   const cancelPatterns = [
     "vreau să anulez",
     "vreau sa anulez",
+    "să anulez",
+    "sa anulez",
     "anulez comanda",
+    "am anulat comanda",
+    "am anulat",
     "nu mai vreau",
     "renunț",
     "renunt",
+    "am răzgândit",
+    "am razgandit",
+    "m-am răzgândit",
+    "m-am razgandit",
     "nu doresc",
   ];
   for (const pattern of cancelPatterns) {

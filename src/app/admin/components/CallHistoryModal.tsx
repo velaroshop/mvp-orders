@@ -154,13 +154,30 @@ export default function CallHistoryModal({
     // Try summary
     if (call.summary) return call.summary;
 
-    // Extract from transcript: find the user line with cancellation signal
+    // Extract from transcript: find user's answer AFTER AI asks for the reason
+    // Pattern: AI asks "motivul" → next User line = the actual reason
     const lines = call.transcript.split("\n");
+    let aiAskedForReason = false;
+
+    for (const line of lines) {
+      if (line.startsWith("AI:")) {
+        const lower = line.toLowerCase();
+        if (lower.includes("motiv")) {
+          aiAskedForReason = true;
+          continue;
+        }
+      }
+      if (aiAskedForReason && line.startsWith("User:")) {
+        const text = line.replace("User:", "").trim();
+        if (text.length > 0) return text;
+      }
+    }
+
+    // Fallback: find the user line with the cancellation signal itself
     const cancelKeywords = [
       "răzgândit", "razgandit", "anulez", "anulat",
       "nu mai vreau", "renunț", "renunt", "nu doresc",
     ];
-
     for (const line of lines) {
       if (!line.startsWith("User:")) continue;
       const text = line.replace("User:", "").trim();

@@ -42,8 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract data from webhook payload
+    // Note: analysis & artifact are top-level on message, NOT under message.call
     const call = message.call || {};
-    const analysis = call.analysis || {};
+    const analysis = message.analysis || {};
     const artifact = message.artifact || {};
     const endedReason = message.endedReason || call.endedReason;
 
@@ -61,6 +62,8 @@ export async function POST(request: NextRequest) {
     const summary = analysis.summary || null;
     const transcript = artifact.transcript || null;
     const recordingUrl = artifact.recordingUrl || null;
+
+    console.log(`[Vapi Webhook] structuredData:`, JSON.stringify(structuredData));
     const cost = call.cost || null;
 
     // Determine call status and result

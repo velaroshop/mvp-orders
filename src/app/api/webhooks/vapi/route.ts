@@ -80,33 +80,40 @@ export async function POST(request: NextRequest) {
     } else if (endedReason === "assistant-error") {
       callStatus = "failed";
     } else {
-      // Call connected - determine result from structuredData
+      // Call connected - determine result
       callStatus = "completed";
 
-      const hasStructuredData = Object.keys(structuredData).length > 0;
+      // ALWAYS check transcript for cancellation first (overrides structuredData)
+      // Customer may confirm initially then change their mind later in the call
+      const transcriptCancelled = transcript ? hasCancellationSignal(transcript) : false;
 
-      if (hasStructuredData) {
-        // Use structured data when available
-        if (structuredData.orderConfirmed === true) {
-          if (
-            structuredData.addressCorrect === false &&
-            structuredData.correctedAddress
-          ) {
-            callResult = "address_corrected";
+      if (transcriptCancelled) {
+        callResult = "cancelled";
+        console.log(`[Vapi Webhook] Cancellation detected in transcript`);
+      } else {
+        const hasStructuredData = Object.keys(structuredData).length > 0;
+
+        if (hasStructuredData) {
+          if (structuredData.orderConfirmed === true) {
+            if (
+              structuredData.addressCorrect === false &&
+              structuredData.correctedAddress
+            ) {
+              callResult = "address_corrected";
+            } else {
+              callResult = "confirmed";
+            }
+          } else if (structuredData.wantsToCancel === true) {
+            callResult = "cancelled";
           } else {
-            callResult = "confirmed";
+            callResult = "needs_review";
           }
-        } else if (structuredData.wantsToCancel === true) {
-          callResult = "cancelled";
+        } else if (transcript) {
+          callResult = analyzeTranscript(transcript);
+          console.log(`[Vapi Webhook] Transcript fallback result: ${callResult}`);
         } else {
           callResult = "needs_review";
         }
-      } else if (transcript) {
-        // Fallback: analyze transcript when structured data is empty
-        callResult = analyzeTranscript(transcript);
-        console.log(`[Vapi Webhook] Transcript fallback result: ${callResult}`);
-      } else {
-        callResult = "needs_review";
       }
     }
 
@@ -159,6 +166,34 @@ export async function POST(request: NextRequest) {
   }
 }
 
+const CANCEL_PATTERNS = [
+  "vreau să anulez",
+  "vreau sa anulez",
+  "să anulez",
+  "sa anulez",
+  "anulez comanda",
+  "am anulat comanda",
+  "am anulat",
+  "nu mai vreau",
+  "renunț",
+  "renunt",
+  "am răzgândit",
+  "am razgandit",
+  "m-am răzgândit",
+  "m-am razgandit",
+  "nu doresc",
+];
+
+/**
+ * Check if transcript contains cancellation signals.
+ * Runs BEFORE structured data check to catch cases where customer
+ * initially confirms but then changes their mind later in the call.
+ */
+function hasCancellationSignal(transcript: string): boolean {
+  const lower = transcript.toLowerCase();
+  return CANCEL_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
 /**
  * Fallback transcript analysis when Vapi structured outputs are empty.
  * Parses user responses to determine if order was confirmed or cancelled.
@@ -166,27 +201,8 @@ export async function POST(request: NextRequest) {
 function analyzeTranscript(transcript: string): string {
   const lower = transcript.toLowerCase();
 
-  // Check for cancellation signals (checked against full transcript including AI lines)
-  const cancelPatterns = [
-    "vreau să anulez",
-    "vreau sa anulez",
-    "să anulez",
-    "sa anulez",
-    "anulez comanda",
-    "am anulat comanda",
-    "am anulat",
-    "nu mai vreau",
-    "renunț",
-    "renunt",
-    "am răzgândit",
-    "am razgandit",
-    "m-am răzgândit",
-    "m-am razgandit",
-    "nu doresc",
-  ];
-  for (const pattern of cancelPatterns) {
-    if (lower.includes(pattern)) return "cancelled";
-  }
+  // Check for cancellation signals
+  if (hasCancellationSignal(transcript)) return "cancelled";
 
   // Extract user lines only
   const userLines = transcript

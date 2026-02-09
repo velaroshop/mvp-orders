@@ -266,8 +266,8 @@ function determineCallResult(
         if (words.some((w) => negativeWords.has(w))) noCount++;
       }
 
-      if (yesCount >= 2 && noCount === 0) return "confirmed";
-      if (yesCount > noCount && yesCount >= 2) return "confirmed";
+      if (yesCount >= 1 && noCount === 0) return "confirmed";
+      if (yesCount > noCount) return "confirmed";
     }
   }
 

@@ -209,13 +209,21 @@ function determineCallResult(
   transcript: string | null,
   structuredData: Record<string, unknown>,
 ): string {
+  console.log("[Vapi Webhook] determineCallResult - transcript is null:", transcript === null);
+  console.log("[Vapi Webhook] determineCallResult - transcript length:", transcript?.length);
+
   // 0. NO USER PARTICIPATION - customer hung up without speaking
   if (transcript) {
-    const userLines = transcript
-      .split("\n")
+    const allLines = transcript.split("\n");
+    console.log("[Vapi Webhook] Total lines in transcript:", allLines.length);
+    console.log("[Vapi Webhook] First 3 lines:", JSON.stringify(allLines.slice(0, 3)));
+
+    const userLines = allLines
       .filter((line) => line.startsWith("User:"))
       .map((line) => line.replace("User:", "").trim())
       .filter((text) => text.length > 0);
+
+    console.log("[Vapi Webhook] User lines found:", userLines.length, JSON.stringify(userLines));
 
     if (userLines.length === 0) {
       console.log("[Vapi Webhook] No user lines in transcript - customer hung up");
@@ -224,30 +232,43 @@ function determineCallResult(
   }
 
   // 1. CANCELLED - highest priority, checked on full transcript (including AI lines)
-  if (transcript && hasSignal(transcript, CANCEL_PATTERNS)) {
+  const hasCancelSignal = transcript && hasSignal(transcript, CANCEL_PATTERNS);
+  console.log("[Vapi Webhook] Cancel signal:", hasCancelSignal);
+  if (hasCancelSignal) {
     return "cancelled";
   }
   if (structuredData.wantsToCancel === true) {
+    console.log("[Vapi Webhook] structuredData.wantsToCancel is true");
     return "cancelled";
   }
 
   // 2. WRONG NUMBER - customer doesn't recognize order or wrong person
-  if (transcript && hasSignal(transcript, WRONG_NUMBER_PATTERNS)) {
+  const hasWrongNumberSignal = transcript && hasSignal(transcript, WRONG_NUMBER_PATTERNS);
+  console.log("[Vapi Webhook] Wrong number signal:", hasWrongNumberSignal);
+  if (hasWrongNumberSignal) {
     return "wrong_number";
   }
   if (structuredData.orderPlaced === false) {
+    console.log("[Vapi Webhook] structuredData.orderPlaced is false");
     return "wrong_number";
   }
 
   // 3. CONFIRMED - customer confirmed order
   // BUT: if customer shows ANY hesitancy, skip confirmation → needs_review
   const hasHesitancy = transcript && hasSignal(transcript, HESITANCY_PATTERNS);
+  console.log("[Vapi Webhook] Hesitancy signal:", hasHesitancy);
 
   if (hasHesitancy) {
-    console.log("[Vapi Webhook] Hesitancy detected in transcript, skipping confirmation");
+    // Log which pattern matched
+    if (transcript) {
+      const lower = transcript.toLowerCase();
+      const matched = HESITANCY_PATTERNS.find((p) => lower.includes(p));
+      console.log("[Vapi Webhook] Hesitancy matched pattern:", JSON.stringify(matched));
+    }
     return "needs_review";
   }
 
+  console.log("[Vapi Webhook] structuredData.orderConfirmed:", structuredData.orderConfirmed);
   if (structuredData.orderConfirmed === true) {
     return "confirmed";
   }
@@ -257,6 +278,8 @@ function determineCallResult(
       .filter((line) => line.startsWith("User:"))
       .map((line) => line.replace("User:", "").trim().toLowerCase());
 
+    console.log("[Vapi Webhook] Affirmative check - userLines:", JSON.stringify(userLines));
+
     if (userLines.length > 0) {
       const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine"]);
       const negativeWords = new Set(["nu"]);
@@ -265,15 +288,18 @@ function determineCallResult(
 
       for (const line of userLines) {
         const words = line.split(/[\s,;.!?]+/).filter(Boolean);
+        console.log("[Vapi Webhook] Line words:", JSON.stringify(words));
         if (words.some((w) => affirmativeWords.has(w))) yesCount++;
         if (words.some((w) => negativeWords.has(w))) noCount++;
       }
 
+      console.log("[Vapi Webhook] yesCount:", yesCount, "noCount:", noCount);
       if (yesCount >= 1 && noCount === 0) return "confirmed";
       if (yesCount > noCount) return "confirmed";
     }
   }
 
   // 4. NEEDS REVIEW - fallback
+  console.log("[Vapi Webhook] Falling through to needs_review");
   return "needs_review";
 }

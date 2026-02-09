@@ -177,6 +177,23 @@ const ADDRESS_CORRECTION_PATTERNS = [
   "adresa e greșită", "adresa e gresita",
 ];
 
+/** Hesitancy / soft refusal: customer is unsure or doesn't really want the order */
+const HESITANCY_PATTERNS = [
+  "mă mai gândesc", "ma mai gandesc",
+  "mă gândesc", "ma gandesc",
+  "nu sunt sigur", "nu sunt sigură", "nu sunt sigura",
+  "nu prea", "nu chiar",
+  "nu știu", "nu stiu",
+  "las că", "las ca",
+  "lasă", "lasa",
+  "poate altă dată", "poate alta data",
+  "nu acum",
+  "mă razgândesc", "ma razgandesc",
+  "nu cred",
+  "nu vreau", "nu o vreau",
+  "nu aș vrea", "nu as vrea",
+];
+
 /** Regex patterns for user giving a new address */
 const ADDRESS_GIVING_REGEXES = [
   /strada\s+\w/i,
@@ -240,6 +257,14 @@ function determineCallResult(
   }
 
   // 4. CONFIRMED - customer confirmed order and address
+  // BUT: if customer shows ANY hesitancy, skip confirmation → needs_review
+  const hasHesitancy = transcript && hasSignal(transcript, HESITANCY_PATTERNS);
+
+  if (hasHesitancy) {
+    console.log("[Vapi Webhook] Hesitancy detected in transcript, skipping confirmation");
+    return "needs_review";
+  }
+
   if (structuredData.orderConfirmed === true) {
     return "confirmed";
   }

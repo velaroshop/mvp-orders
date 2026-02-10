@@ -42,41 +42,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract data from webhook payload
-    // Note: analysis & artifact are top-level on message, NOT under message.call
+    // Vapi puts most fields at TOP-LEVEL on message (not nested under analysis/artifact)
     const call = message.call || {};
     const analysis = message.analysis || {};
     const artifact = message.artifact || {};
     const endedReason = message.endedReason || call.endedReason;
 
-    // Duration
-    const startTime = call.startedAt
-      ? new Date(call.startedAt).getTime()
-      : null;
-    const endTime = call.endedAt ? new Date(call.endedAt).getTime() : null;
-    const durationSeconds =
-      startTime && endTime
-        ? Math.round((endTime - startTime) / 1000)
-        : null;
+    // Duration: prefer top-level durationSeconds, fallback to calculating from timestamps
+    const durationSeconds: number | null =
+      message.durationSeconds ??
+      (call.startedAt && call.endedAt
+        ? Math.round(
+            (new Date(call.endedAt).getTime() -
+              new Date(call.startedAt).getTime()) /
+              1000,
+          )
+        : null);
 
-    const rawStructuredData = analysis.structuredData || {};
+    // Structured data: check analysis.structuredData (if Vapi Analysis configured)
+    const rawStructuredData = analysis.structuredData || message.structuredData || {};
     const structuredData = normalizeStructuredData(rawStructuredData);
-    const summary = analysis.summary || null;
-    const transcript = artifact.transcript || null;
-    const recordingUrl = artifact.recordingUrl || null;
 
-    // DEBUG: Dump full message structure to find where Vapi puts structured data
-    console.log(`[Vapi Webhook] TOP-LEVEL message keys:`, Object.keys(message));
-    console.log(`[Vapi Webhook] message.analysis:`, JSON.stringify(analysis).slice(0, 2000));
-    console.log(`[Vapi Webhook] message.artifact keys:`, Object.keys(artifact));
-    console.log(`[Vapi Webhook] message.call keys:`, Object.keys(call));
-    // Log the full message (truncated) to find structured data location
-    console.log(`[Vapi Webhook] FULL MESSAGE:`, JSON.stringify(message).slice(0, 5000));
-    // Check specific alternative paths where Vapi might put structured data
-    console.log(`[Vapi Webhook] message.structuredData:`, JSON.stringify(message.structuredData));
-    console.log(`[Vapi Webhook] artifact.structuredData:`, JSON.stringify(artifact.structuredData));
-    console.log(`[Vapi Webhook] call.analysis:`, JSON.stringify(call.analysis));
-    console.log(`[Vapi Webhook] message.results:`, JSON.stringify(message.results));
-    const cost = call.cost || null;
+    // Top-level fields take priority over nested ones
+    const summary = message.summary || analysis.summary || null;
+    const transcript = message.transcript || artifact.transcript || null;
+    const recordingUrl = message.recordingUrl || artifact.recordingUrl || null;
+    const cost = message.cost ?? call.cost ?? null;
 
     // Determine call status and result
     let callStatus: string;

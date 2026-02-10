@@ -161,7 +161,7 @@ export async function POST(
           orderDescription: orderDescription,
           orderDetails: orderDetails,
           quantity: String(qty),
-          total: String(order.total || 0),
+          total: String(order.total || 0).replace(".", ","),
           address: order.address || "",
           streetNumber: order.street_number || "",
           city: order.city || "",

@@ -124,31 +124,38 @@ export async function GET(request: NextRequest) {
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
-    // Calculate revenue by product
-    const productRevenue: Record<string, { revenue: number; unitsSold: number; orders: number }> = {};
+    // Calculate revenue by product (grouped by SKU to avoid duplicates from name changes)
+    const productRevenue: Record<string, { name: string; revenue: number; unitsSold: number; orders: number }> = {};
     filteredOrders.forEach((order: any) => {
-      const productName = order.product_name || "Unknown Product";
+      const sku = order.product_sku || order.product_name || "Unknown Product";
+      const displayName = order.product_name || sku;
       const orderTotal = order.total || 0;
       const quantity = order.product_quantity || 1;
-      if (!productRevenue[productName]) {
-        productRevenue[productName] = { revenue: 0, unitsSold: 0, orders: 0 };
+      if (!productRevenue[sku]) {
+        productRevenue[sku] = { name: displayName, revenue: 0, unitsSold: 0, orders: 0 };
       }
-      productRevenue[productName].revenue += orderTotal;
-      productRevenue[productName].unitsSold += quantity;
-      productRevenue[productName].orders += 1;
+      productRevenue[sku].name = displayName; // always use latest name
+      productRevenue[sku].revenue += orderTotal;
+      productRevenue[sku].unitsSold += quantity;
+      productRevenue[sku].orders += 1;
     });
 
     // Convert to array and sort by revenue (descending)
-    const revenueByProduct = Object.entries(productRevenue)
-      .map(([name, data]) => ({ name, revenue: data.revenue, unitsSold: data.unitsSold, orders: data.orders }))
+    const revenueByProduct = Object.values(productRevenue)
+      .map((data) => ({ name: data.name, revenue: data.revenue, unitsSold: data.unitsSold, orders: data.orders }))
       .sort((a, b) => b.revenue - a.revenue);
 
-    // Calculate product sales analysis (units sold per product)
-    const productSales: Record<string, number> = {};
+    // Calculate product sales analysis (units sold per product, grouped by SKU)
+    const productSales: Record<string, { name: string; totalSold: number }> = {};
     filteredOrders.forEach((order: any) => {
-      const productName = order.product_name || "Unknown Product";
+      const sku = order.product_sku || order.product_name || "Unknown Product";
+      const displayName = order.product_name || sku;
       const quantity = order.product_quantity || 1;
-      productSales[productName] = (productSales[productName] || 0) + quantity;
+      if (!productSales[sku]) {
+        productSales[sku] = { name: displayName, totalSold: 0 };
+      }
+      productSales[sku].name = displayName;
+      productSales[sku].totalSold += quantity;
     });
 
     // Calculate days in period for daily average
@@ -157,11 +164,11 @@ export async function GET(request: NextRequest) {
     const daysInPeriod = Math.max(1, Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
     // Convert to array with daily average
-    const productStockAnalysis = Object.entries(productSales)
-      .map(([name, totalSold]) => ({
-        name,
-        totalSold,
-        dailyAverage: totalSold / daysInPeriod,
+    const productStockAnalysis = Object.values(productSales)
+      .map((data) => ({
+        name: data.name,
+        totalSold: data.totalSold,
+        dailyAverage: data.totalSold / daysInPeriod,
         daysInPeriod,
       }))
       .sort((a, b) => b.totalSold - a.totalSold);

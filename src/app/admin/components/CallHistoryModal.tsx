@@ -146,19 +146,35 @@ export default function CallHistoryModal({
 
   if (!isOpen || !order) return null;
 
-  // Normalize Vapi UUID-keyed structured data to flat key-value
-  // Old calls have: {"uuid1": {"name": "orderConfirmed", "result": true}}
-  // New calls have: {"orderConfirmed": true}
-  function normalizeSD(raw: Record<string, unknown>): Record<string, unknown> {
-    const values = Object.values(raw);
+  // Normalize structured data from DB to flat key-value
+  // Handles multiple formats from different Vapi versions/paths:
+  // - Array: [{name: "orderConfirmed", value: true}, ...]
+  // - UUID-keyed: {"uuid1": {"name": "orderConfirmed", "result": true}}
+  // - Flat: {"orderConfirmed": true} (already normalized)
+  function normalizeSD(raw: unknown): Record<string, unknown> {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      const flat: Record<string, unknown> = {};
+      for (const item of raw) {
+        if (item && typeof item === "object") {
+          if ("name" in item && "value" in item) flat[(item as {name:string}).name] = (item as {value:unknown}).value;
+          else if ("name" in item && "result" in item) flat[(item as {name:string}).name] = (item as {result:unknown}).result;
+          else Object.assign(flat, item);
+        }
+      }
+      return flat;
+    }
+    if (typeof raw !== "object") return {};
+    const obj = raw as Record<string, unknown>;
+    const values = Object.values(obj);
     const isUuidKeyed = values.length > 0 && values.every(
-      (v) => typeof v === "object" && v !== null && "name" in v && "result" in v,
+      (v) => typeof v === "object" && v !== null && "name" in v,
     );
-    if (!isUuidKeyed) return raw;
+    if (!isUuidKeyed) return obj;
     const flat: Record<string, unknown> = {};
     for (const value of values) {
-      const entry = value as { name: string; result: unknown };
-      flat[entry.name] = entry.result;
+      const entry = value as { name: string; result?: unknown; value?: unknown };
+      flat[entry.name] = entry.result ?? entry.value;
     }
     return flat;
   }

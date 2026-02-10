@@ -60,27 +60,10 @@ export async function POST(request: NextRequest) {
     const durationSeconds: number | null =
       rawDuration != null ? Math.round(rawDuration) : null;
 
-    // DEBUG: Find where Vapi puts structured outputs
-    console.log(`[Vapi Webhook] message keys:`, Object.keys(message));
-    console.log(`[Vapi Webhook] analysis:`, JSON.stringify(analysis).slice(0, 1000));
-    console.log(`[Vapi Webhook] artifact keys:`, Object.keys(artifact));
-    console.log(`[Vapi Webhook] call keys:`, Object.keys(call));
-    // Dump full message to find structured outputs location
-    const msgDump = JSON.stringify(message);
-    // Log in chunks to avoid Vercel truncation
-    console.log(`[Vapi Webhook] FULL MSG (1/3):`, msgDump.slice(0, 4000));
-    if (msgDump.length > 4000) console.log(`[Vapi Webhook] FULL MSG (2/3):`, msgDump.slice(4000, 8000));
-    if (msgDump.length > 8000) console.log(`[Vapi Webhook] FULL MSG (3/3):`, msgDump.slice(8000, 12000));
-
-    // Structured data: check all possible paths
-    const rawStructuredData =
-      analysis.structuredData ||
-      message.structuredData ||
-      artifact.structuredData ||
-      call.structuredData ||
-      {};
-    const structuredData = normalizeStructuredData(rawStructuredData);
-    console.log(`[Vapi Webhook] structuredData found:`, JSON.stringify(structuredData));
+    // Structured data: Vapi puts it at artifact.structuredOutputs (NOT analysis.structuredData)
+    const rawStructuredOutputs = artifact.structuredOutputs || [];
+    const structuredData = normalizeStructuredOutputs(rawStructuredOutputs);
+    console.log(`[Vapi Webhook] structuredData:`, JSON.stringify(structuredData));
 
     // Top-level fields take priority over nested ones
     const summary = message.summary || analysis.summary || null;
@@ -165,30 +148,61 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ─── Normalize Vapi structured data ─────────────────────────────────
-// Vapi sends structured outputs as UUID-keyed objects:
-//   {"uuid1": {"name": "orderConfirmed", "result": true}, "uuid2": {"name": "wantsToCancel", "result": false}}
-// We normalize to flat key-value: {"orderConfirmed": true, "wantsToCancel": false}
-function normalizeStructuredData(
-  raw: Record<string, unknown>,
+// ─── Normalize Vapi structured outputs ───────────────────────────────
+// Vapi sends structured outputs at artifact.structuredOutputs as an array:
+//   [{"name": "orderConfirmed", "value": true}, {"name": "wantsToCancel", "value": false}]
+// Or possibly as UUID-keyed objects (older format):
+//   {"uuid1": {"name": "orderConfirmed", "result": true}}
+// We normalize everything to flat key-value: {"orderConfirmed": true, "wantsToCancel": false}
+function normalizeStructuredOutputs(
+  raw: unknown,
 ): Record<string, unknown> {
-  // Check if this is already flat format (e.g. {"orderConfirmed": true})
-  const values = Object.values(raw);
-  const isUuidKeyed = values.length > 0 && values.every(
-    (v) => typeof v === "object" && v !== null && "name" in v && "result" in v,
-  );
+  if (!raw) return {};
 
-  if (!isUuidKeyed) {
-    // Already flat or empty - return as-is
-    return raw;
+  // Array format: [{name, value}, ...]
+  if (Array.isArray(raw)) {
+    const normalized: Record<string, unknown> = {};
+    for (const item of raw) {
+      if (item && typeof item === "object") {
+        // Try {name, value} format
+        if ("name" in item && "value" in item) {
+          normalized[(item as { name: string }).name] = (item as { value: unknown }).value;
+        }
+        // Try {name, result} format
+        else if ("name" in item && "result" in item) {
+          normalized[(item as { name: string }).name] = (item as { result: unknown }).result;
+        }
+        // Try flat key-value in array element (e.g. {orderConfirmed: true})
+        else {
+          Object.assign(normalized, item);
+        }
+      }
+    }
+    return normalized;
   }
 
-  const normalized: Record<string, unknown> = {};
-  for (const value of values) {
-    const entry = value as { name: string; result: unknown };
-    normalized[entry.name] = entry.result;
+  // Object format (UUID-keyed or flat)
+  if (typeof raw === "object" && raw !== null) {
+    const obj = raw as Record<string, unknown>;
+    const values = Object.values(obj);
+    const isUuidKeyed = values.length > 0 && values.every(
+      (v) => typeof v === "object" && v !== null && "name" in v,
+    );
+
+    if (isUuidKeyed) {
+      const normalized: Record<string, unknown> = {};
+      for (const value of values) {
+        const entry = value as { name: string; result?: unknown; value?: unknown };
+        normalized[entry.name] = entry.result ?? entry.value;
+      }
+      return normalized;
+    }
+
+    // Already flat
+    return obj;
   }
-  return normalized;
+
+  return {};
 }
 
 // ─── Transcript signal detection ────────────────────────────────────

@@ -59,9 +59,27 @@ export async function POST(request: NextRequest) {
           )
         : null);
 
-    // Structured data: check analysis.structuredData (if Vapi Analysis configured)
-    const rawStructuredData = analysis.structuredData || message.structuredData || {};
+    // DEBUG: Find where Vapi puts structured outputs
+    console.log(`[Vapi Webhook] message keys:`, Object.keys(message));
+    console.log(`[Vapi Webhook] analysis:`, JSON.stringify(analysis).slice(0, 1000));
+    console.log(`[Vapi Webhook] artifact keys:`, Object.keys(artifact));
+    console.log(`[Vapi Webhook] call keys:`, Object.keys(call));
+    // Dump full message to find structured outputs location
+    const msgDump = JSON.stringify(message);
+    // Log in chunks to avoid Vercel truncation
+    console.log(`[Vapi Webhook] FULL MSG (1/3):`, msgDump.slice(0, 4000));
+    if (msgDump.length > 4000) console.log(`[Vapi Webhook] FULL MSG (2/3):`, msgDump.slice(4000, 8000));
+    if (msgDump.length > 8000) console.log(`[Vapi Webhook] FULL MSG (3/3):`, msgDump.slice(8000, 12000));
+
+    // Structured data: check all possible paths
+    const rawStructuredData =
+      analysis.structuredData ||
+      message.structuredData ||
+      artifact.structuredData ||
+      call.structuredData ||
+      {};
     const structuredData = normalizeStructuredData(rawStructuredData);
+    console.log(`[Vapi Webhook] structuredData found:`, JSON.stringify(structuredData));
 
     // Top-level fields take priority over nested ones
     const summary = message.summary || analysis.summary || null;

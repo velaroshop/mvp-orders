@@ -183,7 +183,6 @@ const HESITANCY_PATTERNS = [
   "nu prea", "nu chiar",
   "nu știu", "nu stiu",
   "las că", "las ca",
-  "lasă", "lasa",
   "poate altă dată", "poate alta data",
   "nu acum",
   "mă razgândesc", "ma razgandesc",

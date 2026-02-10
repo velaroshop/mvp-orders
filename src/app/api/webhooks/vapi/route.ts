@@ -191,6 +191,15 @@ const HESITANCY_PATTERNS = [
   "nu aș vrea", "nu as vrea",
 ];
 
+/** AI lines that indicate the assistant asked for ORDER confirmation (not identity) */
+const AI_CONFIRMATION_PATTERNS = [
+  "confirmați comanda", "confirmati comanda",
+  "confirmați această comandă", "confirmati aceasta comanda",
+  "doriți să confirmați", "doriti sa confirmati",
+  "putem expedia", "o putem expedia",
+  "doriți să o expedi", "doriti sa o expedi",
+];
+
 function hasSignal(transcript: string, patterns: string[]): boolean {
   const lower = transcript.toLowerCase();
   return patterns.some((p) => lower.includes(p));
@@ -267,34 +276,72 @@ function determineCallResult(
     return "needs_review";
   }
 
+  // 3. CONFIRMED - only count affirmatives from AFTER AI asked for order confirmation
+  // This prevents "da" from identity check (PASUL 1) being counted as order confirmation
   console.log("[Vapi Webhook] structuredData.orderConfirmed:", structuredData.orderConfirmed);
-  if (structuredData.orderConfirmed === true) {
-    return "confirmed";
-  }
+
   if (transcript) {
-    const userLines = transcript
-      .split("\n")
-      .filter((line) => line.startsWith("User:"))
-      .map((line) => line.replace("User:", "").trim().toLowerCase());
+    const lines = transcript.split("\n");
+    let lastConfirmQuestionIdx = -1;
 
-    console.log("[Vapi Webhook] Affirmative check - userLines:", JSON.stringify(userLines));
-
-    if (userLines.length > 0) {
-      const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine"]);
-      const negativeWords = new Set(["nu"]);
-      let yesCount = 0;
-      let noCount = 0;
-
-      for (const line of userLines) {
-        const words = line.split(/[\s,;.!?]+/).filter(Boolean);
-        console.log("[Vapi Webhook] Line words:", JSON.stringify(words));
-        if (words.some((w) => affirmativeWords.has(w))) yesCount++;
-        if (words.some((w) => negativeWords.has(w))) noCount++;
+    // Find the LAST AI line that asks for order confirmation
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith("AI:")) {
+        const lower = lines[i].toLowerCase();
+        if (AI_CONFIRMATION_PATTERNS.some((p) => lower.includes(p))) {
+          lastConfirmQuestionIdx = i;
+        }
       }
+    }
 
-      console.log("[Vapi Webhook] yesCount:", yesCount, "noCount:", noCount);
-      if (yesCount >= 1 && noCount === 0) return "confirmed";
-      if (yesCount > noCount) return "confirmed";
+    console.log("[Vapi Webhook] Last AI confirmation question at line:", lastConfirmQuestionIdx);
+
+    if (lastConfirmQuestionIdx >= 0) {
+      // Get user lines AFTER the confirmation question
+      const postConfirmUserLines = lines
+        .slice(lastConfirmQuestionIdx + 1)
+        .filter((line) => line.startsWith("User:"))
+        .map((line) => line.replace("User:", "").trim().toLowerCase())
+        .filter((text) => text.length > 0);
+
+      console.log("[Vapi Webhook] Post-confirmation user lines:", JSON.stringify(postConfirmUserLines));
+
+      if (postConfirmUserLines.length > 0) {
+        const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine", "confirm", "confirmez", "desigur"]);
+        const negativeWords = new Set(["nu"]);
+
+        // Check the first user response after confirmation question
+        const firstResponse = postConfirmUserLines[0];
+        const words = firstResponse.split(/[\s,;.!?]+/).filter(Boolean);
+        console.log("[Vapi Webhook] First post-confirm response words:", JSON.stringify(words));
+
+        const hasAffirmative = words.some((w) => affirmativeWords.has(w));
+        const hasNegative = words.some((w) => negativeWords.has(w));
+
+        if (hasAffirmative && !hasNegative) {
+          console.log("[Vapi Webhook] Clear affirmative after confirmation question");
+          return "confirmed";
+        }
+      } else {
+        // AI asked for confirmation but customer never responded → needs_review
+        console.log("[Vapi Webhook] No user response after confirmation question");
+      }
+    } else {
+      // AI never asked for confirmation → needs_review
+      console.log("[Vapi Webhook] AI never asked for order confirmation");
+    }
+
+    // Secondary: trust structuredData only if customer responded after confirmation question
+    if (structuredData.orderConfirmed === true && lastConfirmQuestionIdx >= 0) {
+      const hasPostConfirmResponse = lines
+        .slice(lastConfirmQuestionIdx + 1)
+        .some((line) => line.startsWith("User:") && line.replace("User:", "").trim().length > 0);
+
+      if (hasPostConfirmResponse) {
+        console.log("[Vapi Webhook] structuredData.orderConfirmed=true + post-confirm response exists");
+        return "confirmed";
+      }
+      console.log("[Vapi Webhook] structuredData.orderConfirmed=true but no post-confirm response - ignoring");
     }
   }
 

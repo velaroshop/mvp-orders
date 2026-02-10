@@ -116,7 +116,38 @@ export async function POST(
     const qty = order.product_quantity || 1;
     const productName = order.product_name || "produsul comandat";
     const productDescription =
-      qty === 1 ? productName : `${qty} bucăți ${productName}`;
+      qty === 1 ? `o bucată ${productName}` : `${qty} bucăți ${productName}`;
+
+    // Build upsell-aware descriptions
+    const upsellsArray = Array.isArray(order.upsells) ? order.upsells : [];
+    const hasUpsells = upsellsArray.length > 0;
+
+    // orderDescription: short version for main mention
+    // - No upsells: "o bucată crema reparatoare" or "3 bucăți crema reparatoare"
+    // - Has upsells: "mai multe produse de pe site-ul nostru"
+    const orderDescription = hasUpsells
+      ? "mai multe produse de pe site-ul nostru"
+      : productDescription;
+
+    // orderDetails: full list for when customer asks "ce am comandat?"
+    // Format: "3 bucăți Crema X, la care ați adăugat și o bucată Produs A, o bucată Produs B și o bucată Produs C"
+    const formatQty = (name: string, q: number) =>
+      q === 1 ? `o bucată ${name}` : `${q} bucăți ${name}`;
+
+    let orderDetails = formatQty(productName, qty);
+    if (hasUpsells) {
+      const upsellParts = upsellsArray.map((u: Record<string, unknown>) => {
+        const uName = (u.title || u.productName || "produs") as string;
+        const uQty = Number(u.quantity) || 1;
+        return formatQty(uName, uQty);
+      });
+      // Join with commas, last item with "și"
+      const upsellText =
+        upsellParts.length === 1
+          ? upsellParts[0]
+          : `${upsellParts.slice(0, -1).join(", ")} și ${upsellParts[upsellParts.length - 1]}`;
+      orderDetails += `, la care ați adăugat și ${upsellText}`;
+    }
 
     const vapiCall = await vapiClient.createOutboundCall({
       phoneNumberId: settings.vapi_phone_number_id,
@@ -127,6 +158,8 @@ export async function POST(
           customerName: order.full_name || "",
           productName: productName,
           productDescription: productDescription,
+          orderDescription: orderDescription,
+          orderDetails: orderDetails,
           quantity: String(qty),
           total: String(order.total || 0),
           address: order.address || "",

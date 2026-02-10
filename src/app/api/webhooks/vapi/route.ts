@@ -338,7 +338,8 @@ function determineCallResult(
       console.log("[Vapi Webhook] Post-confirmation user lines:", JSON.stringify(postConfirmUserLines));
 
       if (postConfirmUserLines.length > 0) {
-        const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine", "confirm", "confirmez", "desigur"]);
+        const affirmativeWords = new Set(["da", "sigur", "corect", "exact", "ok", "bine", "confirm", "confirmez", "desigur", "acord", "perfect", "mergem", "trimiteți", "trimiteti", "expediați", "expediati"]);
+        const affirmativePhrases = ["de acord", "sunt de acord", "da sigur", "da desigur", "da bine"];
         const negativeWords = new Set(["nu"]);
 
         // Check the first user response after confirmation question
@@ -346,7 +347,7 @@ function determineCallResult(
         const words = firstResponse.split(/[\s,;.!?]+/).filter(Boolean);
         console.log("[Vapi Webhook] First post-confirm response words:", JSON.stringify(words));
 
-        const hasAffirmative = words.some((w) => affirmativeWords.has(w));
+        const hasAffirmative = words.some((w) => affirmativeWords.has(w)) || affirmativePhrases.some((p) => firstResponse.includes(p));
         const hasNegative = words.some((w) => negativeWords.has(w));
 
         if (hasAffirmative && !hasNegative) {

@@ -146,8 +146,26 @@ export default function CallHistoryModal({
 
   if (!isOpen || !order) return null;
 
+  // Normalize Vapi UUID-keyed structured data to flat key-value
+  // Old calls have: {"uuid1": {"name": "orderConfirmed", "result": true}}
+  // New calls have: {"orderConfirmed": true}
+  function normalizeSD(raw: Record<string, unknown>): Record<string, unknown> {
+    const values = Object.values(raw);
+    const isUuidKeyed = values.length > 0 && values.every(
+      (v) => typeof v === "object" && v !== null && "name" in v && "result" in v,
+    );
+    if (!isUuidKeyed) return raw;
+    const flat: Record<string, unknown> = {};
+    for (const value of values) {
+      const entry = value as { name: string; result: unknown };
+      flat[entry.name] = entry.result;
+    }
+    return flat;
+  }
+
   // Format structured outputs for display
-  function formatStructuredOutputs(sd: Record<string, unknown>) {
+  function formatStructuredOutputs(rawSd: Record<string, unknown>) {
+    const sd = normalizeSD(rawSd);
     const items: { label: string; value: string; icon: string; color: string; valueColor: string }[] = [];
 
     // Order confirmed

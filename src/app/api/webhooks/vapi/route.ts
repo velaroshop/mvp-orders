@@ -64,11 +64,18 @@ export async function POST(request: NextRequest) {
     const transcript = artifact.transcript || null;
     const recordingUrl = artifact.recordingUrl || null;
 
-    console.log(`[Vapi Webhook] analysis keys:`, Object.keys(analysis));
-    console.log(`[Vapi Webhook] analysis full:`, JSON.stringify(analysis).slice(0, 2000));
-    console.log(`[Vapi Webhook] message keys:`, Object.keys(message));
-    console.log(`[Vapi Webhook] rawStructuredData:`, JSON.stringify(rawStructuredData));
-    console.log(`[Vapi Webhook] normalizedStructuredData:`, JSON.stringify(structuredData));
+    // DEBUG: Dump full message structure to find where Vapi puts structured data
+    console.log(`[Vapi Webhook] TOP-LEVEL message keys:`, Object.keys(message));
+    console.log(`[Vapi Webhook] message.analysis:`, JSON.stringify(analysis).slice(0, 2000));
+    console.log(`[Vapi Webhook] message.artifact keys:`, Object.keys(artifact));
+    console.log(`[Vapi Webhook] message.call keys:`, Object.keys(call));
+    // Log the full message (truncated) to find structured data location
+    console.log(`[Vapi Webhook] FULL MESSAGE:`, JSON.stringify(message).slice(0, 5000));
+    // Check specific alternative paths where Vapi might put structured data
+    console.log(`[Vapi Webhook] message.structuredData:`, JSON.stringify(message.structuredData));
+    console.log(`[Vapi Webhook] artifact.structuredData:`, JSON.stringify(artifact.structuredData));
+    console.log(`[Vapi Webhook] call.analysis:`, JSON.stringify(call.analysis));
+    console.log(`[Vapi Webhook] message.results:`, JSON.stringify(message.results));
     const cost = call.cost || null;
 
     // Determine call status and result

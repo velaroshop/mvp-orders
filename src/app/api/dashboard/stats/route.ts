@@ -96,6 +96,19 @@ export async function GET(request: NextRequest) {
 
     const filteredOrders = orders || [];
 
+    // Fetch current product names from products table (canonical names)
+    const { data: products } = await supabase
+      .from("products")
+      .select("name, sku")
+      .eq("organization_id", organizationId);
+
+    const skuToName: Record<string, string> = {};
+    if (products) {
+      for (const p of products) {
+        if (p.sku) skuToName[p.sku.toUpperCase()] = p.name;
+      }
+    }
+
     // Calculate stats
     const totalRevenue = filteredOrders.reduce(
       (sum, order: any) => sum + (order.total || 0),
@@ -128,16 +141,16 @@ export async function GET(request: NextRequest) {
     const productRevenue: Record<string, { name: string; revenue: number; unitsSold: number; orders: number }> = {};
     filteredOrders.forEach((order: any) => {
       const sku = order.product_sku || order.product_name || "Unknown Product";
-      const displayName = order.product_name || sku;
+      const skuKey = sku.toUpperCase();
+      const displayName = skuToName[skuKey] || order.product_name || sku;
       const orderTotal = order.total || 0;
       const quantity = order.product_quantity || 1;
-      if (!productRevenue[sku]) {
-        productRevenue[sku] = { name: displayName, revenue: 0, unitsSold: 0, orders: 0 };
+      if (!productRevenue[skuKey]) {
+        productRevenue[skuKey] = { name: displayName, revenue: 0, unitsSold: 0, orders: 0 };
       }
-      productRevenue[sku].name = displayName; // always use latest name
-      productRevenue[sku].revenue += orderTotal;
-      productRevenue[sku].unitsSold += quantity;
-      productRevenue[sku].orders += 1;
+      productRevenue[skuKey].revenue += orderTotal;
+      productRevenue[skuKey].unitsSold += quantity;
+      productRevenue[skuKey].orders += 1;
     });
 
     // Convert to array and sort by revenue (descending)
@@ -149,13 +162,13 @@ export async function GET(request: NextRequest) {
     const productSales: Record<string, { name: string; totalSold: number }> = {};
     filteredOrders.forEach((order: any) => {
       const sku = order.product_sku || order.product_name || "Unknown Product";
-      const displayName = order.product_name || sku;
+      const skuKey = sku.toUpperCase();
+      const displayName = skuToName[skuKey] || order.product_name || sku;
       const quantity = order.product_quantity || 1;
-      if (!productSales[sku]) {
-        productSales[sku] = { name: displayName, totalSold: 0 };
+      if (!productSales[skuKey]) {
+        productSales[skuKey] = { name: displayName, totalSold: 0 };
       }
-      productSales[sku].name = displayName;
-      productSales[sku].totalSold += quantity;
+      productSales[skuKey].totalSold += quantity;
     });
 
     // Calculate days in period for daily average

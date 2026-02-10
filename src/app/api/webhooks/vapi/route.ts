@@ -49,15 +49,16 @@ export async function POST(request: NextRequest) {
     const endedReason = message.endedReason || call.endedReason;
 
     // Duration: prefer top-level durationSeconds, fallback to calculating from timestamps
-    const durationSeconds: number | null =
+    // Round to integer - Vapi sends float (e.g. 77.403) but DB column is integer
+    const rawDuration =
       message.durationSeconds ??
       (call.startedAt && call.endedAt
-        ? Math.round(
-            (new Date(call.endedAt).getTime() -
-              new Date(call.startedAt).getTime()) /
-              1000,
-          )
+        ? (new Date(call.endedAt).getTime() -
+            new Date(call.startedAt).getTime()) /
+          1000
         : null);
+    const durationSeconds: number | null =
+      rawDuration != null ? Math.round(rawDuration) : null;
 
     // DEBUG: Find where Vapi puts structured outputs
     console.log(`[Vapi Webhook] message keys:`, Object.keys(message));

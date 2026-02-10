@@ -149,6 +149,14 @@ export async function POST(
       orderDetails += `, la care ați adăugat și ${upsellText}`;
     }
 
+    // Format total for natural Romanian TTS: "143 de lei și 80 de bani"
+    const totalNum = Number(order.total) || 0;
+    const lei = Math.floor(totalNum);
+    const bani = Math.round((totalNum - lei) * 100);
+    const totalSpoken = bani > 0
+      ? `${lei} de lei și ${bani} de bani`
+      : `${lei} de lei`;
+
     const vapiCall = await vapiClient.createOutboundCall({
       phoneNumberId: settings.vapi_phone_number_id,
       assistantId: settings.vapi_assistant_id,
@@ -161,7 +169,7 @@ export async function POST(
           orderDescription: orderDescription,
           orderDetails: orderDetails,
           quantity: String(qty),
-          total: String(order.total || 0).replace(".", ","),
+          total: totalSpoken,
           address: order.address || "",
           streetNumber: order.street_number || "",
           city: order.city || "",

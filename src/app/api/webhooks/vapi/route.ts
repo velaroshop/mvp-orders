@@ -58,12 +58,14 @@ export async function POST(request: NextRequest) {
         ? Math.round((endTime - startTime) / 1000)
         : null;
 
-    const structuredData = analysis.structuredData || {};
+    const rawStructuredData = analysis.structuredData || {};
+    const structuredData = normalizeStructuredData(rawStructuredData);
     const summary = analysis.summary || null;
     const transcript = artifact.transcript || null;
     const recordingUrl = artifact.recordingUrl || null;
 
-    console.log(`[Vapi Webhook] structuredData:`, JSON.stringify(structuredData));
+    console.log(`[Vapi Webhook] rawStructuredData:`, JSON.stringify(rawStructuredData));
+    console.log(`[Vapi Webhook] normalizedStructuredData:`, JSON.stringify(structuredData));
     const cost = call.cost || null;
 
     // Determine call status and result
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
         duration_seconds: durationSeconds,
         transcript: transcript,
         summary: summary,
-        structured_data: structuredData,
+        structured_data: structuredData, // normalized flat format
         recording_url: recordingUrl,
         cost: cost,
         ended_at: new Date().toISOString(),
@@ -141,6 +143,32 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+// ─── Normalize Vapi structured data ─────────────────────────────────
+// Vapi sends structured outputs as UUID-keyed objects:
+//   {"uuid1": {"name": "orderConfirmed", "result": true}, "uuid2": {"name": "wantsToCancel", "result": false}}
+// We normalize to flat key-value: {"orderConfirmed": true, "wantsToCancel": false}
+function normalizeStructuredData(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  // Check if this is already flat format (e.g. {"orderConfirmed": true})
+  const values = Object.values(raw);
+  const isUuidKeyed = values.length > 0 && values.every(
+    (v) => typeof v === "object" && v !== null && "name" in v && "result" in v,
+  );
+
+  if (!isUuidKeyed) {
+    // Already flat or empty - return as-is
+    return raw;
+  }
+
+  const normalized: Record<string, unknown> = {};
+  for (const value of values) {
+    const entry = value as { name: string; result: unknown };
+    normalized[entry.name] = entry.result;
+  }
+  return normalized;
 }
 
 // ─── Transcript signal detection ────────────────────────────────────

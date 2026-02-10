@@ -146,6 +146,86 @@ export default function CallHistoryModal({
 
   if (!isOpen || !order) return null;
 
+  // Format structured outputs for display
+  function formatStructuredOutputs(sd: Record<string, unknown>) {
+    const items: { label: string; value: string; icon: string; color: string; valueColor: string }[] = [];
+
+    // Order confirmed
+    if ("orderConfirmed" in sd) {
+      const confirmed = sd.orderConfirmed === true;
+      items.push({
+        label: "Comandă confirmată",
+        value: confirmed ? "Da" : "Nu",
+        icon: confirmed ? "\u2713" : "\u2717",
+        color: confirmed ? "text-emerald-400" : "text-red-400",
+        valueColor: confirmed ? "text-emerald-300" : "text-red-300",
+      });
+    }
+
+    // Order placed (did customer actually order)
+    if ("orderPlaced" in sd) {
+      const placed = sd.orderPlaced === true;
+      items.push({
+        label: "A plasat comanda",
+        value: placed ? "Da" : "Nu",
+        icon: placed ? "\u2713" : "\u2717",
+        color: placed ? "text-emerald-400" : "text-red-400",
+        valueColor: placed ? "text-emerald-300" : "text-red-300",
+      });
+    }
+
+    // Wants to cancel
+    if ("wantsToCancel" in sd) {
+      const cancel = sd.wantsToCancel === true;
+      items.push({
+        label: "Vrea anulare",
+        value: cancel ? "Da" : "Nu",
+        icon: cancel ? "\u26A0" : "\u2713",
+        color: cancel ? "text-red-400" : "text-zinc-500",
+        valueColor: cancel ? "text-red-300" : "text-zinc-400",
+      });
+    }
+
+    // Cancel reason
+    if (sd.cancelReason && typeof sd.cancelReason === "string" && sd.cancelReason.trim()) {
+      items.push({
+        label: "Motiv anulare",
+        value: sd.cancelReason as string,
+        icon: "\u2022",
+        color: "text-red-400",
+        valueColor: "text-red-200",
+      });
+    }
+
+    // Customer notes
+    if (sd.customerNotes && typeof sd.customerNotes === "string" && sd.customerNotes.trim()) {
+      items.push({
+        label: "Note",
+        value: sd.customerNotes as string,
+        icon: "\u2022",
+        color: "text-blue-400",
+        valueColor: "text-zinc-200",
+      });
+    }
+
+    // Corrected address (if present as object)
+    if (sd.correctedAddress && typeof sd.correctedAddress === "object") {
+      const addr = sd.correctedAddress as Record<string, string>;
+      const parts = [addr.street, addr.streetNumber ? `nr. ${addr.streetNumber}` : null, addr.city, addr.county, addr.postalCode].filter(Boolean);
+      if (parts.length > 0) {
+        items.push({
+          label: "Adresă corectată",
+          value: parts.join(", "),
+          icon: "\u2022",
+          color: "text-blue-400",
+          valueColor: "text-blue-200",
+        });
+      }
+    }
+
+    return items;
+  }
+
   // Extract cancellation reason from transcript
   function getCancellationReason(call: PhoneCall): string | null {
     if (call.result !== "cancelled" || !call.transcript) return null;
@@ -379,6 +459,32 @@ export default function CallHistoryModal({
                             <p className="text-xs text-zinc-200">
                               {call.summary}
                             </p>
+                          </div>
+                        )}
+
+                        {/* Structured outputs from AI */}
+                        {call.structured_data && Object.keys(call.structured_data).length > 0 && (
+                          <div>
+                            <p className="text-[10px] text-zinc-400 uppercase mb-1">
+                              Rezultate AI
+                            </p>
+                            <div className="bg-zinc-900 rounded p-2 space-y-1.5">
+                              {formatStructuredOutputs(call.structured_data).map((item, idx) => (
+                                <div key={idx} className="flex items-start gap-2">
+                                  <span className={`text-[10px] mt-0.5 ${item.color}`}>
+                                    {item.icon}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-[10px] text-zinc-400">
+                                      {item.label}:
+                                    </span>{" "}
+                                    <span className={`text-[11px] ${item.valueColor}`}>
+                                      {item.value}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 

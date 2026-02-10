@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
     const transcript = artifact.transcript || null;
     const recordingUrl = artifact.recordingUrl || null;
 
+    console.log(`[Vapi Webhook] analysis keys:`, Object.keys(analysis));
+    console.log(`[Vapi Webhook] analysis full:`, JSON.stringify(analysis).slice(0, 2000));
+    console.log(`[Vapi Webhook] message keys:`, Object.keys(message));
     console.log(`[Vapi Webhook] rawStructuredData:`, JSON.stringify(rawStructuredData));
     console.log(`[Vapi Webhook] normalizedStructuredData:`, JSON.stringify(structuredData));
     const cost = call.cost || null;

@@ -285,9 +285,9 @@ function hasSignal(transcript: string, patterns: string[]): boolean {
  * Determine call result from transcript and structured data.
  * Priority: cancelled > wrong_number > confirmed > needs_review
  *
- * Transcript signals ALWAYS override structured data because:
- * - Customer may confirm initially then cancel later
- * - Structured data captures early responses, not final intent
+ * Transcript signals have priority, BUT structured data can override when
+ * the AI's final assessment contradicts a mid-conversation signal
+ * (e.g. customer mentions cancelling a product but ultimately confirms)
  */
 function determineCallResult(
   transcript: string | null,
@@ -316,10 +316,17 @@ function determineCallResult(
   }
 
   // 1. CANCELLED - highest priority, checked on full transcript (including AI lines)
+  // BUT: if structured data says orderConfirmed=true AND wantsToCancel is NOT true,
+  // trust the AI's final assessment (customer may have mentioned cancelling mid-conversation
+  // but ultimately confirmed, e.g. "vreau să renunț la un produs" → AI explains → customer confirms)
   const hasCancelSignal = transcript && hasSignal(transcript, CANCEL_PATTERNS);
   console.log("[Vapi Webhook] Cancel signal:", hasCancelSignal);
   if (hasCancelSignal) {
-    return "cancelled";
+    if (structuredData.orderConfirmed === true && structuredData.wantsToCancel !== true) {
+      console.log("[Vapi Webhook] Cancel signal in transcript but AI says confirmed + not cancelling - skipping cancel");
+    } else {
+      return "cancelled";
+    }
   }
   if (structuredData.wantsToCancel === true) {
     console.log("[Vapi Webhook] structuredData.wantsToCancel is true");
@@ -343,13 +350,17 @@ function determineCallResult(
   console.log("[Vapi Webhook] Hesitancy signal:", hasHesitancy);
 
   if (hasHesitancy) {
-    // Log which pattern matched
     if (transcript) {
       const lower = transcript.toLowerCase();
       const matched = HESITANCY_PATTERNS.find((p) => lower.includes(p));
       console.log("[Vapi Webhook] Hesitancy matched pattern:", JSON.stringify(matched));
     }
-    return "needs_review";
+    // If AI's final assessment says confirmed, don't block on hesitancy
+    if (structuredData.orderConfirmed === true && structuredData.wantsToCancel !== true) {
+      console.log("[Vapi Webhook] Hesitancy in transcript but AI says confirmed - continuing to confirmation checks");
+    } else {
+      return "needs_review";
+    }
   }
 
   // 3. CONFIRMED - only count affirmatives from AFTER AI asked for order confirmation

@@ -29,13 +29,14 @@ export async function POST(
     const body = await request.json();
 
     // Data from modal
-    const { fullName, phone, county, city, address, selectedOffer } = body as {
+    const { fullName, phone, county, city, address, selectedOffer, orderNote } = body as {
       fullName: string;
       phone: string;
       county: string;
       city: string;
       address: string;
       selectedOffer: OfferCode;
+      orderNote?: string;
     };
 
     // Validate required fields
@@ -52,6 +53,17 @@ export async function POST(
         { error: "Invalid phone number format" },
         { status: 400 }
       );
+    }
+
+    // Validate order note format if provided
+    if (orderNote) {
+      const noteLines = orderNote.split("\n");
+      if (noteLines.length > 2 || noteLines.some((l) => l.length > 20)) {
+        return NextResponse.json(
+          { error: "Order note: max 2 lines, 20 chars each" },
+          { status: 400 }
+        );
+      }
     }
 
     // Get the partial order
@@ -187,6 +199,7 @@ export async function POST(
         total: total,
         status: "pending",
         order_series: orderSeries,
+        order_note: orderNote || null,
         from_partial_id: id, // Mark that this order comes from a partial
         source: "partial", // Mark that this order was created from a partial order
         confirmed_by: (session.user as any).id, // Track who confirmed this order

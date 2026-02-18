@@ -18,6 +18,7 @@ export interface ConfirmPartialData {
   city: string;
   address: string;
   selectedOffer: OfferCode;
+  orderNote?: string;
 }
 
 export default function ConfirmPartialOrderModal({
@@ -33,6 +34,8 @@ export default function ConfirmPartialOrderModal({
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+  const [noteLine1, setNoteLine1] = useState("");
+  const [noteLine2, setNoteLine2] = useState("");
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{
     hasOrders: boolean;
@@ -46,6 +49,8 @@ export default function ConfirmPartialOrderModal({
     city?: string;
     address?: string;
   }>({});
+
+  const MAX_NOTE_CHARS = 20;
 
   function validatePhone(phoneValue: string): string | undefined {
     const phoneDigits = phoneValue.replace(/\D/g, "");
@@ -69,6 +74,8 @@ export default function ConfirmPartialOrderModal({
       setCity(partialOrder.city || "");
       setAddress(partialOrder.address || "");
       setSelectedOffer(partialOrder.offerCode || "offer_1");
+      setNoteLine1("");
+      setNoteLine2("");
 
       // Validate phone immediately when modal opens
       const phoneError = validatePhone(phoneValue);
@@ -138,6 +145,10 @@ export default function ConfirmPartialOrderModal({
       return;
     }
 
+    const note = [noteLine1.trim(), noteLine2.trim()]
+      .filter((l) => l.length > 0)
+      .join("\n");
+
     onConfirm({
       fullName: fullName.trim(),
       phone: phone.replace(/\D/g, ""), // Send only digits
@@ -145,6 +156,7 @@ export default function ConfirmPartialOrderModal({
       city: city.trim(),
       address: address.trim(),
       selectedOffer,
+      orderNote: note || undefined,
     });
   }
 
@@ -366,6 +378,44 @@ export default function ConfirmPartialOrderModal({
               {errors.address && (
                 <p className="mt-0.5 text-xs text-red-400">{errors.address}</p>
               )}
+            </div>
+          </div>
+
+          {/* Order Note */}
+          <div>
+            <h3 className="text-xs font-medium text-zinc-400 mb-2 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Order Note
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                  Linia 1 ({noteLine1.length}/{MAX_NOTE_CHARS})
+                </label>
+                <input
+                  type="text"
+                  value={noteLine1}
+                  onChange={(e) => setNoteLine1(e.target.value.slice(0, MAX_NOTE_CHARS))}
+                  maxLength={MAX_NOTE_CHARS}
+                  className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 placeholder:text-zinc-500"
+                  placeholder="Notă linia 1..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                  Linia 2 ({noteLine2.length}/{MAX_NOTE_CHARS})
+                </label>
+                <input
+                  type="text"
+                  value={noteLine2}
+                  onChange={(e) => setNoteLine2(e.target.value.slice(0, MAX_NOTE_CHARS))}
+                  maxLength={MAX_NOTE_CHARS}
+                  className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 placeholder:text-zinc-500"
+                  placeholder="Notă linia 2..."
+                />
+              </div>
             </div>
           </div>
 

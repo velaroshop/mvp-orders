@@ -1790,9 +1790,12 @@ export default function AdminPage() {
                             order.callStatus === "cancelled" ? "text-red-400" :
                             order.callStatus === "wrong_number" ? "text-rose-400" :
                             order.callStatus === "no_answer" ? "text-orange-400" :
+                            order.callStatus === "voicemail" ? "text-orange-400" :
+                            order.callStatus === "busy" ? "text-amber-400" :
                             order.callStatus === "needs_review" ? "text-yellow-400" :
                             order.callStatus === "calling" ? "text-blue-400" :
-                            order.callStatus === "failed" ? "text-red-400" :
+                            order.callStatus === "error" ? "text-red-400" :
+                            order.callStatus === "invalid_phone" ? "text-rose-400" :
                             "text-zinc-400"
                           }`}>
                             <span className={`inline-block w-1.5 h-1.5 rounded-full ${
@@ -1801,9 +1804,12 @@ export default function AdminPage() {
                               order.callStatus === "cancelled" ? "bg-red-400" :
                               order.callStatus === "wrong_number" ? "bg-rose-400" :
                               order.callStatus === "no_answer" ? "bg-orange-400" :
+                              order.callStatus === "voicemail" ? "bg-orange-400" :
+                              order.callStatus === "busy" ? "bg-amber-400" :
                               order.callStatus === "needs_review" ? "bg-yellow-400" :
                               order.callStatus === "calling" ? "bg-blue-400 animate-pulse" :
-                              order.callStatus === "failed" ? "bg-red-400" :
+                              order.callStatus === "error" ? "bg-red-400" :
+                              order.callStatus === "invalid_phone" ? "bg-rose-400" :
                               "bg-zinc-400"
                             }`} />
                             {order.callStatus === "confirmed" ? "Confirmat tel." :
@@ -1811,9 +1817,12 @@ export default function AdminPage() {
                              order.callStatus === "cancelled" ? "Anulat tel." :
                              order.callStatus === "wrong_number" ? "Nr. greșit" :
                              order.callStatus === "no_answer" ? `Nu răspunde (${order.callAttempts || 0}/3)` :
+                             order.callStatus === "voicemail" ? `Mesagerie vocală (${order.callAttempts || 0}/3)` :
+                             order.callStatus === "busy" ? `Ocupat (${order.callAttempts || 0}/3)` :
                              order.callStatus === "needs_review" ? "Necesită review" :
                              order.callStatus === "calling" ? "Se apelează..." :
-                             order.callStatus === "failed" ? "Apel eșuat" :
+                             order.callStatus === "error" ? "Eroare apel" :
+                             order.callStatus === "invalid_phone" ? "Nr. invalid" :
                              order.callStatus}
                           </button>
                         )}

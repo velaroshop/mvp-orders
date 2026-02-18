@@ -75,22 +75,21 @@ export async function POST(request: NextRequest) {
     let callStatus: string;
     let callResult: string | null = null;
 
-    if (
-      endedReason === "customer-did-not-answer" ||
-      endedReason === "voicemail"
-    ) {
+    if (endedReason === "customer-did-not-answer") {
       callStatus = "no_answer";
+    } else if (endedReason === "voicemail") {
+      callStatus = "voicemail";
+    } else if (endedReason === "customer-busy") {
+      callStatus = "busy";
     } else if (
       endedReason === "phone-call-provider-error" ||
-      endedReason === "customer-busy"
+      endedReason === "assistant-error"
     ) {
-      callStatus = "failed";
-    } else if (endedReason === "assistant-error") {
-      callStatus = "failed";
+      callStatus = "error";
     } else if (!transcript && !durationSeconds) {
       // Call "completed" but no transcript and no duration → invalid/unreachable number
-      callStatus = "failed";
-      console.log(`[Vapi Webhook] No transcript/duration - marking as failed (invalid number)`);
+      callStatus = "invalid_phone";
+      console.log(`[Vapi Webhook] No transcript/duration - marking as invalid_phone`);
     } else {
       // Call connected - determine result
       // Priority: cancelled > wrong_number > confirmed > needs_review

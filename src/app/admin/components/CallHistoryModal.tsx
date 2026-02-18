@@ -66,12 +66,18 @@ function getStatusColor(status: string, result: string | null) {
       return "bg-rose-500/20 text-rose-400 border-rose-500/50";
     case "no_answer":
       return "bg-orange-500/20 text-orange-400 border-orange-500/50";
+    case "voicemail":
+      return "bg-orange-500/20 text-orange-400 border-orange-500/50";
+    case "busy":
+      return "bg-amber-500/20 text-amber-400 border-amber-500/50";
     case "needs_review":
       return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50";
     case "calling":
       return "bg-blue-500/20 text-blue-400 border-blue-500/50";
-    case "failed":
+    case "error":
       return "bg-red-500/20 text-red-400 border-red-500/50";
+    case "invalid_phone":
+      return "bg-rose-500/20 text-rose-400 border-rose-500/50";
     default:
       return "bg-zinc-500/20 text-zinc-400 border-zinc-500/50";
   }
@@ -90,12 +96,18 @@ function getStatusLabel(status: string, result: string | null) {
       return "Nr. greșit";
     case "no_answer":
       return "Nu răspunde";
+    case "voicemail":
+      return "Mesagerie vocală";
+    case "busy":
+      return "Ocupat";
     case "needs_review":
       return "Necesită review";
     case "calling":
       return "Se apelează...";
-    case "failed":
-      return "Eșuat";
+    case "error":
+      return "Eroare apel";
+    case "invalid_phone":
+      return "Nr. invalid";
     case "completed":
       return "Completat";
     default:

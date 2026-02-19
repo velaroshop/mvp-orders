@@ -1777,55 +1777,7 @@ export default function AdminPage() {
                       <div>
                         <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
-                        {order.callStatus && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCallHistoryOrder(order);
-                              setIsCallHistoryOpen(true);
-                            }}
-                            className={`inline-flex items-center gap-0.5 text-[9px] mt-0.5 hover:underline cursor-pointer ${
-                            order.callStatus === "confirmed" ? "text-emerald-400" :
-                            order.callStatus === "address_corrected" ? "text-blue-400" :
-                            order.callStatus === "cancelled" ? "text-red-400" :
-                            order.callStatus === "wrong_number" ? "text-rose-400" :
-                            order.callStatus === "no_answer" ? "text-orange-400" :
-                            order.callStatus === "voicemail" ? "text-orange-400" :
-                            order.callStatus === "busy" ? "text-amber-400" :
-                            order.callStatus === "needs_review" ? "text-yellow-400" :
-                            order.callStatus === "calling" ? "text-blue-400" :
-                            order.callStatus === "error" ? "text-red-400" :
-                            order.callStatus === "invalid_phone" ? "text-rose-400" :
-                            "text-zinc-400"
-                          }`}>
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                              order.callStatus === "confirmed" ? "bg-emerald-400" :
-                              order.callStatus === "address_corrected" ? "bg-blue-400" :
-                              order.callStatus === "cancelled" ? "bg-red-400" :
-                              order.callStatus === "wrong_number" ? "bg-rose-400" :
-                              order.callStatus === "no_answer" ? "bg-orange-400" :
-                              order.callStatus === "voicemail" ? "bg-orange-400" :
-                              order.callStatus === "busy" ? "bg-amber-400" :
-                              order.callStatus === "needs_review" ? "bg-yellow-400" :
-                              order.callStatus === "calling" ? "bg-blue-400 animate-pulse" :
-                              order.callStatus === "error" ? "bg-red-400" :
-                              order.callStatus === "invalid_phone" ? "bg-rose-400" :
-                              "bg-zinc-400"
-                            }`} />
-                            {order.callStatus === "confirmed" ? "Confirmat tel." :
-                             order.callStatus === "address_corrected" ? "Adresă corectată" :
-                             order.callStatus === "cancelled" ? "Anulat tel." :
-                             order.callStatus === "wrong_number" ? "Nr. greșit" :
-                             order.callStatus === "no_answer" ? `Nu răspunde (${order.callAttempts || 0}/3)` :
-                             order.callStatus === "voicemail" ? `Mesagerie vocală (${order.callAttempts || 0}/3)` :
-                             order.callStatus === "busy" ? `Ocupat (${order.callAttempts || 0}/3)` :
-                             order.callStatus === "needs_review" ? "Necesită review" :
-                             order.callStatus === "calling" ? "Se apelează..." :
-                             order.callStatus === "error" ? "Eroare apel" :
-                             order.callStatus === "invalid_phone" ? "Nr. invalid" :
-                             order.callStatus}
-                          </button>
-                        )}
+                        {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
                       </div>
                     </td>
 
@@ -1998,14 +1950,7 @@ export default function AdminPage() {
                                     {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
                                   </button>
                                 )}
-                                {order.status === "pending" && order.callStatus !== "calling" && order.callStatus !== "confirmed" && (
-                                  <button
-                                    onClick={() => handleActionClick(order.id, "call")}
-                                    className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-blue-900/30 font-medium"
-                                  >
-                                    Suna clientul
-                                  </button>
-                                )}
+                                {/* "Suna clientul" button — HIDDEN: AI phone calls feature disabled temporarily */}
                                 <button
                                   onClick={() => handleActionClick(order.id, "cancel")}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
@@ -2301,26 +2246,7 @@ export default function AdminPage() {
                 orderId={syncStatusOrderId || ""}
               />
 
-              {/* Call Order Modal */}
-              <CallOrderModal
-                isOpen={isCallModalOpen}
-                onClose={() => {
-                  setIsCallModalOpen(false);
-                  setCallOrderSelected(null);
-                }}
-                onCall={handleCallOrder}
-                order={callOrderSelected}
-              />
-
-              {/* Call History Modal */}
-              <CallHistoryModal
-                isOpen={isCallHistoryOpen}
-                onClose={() => {
-                  setIsCallHistoryOpen(false);
-                  setCallHistoryOrder(null);
-                }}
-                order={callHistoryOrder}
-              />
+              {/* Call modals — HIDDEN: AI phone calls feature disabled temporarily */}
 
               {/* Tracking Details Modal */}
               {isTrackingModalOpen && trackingModalOrder && (

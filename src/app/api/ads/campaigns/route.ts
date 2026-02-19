@@ -108,12 +108,15 @@ export async function GET(request: NextRequest) {
           ctr: 0,
           cpc: 0,
           metaPurchases: 0,
+          metaPurchaseValue: 0,
+          metaRoas: null,
         };
       }
       campaignMap[key].spend += Number(row.spend) || 0;
       campaignMap[key].impressions += Number(row.impressions) || 0;
       campaignMap[key].linkClicks += Number(row.link_clicks) || 0;
       campaignMap[key].metaPurchases += Number(row.meta_purchases) || 0;
+      campaignMap[key].metaPurchaseValue += Number(row.meta_purchase_value) || 0;
     }
 
     // Calculate derived metrics per campaign
@@ -122,17 +125,21 @@ export async function GET(request: NextRequest) {
       cpm: c.impressions > 0 ? (c.spend / c.impressions) * 1000 : 0,
       ctr: c.impressions > 0 ? (c.linkClicks / c.impressions) * 100 : 0,
       cpc: c.linkClicks > 0 ? c.spend / c.linkClicks : 0,
+      metaRoas: c.spend > 0 ? c.metaPurchaseValue / c.spend : null,
     }));
 
     // Calculate aggregate KPIs
     const totalSpend = campaigns.reduce((sum, c) => sum + c.spend, 0);
     const totalImpressions = campaigns.reduce((sum, c) => sum + c.impressions, 0);
     const totalLinkClicks = campaigns.reduce((sum, c) => sum + c.linkClicks, 0);
+    const totalMetaRevenue = campaigns.reduce((sum, c) => sum + c.metaPurchaseValue, 0);
 
     const kpis: AdsKPIs = {
       adSpend: totalSpend,
       revenue: totalRevenue,
       roas: totalSpend > 0 ? totalRevenue / totalSpend : null,
+      metaRevenue: totalMetaRevenue,
+      metaRoas: totalSpend > 0 ? totalMetaRevenue / totalSpend : null,
       cpa: orderCount > 0 ? totalSpend / orderCount : null,
       cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
       ctr: totalImpressions > 0 ? (totalLinkClicks / totalImpressions) * 100 : 0,

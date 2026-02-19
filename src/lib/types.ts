@@ -190,6 +190,8 @@ export interface AdsKPIs {
   adSpend: number;
   revenue: number;
   roas: number | null;
+  metaRevenue: number;
+  metaRoas: number | null;
   cpa: number | null;
   cpm: number;
   ctr: number;
@@ -211,5 +213,7 @@ export interface AdsCampaignRow {
   ctr: number;
   cpc: number;
   metaPurchases: number;
+  metaPurchaseValue: number;
+  metaRoas: number | null;
 }
 

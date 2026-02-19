@@ -73,7 +73,7 @@ function getStatusBadge(status: string) {
   }
 }
 
-type SortKey = "campaignName" | "spend" | "impressions" | "linkClicks" | "cpm" | "ctr" | "cpc" | "metaPurchases";
+type SortKey = "campaignName" | "spend" | "impressions" | "linkClicks" | "cpm" | "ctr" | "cpc" | "metaPurchases" | "metaPurchaseValue" | "metaRoas";
 
 export default function AdsDashboardPage() {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
@@ -262,11 +262,17 @@ export default function AdsDashboardPage() {
       (s, c) => s + c.linkClicks,
       0
     );
+    const totalMetaRevenue = filteredCampaigns.reduce(
+      (s, c) => s + c.metaPurchaseValue,
+      0
+    );
 
     return {
       adSpend: totalSpend,
       revenue: kpis.revenue, // Can't split revenue per campaign
       roas: totalSpend > 0 ? kpis.revenue / totalSpend : null,
+      metaRevenue: totalMetaRevenue,
+      metaRoas: totalSpend > 0 ? totalMetaRevenue / totalSpend : null,
       cpa: kpis.orders > 0 ? totalSpend / kpis.orders : null,
       cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
       ctr: totalImpressions > 0
@@ -484,19 +490,19 @@ export default function AdsDashboardPage() {
             value={`${formatNumber(filteredKpis.adSpend, 2)} RON`}
           />
           <KPICard
-            label="Revenue"
-            value={`${formatNumber(filteredKpis.revenue, 2)} RON`}
+            label="Meta Revenue"
+            value={`${formatNumber(filteredKpis.metaRevenue, 2)} RON`}
             valueColor="text-emerald-400"
           />
           <KPICard
-            label="ROAS"
+            label="Meta ROAS"
             value={
-              filteredKpis.roas !== null
-                ? `${filteredKpis.roas.toFixed(2)}x`
+              filteredKpis.metaRoas !== null
+                ? `${filteredKpis.metaRoas.toFixed(2)}x`
                 : "N/A"
             }
-            valueColor={getRoasColor(filteredKpis.roas)}
-            borderColor={getRoasBg(filteredKpis.roas)}
+            valueColor={getRoasColor(filteredKpis.metaRoas)}
+            borderColor={getRoasBg(filteredKpis.metaRoas)}
           />
           <KPICard
             label="CPA"
@@ -663,7 +669,19 @@ export default function AdsDashboardPage() {
                     className="px-3 py-3 text-right cursor-pointer hover:text-white"
                     onClick={() => handleSort("metaPurchases")}
                   >
-                    Meta Purch. <SortIcon col="metaPurchases" />
+                    Purch. <SortIcon col="metaPurchases" />
+                  </th>
+                  <th
+                    className="px-3 py-3 text-right cursor-pointer hover:text-white"
+                    onClick={() => handleSort("metaPurchaseValue")}
+                  >
+                    Meta Rev. <SortIcon col="metaPurchaseValue" />
+                  </th>
+                  <th
+                    className="px-3 py-3 text-right cursor-pointer hover:text-white"
+                    onClick={() => handleSort("metaRoas")}
+                  >
+                    ROAS <SortIcon col="metaRoas" />
                   </th>
                 </tr>
               </thead>
@@ -704,6 +722,12 @@ export default function AdsDashboardPage() {
                     <td className="px-3 py-2.5 text-right text-zinc-300">
                       {c.metaPurchases}
                     </td>
+                    <td className="px-3 py-2.5 text-right text-zinc-300">
+                      {formatNumber(c.metaPurchaseValue, 2)}
+                    </td>
+                    <td className={`px-3 py-2.5 text-right font-medium ${getRoasColor(c.metaRoas)}`}>
+                      {c.metaRoas !== null ? `${c.metaRoas.toFixed(2)}x` : "—"}
+                    </td>
                   </tr>
                 ))}
                 {/* Totals row */}
@@ -742,6 +766,17 @@ export default function AdsDashboardPage() {
                       (s, c) => s + c.metaPurchases,
                       0
                     )}
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-white">
+                    {formatNumber(
+                      filteredCampaigns.reduce((s, c) => s + c.metaPurchaseValue, 0),
+                      2
+                    )}
+                  </td>
+                  <td className={`px-3 py-2.5 text-right font-medium ${filteredKpis ? getRoasColor(filteredKpis.metaRoas) : "text-white"}`}>
+                    {filteredKpis?.metaRoas !== null && filteredKpis?.metaRoas !== undefined
+                      ? `${filteredKpis.metaRoas.toFixed(2)}x`
+                      : "—"}
                   </td>
                 </tr>
               </tbody>

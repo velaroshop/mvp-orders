@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const campaignLines = (campaigns || [])
       .map(
         (c: any) =>
-          `- ${c.campaignName} (${c.campaignStatus}): Spend ${c.spend.toFixed(2)} RON, ${c.impressions} impressions, ${c.linkClicks} clicks, CPM ${c.cpm.toFixed(2)}, CTR ${c.ctr.toFixed(2)}%, CPC ${c.cpc.toFixed(2)} RON`
+          `- ${c.campaignName} (${c.campaignStatus}): Spend ${c.spend.toFixed(2)} RON, Meta Revenue ${(c.metaPurchaseValue || 0).toFixed(2)} RON, ROAS ${c.metaRoas !== null ? c.metaRoas.toFixed(2) + "x" : "N/A"}, ${c.impressions} impressions, ${c.linkClicks} clicks, CPM ${c.cpm.toFixed(2)}, CTR ${c.ctr.toFixed(2)}%, CPC ${c.cpc.toFixed(2)} RON, Purchases ${c.metaPurchases || 0}`
       )
       .join("\n");
 
@@ -66,10 +66,8 @@ Currency: RON (Romanian Leu)
 
 Overall KPIs:
 - Ad Spend: ${kpis.adSpend?.toFixed(2)} RON
-- Revenue (from real orders): ${kpis.revenue?.toFixed(2)} RON
-- ROAS: ${kpis.roas?.toFixed(2) || "N/A"}
-- CPA (Cost per Order): ${kpis.cpa?.toFixed(2) || "N/A"} RON
-- Orders: ${kpis.orders}
+- Meta Revenue (from Meta Pixel): ${(kpis.metaRevenue || 0).toFixed(2)} RON
+- Meta ROAS: ${kpis.metaRoas?.toFixed(2) || "N/A"}
 - CPM: ${kpis.cpm?.toFixed(2)} RON
 - CTR: ${kpis.ctr?.toFixed(2)}%
 - CPC: ${kpis.cpc?.toFixed(2)} RON

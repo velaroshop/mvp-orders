@@ -77,6 +77,8 @@ type SortKey = "campaignName" | "spend" | "impressions" | "linkClicks" | "cpm" |
 
 export default function AdsDashboardPage() {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
+  const [adAccounts, setAdAccounts] = useState<Array<{ id: string; name: string; currency: string }>>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [datePreset, setDatePreset] = useState<DatePreset>("last7days");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -100,17 +102,36 @@ export default function AdsDashboardPage() {
     return getDateRange(datePreset);
   }, [datePreset, customStart, customEnd]);
 
-  // Check if configured
+  // Check if configured and load ad accounts
   useEffect(() => {
     async function checkConfig() {
       try {
         const res = await fetch("/api/settings");
         if (!res.ok) return;
         const data = await res.json();
-        const configured =
-          !!data.settings.meta_ads_access_token &&
-          !!data.settings.meta_ads_account_id;
-        setIsConfigured(configured);
+        const hasToken = !!data.settings.meta_ads_access_token;
+        if (!hasToken) {
+          setIsConfigured(false);
+          return;
+        }
+        // Fetch available ad accounts
+        const accRes = await fetch("/api/ads/accounts");
+        if (accRes.ok) {
+          const accData = await accRes.json();
+          const accounts = accData.accounts || [];
+          setAdAccounts(accounts);
+          // Default to saved account or first account
+          const savedAccount = data.settings.meta_ads_account_id;
+          if (savedAccount && accounts.some((a: any) => a.id === savedAccount)) {
+            setSelectedAccountId(savedAccount);
+          } else if (accounts.length > 0) {
+            setSelectedAccountId(accounts[0].id);
+          }
+          setIsConfigured(accounts.length > 0);
+        } else {
+          setIsConfigured(!!data.settings.meta_ads_account_id);
+          setSelectedAccountId(data.settings.meta_ads_account_id || "");
+        }
       } catch {
         setIsConfigured(false);
       }
@@ -118,18 +139,18 @@ export default function AdsDashboardPage() {
     checkConfig();
   }, []);
 
-  // Load data when date range changes
+  // Load data when date range or account changes
   useEffect(() => {
-    if (isConfigured !== true) return;
+    if (isConfigured !== true || !selectedAccountId) return;
     loadData();
-  }, [isConfigured, dateRange.startDate, dateRange.endDate]);
+  }, [isConfigured, selectedAccountId, dateRange.startDate, dateRange.endDate]);
 
   async function loadData() {
     setIsLoadingData(true);
     setError(null);
     try {
       const res = await fetch(
-        `/api/ads/campaigns?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+        `/api/ads/campaigns?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&adAccountId=${encodeURIComponent(selectedAccountId)}`
       );
       if (!res.ok) {
         const data = await res.json();
@@ -156,6 +177,7 @@ export default function AdsDashboardPage() {
         body: JSON.stringify({
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
+          adAccountId: selectedAccountId,
         }),
       });
       if (!res.ok) {
@@ -383,8 +405,22 @@ export default function AdsDashboardPage() {
         </button>
       </div>
 
-      {/* Date Filters */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Ad Account Selector + Date Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        {adAccounts.length > 1 && (
+          <select
+            value={selectedAccountId}
+            onChange={(e) => setSelectedAccountId(e.target.value)}
+            className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            {adAccounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} ({acc.currency})
+              </option>
+            ))}
+          </select>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
         {(
           [
             ["today", "Today"],
@@ -423,6 +459,7 @@ export default function AdsDashboardPage() {
             />
           </div>
         )}
+        </div>
       </div>
 
       {/* Error */}

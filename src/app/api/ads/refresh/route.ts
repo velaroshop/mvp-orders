@@ -27,9 +27,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { startDate, endDate } = body as {
+    const { startDate, endDate, adAccountId } = body as {
       startDate: string;
       endDate: string;
+      adAccountId?: string;
     };
 
     if (!startDate || !endDate) {
@@ -46,9 +47,18 @@ export async function POST(request: Request) {
       .eq("organization_id", activeOrganizationId)
       .single();
 
-    if (!settings?.meta_ads_access_token || !settings?.meta_ads_account_id) {
+    if (!settings?.meta_ads_access_token) {
       return NextResponse.json(
         { error: "Meta Ads not configured. Go to Settings to connect your account." },
+        { status: 400 }
+      );
+    }
+
+    // Use provided adAccountId or fall back to settings
+    const accountId = adAccountId || settings.meta_ads_account_id;
+    if (!accountId) {
+      return NextResponse.json(
+        { error: "No ad account selected" },
         { status: 400 }
       );
     }
@@ -56,7 +66,7 @@ export async function POST(request: Request) {
     // Fetch from Meta Marketing API
     const insights = await fetchCampaignInsights({
       accessToken: settings.meta_ads_access_token,
-      adAccountId: settings.meta_ads_account_id,
+      adAccountId: accountId,
       since: startDate,
       until: endDate,
     });
@@ -73,7 +83,7 @@ export async function POST(request: Request) {
     // UPSERT into ad_campaign_insights
     const rows = insights.map((row) => ({
       organization_id: activeOrganizationId,
-      ad_account_id: settings.meta_ads_account_id,
+      ad_account_id: accountId,
       campaign_id: row.campaignId,
       campaign_name: row.campaignName,
       campaign_status: row.campaignStatus,

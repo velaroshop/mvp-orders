@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const adAccountId = searchParams.get("adAccountId");
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -34,14 +35,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Read settings for account ID
-    const { data: settings } = await supabaseAdmin
-      .from("settings")
-      .select("meta_ads_account_id")
-      .eq("organization_id", activeOrganizationId)
-      .single();
+    // Use provided adAccountId or fall back to settings
+    let accountId = adAccountId;
+    if (!accountId) {
+      const { data: settings } = await supabaseAdmin
+        .from("settings")
+        .select("meta_ads_account_id")
+        .eq("organization_id", activeOrganizationId)
+        .single();
+      accountId = settings?.meta_ads_account_id || null;
+    }
 
-    if (!settings?.meta_ads_account_id) {
+    if (!accountId) {
       return NextResponse.json(
         { error: "Meta Ads not configured" },
         { status: 400 }
@@ -53,7 +58,7 @@ export async function GET(request: NextRequest) {
       .from("ad_campaign_insights")
       .select("*")
       .eq("organization_id", activeOrganizationId)
-      .eq("ad_account_id", settings.meta_ads_account_id)
+      .eq("ad_account_id", accountId)
       .gte("date", startDate)
       .lte("date", endDate);
 

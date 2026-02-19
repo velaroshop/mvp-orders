@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [isTestingMetaAds, setIsTestingMetaAds] = useState(false);
   const [isSavingMetaAds, setIsSavingMetaAds] = useState(false);
   const [metaAdsMessage, setMetaAdsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [metaAdsTokenExpiresAt, setMetaAdsTokenExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
     // Load settings from API
@@ -56,6 +57,7 @@ export default function SettingsPage() {
         setHasExistingMetaAdsToken(!!data.settings.meta_ads_access_token);
         setMetaAdsToken("");
         setMetaAdsAccountId(data.settings.meta_ads_account_id || "");
+        setMetaAdsTokenExpiresAt(data.settings.meta_ads_token_expires_at || null);
       } catch (error) {
         console.error("Error loading settings:", error);
         setCredentialsMessage({ type: "error", text: "Failed to load settings" });
@@ -708,6 +710,28 @@ export default function SettingsPage() {
               <p className="text-xs text-zinc-400 mt-1">
                 System User access token din Meta Business Suite cu permisiune ads_read
               </p>
+              {metaAdsTokenExpiresAt && (
+                <div className="mt-2">
+                  {(() => {
+                    const diffMs = new Date(metaAdsTokenExpiresAt).getTime() - Date.now();
+                    const daysLeft = Math.floor(diffMs / 86400000);
+                    const isExpired = diffMs <= 0;
+                    const isWarning = daysLeft <= 7;
+                    return (
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs border ${
+                        isExpired ? "bg-red-900/30 border-red-700/50 text-red-400" :
+                        isWarning ? "bg-amber-900/30 border-amber-700/50 text-amber-400" :
+                        "bg-zinc-700 border-zinc-600 text-zinc-300"
+                      }`}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {isExpired ? "Token expirat" : `Token expiră în ${daysLeft} zile (${new Date(metaAdsTokenExpiresAt).toLocaleDateString("ro-RO")})`}
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
 
             {/* Test Connection Button */}
@@ -818,6 +842,12 @@ export default function SettingsPage() {
                 if (metaAdsToken) {
                   setHasExistingMetaAdsToken(true);
                   setMetaAdsToken("");
+                  // Re-fetch settings to get updated token expiry
+                  const settingsRes = await fetch("/api/settings");
+                  if (settingsRes.ok) {
+                    const settingsData = await settingsRes.json();
+                    setMetaAdsTokenExpiresAt(settingsData.settings.meta_ads_token_expires_at || null);
+                  }
                 }
               } catch (error) {
                 setMetaAdsMessage({

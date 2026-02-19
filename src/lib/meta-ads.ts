@@ -160,3 +160,54 @@ function extractActionValue(actions: any[] | undefined, actionType: string): num
   const action = actions.find((a: any) => a.action_type === actionType);
   return action ? parseFloat(action.value || "0") : 0;
 }
+
+/**
+ * Debug a token to get its expiration timestamp.
+ * Returns the expires_at Unix timestamp (seconds), or null if unable to determine.
+ */
+export async function debugToken(accessToken: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `${META_API_BASE}/debug_token?input_token=${accessToken}&access_token=${accessToken}`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.expires_at || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Exchange a valid long-lived token for a new long-lived token (~60 days).
+ * Requires META_APP_ID and META_APP_SECRET env vars.
+ * Returns { accessToken, expiresIn } or throws on error.
+ */
+export async function exchangeForLongLivedToken(
+  currentToken: string
+): Promise<{ accessToken: string; expiresIn: number }> {
+  const appId = process.env.META_APP_ID;
+  const appSecret = process.env.META_APP_SECRET;
+
+  if (!appId || !appSecret) {
+    throw new Error("META_APP_ID and META_APP_SECRET environment variables are required for token renewal.");
+  }
+
+  const url = `${META_API_BASE}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${currentToken}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    const msg = error?.error?.message || `HTTP ${res.status}`;
+    if (error?.error?.code === 190) {
+      throw new Error("Token-ul a expirat. Trebuie generat un token nou din Meta Business Suite.");
+    }
+    throw new Error(`Failed to exchange token: ${msg}`);
+  }
+
+  const data = await res.json();
+  return {
+    accessToken: data.access_token,
+    expiresIn: data.expires_in,
+  };
+}

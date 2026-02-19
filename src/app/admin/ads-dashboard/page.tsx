@@ -153,6 +153,8 @@ export default function AdsDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [sortAsc, setSortAsc] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
+  const [tokenExpiresAt, setTokenExpiresAt] = useState<string | null>(null);
+  const [isRenewing, setIsRenewing] = useState(false);
 
   // Spend attribution
   const [products, setProducts] = useState<Product[]>([]);
@@ -198,6 +200,7 @@ export default function AdsDashboardPage() {
         if (!res.ok) return;
         const data = await res.json();
         const hasToken = !!data.settings.meta_ads_access_token;
+        setTokenExpiresAt(data.settings.meta_ads_token_expires_at || null);
         if (!hasToken) {
           setIsConfigured(false);
           return;
@@ -448,6 +451,40 @@ export default function AdsDashboardPage() {
     return `${hours}h ago`;
   }, [lastFetchedAt]);
 
+  // Token expiry info
+  const tokenExpiryInfo = useMemo(() => {
+    if (!tokenExpiresAt) return null;
+    const expiresDate = new Date(tokenExpiresAt);
+    const now = Date.now();
+    const diffMs = expiresDate.getTime() - now;
+
+    if (diffMs <= 0) {
+      return { text: "Token expirat", color: "text-red-400", bgColor: "bg-red-900/30 border-red-700/50", daysLeft: 0, isExpired: true };
+    }
+
+    const daysLeft = Math.floor(diffMs / 86400000);
+    if (daysLeft <= 7) {
+      return { text: `${daysLeft}d ramase`, color: "text-amber-400", bgColor: "bg-amber-900/30 border-amber-700/50", daysLeft, isExpired: false };
+    }
+    return { text: `${daysLeft}d ramase`, color: "text-zinc-400", bgColor: "bg-zinc-800 border-zinc-700", daysLeft, isExpired: false };
+  }, [tokenExpiresAt]);
+
+  async function handleRenewToken() {
+    setIsRenewing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ads/renew-token", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to renew token");
+      setTokenExpiresAt(data.expiresAt);
+      setTokenExpired(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to renew token");
+    } finally {
+      setIsRenewing(false);
+    }
+  }
+
   // Loading state
   if (isConfigured === null) {
     return (
@@ -560,7 +597,45 @@ export default function AdsDashboardPage() {
                 </option>
               ))}
             </select>
-            {tokenExpired && (
+            {tokenExpiryInfo && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`flex items-center gap-1 px-2 py-1 border rounded text-[11px] ${tokenExpiryInfo.bgColor} ${tokenExpiryInfo.color}`}
+                  title={tokenExpiresAt ? `Expiră: ${new Date(tokenExpiresAt).toLocaleDateString("ro-RO")}` : ""}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {tokenExpiryInfo.text}
+                </span>
+                {!tokenExpiryInfo.isExpired && (
+                  <button
+                    onClick={handleRenewToken}
+                    disabled={isRenewing}
+                    className="flex items-center gap-1 px-2 py-1 bg-emerald-900/30 border border-emerald-700/50 rounded text-[11px] text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-50 transition-colors"
+                    title="Prelungește token-ul cu ~60 zile"
+                  >
+                    <svg className={`w-3 h-3 ${isRenewing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {isRenewing ? "..." : "Renew"}
+                  </button>
+                )}
+                {tokenExpiryInfo.isExpired && (
+                  <Link
+                    href="/admin/settings"
+                    className="flex items-center gap-1 px-2 py-1 bg-amber-900/30 border border-amber-700/50 rounded text-[11px] text-amber-400 hover:bg-amber-900/50 transition-colors"
+                    title="Token expirat — generează un token nou din Meta Business Suite"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    Settings
+                  </Link>
+                )}
+              </div>
+            )}
+            {tokenExpired && !tokenExpiryInfo && (
               <Link
                 href="/admin/settings"
                 className="flex items-center gap-1 px-2 py-1 bg-amber-900/30 border border-amber-700/50 rounded text-[11px] text-amber-400 hover:bg-amber-900/50 transition-colors"

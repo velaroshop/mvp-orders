@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { debugToken } from "@/lib/meta-ads";
 
 // GET - Retrieve settings for active organization
 export async function GET() {
@@ -54,6 +55,7 @@ export async function GET() {
         vapi_assistant_id: data?.vapi_assistant_id || "",
         meta_ads_access_token: hasMetaAdsToken ? "configured" : "",
         meta_ads_account_id: data?.meta_ads_account_id || "",
+        meta_ads_token_expires_at: data?.meta_ads_token_expires_at || null,
       },
     });
   } catch (error) {
@@ -114,7 +116,18 @@ export async function PUT(request: Request) {
     if (vapiPhoneNumberId !== undefined) updateFields.vapi_phone_number_id = vapiPhoneNumberId;
     if (vapiAssistantId !== undefined) updateFields.vapi_assistant_id = vapiAssistantId;
 
-    if (metaAdsAccessToken !== undefined) updateFields.meta_ads_access_token = metaAdsAccessToken;
+    if (metaAdsAccessToken !== undefined) {
+      updateFields.meta_ads_access_token = metaAdsAccessToken;
+      // Fetch and store token expiry
+      if (metaAdsAccessToken) {
+        const expiresAt = await debugToken(metaAdsAccessToken);
+        if (expiresAt) {
+          updateFields.meta_ads_token_expires_at = new Date(expiresAt * 1000).toISOString();
+        }
+      } else {
+        updateFields.meta_ads_token_expires_at = null;
+      }
+    }
     if (metaAdsAccountId !== undefined) updateFields.meta_ads_account_id = metaAdsAccountId;
 
     // Check if settings exist

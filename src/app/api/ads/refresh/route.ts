@@ -15,6 +15,13 @@ export async function POST(request: Request) {
     const activeOrganizationId = (session.user as any).activeOrganizationId;
     const activeRole = (session.user as any).activeRole;
 
+    console.log("[ads/refresh] session.user:", JSON.stringify({
+      id: (session.user as any).id,
+      email: session.user.email,
+      activeRole,
+      activeOrganizationId,
+    }));
+
     if (!activeOrganizationId) {
       return NextResponse.json(
         { error: "No active organization" },
@@ -23,6 +30,7 @@ export async function POST(request: Request) {
     }
 
     if (!["owner", "admin"].includes(activeRole)) {
+      console.log("[ads/refresh] Forbidden - activeRole:", activeRole);
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

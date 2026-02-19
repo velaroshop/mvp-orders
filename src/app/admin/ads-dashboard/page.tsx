@@ -91,7 +91,7 @@ export default function AdsDashboardPage() {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [adAccounts, setAdAccounts] = useState<Array<{ id: string; name: string; currency: string }>>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-  const [datePreset, setDatePreset] = useState<DatePreset>("last7days");
+  const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [kpis, setKpis] = useState<AdsKPIs | null>(null);
@@ -493,7 +493,7 @@ export default function AdsDashboardPage() {
 
       {/* Ad Account Selector + Date Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        {adAccounts.length > 1 && (
+        {adAccounts.length > 0 && (
           <select
             value={selectedAccountId}
             onChange={(e) => setSelectedAccountId(e.target.value)}

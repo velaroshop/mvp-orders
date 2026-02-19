@@ -85,6 +85,52 @@ function getStatusBadge(status: string) {
   }
 }
 
+// Auto-match campaigns to product by finding keyword overlap (weighted by spend)
+function guessProductForCampaigns(
+  campaigns: AdsCampaignRow[],
+  products: Product[]
+): string | null {
+  if (!products.length || !campaigns.length) return null;
+
+  let bestId: string | null = null;
+  let bestScore = 0;
+
+  for (const product of products) {
+    // Get meaningful tokens from product name (4+ chars, no diacritics)
+    const productTokens = product.name
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .split(/[\s\-_.,;:!?()\[\]{}|\/]+/)
+      .filter((t) => t.length >= 4);
+
+    if (product.sku) {
+      const skuNorm = product.sku.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (skuNorm.length >= 3) productTokens.push(skuNorm);
+    }
+
+    let score = 0;
+    for (const campaign of campaigns) {
+      const campNameNorm = campaign.campaignName
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      for (const token of productTokens) {
+        if (campNameNorm.includes(token)) {
+          score += campaign.spend;
+          break; // count each campaign only once per product
+        }
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestId = product.id;
+    }
+  }
+
+  return bestId;
+}
+
 type SortKey = "campaignName" | "spend" | "impressions" | "linkClicks" | "cpm" | "ctr" | "cpc" | "metaPurchases" | "metaPurchaseValue" | "metaRoas";
 
 export default function AdsDashboardPage() {
@@ -106,6 +152,7 @@ export default function AdsDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [sortAsc, setSortAsc] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
 
   // Spend attribution
   const [products, setProducts] = useState<Product[]>([]);
@@ -161,6 +208,7 @@ export default function AdsDashboardPage() {
           const accData = await accRes.json();
           const accounts = accData.accounts || [];
           setAdAccounts(accounts);
+          setTokenExpired(false);
           // Default to saved account or first account
           const savedAccount = data.settings.meta_ads_account_id;
           if (savedAccount && accounts.some((a: any) => a.id === savedAccount)) {
@@ -170,8 +218,14 @@ export default function AdsDashboardPage() {
           }
           setIsConfigured(accounts.length > 0);
         } else {
-          setIsConfigured(!!data.settings.meta_ads_account_id);
-          setSelectedAccountId(data.settings.meta_ads_account_id || "");
+          // Accounts API failed (token expired?) — show saved account anyway
+          setTokenExpired(true);
+          const savedId = data.settings.meta_ads_account_id;
+          if (savedId) {
+            setAdAccounts([{ id: savedId, name: savedId, currency: "" }]);
+            setSelectedAccountId(savedId);
+          }
+          setIsConfigured(!!savedId);
         }
       } catch {
         setIsConfigured(false);
@@ -494,17 +548,31 @@ export default function AdsDashboardPage() {
       {/* Ad Account Selector + Date Filters */}
       <div className="flex flex-wrap items-center gap-3">
         {adAccounts.length > 0 && (
-          <select
-            value={selectedAccountId}
-            onChange={(e) => setSelectedAccountId(e.target.value)}
-            className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            {adAccounts.map((acc) => (
-              <option key={acc.id} value={acc.id}>
-                {acc.name} ({acc.currency})
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {adAccounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} ({acc.currency})
+                </option>
+              ))}
+            </select>
+            {tokenExpired && (
+              <Link
+                href="/admin/settings"
+                className="flex items-center gap-1 px-2 py-1 bg-amber-900/30 border border-amber-700/50 rounded text-[11px] text-amber-400 hover:bg-amber-900/50 transition-colors"
+                title="Token expirat — Refresh Data nu va funcționa. Actualizează token-ul din Settings."
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Token expirat
+              </Link>
+            )}
+          </div>
         )}
         <div className="flex flex-wrap items-center gap-2">
         {(
@@ -828,6 +896,11 @@ export default function AdsDashboardPage() {
                       {isSingleDayNotToday && products.length > 0 && (
                         <button
                           onClick={() => {
+                            if (!showAttributeModal) {
+                              // Auto-guess product based on campaign names
+                              const guessed = guessProductForCampaigns(filteredCampaigns, products);
+                              if (guessed) setSelectedProductId(guessed);
+                            }
                             setShowAttributeModal(!showAttributeModal);
                             setAttributeMessage(null);
                           }}

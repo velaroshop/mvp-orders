@@ -4,6 +4,13 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { AdsKPIs, AdsCampaignRow } from "@/lib/types";
 
+interface Product {
+  id: string;
+  name: string;
+  sku: string | null;
+  status: string;
+}
+
 type DatePreset = "today" | "yesterday" | "last3days" | "last7days" | "last30days" | "custom";
 
 function getDateRange(preset: DatePreset): { startDate: string; endDate: string } {
@@ -100,12 +107,41 @@ export default function AdsDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [sortAsc, setSortAsc] = useState(false);
 
+  // Spend attribution
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showAttributeModal, setShowAttributeModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [isAttributing, setIsAttributing] = useState(false);
+  const [attributeMessage, setAttributeMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const dateRange = useMemo(() => {
     if (datePreset === "custom" && customStart && customEnd) {
       return { startDate: customStart, endDate: customEnd };
     }
     return getDateRange(datePreset);
   }, [datePreset, customStart, customEnd]);
+
+  // Check if a single day is selected and it's not today
+  const isSingleDayNotToday = useMemo(() => {
+    if (dateRange.startDate !== dateRange.endDate) return false;
+    const today = new Date().toISOString().split("T")[0];
+    return dateRange.startDate !== today;
+  }, [dateRange]);
+
+  // Fetch products for attribution dropdown
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products");
+        if (!res.ok) return;
+        const data = await res.json();
+        setProducts((data.products || []).filter((p: Product) => p.status === "active"));
+      } catch {
+        // silent fail
+      }
+    }
+    fetchProducts();
+  }, []);
 
   // Check if configured and load ad accounts
   useEffect(() => {
@@ -224,6 +260,45 @@ export default function AdsDashboardPage() {
       );
     } finally {
       setIsAnalyzing(false);
+    }
+  }
+
+  async function handleAttributeSpend() {
+    if (!selectedProductId || !filteredKpis) return;
+    setIsAttributing(true);
+    setAttributeMessage(null);
+    try {
+      const totalSpend = filteredKpis.adSpend;
+      const res = await fetch("/api/roas/dates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: selectedProductId,
+          date: dateRange.startDate,
+          amountSpent: totalSpend,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to attribute spend");
+      }
+      const product = products.find((p) => p.id === selectedProductId);
+      setAttributeMessage({
+        type: "success",
+        text: `${formatNumber(totalSpend, 2)} RON attributed to ${product?.name || "product"} for ${dateRange.startDate}`,
+      });
+      setTimeout(() => {
+        setShowAttributeModal(false);
+        setAttributeMessage(null);
+        setSelectedProductId("");
+      }, 2000);
+    } catch (err) {
+      setAttributeMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to attribute spend",
+      });
+    } finally {
+      setIsAttributing(false);
     }
   }
 
@@ -742,10 +817,72 @@ export default function AdsDashboardPage() {
                     TOTAL ({filteredCampaigns.length} campaigns)
                   </td>
                   <td />
-                  <td className="px-3 py-2.5 text-right text-white">
-                    {formatNumber(
-                      filteredCampaigns.reduce((s, c) => s + c.spend, 0),
-                      2
+                  <td className="px-3 py-2.5 text-right text-white relative">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>
+                        {formatNumber(
+                          filteredCampaigns.reduce((s, c) => s + c.spend, 0),
+                          2
+                        )}
+                      </span>
+                      {isSingleDayNotToday && products.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setShowAttributeModal(!showAttributeModal);
+                            setAttributeMessage(null);
+                          }}
+                          title="Attribute spend to a product for ROAS"
+                          className="p-0.5 rounded hover:bg-zinc-600 transition-colors text-emerald-400 hover:text-emerald-300"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {/* Attribution dropdown */}
+                    {showAttributeModal && isSingleDayNotToday && (
+                      <div className="absolute top-full right-0 mt-1 z-50 bg-zinc-800 border border-zinc-600 rounded-lg shadow-xl p-3 min-w-70">
+                        <p className="text-xs text-zinc-400 mb-2">
+                          Attribute {formatNumber(filteredCampaigns.reduce((s, c) => s + c.spend, 0), 2)} RON to product for {dateRange.startDate}
+                        </p>
+                        <select
+                          value={selectedProductId}
+                          onChange={(e) => setSelectedProductId(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white mb-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          <option value="">Select product...</option>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}{p.sku ? ` (${p.sku})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleAttributeSpend}
+                            disabled={!selectedProductId || isAttributing}
+                            className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                          >
+                            {isAttributing ? "Saving..." : "Attribute"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAttributeModal(false);
+                              setAttributeMessage(null);
+                              setSelectedProductId("");
+                            }}
+                            className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded text-xs font-medium hover:bg-zinc-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {attributeMessage && (
+                          <p className={`text-xs mt-2 ${attributeMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                            {attributeMessage.text}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-3 py-2.5 text-right text-white">

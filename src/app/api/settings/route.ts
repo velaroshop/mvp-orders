@@ -38,6 +38,7 @@ export async function GET() {
     const hasSecret = !!(data?.helpship_client_secret);
 
     const hasVapiKey = !!(data?.vapi_api_key);
+    const hasMetaAdsToken = !!(data?.meta_ads_access_token);
 
     return NextResponse.json({
       settings: {
@@ -51,6 +52,8 @@ export async function GET() {
         vapi_api_key: hasVapiKey ? "configured" : "",
         vapi_phone_number_id: data?.vapi_phone_number_id || "",
         vapi_assistant_id: data?.vapi_assistant_id || "",
+        meta_ads_access_token: hasMetaAdsToken ? "configured" : "",
+        meta_ads_account_id: data?.meta_ads_account_id || "",
       },
     });
   } catch (error) {
@@ -81,15 +84,16 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { helpshipClientId, helpshipClientSecret, vapiApiKey, vapiPhoneNumberId, vapiAssistantId } = body;
+    const { helpshipClientId, helpshipClientSecret, vapiApiKey, vapiPhoneNumberId, vapiAssistantId, metaAdsAccessToken, metaAdsAccountId } = body;
 
-    // Require at least one set of credentials
+    // Require at least one set of fields
     const hasHelpshipFields = helpshipClientId && helpshipClientSecret;
     const hasVapiFields = vapiApiKey !== undefined || vapiPhoneNumberId !== undefined || vapiAssistantId !== undefined;
+    const hasMetaAdsFields = metaAdsAccessToken !== undefined || metaAdsAccountId !== undefined;
 
-    if (!hasHelpshipFields && !hasVapiFields) {
+    if (!hasHelpshipFields && !hasVapiFields && !hasMetaAdsFields) {
       return NextResponse.json(
-        { error: "Client ID and Client Secret are required" },
+        { error: "At least one field is required" },
         { status: 400 },
       );
     }
@@ -109,6 +113,9 @@ export async function PUT(request: Request) {
     if (vapiApiKey !== undefined) updateFields.vapi_api_key = vapiApiKey;
     if (vapiPhoneNumberId !== undefined) updateFields.vapi_phone_number_id = vapiPhoneNumberId;
     if (vapiAssistantId !== undefined) updateFields.vapi_assistant_id = vapiAssistantId;
+
+    if (metaAdsAccessToken !== undefined) updateFields.meta_ads_access_token = metaAdsAccessToken;
+    if (metaAdsAccountId !== undefined) updateFields.meta_ads_account_id = metaAdsAccountId;
 
     // Check if settings exist
     const { data: existingSettings } = await supabaseAdmin

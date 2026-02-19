@@ -44,6 +44,11 @@ export default function Sidebar() {
       icon: "📈",
     },
     {
+      name: "Ads",
+      href: "/admin/ads-dashboard",
+      icon: "💰",
+    },
+    {
       name: "Store",
       href: "/admin/store",
       icon: "🏪",

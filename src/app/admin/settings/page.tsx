@@ -23,6 +23,14 @@ export default function SettingsPage() {
   const [credentialsMessage, setCredentialsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [metaTestMessage, setMetaTestMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationStatus, setValidationStatus] = useState<"valid" | "invalid" | null>(null);
+  // Meta Ads Dashboard
+  const [metaAdsToken, setMetaAdsToken] = useState("");
+  const [hasExistingMetaAdsToken, setHasExistingMetaAdsToken] = useState(false);
+  const [metaAdsAccountId, setMetaAdsAccountId] = useState("");
+  const [metaAdsAccounts, setMetaAdsAccounts] = useState<Array<{ id: string; name: string; currency: string }>>([]);
+  const [isTestingMetaAds, setIsTestingMetaAds] = useState(false);
+  const [isSavingMetaAds, setIsSavingMetaAds] = useState(false);
+  const [metaAdsMessage, setMetaAdsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     // Load settings from API
@@ -44,6 +52,10 @@ export default function SettingsPage() {
         setVapiApiKey("");
         setVapiPhoneNumberId(data.settings.vapi_phone_number_id || "");
         setVapiAssistantId(data.settings.vapi_assistant_id || "");
+        // Meta Ads settings
+        setHasExistingMetaAdsToken(!!data.settings.meta_ads_access_token);
+        setMetaAdsToken("");
+        setMetaAdsAccountId(data.settings.meta_ads_account_id || "");
       } catch (error) {
         console.error("Error loading settings:", error);
         setCredentialsMessage({ type: "error", text: "Failed to load settings" });
@@ -660,6 +672,168 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Meta Ads Dashboard Section */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6">
+        <div className="p-6 border-b border-zinc-700">
+          <h2 className="text-xl font-semibold text-white mb-1">
+            Meta Ads Dashboard
+          </h2>
+          <p className="text-sm text-zinc-400 mb-4">
+            Conectează contul tău Meta Ads pentru a vizualiza performanța campaniilor
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="metaAdsToken" className="block text-sm font-medium text-zinc-300 mb-1">
+                Access Token
+                {hasExistingMetaAdsToken && (
+                  <span className="ml-2 text-xs text-emerald-400">(Configured ✓)</span>
+                )}
+              </label>
+              <input
+                type="password"
+                id="metaAdsToken"
+                autoComplete="new-password"
+                value={metaAdsToken}
+                onChange={(e) => {
+                  setMetaAdsToken(e.target.value);
+                  setMetaAdsAccounts([]);
+                  setMetaAdsMessage(null);
+                }}
+                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-zinc-400"
+                placeholder={hasExistingMetaAdsToken ? "Enter new token to update" : "Enter Meta access token"}
+              />
+              <p className="text-xs text-zinc-400 mt-1">
+                System User access token din Meta Business Suite cu permisiune ads_read
+              </p>
+            </div>
+
+            {/* Test Connection Button */}
+            <button
+              type="button"
+              onClick={async () => {
+                setIsTestingMetaAds(true);
+                setMetaAdsMessage(null);
+                setMetaAdsAccounts([]);
+                try {
+                  const tokenParam = metaAdsToken ? `?token=${encodeURIComponent(metaAdsToken)}` : "";
+                  const res = await fetch(`/api/ads/accounts${tokenParam}`);
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "Failed to connect");
+                  if (!data.accounts || data.accounts.length === 0) {
+                    throw new Error("No ad accounts found for this token");
+                  }
+                  setMetaAdsAccounts(data.accounts);
+                  if (!metaAdsAccountId && data.accounts.length > 0) {
+                    setMetaAdsAccountId(data.accounts[0].id);
+                  }
+                  setMetaAdsMessage({ type: "success", text: `${data.accounts.length} ad account(s) found!` });
+                } catch (error) {
+                  setMetaAdsMessage({
+                    type: "error",
+                    text: error instanceof Error ? error.message : "Failed to test connection",
+                  });
+                } finally {
+                  setIsTestingMetaAds(false);
+                }
+              }}
+              disabled={isTestingMetaAds || (!metaAdsToken && !hasExistingMetaAdsToken)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            >
+              {isTestingMetaAds ? "Testing..." : "Test Connection"}
+            </button>
+
+            {/* Ad Account Selector */}
+            {metaAdsAccounts.length > 0 && (
+              <div>
+                <label htmlFor="metaAdsAccount" className="block text-sm font-medium text-zinc-300 mb-1">
+                  Ad Account
+                </label>
+                <select
+                  id="metaAdsAccount"
+                  value={metaAdsAccountId}
+                  onChange={(e) => setMetaAdsAccountId(e.target.value)}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  {metaAdsAccounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.id}) - {acc.currency}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Current Account ID (when accounts not loaded but saved) */}
+            {metaAdsAccountId && metaAdsAccounts.length === 0 && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Selected Ad Account
+                </label>
+                <p className="text-sm text-zinc-400">{metaAdsAccountId}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {metaAdsMessage && (
+          <div className="p-6 border-b border-zinc-700">
+            <div className={`p-3 rounded-md text-sm ${
+              metaAdsMessage.type === "success"
+                ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
+                : "bg-red-900/20 border border-red-700 text-red-300"
+            }`}>
+              {metaAdsMessage.text}
+            </div>
+          </div>
+        )}
+
+        <div className="p-6 bg-zinc-800/50 flex justify-end">
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSavingMetaAds(true);
+              setMetaAdsMessage(null);
+              try {
+                const body: Record<string, string> = {};
+                if (metaAdsToken) body.metaAdsAccessToken = metaAdsToken;
+                if (metaAdsAccountId) body.metaAdsAccountId = metaAdsAccountId;
+
+                if (Object.keys(body).length === 0) {
+                  throw new Error("Enter a token or select an account first");
+                }
+
+                const res = await fetch("/api/settings", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                });
+                if (!res.ok) {
+                  const data = await res.json();
+                  throw new Error(data.error || "Failed to save");
+                }
+                setMetaAdsMessage({ type: "success", text: "Meta Ads settings saved!" });
+                if (metaAdsToken) {
+                  setHasExistingMetaAdsToken(true);
+                  setMetaAdsToken("");
+                }
+              } catch (error) {
+                setMetaAdsMessage({
+                  type: "error",
+                  text: error instanceof Error ? error.message : "Failed to save",
+                });
+              } finally {
+                setIsSavingMetaAds(false);
+              }
+            }}
+            disabled={isSavingMetaAds}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          >
+            {isSavingMetaAds ? "Se salvează..." : "Save Meta Ads Settings"}
+          </button>
+        </div>
       </div>
 
       {/* Security Note */}

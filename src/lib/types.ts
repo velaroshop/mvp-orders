@@ -165,3 +165,51 @@ export interface MetaEventsOutbox {
   updatedAt: string;
 }
 
+// Ads Dashboard types
+export interface AdCampaignInsight {
+  id: string;
+  organizationId: string;
+  adAccountId: string;
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: string;
+  campaignObjective: string;
+  date: string;
+  spend: number;
+  impressions: number;
+  linkClicks: number;
+  cpm: number;
+  ctr: number;
+  cpc: number;
+  metaPurchases: number;
+  metaPurchaseValue: number;
+  fetchedAt: string;
+}
+
+export interface AdsKPIs {
+  adSpend: number;
+  revenue: number;
+  roas: number | null;
+  cpa: number | null;
+  cpm: number;
+  ctr: number;
+  cpc: number;
+  impressions: number;
+  linkClicks: number;
+  orders: number;
+}
+
+export interface AdsCampaignRow {
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: string;
+  campaignObjective: string;
+  spend: number;
+  impressions: number;
+  linkClicks: number;
+  cpm: number;
+  ctr: number;
+  cpc: number;
+  metaPurchases: number;
+}
+

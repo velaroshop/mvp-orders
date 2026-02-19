@@ -295,10 +295,10 @@ export default function AdsDashboardPage() {
   }
 
   function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <span className="text-zinc-600 ml-1">&#8645;</span>;
+    if (sortKey !== col) return <span className="text-zinc-600 ml-1">{"\u21C5"}</span>;
     return (
       <span className="text-emerald-400 ml-1">
-        {sortAsc ? "&#8593;" : "&#8595;"}
+        {sortAsc ? "\u2191" : "\u2193"}
       </span>
     );
   }

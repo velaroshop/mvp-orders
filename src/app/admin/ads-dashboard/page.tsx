@@ -817,7 +817,7 @@ export default function AdsDashboardPage() {
                     TOTAL ({filteredCampaigns.length} campaigns)
                   </td>
                   <td />
-                  <td className="px-3 py-2.5 text-right text-white relative">
+                  <td className="px-3 py-2.5 text-right text-white">
                     <div className="flex items-center justify-end gap-1.5">
                       <span>
                         {formatNumber(
@@ -840,50 +840,6 @@ export default function AdsDashboardPage() {
                         </button>
                       )}
                     </div>
-                    {/* Attribution dropdown */}
-                    {showAttributeModal && isSingleDayNotToday && (
-                      <div className="absolute top-full right-0 mt-1 z-50 bg-zinc-800 border border-zinc-600 rounded-lg shadow-xl p-3 min-w-70">
-                        <p className="text-xs text-zinc-400 mb-2">
-                          Attribute {formatNumber(filteredCampaigns.reduce((s, c) => s + c.spend, 0), 2)} RON to product for {dateRange.startDate}
-                        </p>
-                        <select
-                          value={selectedProductId}
-                          onChange={(e) => setSelectedProductId(e.target.value)}
-                          className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white mb-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        >
-                          <option value="">Select product...</option>
-                          {products.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}{p.sku ? ` (${p.sku})` : ""}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleAttributeSpend}
-                            disabled={!selectedProductId || isAttributing}
-                            className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                          >
-                            {isAttributing ? "Saving..." : "Attribute"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowAttributeModal(false);
-                              setAttributeMessage(null);
-                              setSelectedProductId("");
-                            }}
-                            className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded text-xs font-medium hover:bg-zinc-600 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                        {attributeMessage && (
-                          <p className={`text-xs mt-2 ${attributeMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
-                            {attributeMessage.text}
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </td>
                   <td className="px-3 py-2.5 text-right text-white">
                     {formatCompact(
@@ -995,6 +951,62 @@ export default function AdsDashboardPage() {
                 {aiAnalysis}
               </div>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Spend Attribution Modal */}
+      {showAttributeModal && isSingleDayNotToday && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => {
+              setShowAttributeModal(false);
+              setAttributeMessage(null);
+              setSelectedProductId("");
+            }}
+          />
+          <div className="relative bg-zinc-800 border border-zinc-600 rounded-lg shadow-xl p-5 w-80">
+            <h3 className="text-sm font-medium text-white mb-3">Attribute Spend</h3>
+            <p className="text-xs text-zinc-400 mb-3">
+              Attribute <span className="text-white font-medium">{filteredKpis ? formatNumber(filteredKpis.adSpend, 2) : "0"} RON</span> to a product for <span className="text-white font-medium">{dateRange.startDate}</span>
+            </p>
+            <select
+              value={selectedProductId}
+              onChange={(e) => setSelectedProductId(e.target.value)}
+              className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white mb-3 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            >
+              <option value="">Select product...</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}{p.sku ? ` (${p.sku})` : ""}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAttributeSpend}
+                disabled={!selectedProductId || isAttributing}
+                className="flex-1 px-3 py-1.5 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {isAttributing ? "Saving..." : "Attribute"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowAttributeModal(false);
+                  setAttributeMessage(null);
+                  setSelectedProductId("");
+                }}
+                className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded text-sm font-medium hover:bg-zinc-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            {attributeMessage && (
+              <p className={`text-xs mt-2 ${attributeMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                {attributeMessage.text}
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { AdsKPIs, AdsCampaignRow } from "@/lib/types";
 
-type DatePreset = "today" | "yesterday" | "last7days" | "last30days" | "custom";
+type DatePreset = "today" | "yesterday" | "last3days" | "last7days" | "last30days" | "custom";
 
 function getDateRange(preset: DatePreset): { startDate: string; endDate: string } {
   const today = new Date();
@@ -17,6 +17,11 @@ function getDateRange(preset: DatePreset): { startDate: string; endDate: string 
       const y = new Date(today);
       y.setDate(y.getDate() - 1);
       return { startDate: fmt(y), endDate: fmt(y) };
+    }
+    case "last3days": {
+      const s = new Date(today);
+      s.setDate(s.getDate() - 2);
+      return { startDate: fmt(s), endDate: fmt(today) };
     }
     case "last7days": {
       const s = new Date(today);
@@ -431,6 +436,7 @@ export default function AdsDashboardPage() {
           [
             ["today", "Today"],
             ["yesterday", "Yesterday"],
+            ["last3days", "Last 3 Days"],
             ["last7days", "Last 7 Days"],
             ["last30days", "Last 30 Days"],
             ["custom", "Custom"],

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase";
 import OpenAI from "openai";
 
 export async function POST(request: Request) {
@@ -11,7 +12,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const activeRole = (session.user as any).activeRole;
+    const activeOrganizationId = (session.user as any).activeOrganizationId;
+    let activeRole = (session.user as any).activeRole;
+
+    // Fallback: if activeRole is not in session (stale JWT), check DB
+    if (!activeRole && activeOrganizationId) {
+      const userId = (session.user as any).id;
+      const { data: membership } = await supabaseAdmin
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("organization_id", activeOrganizationId)
+        .eq("is_active", true)
+        .single();
+      activeRole = membership?.role;
+    }
+
     if (!["owner", "admin"].includes(activeRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

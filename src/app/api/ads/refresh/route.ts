@@ -13,14 +13,7 @@ export async function POST(request: Request) {
     }
 
     const activeOrganizationId = (session.user as any).activeOrganizationId;
-    const activeRole = (session.user as any).activeRole;
-
-    console.log("[ads/refresh] session.user:", JSON.stringify({
-      id: (session.user as any).id,
-      email: session.user.email,
-      activeRole,
-      activeOrganizationId,
-    }));
+    let activeRole = (session.user as any).activeRole;
 
     if (!activeOrganizationId) {
       return NextResponse.json(
@@ -29,8 +22,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Fallback: if activeRole is not in session (stale JWT), check DB
+    if (!activeRole) {
+      const userId = (session.user as any).id;
+      const { data: membership } = await supabaseAdmin
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("organization_id", activeOrganizationId)
+        .eq("is_active", true)
+        .single();
+      activeRole = membership?.role;
+    }
+
     if (!["owner", "admin"].includes(activeRole)) {
-      console.log("[ads/refresh] Forbidden - activeRole:", activeRole);
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

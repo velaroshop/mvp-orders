@@ -1777,17 +1777,6 @@ export default function AdminPage() {
                       <div>
                         <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
-                        {order.phone && (
-                          <a
-                            href={`tel:${order.phone}`}
-                            className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 bg-emerald-900/30 border border-emerald-700/50 rounded text-[10px] text-emerald-400 hover:bg-emerald-900/50 transition-colors"
-                          >
-                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            Apelează
-                          </a>
-                        )}
                         {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
                       </div>
                     </td>

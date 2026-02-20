@@ -165,10 +165,7 @@ export default function ConfirmOrderModal({
           if (response.ok) {
             const helpshipData = await response.json();
             const helpshipOrder = helpshipData.order;
-
-            // DEBUG: Log mailingAddress to see actual field names from Helpship
-            console.log('[ConfirmModal] Helpship mailingAddress:', JSON.stringify(helpshipOrder?.mailingAddress, null, 2));
-
+            
             // Extrage codul poștal din Helpship
             const postalCode = helpshipOrder?.mailingAddress?.zip || 
                               currentOrder.postalCode || 
@@ -183,12 +180,12 @@ export default function ConfirmOrderModal({
               county: helpshipOrder?.mailingAddress?.province || currentOrder.county || "",
               city: helpshipOrder?.mailingAddress?.city || currentOrder.city || "",
               address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
-              streetNumber: helpshipOrder?.mailingAddress?.addressLine2 || helpshipOrder?.mailingAddress?.number || "",
+              streetNumber: "",
               postalCode: postalCode,
               scheduledDate: "",
             };
             setFormData(initialData);
-
+            
             // Caută automat codurile poștale dacă avem adresa completă
             if (initialData.address && initialData.city && initialData.county) {
               searchPostalCodes(initialData.address, initialData.city, initialData.county);

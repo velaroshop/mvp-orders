@@ -180,12 +180,12 @@ export default function ConfirmOrderModal({
               county: helpshipOrder?.mailingAddress?.province || currentOrder.county || "",
               city: helpshipOrder?.mailingAddress?.city || currentOrder.city || "",
               address: helpshipOrder?.mailingAddress?.addressLine1 || currentOrder.address || "",
-              streetNumber: "",
+              streetNumber: helpshipOrder?.mailingAddress?.addressLine2 || helpshipOrder?.mailingAddress?.number || "",
               postalCode: postalCode,
               scheduledDate: "",
             };
             setFormData(initialData);
-            
+
             // Caută automat codurile poștale dacă avem adresa completă
             if (initialData.address && initialData.city && initialData.county) {
               searchPostalCodes(initialData.address, initialData.city, initialData.county);

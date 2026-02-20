@@ -165,7 +165,10 @@ export default function ConfirmOrderModal({
           if (response.ok) {
             const helpshipData = await response.json();
             const helpshipOrder = helpshipData.order;
-            
+
+            // DEBUG: Log mailingAddress to see actual field names from Helpship
+            console.log('[ConfirmModal] Helpship mailingAddress:', JSON.stringify(helpshipOrder?.mailingAddress, null, 2));
+
             // Extrage codul poștal din Helpship
             const postalCode = helpshipOrder?.mailingAddress?.zip || 
                               currentOrder.postalCode || 

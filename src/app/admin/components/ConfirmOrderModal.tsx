@@ -48,6 +48,10 @@ export default function ConfirmOrderModal({
   const [isLoadingPostalCodes, setIsLoadingPostalCodes] = useState(false);
   const [postalCodeError, setPostalCodeError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [noteLine1, setNoteLine1] = useState("");
+  const [noteLine2, setNoteLine2] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteSaved, setNoteSaved] = useState(false);
 
   // Funcție pentru căutarea codurilor poștale
   async function searchPostalCodes(street?: string, city?: string, county?: string) {
@@ -134,6 +138,13 @@ export default function ConfirmOrderModal({
   // Populează formularul când se deschide modalul
   useEffect(() => {
     if (order && isOpen) {
+      // Initialize note from existing order note
+      const existingNote = order.orderNote || "";
+      const noteLines = existingNote.split("\n");
+      setNoteLine1(noteLines[0] || "");
+      setNoteLine2(noteLines[1] || "");
+      setNoteSaved(false);
+
       // Obține datele din Helpship pentru a prelua codul poștal
       async function fetchHelpshipData() {
         const currentOrder = order; // Salvează referința pentru a evita problemele cu closure
@@ -493,6 +504,80 @@ export default function ConfirmOrderModal({
                         })()}
                       </span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Note - Independent save */}
+              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">📝</span>
+                    <h4 className="text-xs font-semibold text-white">
+                      Order Note
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isSavingNote || (!noteLine1.trim() && !noteLine2.trim() && !order.orderNote)}
+                    onClick={async () => {
+                      if (!order) return;
+                      setIsSavingNote(true);
+                      setNoteSaved(false);
+                      try {
+                        const note = [noteLine1.trim(), noteLine2.trim()].filter(Boolean).join("\n") || null;
+                        const res = await fetch(`/api/orders/${order.id}/note`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ note }),
+                        });
+                        if (!res.ok) {
+                          const data = await res.json();
+                          throw new Error(data.error || "Failed to save note");
+                        }
+                        setNoteSaved(true);
+                        setTimeout(() => setNoteSaved(false), 3000);
+                      } catch (err) {
+                        console.error("Error saving note:", err);
+                      } finally {
+                        setIsSavingNote(false);
+                      }
+                    }}
+                    className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
+                      noteSaved
+                        ? "bg-emerald-600 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    {isSavingNote ? "..." : noteSaved ? "Saved" : "Save Note"}
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <div>
+                    <label className="block text-xs text-zinc-400 mb-0.5">
+                      Linia 1 ({noteLine1.length}/20)
+                    </label>
+                    <input
+                      type="text"
+                      value={noteLine1}
+                      onChange={(e) => setNoteLine1(e.target.value.slice(0, 20))}
+                      maxLength={20}
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Notă linia 1..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-400 mb-0.5">
+                      Linia 2 ({noteLine2.length}/20)
+                    </label>
+                    <input
+                      type="text"
+                      value={noteLine2}
+                      onChange={(e) => setNoteLine2(e.target.value.slice(0, 20))}
+                      maxLength={20}
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Notă linia 2..."
+                    />
                   </div>
                 </div>
               </div>

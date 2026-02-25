@@ -333,7 +333,7 @@ function WidgetFormContent() {
   // Keep saveOnLeaveRef up to date with latest form values
   useEffect(() => {
     saveOnLeaveRef.current = () => {
-      if (!landingPage || success || !phone) return;
+      if (!landingPage || success || !isValidPhone(phone)) return;
 
       let lastField = "phone";
       if (address) lastField = "address";
@@ -698,6 +698,11 @@ function WidgetFormContent() {
     return landingPage.srp - currentPrice;
   }
 
+  // Check if phone is a valid 10-digit Romanian number
+  function isValidPhone(p: string) {
+    return p.length === 10 && p.startsWith("07");
+  }
+
   // Validation function
   function validateField(fieldName: string, value: string): string | undefined {
     const trimmedValue = value.trim();
@@ -728,8 +733,8 @@ function WidgetFormContent() {
       [fieldName]: error,
     }));
 
-    // Save partial order on blur if phone exists
-    if (phone && !success) {
+    // Save partial order on blur if phone is valid (10 digits)
+    if (isValidPhone(phone) && !success) {
       savePartialOrder(fieldName);
     }
   }

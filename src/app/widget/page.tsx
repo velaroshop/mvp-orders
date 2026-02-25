@@ -98,7 +98,8 @@ function WidgetFormContent() {
 
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
-  const [lastSaveTimeout, setLastSaveTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const partialOrderIdRef = useRef<string | null>(null);
+  const saveOnLeaveRef = useRef<() => void>(() => {});
 
   // Meta tracking data from URL params
   const [trackingData, setTrackingData] = useState<{
@@ -302,33 +303,77 @@ function WidgetFormContent() {
     };
   }, [loading, success, landingPage, selectedOffer, selectedUpsells, phone, fullName, county, city, address]);
 
-  // Auto-save partial order with debouncing
+  // Keep saveOnLeaveRef up to date with latest form values
   useEffect(() => {
-    // Don't save if form is empty or already submitted successfully
-    if (!landingPage || success || !phone) return;
+    saveOnLeaveRef.current = () => {
+      if (!landingPage || success || !phone) return;
 
-    // Clear previous timeout
-    if (lastSaveTimeout) {
-      clearTimeout(lastSaveTimeout);
-    }
-
-    // Save after 3 seconds of inactivity
-    const timeout = setTimeout(() => {
       let lastField = "phone";
       if (address) lastField = "address";
       else if (city) lastField = "city";
       else if (county) lastField = "county";
       else if (fullName) lastField = "fullName";
 
-      savePartialOrder(lastField);
-    }, 3000);
+      const selectedUpsellsData = presaleUpsells
+        .filter(upsell => selectedUpsells.has(upsell.id))
+        .map(upsell => ({
+          upsellId: upsell.id,
+          title: upsell.title,
+          quantity: upsell.quantity,
+          price: upsell.price,
+          productSku: upsell.product?.sku || null,
+          type: "presale",
+        }));
 
-    setLastSaveTimeout(timeout);
+      const payload = {
+        partialOrderId: partialOrderIdRef.current,
+        organizationId: landingPage.stores?.organization_id,
+        landingKey: landingPage.slug,
+        offerCode: selectedOffer,
+        phone: phone || undefined,
+        fullName: fullName.trim() || undefined,
+        county: county.trim() || undefined,
+        city: city.trim() || undefined,
+        address: address.trim() || undefined,
+        productName: landingPage.products?.name,
+        productSku: landingPage.products?.sku,
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
+        upsells: selectedUpsellsData,
+        subtotal: getCurrentPrice(),
+        shippingCost: landingPage.shipping_price,
+        total: getTotalPrice(),
+        lastCompletedField: lastField,
+      };
+
+      navigator.sendBeacon(
+        "/api/partial-orders",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
+      );
+    };
+  });
+
+  // Register page unload / tab switch listeners once
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveOnLeaveRef.current();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      saveOnLeaveRef.current();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      if (timeout) clearTimeout(timeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [phone, fullName, county, city, address, selectedOffer, selectedUpsells, landingPage, success]);
+  }, []);
 
   async function fetchLandingPage() {
     try {
@@ -547,6 +592,7 @@ function WidgetFormContent() {
         const data = await response.json();
         if (!partialOrderId && data.partialOrder?.id) {
           setPartialOrderId(data.partialOrder.id);
+          partialOrderIdRef.current = data.partialOrder.id;
         }
       }
     } catch (error) {
@@ -581,6 +627,12 @@ function WidgetFormContent() {
     // Limit to 10 digits
     const limited = digitsOnly.slice(0, 10);
     setPhone(limited);
+
+    // Instant save when phone reaches 10 valid digits
+    // Use setTimeout(0) to let React state update before saving
+    if (limited.length === 10 && limited.startsWith("07")) {
+      setTimeout(() => savePartialOrder("phone"), 0);
+    }
   }
 
   function getCurrentPrice() {
@@ -636,13 +688,18 @@ function WidgetFormContent() {
     return undefined;
   }
 
-  // Handle field blur for validation
+  // Handle field blur for validation + partial order save
   function handleFieldBlur(fieldName: string, value: string) {
     const error = validateField(fieldName, value);
     setErrors((prev) => ({
       ...prev,
       [fieldName]: error,
     }));
+
+    // Save partial order on blur if phone exists
+    if (phone && !success) {
+      savePartialOrder(fieldName);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

@@ -101,6 +101,7 @@ function WidgetFormContent() {
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
   const partialOrderIdRef = useRef<string | null>(null);
   const saveOnLeaveRef = useRef<() => void>(() => {});
+  const presenceChannelRef = useRef<any>(null);
 
   // Meta tracking data from URL params
   const [trackingData, setTrackingData] = useState<{
@@ -153,12 +154,15 @@ function WidgetFormContent() {
 
     channel.on('presence', { event: 'sync' }, () => {}).subscribe(async (status: string) => {
       if (status === 'SUBSCRIBED') {
-        await channel.track({ slug, joined_at: new Date().toISOString() });
+        await channel.track({ slug, joined_at: new Date().toISOString(), in_form: false });
       }
     });
 
+    presenceChannelRef.current = channel;
+
     return () => {
       channel.unsubscribe();
+      presenceChannelRef.current = null;
     };
   }, [slug]);
 
@@ -616,6 +620,11 @@ function WidgetFormContent() {
         if (!partialOrderId && data.partialOrder?.id) {
           setPartialOrderId(data.partialOrder.id);
           partialOrderIdRef.current = data.partialOrder.id;
+
+          // Update Presence to mark visitor as actively filling form
+          if (presenceChannelRef.current) {
+            presenceChannelRef.current.track({ slug, joined_at: new Date().toISOString(), in_form: true });
+          }
         }
       }
     } catch (error) {

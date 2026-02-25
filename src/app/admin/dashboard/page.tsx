@@ -106,7 +106,7 @@ export default function DashboardPage() {
   });
 
   // Live visitors tracking via Supabase Presence
-  const [liveVisitors, setLiveVisitors] = useState<Record<string, number>>({});
+  const [liveVisitors, setLiveVisitors] = useState<Record<string, { total: number; inForm: number }>>({});
   const channelsRef = useRef<any[]>([]);
 
   useEffect(() => {
@@ -125,8 +125,10 @@ export default function DashboardPage() {
 
       channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const count = Object.keys(state).length;
-        setLiveVisitors((prev) => ({ ...prev, [lp.slug!]: count }));
+        const entries = Object.values(state).flat() as any[];
+        const total = entries.length;
+        const inForm = entries.filter((e: any) => e.in_form === true).length;
+        setLiveVisitors((prev) => ({ ...prev, [lp.slug!]: { total, inForm } }));
       });
 
       channel.subscribe();
@@ -140,7 +142,8 @@ export default function DashboardPage() {
     };
   }, [landingPages]);
 
-  const totalLiveVisitors = Object.values(liveVisitors).reduce((sum, count) => sum + count, 0);
+  const totalLiveVisitors = Object.values(liveVisitors).reduce((sum, v) => sum + v.total, 0);
+  const totalInForm = Object.values(liveVisitors).reduce((sum, v) => sum + v.inForm, 0);
 
   // Helper to format date in local timezone as YYYY-MM-DD
   const formatLocalDate = (date: Date): string => {
@@ -515,6 +518,9 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${totalLiveVisitors > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-500'}`}></div>
               <span className="text-2xl font-bold text-white">{totalLiveVisitors}</span>
+              {totalInForm > 0 && (
+                <span className="text-sm text-amber-400">({totalInForm} in form)</span>
+              )}
             </div>
           </div>
 
@@ -525,17 +531,20 @@ export default function DashboardPage() {
             </div>
 
             {landingPages.filter(lp => lp.slug).map((lp) => {
-              const count = liveVisitors[lp.slug!] || 0;
+              const data = liveVisitors[lp.slug!] || { total: 0, inForm: 0 };
               return (
                 <div key={lp.id} className="grid grid-cols-2 gap-4 items-center">
                   <span className="text-sm text-white truncate" title={lp.name}>{lp.name}</span>
                   <div className="flex items-center justify-end gap-2">
-                    {count > 0 && (
+                    {data.total > 0 && (
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     )}
-                    <span className={`text-sm font-semibold ${count > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                      {count}
+                    <span className={`text-sm font-semibold ${data.total > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      {data.total}
                     </span>
+                    {data.inForm > 0 && (
+                      <span className="text-xs text-amber-400">({data.inForm})</span>
+                    )}
                   </div>
                 </div>
               );

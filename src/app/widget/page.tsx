@@ -10,6 +10,7 @@ import {
   trackInitiateCheckout,
   trackPurchase,
 } from "@/lib/facebook-pixel";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +138,28 @@ function WidgetFormContent() {
       setError("Slug parameter is required");
       setLoading(false);
     }
+  }, [slug]);
+
+  // Supabase Realtime Presence — track live visitors per landing page
+  useEffect(() => {
+    if (!slug) return;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return;
+
+    const client = createClient(supabaseUrl, supabaseAnonKey);
+    const channel = client.channel(`visitors:${slug}`);
+
+    channel.on('presence', { event: 'sync' }, () => {}).subscribe(async (status: string) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ slug, joined_at: new Date().toISOString() });
+      }
+    });
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [slug]);
 
   // Initialize Facebook Pixel when landing page is loaded (only once)

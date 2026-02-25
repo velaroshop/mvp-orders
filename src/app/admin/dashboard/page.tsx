@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
 import RevenueGrowthChart from "../components/RevenueGrowthChart";
 
 interface ProductRevenue {
@@ -44,6 +45,7 @@ interface DashboardStats {
 interface LandingPage {
   id: string;
   name: string;
+  slug?: string;
 }
 
 interface Product {
@@ -102,6 +104,43 @@ export default function DashboardPage() {
     granularity: 'hourly',
     upsellSplit: { presale: 0, postsale: 0 },
   });
+
+  // Live visitors tracking via Supabase Presence
+  const [liveVisitors, setLiveVisitors] = useState<Record<string, number>>({});
+  const channelsRef = useRef<any[]>([]);
+
+  useEffect(() => {
+    if (landingPages.length === 0) return;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return;
+
+    const client = createClient(supabaseUrl, supabaseAnonKey);
+    const channels: any[] = [];
+
+    landingPages.forEach((lp) => {
+      if (!lp.slug) return;
+      const channel = client.channel(`visitors:${lp.slug}`);
+
+      channel.on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const count = Object.keys(state).length;
+        setLiveVisitors((prev) => ({ ...prev, [lp.slug!]: count }));
+      });
+
+      channel.subscribe();
+      channels.push(channel);
+    });
+
+    channelsRef.current = channels;
+
+    return () => {
+      channels.forEach((ch) => ch.unsubscribe());
+    };
+  }, [landingPages]);
+
+  const totalLiveVisitors = Object.values(liveVisitors).reduce((sum, count) => sum + count, 0);
 
   // Helper to format date in local timezone as YYYY-MM-DD
   const formatLocalDate = (date: Date): string => {
@@ -469,44 +508,43 @@ export default function DashboardPage() {
         </div>
         </div>
 
-        {/* Orders by Status Card - 1/3 width */}
+        {/* Live Visitors Card - 1/3 width */}
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Orders by Status</h3>
-
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-zinc-400">Loading...</p>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Live Visitors</h3>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${totalLiveVisitors > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-500'}`}></div>
+              <span className="text-2xl font-bold text-white">{totalLiveVisitors}</span>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Table Header */}
-              <div className="grid grid-cols-2 gap-4 pb-2 border-b border-zinc-700">
-                <p className="text-xs font-medium text-zinc-400 uppercase">Status</p>
-                <p className="text-xs font-medium text-zinc-400 uppercase text-right">Count</p>
-              </div>
+          </div>
 
-              {/* Status Rows */}
-              {statusConfig.map((status) => {
-                const count = stats.ordersByStatus[status.key] || 0;
-                if (count === 0) return null;
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4 pb-2 border-b border-zinc-700">
+              <p className="text-xs font-medium text-zinc-400 uppercase">Landing Page</p>
+              <p className="text-xs font-medium text-zinc-400 uppercase text-right">Visitors</p>
+            </div>
 
-                return (
-                  <div key={status.key} className="grid grid-cols-2 gap-4 items-center">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
-                      <span className="text-sm text-white">{status.label}</span>
-                    </div>
-                    <p className="text-sm font-semibold text-white text-right">{count}</p>
+            {landingPages.filter(lp => lp.slug).map((lp) => {
+              const count = liveVisitors[lp.slug!] || 0;
+              return (
+                <div key={lp.id} className="grid grid-cols-2 gap-4 items-center">
+                  <span className="text-sm text-white truncate" title={lp.name}>{lp.name}</span>
+                  <div className="flex items-center justify-end gap-2">
+                    {count > 0 && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    )}
+                    <span className={`text-sm font-semibold ${count > 0 ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      {count}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
 
-              {/* Show message if no orders */}
-              {Object.keys(stats.ordersByStatus).length === 0 && (
-                <p className="text-sm text-zinc-400 text-center py-4">No orders found</p>
-              )}
-            </div>
-          )}
+            {landingPages.length === 0 && (
+              <p className="text-sm text-zinc-400 text-center py-4">No landing pages configured</p>
+            )}
+          </div>
         </div>
       </div>
 

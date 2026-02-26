@@ -1069,8 +1069,11 @@ function WidgetFormContent() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          {/* Unified Card: Delivery + Offers + Upsells + Summary */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+
           {/* Delivery Information */}
-          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+          <div className="p-3 sm:p-4">
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
               Introduceți datele de livrare
             </h2>
@@ -1276,8 +1279,8 @@ function WidgetFormContent() {
             </div>
           </div>
 
-          {/* Quantity Selection - COMPACT */}
-          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+          {/* Quantity Selection */}
+          <div className="border-t border-zinc-200 p-3 sm:p-4">
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
               SELECTAȚI OFERTA DORITĂ
             </h2>
@@ -1380,9 +1383,9 @@ function WidgetFormContent() {
             </div>
           </div>
 
-          {/* Presale Upsells - COMPACT & ATTRACTIVE */}
+          {/* Presale Upsells */}
           {presaleUpsells.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+            <div className="border-t border-zinc-200 p-3 sm:p-4">
               {/* Header */}
               <div className="mb-2 text-center">
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
@@ -1505,8 +1508,8 @@ function WidgetFormContent() {
             </div>
           )}
 
-          {/* Order Summary - Compact */}
-          <div className="rounded-lg shadow-lg p-2.5 sm:p-3" style={{ backgroundColor }}>
+          {/* Order Summary */}
+          <div className="p-2.5 sm:p-3" style={{ backgroundColor }}>
             <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
@@ -1532,6 +1535,8 @@ function WidgetFormContent() {
               </div>
             </div>
           </div>
+
+          </div>{/* End Unified Card */}
 
           {/* Error Message */}
           {error && (

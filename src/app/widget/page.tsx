@@ -1510,19 +1510,16 @@ function WidgetFormContent() {
             <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
-            <div className="space-y-0.5 mb-1.5 max-w-xs mx-auto">
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                <span>Preț produse:</span>
-                <span className="font-medium">{currentPrice.toFixed(2)} Lei</span>
+            <div className="space-y-0.5 mb-1.5 text-center">
+              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                Preț produse: <span className="font-bold">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                <span>Livrare curier rapid</span>
-                <span className="font-medium">{landingPage.shipping_price.toFixed(2)} Lei</span>
+              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
               {getUpsellsTotal() > 0 && (
-                <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                  <span>Oferte speciale ({selectedUpsells.size})</span>
-                  <span className="font-medium">{getUpsellsTotal().toFixed(2)} Lei</span>
+                <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                  Oferte speciale ({selectedUpsells.size}): <span className="font-bold">{getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
               )}
             </div>
@@ -1543,12 +1540,12 @@ function WidgetFormContent() {
             </div>
           )}
 
-          {/* Submit Button - Text 50% larger */}
-          <div className="space-y-2">
+          {/* Submit Button */}
+          <div className="space-y-2 flex flex-col items-center">
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full text-white font-bold py-4 sm:py-5 px-4 sm:px-6 rounded-lg text-2xl sm:text-3xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`w-3/5 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
               style={{

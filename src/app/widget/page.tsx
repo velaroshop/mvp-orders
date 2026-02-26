@@ -1070,13 +1070,13 @@ function WidgetFormContent() {
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Delivery Information */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
               Introduceți datele de livrare
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
                   Număr Telefon
                 </label>
                 <input
@@ -1090,7 +1090,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Ex: 0722 123 456"
-                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.phone
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
@@ -1116,7 +1116,7 @@ function WidgetFormContent() {
                 )}
               </div>
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
                   Nume și Prenume
                 </label>
                 <input
@@ -1131,7 +1131,7 @@ function WidgetFormContent() {
                   }}
                   placeholder="Introduceți aici numele complet"
                   maxLength={100}
-                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.fullName
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
@@ -1154,9 +1154,9 @@ function WidgetFormContent() {
                   <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
                     Județ
                   </label>
                   <input
@@ -1171,7 +1171,7 @@ function WidgetFormContent() {
                     }}
                     placeholder="Introduceți aici județul"
                     maxLength={50}
-                    className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.county
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
@@ -1195,7 +1195,7 @@ function WidgetFormContent() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
                     Localitate, comună sau sat
                   </label>
                   <input
@@ -1210,7 +1210,7 @@ function WidgetFormContent() {
                     }}
                     placeholder="Introduceți aici localitatea / comuna / satul"
                     maxLength={100}
-                    className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                       errors.city
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
@@ -1235,7 +1235,7 @@ function WidgetFormContent() {
                 </div>
               </div>
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1.5">
+                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
                   Stradă, număr, bloc, scară, ap.
                 </label>
                 <input
@@ -1250,7 +1250,7 @@ function WidgetFormContent() {
                   }}
                   placeholder="Introduceți aici adresa completă"
                   maxLength={200}
-                  className={`w-full px-3 sm:px-4 py-3 sm:py-3.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.address
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'

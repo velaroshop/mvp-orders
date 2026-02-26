@@ -574,7 +574,7 @@ function WidgetFormContent() {
 
 
   // Save partial order (auto-save as user fills form)
-  async function savePartialOrder(lastField?: string) {
+  async function savePartialOrder(lastField?: string, phoneOverride?: string) {
     if (!landingPage || !landingPage.stores?.organization_id) return;
 
     try {
@@ -594,7 +594,7 @@ function WidgetFormContent() {
         organizationId: landingPage.stores.organization_id,
         landingKey: landingPage.slug,
         offerCode: selectedOffer,
-        phone: phone || undefined,
+        phone: phoneOverride || phone || undefined,
         fullName: fullName.trim() || undefined,
         county: county.trim() || undefined,
         city: city.trim() || undefined,
@@ -661,9 +661,9 @@ function WidgetFormContent() {
     setPhone(limited);
 
     // Instant save when phone reaches 10 valid digits
-    // Use setTimeout(0) to let React state update before saving
+    // Pass limited directly to avoid stale closure (state hasn't updated yet)
     if (limited.length === 10 && limited.startsWith("07")) {
-      setTimeout(() => savePartialOrder("phone"), 0);
+      setTimeout(() => savePartialOrder("phone", limited), 0);
     }
   }
 

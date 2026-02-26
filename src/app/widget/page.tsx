@@ -1506,30 +1506,30 @@ function WidgetFormContent() {
           )}
 
           {/* Order Summary - Compact */}
-          <div className="rounded-lg shadow-lg p-3 sm:p-4" style={{ backgroundColor }}>
-            <h2 className="text-lg sm:text-xl font-bold mb-2" style={{ color: textOnDarkColor }}>
+          <div className="rounded-lg shadow-lg p-2.5 sm:p-3" style={{ backgroundColor }}>
+            <h2 className="text-base sm:text-lg font-bold mb-1.5" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>
-            <div className="space-y-1 mb-2">
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+            <div className="space-y-0.5 mb-1.5">
+              <div className="flex justify-between text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Preț produse:</span>
                 <span className="whitespace-nowrap">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+              <div className="flex justify-between text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                 <span className="break-words pr-2">• Livrare curier rapid</span>
                 <span className="whitespace-nowrap">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
               {getUpsellsTotal() > 0 && (
-                <div className="flex justify-between text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                <div className="flex justify-between text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.8 }}>
                   <span className="break-words pr-2">• Oferte speciale ({selectedUpsells.size})</span>
                   <span className="whitespace-nowrap">{getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
               )}
             </div>
-            <div className="pt-2 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
+            <div className="pt-1.5 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-base sm:text-lg font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
-                <span className="text-xl sm:text-2xl font-bold" style={{ color: accentColor }}>
+                <span className="text-sm sm:text-base font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
+                <span className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>

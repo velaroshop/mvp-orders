@@ -1039,7 +1039,17 @@ function WidgetFormContent() {
 
           {/* Trust Signals */}
           <div className="space-y-1.5">
-            {/* First Row: Delivery & Payment */}
+            {/* First Row: Stars */}
+            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-base sm:text-lg">⭐⭐⭐⭐⭐</span>
+            </div>
+
+            {/* Second Row: Social Proof Text */}
+            <div className="flex items-center justify-center text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
+            </div>
+
+            {/* Third Row: Delivery & Payment */}
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.85 }}>
               <div className="flex items-center gap-1">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1054,16 +1064,6 @@ function WidgetFormContent() {
                 </svg>
                 <span className="font-semibold">Plată la livrare</span>
               </div>
-            </div>
-
-            {/* Second Row: Stars */}
-            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="text-yellow-400 text-lg sm:text-xl">⭐⭐⭐⭐⭐</span>
-            </div>
-
-            {/* Third Row: Social Proof Text */}
-            <div className="flex items-center justify-center text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
             </div>
           </div>
         </div>

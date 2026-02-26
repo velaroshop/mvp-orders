@@ -1012,11 +1012,11 @@ function WidgetFormContent() {
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-xl mx-auto">
         {/* Price Header - COMPACT & EYE-CATCHING */}
-        <div className="rounded-lg shadow-lg p-3 sm:p-4 mb-4 sm:mb-6" style={{ backgroundColor }}>
-          {/* Discount Badge - Gradient - 30% larger - Separate row on desktop */}
-          <div className="flex items-center justify-center mb-3">
+        <div className="rounded-lg shadow-lg p-3 mb-3 sm:mb-4" style={{ backgroundColor }}>
+          {/* Discount Badge - Gradient */}
+          <div className="flex items-center justify-center mb-2">
             <span
-              className="px-5 py-2.5 text-white rounded-md text-xl sm:text-2xl font-black whitespace-nowrap shadow-lg animate-pulse"
+              className="px-4 py-2 text-white rounded-md text-lg sm:text-xl font-black whitespace-nowrap shadow-lg animate-pulse"
               style={{
                 background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
@@ -1026,30 +1026,30 @@ function WidgetFormContent() {
             </span>
           </div>
 
-          {/* Prices - 30% larger */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3">
-            <span className="text-xl sm:text-2xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+          {/* Prices */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+            <span className="text-lg sm:text-xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
               {landingPage.srp.toFixed(2)} Lei
             </span>
-            <span className="text-2xl sm:text-3xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
-            <span className="text-3xl sm:text-4xl font-black" style={{ color: textOnDarkColor }}>
+            <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+            <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
               {landingPage.price_1.toFixed(2)} LEI
             </span>
           </div>
 
-          {/* Trust Signals - Multiple Rows */}
-          <div className="space-y-2">
+          {/* Trust Signals */}
+          <div className="space-y-1.5">
             {/* First Row: Delivery & Payment */}
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-base sm:text-lg" style={{ color: textOnDarkColor, opacity: 0.85 }}>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.85 }}>
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                 </svg>
                 <span className="font-semibold">Livrare 1-3 zile</span>
               </div>
               <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <span className="font-semibold">Plată la livrare</span>
@@ -1058,11 +1058,11 @@ function WidgetFormContent() {
 
             {/* Second Row: Stars */}
             <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="text-yellow-400 text-xl sm:text-2xl">⭐⭐⭐⭐⭐</span>
+              <span className="text-yellow-400 text-lg sm:text-xl">⭐⭐⭐⭐⭐</span>
             </div>
 
             {/* Third Row: Social Proof Text */}
-            <div className="flex items-center justify-center text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+            <div className="flex items-center justify-center text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.9 }}>
               <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
             </div>
           </div>

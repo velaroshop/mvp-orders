@@ -1012,23 +1012,23 @@ function WidgetFormContent() {
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-xl mx-auto">
         {/* Price Header - COMPACT & EYE-CATCHING */}
-        <div className="rounded-lg shadow-lg p-3 mb-3 sm:mb-4" style={{ backgroundColor }}>
-          {/* Discount Badge - Gradient */}
-          <div className="flex items-center justify-center mb-2">
+        <div className="relative rounded-lg shadow-lg p-3 pt-5 mb-3 sm:mb-4" style={{ backgroundColor }}>
+          {/* Discount Badge - Positioned on top edge */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
             <span
-              className="px-4 py-2 text-white rounded-md text-lg sm:text-xl font-black whitespace-nowrap shadow-lg animate-pulse"
+              className="px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"
               style={{
                 background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
               }}
             >
-              ⚡ REDUCERE {discount}% ⚡
+              REDUCERE {discount}%
             </span>
           </div>
 
           {/* Prices */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
-            <span className="text-lg sm:text-xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+            <span className="text-lg sm:text-xl font-bold" style={{ color: textOnDarkColor, opacity: 0.6 }}>
               {landingPage.srp.toFixed(2)} Lei
             </span>
             <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>

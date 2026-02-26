@@ -1370,12 +1370,6 @@ function WidgetFormContent() {
               </button>
             </div>
 
-            {/* Delivery Method */}
-            <div className="mt-3 pt-3 border-t border-zinc-200 text-center">
-              <div className="text-sm sm:text-base text-zinc-900">
-                Livrare prin curier rapid (1-3 zile): <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span>
-              </div>
-            </div>
           </div>
 
           {/* Presale Upsells */}

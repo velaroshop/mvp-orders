@@ -1382,16 +1382,13 @@ function WidgetFormContent() {
 
           {/* Presale Upsells - COMPACT & ATTRACTIVE */}
           {presaleUpsells.length > 0 && (
-            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-              {/* Scarcity Header */}
-              <div className="mb-4 text-center">
-                <p className="text-sm sm:text-base font-semibold text-zinc-600 uppercase tracking-wide mb-1">
+            <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+              {/* Header */}
+              <div className="mb-2 text-center">
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
+                  <span className="text-base sm:text-lg">⚡</span>
                   PRODUSE AFLATE ÎN OFERTĂ
-                </p>
-                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2">
-                  <span className="text-xl sm:text-2xl">⚡</span>
-                  ULTIMELE BUCĂȚI ÎN STOC
-                  <span className="text-xl sm:text-2xl">⚡</span>
+                  <span className="text-base sm:text-lg">⚡</span>
                 </h2>
               </div>
 
@@ -1402,7 +1399,7 @@ function WidgetFormContent() {
                 }
               `}</style>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
                   const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
@@ -1412,7 +1409,7 @@ function WidgetFormContent() {
                       key={upsell.id}
                       type="button"
                       onClick={() => toggleUpsell(upsell.id)}
-                      className="relative w-full p-3 sm:p-4 rounded-lg text-left transition-all duration-300"
+                      className="relative w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-300"
                       style={{
                         background: isSelected ? backgroundColor : '#fff',
                         border: isSelected
@@ -1474,16 +1471,16 @@ function WidgetFormContent() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <h3 className="text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                              <h3 className="text-sm sm:text-base leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
                                 Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
                                 <span
-                                  className="font-bold text-lg sm:text-xl"
+                                  className="font-bold text-base sm:text-lg"
                                   style={{ color: accentColor }}
                                 >
                                   {upsell.price.toFixed(2)} Lei
                                 </span>
                                 {upsell.srp > upsell.price && (
-                                  <span className="text-sm sm:text-base" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
+                                  <span className="text-xs sm:text-sm" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
                                     {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
                                   </span>
                                 )}
@@ -1494,7 +1491,7 @@ function WidgetFormContent() {
                                 <img
                                   src={upsell.media_url}
                                   alt={upsell.title}
-                                  className="w-20 h-20 object-cover rounded-lg"
+                                  className="w-16 h-16 object-cover rounded-lg"
                                 />
                               </div>
                             )}

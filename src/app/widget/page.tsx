@@ -1074,7 +1074,7 @@ function WidgetFormContent() {
 
           {/* Delivery Information */}
           <div className="p-3 sm:p-4">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
             <div className="space-y-3">
@@ -1281,7 +1281,7 @@ function WidgetFormContent() {
 
           {/* Quantity Selection */}
           <div className="border-t border-zinc-200 p-3 sm:p-4">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               SELECTAȚI OFERTA DORITĂ
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -1370,15 +1370,10 @@ function WidgetFormContent() {
               </button>
             </div>
 
-            {/* Delivery Method - Same card as offers */}
-            <div className="mt-3 pt-3 border-t border-zinc-200">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1">
-                  <div className="font-medium text-sm sm:text-base text-zinc-900">Livrare prin curier rapid (1-3 zile)</div>
-                </div>
-                <div className="text-base sm:text-lg font-bold text-zinc-900 whitespace-nowrap">
-                  {landingPage.shipping_price.toFixed(2)} Lei
-                </div>
+            {/* Delivery Method */}
+            <div className="mt-3 pt-3 border-t border-zinc-200 text-center">
+              <div className="text-sm sm:text-base text-zinc-900">
+                Livrare prin curier rapid (1-3 zile): <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span>
               </div>
             </div>
           </div>

@@ -146,29 +146,44 @@ export async function GET(request: NextRequest) {
     const startDateTime = `${startDateStr}T00:00:00+02:00`;
     const endDateTime = `${endDateStr}T23:59:59+02:00`;
 
-    let ordersQuery = supabase
-      .from("orders")
-      .select("*")
-      .eq("organization_id", organizationId)
-      .neq("status", "cancelled")
-      .neq("status", "testing")
-      .gte("created_at", new Date(startDateTime).toISOString())
-      .lte("created_at", new Date(endDateTime).toISOString())
-      .limit(50000);
+    // Fetch all orders using pagination (Supabase server-side max_rows caps single requests to 1000)
+    const allOrders: any[] = [];
+    const batchSize = 1000;
+    let offset = 0;
 
-    if (!isAllProducts && product.sku) {
-      ordersQuery = ordersQuery.eq("product_sku", product.sku);
+    while (true) {
+      let batchQuery = supabase
+        .from("orders")
+        .select("id, created_at, total, product_quantity, product_sku, upsells")
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .neq("status", "testing")
+        .gte("created_at", new Date(startDateTime).toISOString())
+        .lte("created_at", new Date(endDateTime).toISOString())
+        .order("created_at", { ascending: true })
+        .range(offset, offset + batchSize - 1);
+
+      if (!isAllProducts && product.sku) {
+        batchQuery = batchQuery.eq("product_sku", product.sku);
+      }
+
+      const { data: batch, error: batchError } = await batchQuery;
+
+      if (batchError) {
+        console.error("Error fetching orders batch:", batchError);
+        return NextResponse.json(
+          { error: "Failed to fetch orders" },
+          { status: 500 }
+        );
+      }
+
+      if (!batch || batch.length === 0) break;
+      allOrders.push(...batch);
+      if (batch.length < batchSize) break;
+      offset += batchSize;
     }
 
-    const { data: orders, error: ordersError } = await ordersQuery;
-
-    if (ordersError) {
-      console.error("Error fetching orders:", ordersError);
-      return NextResponse.json(
-        { error: "Failed to fetch orders" },
-        { status: 500 }
-      );
-    }
+    const orders = allOrders;
 
     // Group orders by date (Romania time)
     const ROMANIA_OFFSET_HOURS = 2;

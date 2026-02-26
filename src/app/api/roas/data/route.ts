@@ -153,7 +153,8 @@ export async function GET(request: NextRequest) {
       .neq("status", "cancelled")
       .neq("status", "testing")
       .gte("created_at", new Date(startDateTime).toISOString())
-      .lte("created_at", new Date(endDateTime).toISOString());
+      .lte("created_at", new Date(endDateTime).toISOString())
+      .limit(50000);
 
     if (!isAllProducts && product.sku) {
       ordersQuery = ordersQuery.eq("product_sku", product.sku);

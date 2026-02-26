@@ -1277,15 +1277,15 @@ function WidgetFormContent() {
           </div>
 
           {/* Quantity Selection - COMPACT */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-3 sm:mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3">
               SELECTAȚI OFERTA DORITĂ
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_1")}
-                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
                   borderColor: primaryColor,
                   backgroundColor: backgroundColor,
@@ -1302,23 +1302,18 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_1}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_1}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
-                {selectedOffer === "offer_1" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
-                    ✓ Selectat
-                  </div>
-                )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_2")}
-                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
                   borderColor: primaryColor,
                   backgroundColor: backgroundColor,
@@ -1335,23 +1330,18 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_2}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_2}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
-                {selectedOffer === "offer_2" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
-                    ✓ Selectat
-                  </div>
-                )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_3")}
-                className="relative p-3 sm:p-4 pt-5 sm:pt-6 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
                   borderColor: primaryColor,
                   backgroundColor: backgroundColor,
@@ -1368,27 +1358,22 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_3}
                 </div>
 
-                <div className="text-base sm:text-lg font-bold mb-1" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_3}
                 </div>
-                <div className="text-lg sm:text-xl font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
-                {selectedOffer === "offer_3" && (
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium" style={{ color: textOnDarkColor }}>
-                    ✓ Selectat
-                  </div>
-                )}
               </button>
             </div>
 
             {/* Delivery Method - Same card as offers */}
-            <div className="mt-4 pt-4 border-t border-zinc-200">
+            <div className="mt-3 pt-3 border-t border-zinc-200">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
-                  <div className="font-medium text-base sm:text-lg text-zinc-900">Livrare prin curier rapid (1-3 zile)</div>
+                  <div className="font-medium text-sm sm:text-base text-zinc-900">Livrare prin curier rapid (1-3 zile)</div>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-zinc-900 whitespace-nowrap">
+                <div className="text-base sm:text-lg font-bold text-zinc-900 whitespace-nowrap">
                   {landingPage.shipping_price.toFixed(2)} Lei
                 </div>
               </div>

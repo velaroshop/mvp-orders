@@ -7,8 +7,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 const DEV_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://mvp-orders.vercel.app',
-];
+  process.env.NEXTAUTH_URL,
+].filter(Boolean) as string[];
 
 /**
  * Verifică dacă un origin corespunde unui domeniu din store

@@ -229,7 +229,7 @@ export async function POST(
             orderId,
             pixelId: landingPage.fb_pixel_id,
             accessToken: landingPage.fb_conversion_token,
-            eventSourceUrl: fullOrder.event_source_url || 'https://mvp-orders.vercel.app/widget',
+            eventSourceUrl: fullOrder.event_source_url || `${process.env.NEXTAUTH_URL || 'https://mvp-orders.vercel.app'}/widget`,
             testEventCode: settings?.meta_test_mode ? settings.meta_test_event_code : undefined,
           });
         }

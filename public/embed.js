@@ -12,7 +12,17 @@
 (function() {
   'use strict';
 
-  const WIDGET_DOMAIN = 'https://mvp-orders.vercel.app';
+  // Auto-detect domain from the script's own URL (works with any domain)
+  const WIDGET_DOMAIN = (function() {
+    try {
+      const scriptSrc = document.currentScript && document.currentScript.src;
+      if (scriptSrc) {
+        const url = new URL(scriptSrc);
+        return url.origin;
+      }
+    } catch (e) {}
+    return 'https://mvp-orders.vercel.app';
+  })();
 
   /**
    * Get cookie value by name

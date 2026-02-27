@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
 
     if (partialOrderId) {
-      // Update existing partial order
+      // Update existing partial order (only if still pending)
       const { data, error } = await supabaseAdmin
         .from("partial_orders")
         .update({
@@ -66,8 +66,8 @@ export async function POST(request: Request) {
           updated_at: now,
         })
         .eq("id", partialOrderId)
-        .select()
-        .single();
+        .eq("status", "pending")
+        .select();
 
       if (error) {
         console.error("Error updating partial order:", error);
@@ -77,7 +77,12 @@ export async function POST(request: Request) {
         );
       }
 
-      return NextResponse.json({ partialOrder: data });
+      // If no rows updated (partial order was confirmed/deleted), return silently
+      if (!data || data.length === 0) {
+        return NextResponse.json({ partialOrder: null, expired: true });
+      }
+
+      return NextResponse.json({ partialOrder: data[0] });
     } else {
       // Create new partial order
       const { data, error } = await supabaseAdmin

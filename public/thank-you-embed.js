@@ -204,21 +204,23 @@
         <!-- Main content - fits mobile screen -->
         <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 16px; display: flex; flex-direction: column; align-items: center;">
 
-          <!-- COUNTDOWN TIMER - compact scarcity style -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 5px 12px; margin-bottom: 10px;">
-            <span style="font-size: 12px; font-weight: 600; color: #f87171; letter-spacing: 0.5px;">OFERTA EXPIRĂ ÎN</span>
-            <span id="countdown-timer" style="font-size: 14px; font-weight: 800; color: #fca5a5; font-variant-numeric: tabular-nums;">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span>
+          <!-- 1. ORDER CONFIRMED -->
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 6px 14px; margin-bottom: 6px;">
+            <svg style="width: 16px; height: 16px; color: #22c55e; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            <span style="font-size: 13px; font-weight: 700; color: #22c55e;">COMANDA TA A FOST TRIMISĂ CU SUCCES!</span>
           </div>
 
-          <!-- ORDER CONFIRMED + OFFER UNLOCKED -->
+          <!-- 2. OFFER UNLOCKED -->
           <div style="text-align: center; margin-bottom: 4px;">
-            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 6px 14px; margin-bottom: 6px;">
-              <svg style="width: 16px; height: 16px; color: #22c55e; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-              <span style="font-size: 13px; font-weight: 700; color: #22c55e;">COMANDA TA A FOST TRIMISĂ CU SUCCES!</span>
-            </div>
             <span style="font-size: 20px; font-weight: 800; color: #FFD700; text-shadow: 0 0 15px #FFD700, 0 0 30px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block; line-height: 1.2; letter-spacing: 0.5px; margin-bottom: 4px;">
               AI DEBLOCAT O OFERTĂ SPECIALĂ!
             </span>
+          </div>
+
+          <!-- 3. COUNTDOWN TIMER -->
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 5px 12px; margin-bottom: 10px;">
+            <span style="font-size: 12px; font-weight: 600; color: #f87171; letter-spacing: 0.5px;">OFERTA EXPIRĂ ÎN</span>
+            <span id="countdown-timer" style="font-size: 14px; font-weight: 800; color: #fca5a5; font-variant-numeric: tabular-nums;">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span>
           </div>
 
           <!-- PRODUCT IMAGE with glow effect -->

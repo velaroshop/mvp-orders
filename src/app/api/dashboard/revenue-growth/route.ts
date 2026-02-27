@@ -46,26 +46,46 @@ export async function GET(request: NextRequest) {
       ? new Date(`${endDate}T23:59:59.999+02:00`).toISOString()
       : new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
-    // Fetch all orders in the period (excluding cancelled and testing)
-    const { data: orders, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("organization_id", organizationId)
-      .neq("status", "cancelled")
-      .neq("status", "testing")
-      .gte("created_at", startDateTime)
-      .lte("created_at", endDateTime)
-      .order("created_at", { ascending: true });
+    // Fetch ALL orders using pagination (Supabase default limit is 1000)
+    const PAGE_SIZE = 1000;
+    let allOrders: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error("Error fetching orders for revenue growth:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch revenue growth data" },
-        { status: 500 }
-      );
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error: fetchError } = await supabase
+        .from("orders")
+        .select("total, upsells, created_at")
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .neq("status", "testing")
+        .gte("created_at", startDateTime)
+        .lte("created_at", endDateTime)
+        .order("created_at", { ascending: true })
+        .range(from, to);
+
+      if (fetchError) {
+        console.error("Error fetching orders for revenue growth:", fetchError);
+        return NextResponse.json(
+          { error: "Failed to fetch revenue growth data" },
+          { status: 500 }
+        );
+      }
+
+      if (data && data.length > 0) {
+        allOrders = allOrders.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+
+      page++;
     }
 
-    const filteredOrders = orders || [];
+    const filteredOrders = allOrders;
 
     const start = new Date(startDateTime);
     const end = new Date(endDateTime);

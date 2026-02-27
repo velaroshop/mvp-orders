@@ -59,29 +59,51 @@ export async function GET(request: NextRequest) {
       ? new Date(`${endDate}T23:59:59.999+02:00`).toISOString()
       : new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
-    let query = supabase
-      .from("orders")
-      .select("*")
-      .eq("organization_id", organizationId)
-      .neq("status", "cancelled")
-      .neq("status", "testing")
-      .gte("created_at", startDateTime)
-      .lte("created_at", endDateTime);
+    // Fetch ALL orders using pagination (Supabase default limit is 1000)
+    const PAGE_SIZE = 1000;
+    let allOrders: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    // Filter by landing page slug if specified
-    if (landingPageSlug) {
-      query = query.eq("landing_key", landingPageSlug);
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      let query = supabase
+        .from("orders")
+        .select("total, product_quantity, upsells, status, product_sku, product_name")
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .neq("status", "testing")
+        .gte("created_at", startDateTime)
+        .lte("created_at", endDateTime)
+        .range(from, to);
+
+      if (landingPageSlug) {
+        query = query.eq("landing_key", landingPageSlug);
+      }
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) {
+        console.error("Error fetching orders:", fetchError);
+        return NextResponse.json(
+          { error: "Failed to fetch dashboard stats" },
+          { status: 500 }
+        );
+      }
+
+      if (data && data.length > 0) {
+        allOrders = allOrders.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+
+      page++;
     }
 
-    const { data: orders, error } = await query;
-
-    if (error) {
-      console.error("Error fetching orders:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch dashboard stats" },
-        { status: 500 }
-      );
-    }
+    const orders = allOrders;
 
     console.log("Dashboard stats query:", {
       organizationId,
@@ -186,20 +208,46 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.totalSold - a.totalSold);
 
-    // Fetch partial orders stats with same filters
-    let partialQuery = supabase
-      .from("partial_orders")
-      .select("status")
-      .eq("organization_id", organizationId)
-      .gte("created_at", startDateTime)
-      .lte("created_at", endDateTime);
+    // Fetch ALL partial orders using pagination (same 1000-row limit issue)
+    let allPartialOrders: any[] = [];
+    let partialPage = 0;
+    let partialHasMore = true;
+    let partialError: any = null;
 
-    // Filter by landing page if specified
-    if (landingPageId && landingPageId !== "all") {
-      partialQuery = partialQuery.eq("landing_page_id", landingPageId);
+    while (partialHasMore) {
+      const from = partialPage * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      let partialQuery = supabase
+        .from("partial_orders")
+        .select("status")
+        .eq("organization_id", organizationId)
+        .gte("created_at", startDateTime)
+        .lte("created_at", endDateTime)
+        .range(from, to);
+
+      if (landingPageId && landingPageId !== "all") {
+        partialQuery = partialQuery.eq("landing_page_id", landingPageId);
+      }
+
+      const { data, error: fetchErr } = await partialQuery;
+
+      if (fetchErr) {
+        partialError = fetchErr;
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allPartialOrders = allPartialOrders.concat(data);
+        partialHasMore = data.length === PAGE_SIZE;
+      } else {
+        partialHasMore = false;
+      }
+
+      partialPage++;
     }
 
-    const { data: partialOrders, error: partialError } = await partialQuery;
+    const partialOrders = allPartialOrders;
 
     // Calculate partial orders by status
     const partialsByStatus: Record<string, number> = {

@@ -160,10 +160,30 @@ class HelpshipClient {
       ...options.headers,
     };
 
-    return fetch(url, {
-      ...options,
-      headers,
-    });
+    const maxRetries = 3;
+    let lastResponse: Response | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      lastResponse = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      // Only retry on transient server errors (502, 503, 504)
+      if (lastResponse.status === 502 || lastResponse.status === 503 || lastResponse.status === 504) {
+        if (attempt < maxRetries) {
+          const delayMs = attempt * 2000; // 2s, 4s
+          console.warn(`[Helpship] Got ${lastResponse.status} on attempt ${attempt}/${maxRetries}, retrying in ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        console.error(`[Helpship] Got ${lastResponse.status} on final attempt ${attempt}/${maxRetries}, giving up.`);
+      }
+
+      return lastResponse;
+    }
+
+    return lastResponse!;
   }
 
   /**

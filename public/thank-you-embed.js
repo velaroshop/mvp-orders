@@ -212,17 +212,16 @@
             <span style="font-size: 18px; font-weight: 700; color: #fca5a5;">EXPIRĂ ÎN <span id="countdown-timer">${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')}</span></span>
           </div>
 
-          <!-- FELICITĂRI TITLE - Big and Gold -->
-          <div style="text-align: center; margin-bottom: 8px;">
-            <span style="font-size: 40px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block;">
-              FELICITĂRI!
+          <!-- ORDER CONFIRMED + OFFER UNLOCKED -->
+          <div style="text-align: center; margin-bottom: 6px;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; padding: 6px 14px; margin-bottom: 8px;">
+              <svg style="width: 16px; height: 16px; color: #22c55e; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+              <span style="font-size: 13px; font-weight: 700; color: #22c55e;">COMANDA TA A FOST TRIMISĂ CU SUCCES!</span>
+            </div>
+            <span style="font-size: 28px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block; line-height: 1.2;">
+              AI DEBLOCAT O OFERTĂ SPECIALĂ!
             </span>
           </div>
-
-          <!-- SUBTITLE -->
-          <p style="font-size: 14px; font-weight: 600; color: #94a3b8; text-align: center; margin: 0 0 16px 0; letter-spacing: 1px;">
-            ⭐ AI DEBLOCAT O REDUCERE LIMITATĂ ⭐
-          </p>
 
           <!-- PRODUCT IMAGE with glow effect - 90-95% width -->
           ${upsell.mediaUrl ? `
@@ -259,27 +258,27 @@
           </div>
 
           <!-- URGENCY MESSAGE -->
-          <p style="font-size: 12px; color: #f87171; text-align: center; margin: 0 0 20px 0; animation: pulse 2s ease-in-out infinite;">
+          <p style="font-size: 14px; color: #fbbf24; text-align: center; margin: 0 0 20px 0; font-weight: 600;">
             ⚡ Această ofertă dispare când părăsești pagina! ⚡
           </p>
 
           <!-- ACTION BUTTONS - Stacked -->
           <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
             <button
-              id="decline-postsale-btn"
-              style="width: 100%; background: transparent; color: #64748b; border: 1px solid #334155; padding: 14px 24px; font-size: 14px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.3s;"
-              onmouseover="this.style.borderColor='#475569'; this.style.color='#94a3b8';"
-              onmouseout="this.style.borderColor='#334155'; this.style.color='#64748b';"
-            >
-              NU MĂ INTERESEAZĂ
-            </button>
-            <button
               id="accept-postsale-btn"
               style="width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4); transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;"
               onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 25px rgba(34, 197, 94, 0.5)';"
               onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.4)';"
             >
-              DA, ADAUGĂ LA OFERTĂ
+              DA, ADAUGĂ LA COMANDĂ
+            </button>
+            <button
+              id="decline-postsale-btn"
+              style="width: 100%; background: rgba(100, 116, 139, 0.15); color: #cbd5e1; border: 1px solid #475569; padding: 14px 24px; font-size: 15px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.3s;"
+              onmouseover="this.style.background='rgba(100, 116, 139, 0.25)'; this.style.color='#e2e8f0';"
+              onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.color='#cbd5e1';"
+            >
+              NU, MULȚUMESC
             </button>
           </div>
         </div>

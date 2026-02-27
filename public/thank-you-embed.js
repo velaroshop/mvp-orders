@@ -218,7 +218,7 @@
               <svg style="width: 16px; height: 16px; color: #22c55e; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
               <span style="font-size: 13px; font-weight: 700; color: #22c55e;">COMANDA TA A FOST TRIMISĂ CU SUCCES!</span>
             </div>
-            <span style="font-size: 28px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block; line-height: 1.2;">
+            <span style="font-size: 20px; font-weight: 800; color: #FFD700; text-shadow: 0 0 15px #FFD700, 0 0 30px #FFA500, 0 2px 4px rgba(0,0,0,0.5); display: block; line-height: 1.2; letter-spacing: 0.5px;">
               AI DEBLOCAT O OFERTĂ SPECIALĂ!
             </span>
           </div>
@@ -251,7 +251,7 @@
           <!-- PRICE SECTION -->
           <div style="text-align: center; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-              <span style="font-size: 18px; color: #64748b; text-decoration: line-through;">${upsell.srp.toFixed(2)} LEI</span>
+              <span style="font-size: 18px; color: #94a3b8; opacity: 0.8;">${upsell.srp.toFixed(2)} LEI</span>
               <span style="font-size: 16px; color: #64748b;">→</span>
               <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);">${upsell.price.toFixed(2)} LEI</span>
             </div>

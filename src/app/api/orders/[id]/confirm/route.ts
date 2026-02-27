@@ -119,8 +119,8 @@ export async function POST(
         
         if (!orderStatus) {
           return NextResponse.json(
-            { error: "Nu s-a putut verifica statusul comenzii în Helpship" },
-            { status: 500 },
+            { error: "Helpship este momentan indisponibil. Reîncearcă peste câteva minute." },
+            { status: 503 },
           );
         }
 
@@ -169,11 +169,15 @@ export async function POST(
         console.log(`[Helpship] Order ${order.helpship_order_id} updated successfully.`);
       } catch (helpshipError) {
         console.error("Failed to update order in Helpship:", helpshipError);
-        // Aruncăm eroarea pentru a fi prinsă de frontend
-        const errorMessage = helpshipError instanceof Error ? helpshipError.message : "Eroare la actualizarea comenzii în Helpship";
+        const rawMessage = helpshipError instanceof Error ? helpshipError.message : String(helpshipError);
+        // Detect Helpship outage (503/502/504) and show user-friendly message
+        const isHelpshipDown = /50[234]/.test(rawMessage) || rawMessage.includes("Service Unavailable");
+        const errorMessage = isHelpshipDown
+          ? "Helpship este momentan indisponibil. Reîncearcă peste câteva minute."
+          : `Eroare la actualizarea comenzii în Helpship: ${rawMessage}`;
         return NextResponse.json(
           { error: errorMessage },
-          { status: 500 },
+          { status: isHelpshipDown ? 503 : 500 },
         );
       }
     }

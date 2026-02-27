@@ -158,7 +158,11 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
   } catch (error) {
     console.error("[Helpship Sync] Failed to sync order:", error);
 
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    const isHelpshipDown = /50[234]/.test(rawMessage) || rawMessage.includes("Service Unavailable");
+    const errorMessage = isHelpshipDown
+      ? "Helpship indisponibil (503). Se va reîncerca automat."
+      : rawMessage;
 
     // Update order status to 'sync_error' and store the error message
     try {

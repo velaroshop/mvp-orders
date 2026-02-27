@@ -30,6 +30,7 @@
   let orderData = null;
   let countdown = 0;
   let countdownInterval = null;
+  let isPreviewMode = false;
 
   /**
    * Fetch order data from API
@@ -471,10 +472,12 @@
       return;
     }
 
-    // Get order ID from URL
+    // Get order ID or preview landing page ID from URL
     const orderId = getQueryParam('order');
+    const previewId = getQueryParam('preview');
+    isPreviewMode = !!previewId;
 
-    if (!orderId) {
+    if (!orderId && !previewId) {
       console.error('Velaro Thank You: No order ID found in URL');
       container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626;">Eroare: Comanda nu a fost găsită.</div>';
       return;
@@ -483,8 +486,19 @@
     // Show loading state
     container.innerHTML = '<div style="padding: 60px; text-align: center; font-size: 18px; color: #6b7280;">Se încarcă...</div>';
 
-    // Fetch order data
-    orderData = await fetchOrderData(orderId);
+    // Fetch order data (preview mode uses landing page ID)
+    const fetchUrl = previewId
+      ? `${API_DOMAIN}/api/thank-you/verify?preview=${previewId}`
+      : `${API_DOMAIN}/api/thank-you/verify?order=${orderId}`;
+
+    try {
+      const response = await fetch(fetchUrl, { credentials: previewId ? 'include' : 'omit' });
+      if (!response.ok) throw new Error('Failed to fetch');
+      orderData = await response.json();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      orderData = null;
+    }
 
     if (!orderData) {
       container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626;">Eroare: Nu am putut încărca datele comenzii.</div>';
@@ -496,6 +510,25 @@
       renderPostsaleOffer(container, orderData);
     } else {
       showConfirmationMessage(orderData.customerName);
+    }
+
+    // In preview mode: add badge and disable action buttons
+    if (isPreviewMode) {
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:fixed;top:12px;right:12px;background:#7c3aed;color:white;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;letter-spacing:1px;box-shadow:0 2px 8px rgba(124,58,237,0.4);';
+      badge.textContent = 'PREVIEW';
+      document.body.appendChild(badge);
+
+      const acceptBtn = document.getElementById('accept-postsale-btn');
+      const declineBtn = document.getElementById('decline-postsale-btn');
+      if (acceptBtn) {
+        acceptBtn.onclick = function(e) { e.preventDefault(); };
+        acceptBtn.style.cursor = 'default';
+      }
+      if (declineBtn) {
+        declineBtn.onclick = function(e) { e.preventDefault(); };
+        declineBtn.style.cursor = 'default';
+      }
     }
   }
 

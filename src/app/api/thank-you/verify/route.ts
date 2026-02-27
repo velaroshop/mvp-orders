@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 // Domenii de dezvoltare permise întotdeauna
@@ -61,6 +63,66 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("order");
+    const previewLandingPageId = searchParams.get("preview");
+
+    // Preview mode: return mock data with real upsell config (admin only)
+    if (previewLandingPageId) {
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { data: landingPage } = await supabaseAdmin
+        .from("landing_pages")
+        .select(`id, slug, post_purchase_status, stores(url, primary_color, accent_color, text_on_dark_color)`)
+        .eq("id", previewLandingPageId)
+        .single();
+
+      if (!landingPage) {
+        return NextResponse.json({ error: "Landing page not found" }, { status: 404 });
+      }
+
+      const store = (landingPage as any).stores;
+
+      const { data: postsaleUpsells } = await supabaseAdmin
+        .from("upsells")
+        .select(`id, title, description, quantity, srp, price, media_url, display_order, products!inner(id, name, sku, status)`)
+        .eq("landing_page_id", landingPage.id)
+        .eq("type", "postsale")
+        .eq("active", true)
+        .eq("products.status", "active")
+        .order("display_order", { ascending: true });
+
+      const hasPostsale = postsaleUpsells && postsaleUpsells.length > 0;
+
+      const formattedUpsells = (postsaleUpsells || []).map((u: any) => ({
+        id: u.id,
+        title: u.title,
+        description: u.description,
+        quantity: u.quantity,
+        srp: u.srp,
+        price: u.price,
+        mediaUrl: u.media_url,
+        productId: u.products.id,
+        productName: u.products.name,
+        productSku: u.products.sku,
+      }));
+
+      return NextResponse.json({
+        orderId: "preview",
+        status: "queue",
+        customerName: "Client Preview",
+        queueExpiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
+        showPostsale: hasPostsale,
+        postsaleUpsells: hasPostsale ? formattedUpsells : undefined,
+        storeColors: hasPostsale ? {
+          primary: store?.primary_color,
+          accent: store?.accent_color,
+          textOnDark: store?.text_on_dark_color,
+        } : undefined,
+        isPreview: true,
+      });
+    }
 
     console.log("[Thank You Verify] Request for orderId:", orderId, "from origin:", origin);
 

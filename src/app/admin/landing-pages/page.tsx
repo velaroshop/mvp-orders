@@ -848,6 +848,14 @@ export default function LandingPagesPage() {
                                 >
                                   Cod embed post-purchase
                                 </button>
+                                <a
+                                  href={`/thank-you-preview?preview=${page.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-xs font-medium hover:bg-purple-500/30 transition-colors"
+                                >
+                                  Preview post-purchase
+                                </a>
                                 <button
                                   onClick={() => toggleRowExpansion(page.id)}
                                   className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"

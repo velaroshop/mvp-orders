@@ -206,8 +206,16 @@ export async function GET(request: Request) {
     // Pentru same-origin requests, nu avem nevoie de CORS headers
     const headers = origin ? getBaseCorsHeaders(origin, origin) : {};
 
-    // If order is not in queue or postsale is not enabled, return simple confirmation
-    if (order.status !== "queue" || !(landingPage as any).post_purchase_status) {
+    // Check organization plan - basic plan has no postsale upsells
+    const { data: orgData } = await supabaseAdmin
+      .from("landing_pages")
+      .select("organizations(plan)")
+      .eq("slug", order.landing_key)
+      .single();
+    const orgPlan = (orgData as any)?.organizations?.plan || "pro";
+
+    // If order is not in queue, postsale is not enabled, or plan is basic, return simple confirmation
+    if (order.status !== "queue" || !(landingPage as any).post_purchase_status || orgPlan === "basic") {
       return NextResponse.json({
         orderId: order.id,
         status: order.status,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -63,7 +64,10 @@ interface LandingPage {
 }
 
 export default function LandingPagesPage() {
+  const { data: session } = useSession();
   const router = useRouter();
+  const activePlan = (session?.user as any)?.activePlan || "pro";
+  const isProPlan = activePlan === "pro";
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
   const [upsellsByLandingPage, setUpsellsByLandingPage] = useState<Record<string, Upsell[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -599,6 +603,9 @@ export default function LandingPagesPage() {
                               </div>
                             </div>
 
+                            {/* Upsells Sections - only visible on PRO plan */}
+                            {isProPlan ? (
+                            <>
                             {/* Presale Section */}
                             <div className="pt-3 border-t border-zinc-700/50">
                               <div className="flex items-center justify-between mb-2">
@@ -818,6 +825,16 @@ export default function LandingPagesPage() {
                                 })()}
                               </div>
                             </div>
+                            </>
+                            ) : (
+                            <div className="pt-3 border-t border-zinc-700/50">
+                              <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-4 text-center">
+                                <p className="text-xs text-zinc-400">
+                                  Upsells sunt disponibile doar pe planul <span className="text-emerald-400 font-medium">PRO</span>.
+                                </p>
+                              </div>
+                            </div>
+                            )}
 
                             {/* Actions */}
                             <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">

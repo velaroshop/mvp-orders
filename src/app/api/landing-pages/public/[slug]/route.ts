@@ -38,8 +38,8 @@ export async function GET(
       );
     }
 
-    // PARALLEL: Fetch product, store, and presale upsells simultaneously
-    const [productResult, storeResult, upsellsResult] = await Promise.all([
+    // PARALLEL: Fetch product, store, presale upsells, and org plan simultaneously
+    const [productResult, storeResult, upsellsResult, orgResult] = await Promise.all([
       // Product query
       landingPage.product_id
         ? supabase
@@ -65,14 +65,23 @@ export async function GET(
         .eq("landing_page_id", landingPage.id)
         .eq("type", "presale")
         .eq("active", true)
-        .order("display_order", { ascending: true })
+        .order("display_order", { ascending: true }),
+
+      // Organization plan query
+      supabase
+        .from("organizations")
+        .select("plan")
+        .eq("id", landingPage.organization_id)
+        .single()
     ]);
 
     const productData = productResult.data;
     const storeData = storeResult.data;
+    const orgPlan = orgResult.data?.plan || "pro";
 
     // Filter upsells based on product status (only "active" products)
-    const presaleUpsells = (upsellsResult.data || []).filter((upsell: any) => {
+    // If organization is on basic plan, return empty presale upsells
+    const presaleUpsells = orgPlan === "basic" ? [] : (upsellsResult.data || []).filter((upsell: any) => {
       const productStatus = upsell.product?.status;
       return productStatus === "active";
     });

@@ -35,6 +35,7 @@ export async function GET() {
         is_active,
         is_pending,
         is_superadmin,
+        plan,
         created_at,
         updated_at
       `)
@@ -96,6 +97,7 @@ export async function GET() {
       isActive: org.is_active,
       isPending: org.is_pending,
       isSuperadmin: org.is_superadmin,
+      plan: org.plan || "pro",
       memberCount: memberCountMap.get(org.id) || 0,
       owner: ownerMap.get(org.id) || null,
       createdAt: org.created_at,

@@ -20,6 +20,7 @@ interface Organization {
   isActive: boolean;
   isPending: boolean;
   isSuperadmin: boolean;
+  plan: string;
   memberCount: number;
   owner: { email: string; name: string } | null;
   createdAt: string;
@@ -40,6 +41,7 @@ export default function SuperadminPage() {
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+  const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
 
   function generatePassword() {
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -228,6 +230,33 @@ export default function SuperadminPage() {
       });
     } finally {
       setIsResettingPassword(false);
+    }
+  }
+
+  async function handleUpdatePlan(orgId: string, newPlan: string) {
+    try {
+      setUpdatingPlanId(orgId);
+      const response = await fetch(`/api/superadmin/organizations/${orgId}/update-plan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: newPlan }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update plan");
+      }
+
+      const data = await response.json();
+      setMessage({ type: "success", text: data.message });
+      await loadOrganizations();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to update plan",
+      });
+    } finally {
+      setUpdatingPlanId(null);
     }
   }
 
@@ -482,6 +511,7 @@ export default function SuperadminPage() {
                   <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Organization</th>
                   <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Owner</th>
                   <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Members</th>
+                  <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Plan</th>
                   <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Status</th>
                   <th className="text-left py-3 px-6 text-sm font-semibold text-zinc-300">Created</th>
                   <th className="text-right py-3 px-6 text-sm font-semibold text-zinc-300">Actions</th>
@@ -516,6 +546,27 @@ export default function SuperadminPage() {
                     </td>
                     <td className="py-4 px-6">
                       <span className="text-zinc-300">{org.memberCount}</span>
+                    </td>
+                    <td className="py-4 px-6">
+                      {org.isSuperadmin ? (
+                        <span className="px-2 py-0.5 bg-emerald-900/30 text-emerald-300 text-xs rounded-full border border-emerald-700 font-medium">
+                          PRO
+                        </span>
+                      ) : (
+                        <select
+                          value={org.plan || "pro"}
+                          onChange={(e) => handleUpdatePlan(org.id, e.target.value)}
+                          disabled={updatingPlanId === org.id}
+                          className={`px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 ${
+                            org.plan === "pro"
+                              ? "bg-emerald-900/30 text-emerald-300 border-emerald-700"
+                              : "bg-zinc-700 text-zinc-300 border-zinc-600"
+                          }`}
+                        >
+                          <option value="basic">BASIC</option>
+                          <option value="pro">PRO</option>
+                        </select>
+                      )}
                     </td>
                     <td className="py-4 px-6">
                       {org.isActive ? (
@@ -584,7 +635,7 @@ export default function SuperadminPage() {
                   </tr>
                   {resetPasswordOrgId === org.id && (
                     <tr className="border-b border-zinc-700 bg-zinc-800/50">
-                      <td colSpan={6} className="py-3 px-6">
+                      <td colSpan={7} className="py-3 px-6">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm text-zinc-400">Parolă nouă pentru {org.name}:</span>
                           <input

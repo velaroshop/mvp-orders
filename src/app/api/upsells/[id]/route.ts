@@ -79,6 +79,16 @@ export async function PUT(
     }
 
     const organizationId = session.user.activeOrganizationId;
+
+    // Check organization plan - basic plan cannot modify upsells
+    const activePlan = (session.user as any).activePlan || "pro";
+    if (activePlan === "basic") {
+      return NextResponse.json(
+        { error: "Upsells are not available on the BASIC plan" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -240,6 +250,16 @@ export async function DELETE(
     }
 
     const organizationId = session.user.activeOrganizationId;
+
+    // Check organization plan - basic plan cannot delete upsells
+    const deletePlan = (session.user as any).activePlan || "pro";
+    if (deletePlan === "basic") {
+      return NextResponse.json(
+        { error: "Upsells are not available on the BASIC plan" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
 
     // Verify upsell exists and belongs to organization

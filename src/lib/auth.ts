@@ -112,7 +112,8 @@ export const authOptions: NextAuthOptions = {
               name,
               slug,
               is_active,
-              is_superadmin
+              is_superadmin,
+              plan
             )
           `)
           .eq("user_id", user.id)
@@ -132,12 +133,14 @@ export const authOptions: NextAuthOptions = {
             slug: m.organizations.slug,
             role: m.role,
             isSuperadmin: m.organizations.is_superadmin || false,
+            plan: m.organizations.plan || "pro",
           }));
 
           // Set the first organization as the active one by default
           token.activeOrganizationId = firstOrg.organization_id;
           token.activeRole = firstOrg.role; // Add active role to token
           token.isSuperadminOrg = firstOrg.organizations?.is_superadmin || false;
+          token.activePlan = firstOrg.organizations?.plan || "pro";
         }
       }
 
@@ -150,6 +153,7 @@ export const authOptions: NextAuthOptions = {
         session.user.activeOrganizationId = token.activeOrganizationId as string;
         session.user.activeRole = token.activeRole as string; // Add active role to session
         session.user.isSuperadminOrg = token.isSuperadminOrg as boolean; // Is current org a superadmin org
+        session.user.activePlan = (token.activePlan as string) || "pro";
       }
 
       return session;

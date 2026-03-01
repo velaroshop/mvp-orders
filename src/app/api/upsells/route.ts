@@ -89,6 +89,16 @@ export async function POST(request: NextRequest) {
     }
 
     const organizationId = session.user.activeOrganizationId;
+
+    // Check organization plan - basic plan cannot create upsells
+    const activePlan = (session.user as any).activePlan || "pro";
+    if (activePlan === "basic") {
+      return NextResponse.json(
+        { error: "Upsells are not available on the BASIC plan" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const {

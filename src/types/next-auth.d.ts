@@ -14,10 +14,12 @@ declare module "next-auth" {
         slug: string;
         role: string;
         isSuperadmin?: boolean;
+        plan?: string;
       }>;
       activeOrganizationId?: string;
       activeRole?: string;
       isSuperadminOrg?: boolean;
+      activePlan?: string;
     };
   }
 
@@ -38,9 +40,11 @@ declare module "next-auth/jwt" {
       slug: string;
       role: string;
       isSuperadmin?: boolean;
+      plan?: string;
     }>;
     activeOrganizationId?: string;
     activeRole?: string;
     isSuperadminOrg?: boolean;
+    activePlan?: string;
   }
 }

@@ -36,6 +36,25 @@ export async function GET(
 
     console.log(`[API] Fetching ${type} upsells for landing page:`, landing_page_id);
 
+    // Check organization plan - basic plan has no upsells
+    const { data: landingPage } = await supabase
+      .from("landing_pages")
+      .select("organization_id")
+      .eq("id", landing_page_id)
+      .single();
+
+    if (landingPage) {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("plan")
+        .eq("id", landingPage.organization_id)
+        .single();
+
+      if (org?.plan === "basic") {
+        return NextResponse.json({ upsells: [] });
+      }
+    }
+
     const { data: upsells, error } = await supabase
       .from("upsells")
       .select(`

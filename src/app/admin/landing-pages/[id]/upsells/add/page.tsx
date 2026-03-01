@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -33,9 +34,18 @@ interface UpsellFormData {
 }
 
 export default function AddUpsellPage() {
+  const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const landingPageId = params.id as string;
+  const activePlan = (session?.user as any)?.activePlan || "pro";
+
+  // Redirect basic plan users away from upsell creation
+  useEffect(() => {
+    if (activePlan === "basic") {
+      router.push("/admin/landing-pages");
+    }
+  }, [activePlan, router]);
 
   // Get type from URL query parameter
   const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;

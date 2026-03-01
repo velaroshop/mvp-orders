@@ -659,12 +659,6 @@ function WidgetFormContent() {
     // Limit to 10 digits
     const limited = digitsOnly.slice(0, 10);
     setPhone(limited);
-
-    // Instant save when phone reaches 10 valid digits
-    // Pass limited directly to avoid stale closure (state hasn't updated yet)
-    if (limited.length === 10 && limited.startsWith("07")) {
-      setTimeout(() => savePartialOrder("phone", limited), 0);
-    }
   }
 
   function getCurrentPrice() {

@@ -269,19 +269,11 @@
 
           <!-- URGENCY MESSAGE -->
           <p style="font-size: 14px; color: #fbbf24; text-align: center; margin: 0 0 20px 0; font-weight: 600;">
-            ⚡ Această ofertă dispare când părăsești pagina! ⚡
+            Această ofertă dispare când părăsești pagina!
           </p>
 
           <!-- ACTION BUTTONS - Stacked -->
           <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
-            <button
-              id="accept-postsale-btn"
-              style="width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4); transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;"
-              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 25px rgba(34, 197, 94, 0.5)';"
-              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.4)';"
-            >
-              DA, ADAUGĂ LA COMANDĂ
-            </button>
             <button
               id="decline-postsale-btn"
               style="width: 100%; background: rgba(100, 116, 139, 0.15); color: #cbd5e1; border: 1px solid #475569; padding: 14px 24px; font-size: 15px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.3s;"
@@ -289,6 +281,14 @@
               onmouseout="this.style.background='rgba(100, 116, 139, 0.15)'; this.style.color='#cbd5e1';"
             >
               NU, MULȚUMESC
+            </button>
+            <button
+              id="accept-postsale-btn"
+              style="width: 100%; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4); transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5px;"
+              onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 25px rgba(34, 197, 94, 0.5)';"
+              onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(34, 197, 94, 0.4)';"
+            >
+              DA, ADAUGĂ LA COMANDĂ
             </button>
           </div>
         </div>

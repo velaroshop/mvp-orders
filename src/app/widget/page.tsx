@@ -735,8 +735,9 @@ function WidgetFormContent() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    
+
     if (!landingPage) return;
+    if (submitting) return;
 
     // Validate all fields
     const phoneDigits = phone.replace(/\D/g, "");

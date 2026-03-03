@@ -161,13 +161,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 1: Find or create customer
+    // Step 1: Check for duplicate order (same phone + landing page within last 30 seconds)
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000).toISOString();
+    const { data: recentOrder } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, queue_expires_at")
+      .eq("organization_id", landingPage.organization_id)
+      .eq("landing_key", landingKey)
+      .eq("phone", cleanPhone)
+      .gte("created_at", thirtySecondsAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentOrder) {
+      console.log("[Order] Duplicate detected, returning existing order:", recentOrder.id);
+      return NextResponse.json(
+        {
+          orderId: recentOrder.id,
+          status: recentOrder.status,
+          queueExpiresAt: recentOrder.queue_expires_at,
+        },
+        { status: 200 },
+      );
+    }
+
+    // Step 2: Find or create customer
     const customer = await findOrCreateCustomer({
       organizationId: landingPage.organization_id,
       phone,
     });
 
-    // Step 2: Create order with customer reference
+    // Step 3: Create order with customer reference
     const order = await createOrder({
       organizationId: landingPage.organization_id,
       customerId: customer.id,
@@ -189,13 +214,13 @@ export async function POST(request: NextRequest) {
       eventSourceUrl,
     });
 
-    // Step 3: Update customer stats
+    // Step 4: Update customer stats
     await updateCustomerStats({
       customerId: customer.id,
       orderTotal: Number(total) || 0,
     });
 
-    // Step 4: Mark associated partial order as converted (if exists)
+    // Step 5: Mark associated partial order as converted (if exists)
     // Find the most recent partial order for this phone + landing page that hasn't been converted yet
     try {
       // Normalize phone for comparison (remove all non-digits)

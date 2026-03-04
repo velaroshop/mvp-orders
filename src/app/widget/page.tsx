@@ -640,29 +640,8 @@ function WidgetFormContent() {
 
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
-    let digitsOnly = value.replace(/\D/g, "");
-
-    // Auto-correct international prefixes
-    // 00407xxxxxxx -> 07xxxxxxx (remove 0040)
-    // 407xxxxxxx -> 07xxxxxxx (remove 40)
-    // 0407xxxxxxx -> 07xxxxxxx (remove 040)
-    if (digitsOnly.startsWith("00407")) {
-      digitsOnly = digitsOnly.slice(4); // Remove "0040"
-    } else if (digitsOnly.startsWith("0040")) {
-      digitsOnly = digitsOnly.slice(4); // Remove "0040"
-    } else if (digitsOnly.startsWith("040") && digitsOnly.length > 3) {
-      digitsOnly = digitsOnly.slice(2); // Remove "04" -> keeps "0..."
-    } else if (digitsOnly.startsWith("407") && !digitsOnly.startsWith("4070")) {
-      digitsOnly = "0" + digitsOnly.slice(2); // Remove "40", add "0"
-    }
-
-    // Ensure starts with 0
-    if (digitsOnly.length > 0 && digitsOnly[0] !== "0") {
-      digitsOnly = "0" + digitsOnly;
-    }
-
-    // Limit to 10 digits
-    const limited = digitsOnly.slice(0, 10);
+    const digitsOnly = value.replace(/\D/g, "");
+    const limited = digitsOnly.slice(0, 16);
     setPhone(limited);
   }
 
@@ -697,9 +676,9 @@ function WidgetFormContent() {
     return landingPage.srp - currentPrice;
   }
 
-  // Check if phone is a valid 10-digit Romanian number
+  // Check if phone has enough digits to be worth saving as partial
   function isValidPhone(p: string) {
-    return p.length === 10 && p.startsWith("07");
+    return p.length >= 4;
   }
 
   // Validation function

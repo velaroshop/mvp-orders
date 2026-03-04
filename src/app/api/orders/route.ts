@@ -63,14 +63,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validare telefon: doar cifre, 10 caractere, începe cu 07
+    // Clean phone: keep only digits
     const cleanPhone = String(phone).replace(/\D/g, '');
-    if (cleanPhone.length !== 10 || !cleanPhone.startsWith('07')) {
-      return NextResponse.json(
-        { error: "Invalid phone number format. Must be 10 digits starting with 07" },
-        { status: 400 },
-      );
-    }
 
     // Validare lungime câmpuri pentru a preveni abuse
     if (String(fullName).length > 200) {

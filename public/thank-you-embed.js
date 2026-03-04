@@ -204,7 +204,7 @@
     }
 
     const html = `
-      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative;">
+      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 20px;">
 
         <!-- Animated sparkles/particles background -->
         <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
@@ -387,7 +387,7 @@
     }
 
     const html = `
-      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative;">
+      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 20px;">
 
         <!-- Animated sparkles/particles background -->
         <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">

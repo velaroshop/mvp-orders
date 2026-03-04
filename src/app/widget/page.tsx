@@ -100,6 +100,7 @@ function WidgetFormContent() {
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
   const partialOrderIdRef = useRef<string | null>(null);
+  const savingPartialRef = useRef(false);
   const saveOnLeaveRef = useRef<() => void>(() => {});
   const presenceChannelRef = useRef<any>(null);
 
@@ -576,6 +577,8 @@ function WidgetFormContent() {
   // Save partial order (auto-save as user fills form)
   async function savePartialOrder(lastField?: string, phoneOverride?: string) {
     if (!landingPage || !landingPage.stores?.organization_id) return;
+    if (savingPartialRef.current) return; // Prevent concurrent saves
+    savingPartialRef.current = true;
 
     try {
       const selectedUpsellsData = presaleUpsells
@@ -630,6 +633,8 @@ function WidgetFormContent() {
     } catch (error) {
       console.error("Error saving partial order:", error);
       // Silently fail - don't interrupt user experience
+    } finally {
+      savingPartialRef.current = false;
     }
   }
 

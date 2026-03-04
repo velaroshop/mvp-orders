@@ -84,6 +84,56 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ partialOrder: data[0] });
     } else {
+      // Check for existing partial order with same phone + landing page (dedup race condition)
+      if (phone && organizationId && landingKey) {
+        const cleanPhone = String(phone).replace(/\D/g, "");
+        const thirtySecondsAgo = new Date(Date.now() - 30 * 1000).toISOString();
+        const { data: existing } = await supabaseAdmin
+          .from("partial_orders")
+          .select("id")
+          .eq("organization_id", organizationId)
+          .eq("landing_key", landingKey)
+          .eq("phone", cleanPhone)
+          .eq("status", "pending")
+          .gte("created_at", thirtySecondsAgo)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existing) {
+          // Update the existing one instead of creating a duplicate
+          const { data: updated, error: updateError } = await supabaseAdmin
+            .from("partial_orders")
+            .update({
+              offer_code: offerCode,
+              phone,
+              full_name: fullName,
+              county,
+              city,
+              address,
+              postal_code: postalCode,
+              product_name: productName,
+              product_sku: productSku,
+              product_quantity: productQuantity,
+              upsells,
+              subtotal,
+              shipping_cost: shippingCost,
+              total,
+              last_completed_field: lastCompletedField,
+              completion_percentage: completionPercentage,
+              updated_at: now,
+            })
+            .eq("id", existing.id)
+            .select()
+            .single();
+
+          if (!updateError && updated) {
+            console.log("[Partial] Dedup: updated existing partial order:", existing.id);
+            return NextResponse.json({ partialOrder: updated });
+          }
+        }
+      }
+
       // Create new partial order
       const { data, error } = await supabaseAdmin
         .from("partial_orders")

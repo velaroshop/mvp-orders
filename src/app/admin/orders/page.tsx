@@ -59,6 +59,11 @@ export default function AdminPage() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
+  // Product filter state
+  const [selectedProductSkus, setSelectedProductSkus] = useState<string[]>([]);
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
+  const [productsList, setProductsList] = useState<{ id: string; name: string; sku: string }[]>([]);
+
   // Tracking Details Modal state
   const [trackingModalOrder, setTrackingModalOrder] = useState<Order | null>(null);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
@@ -224,6 +229,11 @@ export default function AdminPage() {
       params.append("statuses", selectedStatuses.join(","));
     }
 
+    // Add product filters if any are selected
+    if (selectedProductSkus.length > 0) {
+      params.append("products", selectedProductSkus.join(","));
+    }
+
     // Add date range filter only when searching
     if (query.trim() && searchDateRange !== "all") {
       params.append("dateRange", searchDateRange.toString());
@@ -335,12 +345,30 @@ export default function AdminPage() {
         return [...prev, status];
       }
     });
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   }
 
   // Clear all status filters
   function clearStatusFilters() {
     setSelectedStatuses([]);
+    setCurrentPage(1);
+  }
+
+  // Toggle product filter
+  function toggleProduct(sku: string) {
+    setSelectedProductSkus((prev) => {
+      if (prev.includes(sku)) {
+        return prev.filter((s) => s !== sku);
+      } else {
+        return [...prev, sku];
+      }
+    });
+    setCurrentPage(1);
+  }
+
+  // Clear all product filters
+  function clearProductFilters() {
+    setSelectedProductSkus([]);
     setCurrentPage(1);
   }
 
@@ -378,7 +406,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage, selectedStatuses, searchDateRange]);
+  }, [currentPage, selectedStatuses, selectedProductSkus, searchDateRange]);
 
   // Fetch landing pages on mount
   useEffect(() => {
@@ -437,6 +465,39 @@ export default function AdminPage() {
       };
     }
   }, [isStatusDropdownOpen]);
+
+  // Close product dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".product-filter-dropdown")) {
+        setIsProductDropdownOpen(false);
+      }
+    }
+
+    if (isProductDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isProductDropdownOpen]);
+
+  // Fetch products list on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products/active");
+        if (response.ok) {
+          const data = await response.json();
+          setProductsList(data.products || []);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
@@ -1628,6 +1689,76 @@ export default function AdminPage() {
                           <span className="text-sm text-white">{status.label}</span>
                         </label>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Filter Dropdown */}
+            <div className="relative product-filter-dropdown">
+              <button
+                onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
+                  selectedProductSkus.length > 0 ? "ring-2 ring-emerald-500" : ""
+                }`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  />
+                </svg>
+                Produse
+                {selectedProductSkus.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                    {selectedProductSkus.length}
+                  </span>
+                )}
+              </button>
+
+              {isProductDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-white">Filtrează după produs</span>
+                      {selectedProductSkus.length > 0 && (
+                        <button
+                          onClick={clearProductFilters}
+                          className="text-xs text-emerald-500 hover:text-emerald-400"
+                        >
+                          Șterge toate
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {productsList.map((product) => (
+                        <label
+                          key={product.id}
+                          className="flex items-center gap-2 cursor-pointer hover:bg-zinc-700 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedProductSkus.includes(product.sku)}
+                            onChange={() => toggleProduct(product.sku)}
+                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm text-white truncate">{product.name}</span>
+                            <span className="text-xs text-zinc-400">{product.sku}</span>
+                          </div>
+                        </label>
+                      ))}
+                      {productsList.length === 0 && (
+                        <p className="text-sm text-zinc-400 text-center py-2">Nu sunt produse</p>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -29,6 +29,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get("q") || "";
     const statusesParam = searchParams.get("statuses") || "";
+    const productsParam = searchParams.get("products") || "";
     const dateRangeParam = searchParams.get("dateRange") || "";
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
@@ -36,6 +37,11 @@ export async function GET(request: Request) {
     // Parse statuses
     const statuses = statusesParam.trim()
       ? statusesParam.split(",").map(s => s.trim()).filter(Boolean)
+      : null;
+
+    // Parse product SKUs
+    const productSkus = productsParam.trim()
+      ? productsParam.split(",").map(s => s.trim()).filter(Boolean)
       : null;
 
     // Calculate date cutoff if searching with date range
@@ -57,6 +63,7 @@ export async function GET(request: Request) {
       p_date_cutoff: dateCutoff,
       p_limit: limit,
       p_offset: offset,
+      p_product_skus: productSkus,
     });
 
     if (error) {
@@ -66,6 +73,7 @@ export async function GET(request: Request) {
         activeOrganizationId,
         searchQuery,
         statuses,
+        productSkus,
         dateCutoff,
         limit,
         offset
@@ -140,6 +148,7 @@ async function fallbackSearch(
   organizationId: string,
   searchQuery: string,
   statuses: string[] | null,
+  productSkus: string[] | null,
   dateCutoff: string | null,
   limit: number,
   offset: number
@@ -151,6 +160,10 @@ async function fallbackSearch(
 
   if (statuses && statuses.length > 0) {
     query = query.in("status", statuses);
+  }
+
+  if (productSkus && productSkus.length > 0) {
+    query = query.in("product_sku", productSkus);
   }
 
   if (dateCutoff) {

@@ -590,30 +590,23 @@ export default function DashboardPage() {
                 ];
                 const barColor = colors[index % colors.length];
 
-                const partialPercentage = product.orders > 0 ? (product.partialOrders / product.orders) * widthPercentage : 0;
-                const directPercentage = widthPercentage - partialPercentage;
-
                 return (
                   <div key={product.name} className="space-y-1">
                     <div className="text-sm text-white truncate">{product.name}</div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-400">{product.orders} orders ({product.unitsSold} bucăți)</span>
+                      <span className="text-zinc-400">
+                        {product.orders} orders ({product.unitsSold} buc)
+                        {product.partialOrders > 0 && (
+                          <span className="text-emerald-400"> - {product.partialOrders} partiale</span>
+                        )}
+                      </span>
                       <span className="text-white font-semibold">{product.revenue.toFixed(2)} RON</span>
                     </div>
-                    {product.partialOrders > 0 && (
-                      <div className="text-[10px] text-emerald-400">{product.partialOrders} din partiale</div>
-                    )}
-                    <div className="w-full bg-zinc-700 rounded-full h-2 flex overflow-hidden">
+                    <div className="w-full bg-zinc-700 rounded-full h-2">
                       <div
-                        className={`${barColor} h-2 transition-all duration-500`}
-                        style={{ width: `${directPercentage}%` }}
+                        className={`${barColor} h-2 rounded-full transition-all duration-500`}
+                        style={{ width: `${widthPercentage}%` }}
                       ></div>
-                      {product.partialOrders > 0 && (
-                        <div
-                          className="bg-emerald-500 h-2 transition-all duration-500"
-                          style={{ width: `${partialPercentage}%` }}
-                        ></div>
-                      )}
                     </div>
                   </div>
                 );

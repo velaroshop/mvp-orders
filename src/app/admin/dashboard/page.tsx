@@ -9,6 +9,7 @@ interface ProductRevenue {
   revenue: number;
   unitsSold: number;
   orders: number;
+  partialOrders: number;
 }
 
 interface UpsellSplit {
@@ -593,7 +594,12 @@ export default function DashboardPage() {
                   <div key={product.name} className="space-y-1">
                     <div className="text-sm text-white truncate">{product.name}</div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-400">{product.orders} orders ({product.unitsSold} bucăți)</span>
+                      <span className="text-zinc-400">
+                        {product.orders} orders ({product.unitsSold} bucăți)
+                        {product.partialOrders > 0 && (
+                          <span className="text-emerald-400"> - {product.partialOrders} din partiale</span>
+                        )}
+                      </span>
                       <span className="text-white font-semibold">{product.revenue.toFixed(2)} RON</span>
                     </div>
                     <div className="w-full bg-zinc-700 rounded-full h-2">

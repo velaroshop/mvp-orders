@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
       let query = supabase
         .from("orders")
-        .select("total, product_quantity, upsells, status, product_sku, product_name")
+        .select("total, product_quantity, upsells, status, product_sku, product_name, source, from_partial_id")
         .eq("organization_id", organizationId)
         .neq("status", "cancelled")
         .neq("status", "testing")
@@ -160,24 +160,28 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate revenue by product (grouped by SKU to avoid duplicates from name changes)
-    const productRevenue: Record<string, { name: string; revenue: number; unitsSold: number; orders: number }> = {};
+    const productRevenue: Record<string, { name: string; revenue: number; unitsSold: number; orders: number; partialOrders: number }> = {};
     filteredOrders.forEach((order: any) => {
       const sku = order.product_sku || order.product_name || "Unknown Product";
       const skuKey = sku.toUpperCase();
       const displayName = skuToName[skuKey] || order.product_name || sku;
       const orderTotal = order.total || 0;
       const quantity = order.product_quantity || 1;
+      const isFromPartial = order.source === "partial" || !!order.from_partial_id;
       if (!productRevenue[skuKey]) {
-        productRevenue[skuKey] = { name: displayName, revenue: 0, unitsSold: 0, orders: 0 };
+        productRevenue[skuKey] = { name: displayName, revenue: 0, unitsSold: 0, orders: 0, partialOrders: 0 };
       }
       productRevenue[skuKey].revenue += orderTotal;
       productRevenue[skuKey].unitsSold += quantity;
       productRevenue[skuKey].orders += 1;
+      if (isFromPartial) {
+        productRevenue[skuKey].partialOrders += 1;
+      }
     });
 
     // Convert to array and sort by revenue (descending)
     const revenueByProduct = Object.values(productRevenue)
-      .map((data) => ({ name: data.name, revenue: data.revenue, unitsSold: data.unitsSold, orders: data.orders }))
+      .map((data) => ({ name: data.name, revenue: data.revenue, unitsSold: data.unitsSold, orders: data.orders, partialOrders: data.partialOrders }))
       .sort((a, b) => b.revenue - a.revenue);
 
     // Calculate product sales analysis (units sold per product, grouped by SKU)

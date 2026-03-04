@@ -743,10 +743,20 @@ function WidgetFormContent() {
       newErrors.address = "Introduceți adresa";
     }
 
-    // If there are errors, set them and stop submission
+    // If there are errors, set them, focus first error field, and stop submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setSubmitting(false);
+      // Focus first empty field
+      const fieldOrder = ["phone", "fullName", "county", "city", "address"];
+      const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
+      if (firstError) {
+        const inputs = event.currentTarget.querySelectorAll<HTMLInputElement>("input");
+        const fieldIndex = fieldOrder.indexOf(firstError);
+        if (inputs[fieldIndex]) {
+          inputs[fieldIndex].focus();
+        }
+      }
       return;
     }
 
@@ -1047,7 +1057,7 @@ function WidgetFormContent() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-6">
           {/* Unified Card: Delivery + Offers + Upsells + Summary */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
 
@@ -1089,7 +1099,6 @@ function WidgetFormContent() {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("phone", phone);
                   }}
-                  required
                 />
                 {errors.phone ? (
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
@@ -1130,7 +1139,6 @@ function WidgetFormContent() {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("fullName", fullName);
                   }}
-                  required
                 />
                 {errors.fullName && (
                   <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
@@ -1170,7 +1178,6 @@ function WidgetFormContent() {
                       e.currentTarget.style.boxShadow = '';
                       handleFieldBlur("county", county);
                     }}
-                    required
                   />
                   {errors.county && (
                     <p className="mt-1 text-sm text-red-600">{errors.county}</p>
@@ -1209,7 +1216,6 @@ function WidgetFormContent() {
                       e.currentTarget.style.boxShadow = '';
                       handleFieldBlur("city", city);
                     }}
-                    required
                   />
                   {errors.city && (
                     <p className="mt-1 text-sm text-red-600">{errors.city}</p>
@@ -1249,7 +1255,6 @@ function WidgetFormContent() {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("address", address);
                   }}
-                  required
                 />
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-600">{errors.address}</p>

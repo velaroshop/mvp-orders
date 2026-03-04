@@ -155,15 +155,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 1: Check for duplicate order (same phone + landing page within last 30 seconds)
-    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000).toISOString();
+    // Step 1: Check for duplicate order (same phone + landing page within last 2 minutes)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const { data: recentOrder } = await supabaseAdmin
       .from("orders")
       .select("id, status, queue_expires_at")
       .eq("organization_id", landingPage.organization_id)
       .eq("landing_key", landingKey)
       .eq("phone", cleanPhone)
-      .gte("created_at", thirtySecondsAgo)
+      .gte("created_at", twoMinutesAgo)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

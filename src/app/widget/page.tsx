@@ -722,11 +722,14 @@ function WidgetFormContent() {
 
     if (!landingPage) return;
     if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    setErrors({});
 
     // Validate all fields
     const phoneDigits = phone.replace(/\D/g, "");
     const newErrors: typeof errors = {};
-    
+
     if (!phoneDigits) {
       newErrors.phone = "Introduceți numărul de telefon";
     }
@@ -759,10 +762,6 @@ function WidgetFormContent() {
       }
       return;
     }
-
-    setSubmitting(true);
-    setError(null);
-    setErrors({});
 
     // Track InitiateCheckout event
     if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
@@ -886,11 +885,13 @@ function WidgetFormContent() {
         // Add order ID to URL for thank you page to process
         const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
 
+        // Don't reset submitting - page is navigating away
         if (window.parent && window.parent !== window) {
           window.parent.location.href = thankYouUrl;
         } else {
           window.location.href = thankYouUrl;
         }
+        return;
       } else {
         // Fallback to success message if no store URL
         setSuccess(true);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { HelpshipClient } from "@/lib/helpship";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 
@@ -14,7 +14,7 @@ export async function GET(
     const { id: orderId } = await params;
 
     // Găsește comanda în DB
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)

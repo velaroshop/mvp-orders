@@ -138,7 +138,7 @@ export async function GET(request: Request) {
     // Fetch order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status, landing_key, full_name, queue_expires_at, upsells")
+      .select("id, status, landing_key, full_name, queue_expires_at, upsells, product_name, product_quantity, subtotal, shipping_cost, total")
       .eq("id", orderId)
       .single();
 
@@ -214,6 +214,21 @@ export async function GET(request: Request) {
       .single();
     const orgPlan = (orgData as any)?.organizations?.plan || "pro";
 
+    // Build order details for confirmation display
+    const acceptedUpsells = (order.upsells || []).map((u: any) => ({
+      name: u.productName || u.title,
+      quantity: u.quantity,
+      price: u.price,
+    }));
+    const orderDetails = {
+      productName: order.product_name,
+      productQuantity: order.product_quantity,
+      upsells: acceptedUpsells,
+      subtotal: order.subtotal,
+      shippingCost: order.shipping_cost,
+      total: order.total,
+    };
+
     // If order is not in queue, postsale is not enabled, or plan is basic, return simple confirmation
     if (order.status !== "queue" || !(landingPage as any).post_purchase_status || orgPlan === "basic") {
       return NextResponse.json({
@@ -221,6 +236,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
+        orderDetails,
       }, { headers });
     }
 
@@ -256,6 +272,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
+        orderDetails,
       }, { headers });
     }
 
@@ -266,6 +283,7 @@ export async function GET(request: Request) {
         status: order.status,
         customerName: order.full_name,
         showPostsale: false,
+        orderDetails,
       }, { headers });
     }
 
@@ -291,6 +309,7 @@ export async function GET(request: Request) {
       queueExpiresAt: order.queue_expires_at,
       showPostsale: true,
       postsaleUpsells: formattedUpsells,
+      orderDetails,
       storeColors: {
         primary: store.primary_color,
         accent: store.accent_color,

@@ -102,8 +102,12 @@
         throw new Error('Failed to add postsale upsell');
       }
 
-      // Show confirmation message
-      showConfirmationMessage(orderData.customerName);
+      // Show confirmation message with accepted postsale upsell
+      showConfirmationMessage(orderData.customerName, {
+        name: upsell.productName || upsell.title,
+        quantity: upsell.quantity,
+        price: upsell.price,
+      });
     } catch (error) {
       console.error('Error adding postsale:', error);
 
@@ -366,8 +370,10 @@
 
   /**
    * Show confirmation message - SPECTACULAR DESIGN matching postsale
+   * @param {string} customerName
+   * @param {object} [acceptedPostsale] - postsale upsell that was just accepted { name, quantity, price }
    */
-  function showConfirmationMessage(customerName) {
+  function showConfirmationMessage(customerName, acceptedPostsale) {
     const container = document.getElementById('velaro-thank-you');
     if (!container) return;
 
@@ -384,6 +390,82 @@
       const delay = Math.random() * 3;
       const size = Math.random() * 4 + 2;
       particlesHtml += `<div style="position: absolute; left: ${left}%; top: ${top}%; width: ${size}px; height: ${size}px; background: rgba(34, 197, 94, 0.6); border-radius: 50%; animation: sparkle 3s ease-in-out ${delay}s infinite;"></div>`;
+    }
+
+    // Build order summary from orderData
+    const details = orderData && orderData.orderDetails;
+    let orderSummaryHtml = '';
+
+    if (details) {
+      // Collect all upsells (pre-existing + just-accepted postsale)
+      const allUpsells = [...(details.upsells || [])];
+      if (acceptedPostsale) {
+        allUpsells.push(acceptedPostsale);
+      }
+
+      // Calculate updated total
+      const postsaleExtra = acceptedPostsale ? (acceptedPostsale.price * acceptedPostsale.quantity) : 0;
+      const updatedTotal = (details.total || 0) + postsaleExtra;
+      const shippingCost = details.shippingCost || 0;
+
+      // Main product line
+      let productLinesHtml = '';
+      if (details.productName) {
+        const qty = details.productQuantity || 1;
+        const productSubtotal = (details.subtotal || 0) - allUpsells.reduce((sum, u) => sum + (u.price * u.quantity), 0) + postsaleExtra;
+        productLinesHtml += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+            <span style="font-size: 14px; color: #e2e8f0;">${qty}x ${details.productName}</span>
+          </div>
+        `;
+      }
+
+      // Upsell lines
+      let upsellLinesHtml = '';
+      if (allUpsells.length > 0) {
+        upsellLinesHtml += `
+          <div style="border-top: 1px solid rgba(34, 197, 94, 0.2); margin: 8px 0; padding-top: 8px;">
+            <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Produse în ofertă</p>
+            ${allUpsells.map(u => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0;">
+                <span style="font-size: 14px; color: #e2e8f0;">${u.quantity}x ${u.name}</span>
+                <span style="font-size: 14px; color: #94a3b8;">${(u.price * u.quantity).toFixed(2)} RON</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Shipping line
+      const shippingHtml = `
+        <div style="border-top: 1px solid rgba(34, 197, 94, 0.2); margin: 8px 0; padding-top: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0;">
+            <span style="font-size: 14px; color: #94a3b8;">Livrare</span>
+            <span style="font-size: 14px; color: #94a3b8;">${shippingCost > 0 ? shippingCost.toFixed(2) + ' RON' : 'GRATUITĂ'}</span>
+          </div>
+        </div>
+      `;
+
+      // Total line
+      const totalHtml = `
+        <div style="border-top: 2px solid rgba(34, 197, 94, 0.4); margin: 8px 0 0 0; padding-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 16px; font-weight: 700; color: white;">Total de plată:</span>
+            <span style="font-size: 18px; font-weight: 800; color: #22c55e;">${updatedTotal.toFixed(2)} RON</span>
+          </div>
+        </div>
+      `;
+
+      orderSummaryHtml = `
+        <!-- Order Summary Box -->
+        <div style="width: 100%; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 16px;">
+          <p style="font-size: 13px; font-weight: 700; color: #94a3b8; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px;">Comanda ta</p>
+          ${productLinesHtml}
+          ${upsellLinesHtml}
+          ${shippingHtml}
+          ${totalHtml}
+        </div>
+      `;
     }
 
     const html = `
@@ -404,7 +486,7 @@
             </svg>
           </div>
 
-          <!-- TITLE - Gold like postsale -->
+          <!-- TITLE -->
           <div style="text-align: center; margin-bottom: 12px;">
             <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block;">
               COMANDĂ CONFIRMATĂ!
@@ -419,30 +501,32 @@
             ${customerName ? `<p style="font-size: 20px; font-weight: 700; color: #ffd700; margin: 0;">${customerName}!</p>` : ''}
           </div>
 
-          <!-- Info box -->
-          <div style="width: 100%; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20">
+          ${orderSummaryHtml}
+
+          <!-- Shipping & Payment info (smaller, below summary) -->
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7h4.05a1 1 0 01.95.68l1.39 4.19a1 1 0 01.11.47V14a1 1 0 01-1 1h-.05a2.5 2.5 0 01-4.9 0H14V7z"></path>
                 </svg>
               </div>
               <div>
-                <p style="font-size: 16px; font-weight: 700; color: white; margin: 0;">Livrare prin curier rapid</p>
-                <p style="font-size: 14px; color: #94a3b8; margin: 0;">1-3 zile lucrătoare</p>
+                <p style="font-size: 14px; font-weight: 600; color: white; margin: 0;">Livrare prin curier rapid</p>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">1-3 zile lucrătoare</p>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 20 20">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
                   <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
                 </svg>
               </div>
               <div>
-                <p style="font-size: 16px; font-weight: 700; color: white; margin: 0;">Plată la livrare</p>
-                <p style="font-size: 14px; color: #94a3b8; margin: 0;">Cash sau card la curier</p>
+                <p style="font-size: 14px; font-weight: 600; color: white; margin: 0;">Plată la livrare</p>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Cash sau card la curier</p>
               </div>
             </div>
           </div>

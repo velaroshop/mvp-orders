@@ -480,17 +480,10 @@
         <!-- Main content -->
         <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 24px; display: flex; flex-direction: column; align-items: center;">
 
-          <!-- SUCCESS BADGE - Big green checkmark -->
-          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.5), 0 10px 30px rgba(0,0,0,0.3); animation: pulse 2s ease-in-out infinite;">
-            <svg style="width: 50px; height: 50px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-
           <!-- TITLE -->
           <div style="text-align: center; margin-bottom: 12px;">
             <span style="font-size: 26px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block; letter-spacing: -0.5px;">
-              COMANDĂ CONFIRMATĂ!
+              COMANDĂ FINALIZATĂ!
             </span>
           </div>
 

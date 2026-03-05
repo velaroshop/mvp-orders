@@ -412,10 +412,12 @@
       let productLinesHtml = '';
       if (details.productName) {
         const qty = details.productQuantity || 1;
-        const productSubtotal = (details.subtotal || 0) - allUpsells.reduce((sum, u) => sum + (u.price * u.quantity), 0) + postsaleExtra;
+        const preExistingUpsellsTotal = (details.upsells || []).reduce((sum, u) => sum + (u.price * u.quantity), 0);
+        const productPrice = (details.subtotal || 0) - preExistingUpsellsTotal;
         productLinesHtml += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
             <span style="font-size: 14px; color: #e2e8f0;">${qty}x ${details.productName}</span>
+            <span style="font-size: 14px; color: #94a3b8;">${productPrice.toFixed(2)} RON</span>
           </div>
         `;
       }
@@ -503,32 +505,14 @@
 
           ${orderSummaryHtml}
 
-          <!-- Shipping & Payment info (smaller, below summary) -->
-          <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
-                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7h4.05a1 1 0 01.95.68l1.39 4.19a1 1 0 01.11.47V14a1 1 0 01-1 1h-.05a2.5 2.5 0 01-4.9 0H14V7z"></path>
-                </svg>
-              </div>
-              <div>
-                <p style="font-size: 14px; font-weight: 600; color: white; margin: 0;">Livrare prin curier rapid</p>
-                <p style="font-size: 12px; color: #94a3b8; margin: 0;">1-3 zile lucrătoare</p>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
-                  <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                </svg>
-              </div>
-              <div>
-                <p style="font-size: 14px; font-weight: 600; color: white; margin: 0;">Plată la livrare</p>
-                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Cash sau card la curier</p>
-              </div>
-            </div>
+          <!-- Shipping & Payment info (compact, below summary) -->
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;">
+            <p style="font-size: 13px; color: #94a3b8; margin: 0; text-align: center;">
+              <span style="color: #e2e8f0; font-weight: 600;">Livrare prin curier rapid</span> · 1-3 zile lucrătoare
+            </p>
+            <p style="font-size: 13px; color: #94a3b8; margin: 0; text-align: center;">
+              <span style="color: #e2e8f0; font-weight: 600;">Plată la livrare</span> · Cash sau card la curier
+            </p>
           </div>
 
           <!-- Trust message -->

@@ -412,8 +412,7 @@
       let productLinesHtml = '';
       if (details.productName) {
         const qty = details.productQuantity || 1;
-        const preExistingUpsellsTotal = (details.upsells || []).reduce((sum, u) => sum + (u.price * u.quantity), 0);
-        const productPrice = (details.subtotal || 0) - preExistingUpsellsTotal;
+        const productPrice = details.subtotal || 0;
         productLinesHtml += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
             <span style="font-size: 14px; color: #e2e8f0;">${qty}x ${details.productName}</span>

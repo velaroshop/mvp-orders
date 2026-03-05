@@ -732,6 +732,8 @@ function WidgetFormContent() {
 
     if (!phoneDigits) {
       newErrors.phone = "Introduceți numărul de telefon";
+    } else if (phoneDigits.length < 10) {
+      newErrors.phone = "Numărul de telefon trebuie să aibă minim 10 cifre";
     }
     if (!fullName.trim()) {
       newErrors.fullName = "Introduceți numele complet";
@@ -1077,9 +1079,12 @@ function WidgetFormContent() {
                   value={phone}
                   onChange={(e) => {
                     handlePhoneChange(e);
-                    // Clear error when user starts typing
+                    // Clear error when phone reaches 10 digits
                     if (errors.phone) {
-                      setErrors((prev) => ({ ...prev, phone: undefined }));
+                      const digits = e.target.value.replace(/\D/g, "");
+                      if (digits.length >= 10) {
+                        setErrors((prev) => ({ ...prev, phone: undefined }));
+                      }
                     }
                   }}
                   placeholder="Ex: 0722 123 456"

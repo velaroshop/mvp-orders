@@ -48,6 +48,9 @@ export default function AdminPage() {
   const [isDuplicateWarningOpen, setIsDuplicateWarningOpen] = useState(false);
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
 
+  // Copy to clipboard state
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -1622,7 +1625,7 @@ export default function AdminPage() {
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Caută după telefon, nume, județ, oraș, adresă..."
+                placeholder="Caută după ID comandă, telefon, nume, județ, oraș, adresă..."
                 className="w-full pl-10 pr-10 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               {searchQuery && (
@@ -1831,9 +1834,19 @@ export default function AdminPage() {
                   >
                     {/* Order ID */}
                     <td className="px-2 py-1.5">
-                      <span className="font-medium text-white text-xs">
-                        {formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
-                      </span>
+                      <button
+                        className="font-medium text-white text-xs hover:text-emerald-400 cursor-pointer transition-colors"
+                        title="Click to copy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const orderLabel = formatOrderNumber(order.orderNumber, order.orderSeries, order.id);
+                          navigator.clipboard.writeText(orderLabel);
+                          setCopiedOrderId(order.id);
+                          setTimeout(() => setCopiedOrderId(null), 2000);
+                        }}
+                      >
+                        {copiedOrderId === order.id ? "Copiat!" : formatOrderNumber(order.orderNumber, order.orderSeries, order.id)}
+                      </button>
                     </td>
 
                     {/* Status */}

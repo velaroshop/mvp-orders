@@ -171,7 +171,11 @@ async function fallbackSearch(
   }
 
   if (searchQuery.trim()) {
+    // Extract digits from query for order_number search (e.g. "VEL-01234" -> 1234)
+    const digits = searchQuery.replace(/\D/g, "");
+    const orderNumberFilter = digits ? `order_number.eq.${parseInt(digits, 10)},` : "";
     query = query.or(
+      `${orderNumberFilter}` +
       `phone.ilike.%${searchQuery}%,` +
       `full_name.ilike.%${searchQuery}%,` +
       `county.ilike.%${searchQuery}%,` +

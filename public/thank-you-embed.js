@@ -489,7 +489,7 @@
 
           <!-- TITLE -->
           <div style="text-align: center; margin-bottom: 12px;">
-            <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block;">
+            <span style="font-size: 26px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block; letter-spacing: -0.5px;">
               COMANDĂ CONFIRMATĂ!
             </span>
           </div>

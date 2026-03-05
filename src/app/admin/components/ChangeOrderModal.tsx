@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Order } from "@/lib/types";
+
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string | null;
+}
 
 interface UpsellRow {
   upsellId?: string;
@@ -51,6 +57,35 @@ export default function ChangeOrderModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Add product state
+  const [availableProducts, setAvailableProducts] = useState<ProductOption[]>([]);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const addProductRef = useRef<HTMLDivElement>(null);
+
+  // Fetch products when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/products/active")
+        .then((res) => res.json())
+        .then((data) => setAvailableProducts(data.products || []))
+        .catch(() => setAvailableProducts([]));
+    }
+  }, [isOpen]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!isAddProductOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (addProductRef.current && !addProductRef.current.contains(e.target as Node)) {
+        setIsAddProductOpen(false);
+        setProductSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isAddProductOpen]);
+
   useEffect(() => {
     if (isOpen && order) {
       const qty = order.productQuantity || 1;
@@ -95,6 +130,31 @@ export default function ChangeOrderModal({
       prev.map((u, i) => (i === index ? { ...u, [field]: value } : u))
     );
   }
+
+  function handleAddProduct(product: ProductOption) {
+    setUpsells((prev) => [
+      ...prev,
+      {
+        upsellId: product.id,
+        title: product.name,
+        productName: product.name,
+        productSku: product.sku,
+        quantity: 1,
+        price: 0,
+        type: "presale",
+      },
+    ]);
+    setIsAddProductOpen(false);
+    setProductSearch("");
+  }
+
+  const filteredProducts = availableProducts.filter((p) => {
+    const q = productSearch.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.sku && p.sku.toLowerCase().includes(q))
+    );
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -181,12 +241,12 @@ export default function ChangeOrderModal({
           </div>
 
           {/* Upsells */}
-          {upsells.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
-                Upsells ({upsells.length})
-              </p>
-              <div className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+              Produse adiționale {upsells.length > 0 && `(${upsells.length})`}
+            </p>
+            {upsells.length > 0 && (
+              <div className="space-y-3 mb-3">
                 {upsells.map((upsell, index) => (
                   <div
                     key={index}
@@ -211,7 +271,7 @@ export default function ChangeOrderModal({
                         type="button"
                         onClick={() => handleRemoveUpsell(index)}
                         className="text-red-400 hover:text-red-300 text-sm font-bold ml-2"
-                        title="Elimină upsell"
+                        title="Elimină produs"
                       >
                         &times;
                       </button>
@@ -253,8 +313,54 @@ export default function ChangeOrderModal({
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* Add Product Button + Dropdown */}
+            <div className="relative" ref={addProductRef}>
+              <button
+                type="button"
+                onClick={() => setIsAddProductOpen(!isAddProductOpen)}
+                className="w-full text-left px-3 py-2 text-xs font-medium text-amber-400 border border-dashed border-amber-600/50 rounded-lg hover:bg-amber-900/20 transition-colors"
+              >
+                + Adaugă produs
+              </button>
+              {isAddProductOpen && (
+                <div className="absolute left-0 right-0 mt-1 bg-zinc-800 border border-zinc-600 rounded-lg shadow-xl z-20 max-h-52 flex flex-col">
+                  <div className="p-2 border-b border-zinc-700">
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Caută produs..."
+                      autoFocus
+                      className="w-full bg-zinc-900 border border-zinc-600 rounded px-2.5 py-1.5 text-white text-xs focus:border-amber-500 focus:outline-none placeholder-zinc-500"
+                    />
+                  </div>
+                  <div className="overflow-y-auto flex-1">
+                    {filteredProducts.length === 0 ? (
+                      <p className="text-xs text-zinc-500 px-3 py-3 text-center">
+                        Niciun produs găsit
+                      </p>
+                    ) : (
+                      filteredProducts.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => handleAddProduct(product)}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-700 transition-colors flex items-center justify-between"
+                        >
+                          <span className="text-white">{product.name}</span>
+                          {product.sku && (
+                            <span className="text-zinc-500 ml-2">{product.sku}</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Shipping */}
           <div>

@@ -1060,7 +1060,16 @@ function WidgetFormContent() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
+              e.preventDefault();
+            }
+          }}
+          noValidate
+          className="space-y-4 sm:space-y-6"
+        >
           {/* Unified Card: Delivery + Offers + Upsells + Summary */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
 

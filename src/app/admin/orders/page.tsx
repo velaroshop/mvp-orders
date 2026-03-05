@@ -788,6 +788,10 @@ export default function AdminPage() {
         type: "success",
         message: updatedOrder.scheduledDate ? "Comanda a fost programată cu succes" : "Comanda a fost confirmată cu succes",
       });
+
+      // Refresh orders list and KPI data to pick up any changes
+      fetchOrders(searchQuery);
+      fetchKpiData();
     } catch (error) {
       console.error("Error confirming order:", error);
       // Rollback on error

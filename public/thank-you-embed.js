@@ -414,9 +414,9 @@
         const qty = details.productQuantity || 1;
         const productPrice = details.subtotal || 0;
         productLinesHtml += `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-            <span style="font-size: 14px; color: #e2e8f0;">${qty}x ${details.productName}</span>
-            <span style="font-size: 14px; color: #94a3b8;">${productPrice.toFixed(2)} RON</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; gap: 8px;">
+            <span style="font-size: 13px; color: #e2e8f0; min-width: 0;">${qty}x ${details.productName}</span>
+            <span style="font-size: 13px; color: #94a3b8; white-space: nowrap; flex-shrink: 0;">${productPrice.toFixed(2)} RON</span>
           </div>
         `;
       }
@@ -428,9 +428,9 @@
           <div style="border-top: 1px solid rgba(34, 197, 94, 0.2); margin: 8px 0; padding-top: 8px;">
             <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Produse în ofertă</p>
             ${allUpsells.map(u => `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0;">
-                <span style="font-size: 14px; color: #e2e8f0;">${u.quantity}x ${u.name}</span>
-                <span style="font-size: 14px; color: #94a3b8;">${(u.price * u.quantity).toFixed(2)} RON</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; gap: 8px;">
+                <span style="font-size: 13px; color: #e2e8f0; min-width: 0;">${u.quantity}x ${u.name}</span>
+                <span style="font-size: 13px; color: #94a3b8; white-space: nowrap; flex-shrink: 0;">${(u.price * u.quantity).toFixed(2)} RON</span>
               </div>
             `).join('')}
           </div>

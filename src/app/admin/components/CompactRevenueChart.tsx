@@ -58,11 +58,19 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
 
   const hasYesterday = yesterdayData && yesterdayData.length > 0;
 
+  // Calculate totals
+  const todayTotal = data.reduce((sum, item) => sum + item.totalRevenue, 0);
+  const todayOrders = data.reduce((sum, item) => sum + item.orderCount, 0);
+  const yesterdayTotal = yesterdayData ? yesterdayData.reduce((sum, item) => sum + item.totalRevenue, 0) : 0;
+  const yesterdayOrders = yesterdayData ? yesterdayData.reduce((sum, item) => sum + item.orderCount, 0) : 0;
+  const diffPercent = yesterdayTotal > 0 ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 : 0;
+  const isUp = diffPercent >= 0;
+
   return (
     <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-4">
       {/* Header */}
       <div className="mb-3">
-        <h3 className="text-sm font-semibold text-white">Today's Revenue</h3>
+        <h3 className="text-sm font-semibold text-white">Today&apos;s Revenue</h3>
         <p className="text-xs text-zinc-400 mt-0.5">Hourly breakdown</p>
       </div>
 
@@ -120,6 +128,29 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Today vs Yesterday summary */}
+      <div className="mt-3 pt-3 border-t border-zinc-700">
+        <div className="flex items-center justify-between text-xs">
+          <div>
+            <span className="text-white font-semibold">{todayTotal.toFixed(2)} RON</span>
+            <span className="text-zinc-500 ml-1">({todayOrders} comenzi)</span>
+          </div>
+          {hasYesterday && yesterdayTotal > 0 && (
+            <span className={`font-semibold ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>
+              {isUp ? '+' : ''}{diffPercent.toFixed(1)}%
+            </span>
+          )}
+        </div>
+        {hasYesterday && (
+          <div className="flex items-center justify-between text-xs mt-1">
+            <div>
+              <span className="text-zinc-400">Ieri: {yesterdayTotal.toFixed(2)} RON</span>
+              <span className="text-zinc-500 ml-1">({yesterdayOrders} comenzi)</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

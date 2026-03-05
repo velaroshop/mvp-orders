@@ -92,19 +92,17 @@ export default function DashboardPage() {
     data: Array<{
       period: string;
       totalRevenue: number;
-      upsellRevenue: number;
       orderCount: number;
     }>;
     granularity: 'hourly' | 'daily' | 'monthly';
-    upsellSplit: {
-      presale: number;
-      postsale: number;
-    };
   }>({
     data: [],
     granularity: 'hourly',
-    upsellSplit: { presale: 0, postsale: 0 },
   });
+  const [comparisonRevenueData, setComparisonRevenueData] = useState<
+    Array<{ period: string; totalRevenue: number; orderCount: number }>
+  >([]);
+  const [comparisonLabel, setComparisonLabel] = useState("Yesterday");
 
   // Live visitors tracking via Supabase Presence
   const [liveVisitors, setLiveVisitors] = useState<Record<string, { total: number; inForm: number }>>({});
@@ -311,12 +309,36 @@ export default function DashboardPage() {
       params.set("startDate", start);
       params.set("endDate", end);
 
-      const response = await fetch(`/api/dashboard/revenue-growth?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
+      // For single-day views, also fetch previous day for comparison
+      const isSingleDay = start === end;
+      const fetches: Promise<Response>[] = [
+        fetch(`/api/dashboard/revenue-growth?${params.toString()}`),
+      ];
+      if (isSingleDay) {
+        const prevDay = new Date(start + 'T00:00:00');
+        prevDay.setDate(prevDay.getDate() - 1);
+        const prevDayStr = formatLocalDate(prevDay);
+        const compParams = new URLSearchParams();
+        compParams.set("startDate", prevDayStr);
+        compParams.set("endDate", prevDayStr);
+        fetches.push(fetch(`/api/dashboard/revenue-growth?${compParams.toString()}`));
+        setComparisonLabel("Yesterday");
+      }
+
+      const responses = await Promise.all(fetches);
+
+      if (responses[0].ok) {
+        const data = await responses[0].json();
         setRevenueGrowthData(data);
       } else {
-        console.error("Failed to fetch revenue growth:", response.status);
+        console.error("Failed to fetch revenue growth:", responses[0].status);
+      }
+
+      if (isSingleDay && responses[1]?.ok) {
+        const compData = await responses[1].json();
+        setComparisonRevenueData(compData.data || []);
+      } else {
+        setComparisonRevenueData([]);
       }
     } catch (error) {
       console.error("Error fetching revenue growth:", error);
@@ -920,6 +942,8 @@ export default function DashboardPage() {
       <div className="mb-6">
         <RevenueGrowthChart
           data={revenueGrowthData.data}
+          comparisonData={comparisonRevenueData}
+          comparisonLabel={comparisonLabel}
           granularity={revenueGrowthData.granularity}
           loading={revenueGrowthLoading}
         />

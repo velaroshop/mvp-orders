@@ -128,7 +128,6 @@ export default function AdminPage() {
     data: Array<{
       period: string;
       totalRevenue: number;
-      upsellRevenue: number;
       orderCount: number;
     }>;
     granularity: 'hourly' | 'daily' | 'monthly';
@@ -136,6 +135,9 @@ export default function AdminPage() {
     data: [],
     granularity: 'hourly',
   });
+  const [yesterdayRevenueData, setYesterdayRevenueData] = useState<
+    Array<{ period: string; totalRevenue: number; orderCount: number }>
+  >([]);
   const [revenueLoading, setRevenueLoading] = useState(false);
 
   // KPI state
@@ -262,15 +264,36 @@ export default function AdminPage() {
       landingPage: lp,
     });
 
-    // Fetch both in parallel
+    // Compute yesterday's date range for comparison
+    const isSingleDay = startDate === endDate;
+    let yesterdayParams: URLSearchParams | null = null;
+    if (isSingleDay) {
+      const prevDay = new Date(startDate + 'T00:00:00');
+      prevDay.setDate(prevDay.getDate() - 1);
+      const prevDayStr = formatLocalDate(prevDay);
+      yesterdayParams = new URLSearchParams({
+        startDate: prevDayStr,
+        endDate: prevDayStr,
+        landingPage: lp,
+      });
+    }
+
+    // Fetch all in parallel
     setRevenueLoading(true);
     setStatsLoading(true);
 
     try {
-      const [revenueResponse, statsResponse] = await Promise.all([
+      const fetches: Promise<Response>[] = [
         fetch(`/api/dashboard/revenue-growth?${params}`),
         fetch(`/api/dashboard/stats?${params}`),
-      ]);
+      ];
+      if (yesterdayParams) {
+        fetches.push(fetch(`/api/dashboard/revenue-growth?${yesterdayParams}`));
+      }
+
+      const responses = await Promise.all(fetches);
+      const [revenueResponse, statsResponse] = responses;
+      const yesterdayResponse = responses[2];
 
       if (revenueResponse.ok) {
         const result = await revenueResponse.json();
@@ -287,6 +310,13 @@ export default function AdminPage() {
         setKpiStats(data);
       } else {
         console.error("Failed to fetch stats");
+      }
+
+      if (yesterdayResponse?.ok) {
+        const result = await yesterdayResponse.json();
+        setYesterdayRevenueData(result.data || []);
+      } else {
+        setYesterdayRevenueData([]);
       }
     } catch (error) {
       console.error("Error fetching KPI data:", error);
@@ -1547,6 +1577,7 @@ export default function AdminPage() {
             <div>
               <CompactRevenueChart
                 data={todayRevenueData.data}
+                yesterdayData={yesterdayRevenueData}
                 granularity={todayRevenueData.granularity}
                 loading={revenueLoading}
               />

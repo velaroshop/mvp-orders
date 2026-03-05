@@ -5,30 +5,35 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface RevenueData {
   period: string;
   totalRevenue: number;
-  upsellRevenue: number;
   orderCount: number;
 }
 
 interface CompactRevenueChartProps {
   data: RevenueData[];
+  yesterdayData?: RevenueData[];
   granularity: 'hourly' | 'daily' | 'monthly';
   loading?: boolean;
 }
 
-export default function CompactRevenueChart({ data, granularity, loading }: CompactRevenueChartProps) {
+export default function CompactRevenueChart({ data, yesterdayData, granularity, loading }: CompactRevenueChartProps) {
+  // Build a map of yesterday's data by period (hour)
+  const yesterdayMap = new Map<string, number>();
+  if (yesterdayData) {
+    yesterdayData.forEach(item => {
+      yesterdayMap.set(item.period, item.totalRevenue);
+    });
+  }
+
   // Format period for display based on granularity
   const formattedData = data.map(item => {
     let displayLabel = item.period;
 
     if (granularity === 'hourly') {
-      // Already in format "HH:00"
       displayLabel = item.period;
     } else if (granularity === 'daily') {
-      // Format: "YYYY-MM-DD" -> "DD MMM"
       const date = new Date(item.period);
       displayLabel = `${date.getUTCDate()} ${date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`;
     } else {
-      // Format: "YYYY-MM" -> "MMM YYYY"
       const [year, month] = item.period.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1);
       displayLabel = date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
@@ -37,6 +42,7 @@ export default function CompactRevenueChart({ data, granularity, loading }: Comp
     return {
       ...item,
       displayLabel,
+      yesterdayRevenue: yesterdayMap.get(item.period) ?? null,
     };
   });
 
@@ -49,6 +55,8 @@ export default function CompactRevenueChart({ data, granularity, loading }: Comp
       </div>
     );
   }
+
+  const hasYesterday = yesterdayData && yesterdayData.length > 0;
 
   return (
     <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-4">
@@ -82,23 +90,33 @@ export default function CompactRevenueChart({ data, granularity, loading }: Comp
                 color: '#fff',
                 fontSize: '12px'
               }}
-              formatter={(value: any) => `${Number(value).toFixed(2)} RON`}
+              formatter={(value: any, name: any) => {
+                if (name === 'Yesterday') {
+                  return [`${Number(value).toFixed(2)} RON`, 'Yesterday'];
+                }
+                return [`${Number(value).toFixed(2)} RON`, 'Revenue'];
+              }}
             />
+            {hasYesterday && (
+              <Line
+                type="monotone"
+                dataKey="yesterdayRevenue"
+                stroke="#71717a"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                name="Yesterday"
+                dot={false}
+                opacity={0.7}
+                connectNulls={false}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="totalRevenue"
               stroke="#3b82f6"
               strokeWidth={2}
-              name="Total Revenue"
+              name="Revenue"
               dot={{ fill: '#3b82f6', r: 3 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="upsellRevenue"
-              stroke="#f97316"
-              strokeWidth={2}
-              name="Upsell Revenue"
-              dot={{ fill: '#f97316', r: 3 }}
             />
           </LineChart>
         </ResponsiveContainer>

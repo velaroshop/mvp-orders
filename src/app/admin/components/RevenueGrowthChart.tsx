@@ -5,30 +5,38 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 interface RevenueData {
   period: string;
   totalRevenue: number;
-  upsellRevenue: number;
   orderCount: number;
 }
 
 interface RevenueGrowthChartProps {
   data: RevenueData[];
+  comparisonData?: RevenueData[];
+  comparisonLabel?: string;
   granularity: 'hourly' | 'daily' | 'monthly';
   loading?: boolean;
 }
 
-export default function RevenueGrowthChart({ data, granularity, loading }: RevenueGrowthChartProps) {
+export default function RevenueGrowthChart({ data, comparisonData, comparisonLabel = "Yesterday", granularity, loading }: RevenueGrowthChartProps) {
+  // Build a map of comparison data by period
+  const comparisonMap = new Map<string, number>();
+  if (comparisonData) {
+    comparisonData.forEach(item => {
+      comparisonMap.set(item.period, item.totalRevenue);
+    });
+  }
+
+  const hasComparison = comparisonData && comparisonData.length > 0;
+
   // Format period for display based on granularity
   const formattedData = data.map(item => {
     let displayLabel = item.period;
 
     if (granularity === 'hourly') {
-      // Already in format "HH:00"
       displayLabel = item.period;
     } else if (granularity === 'daily') {
-      // Format: "YYYY-MM-DD" -> "DD MMM"
       const date = new Date(item.period);
       displayLabel = `${date.getUTCDate()} ${date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`;
     } else {
-      // Format: "YYYY-MM" -> "MMM YYYY"
       const [year, month] = item.period.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1);
       displayLabel = date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
@@ -37,6 +45,7 @@ export default function RevenueGrowthChart({ data, granularity, loading }: Reven
     return {
       ...item,
       displayLabel,
+      comparisonRevenue: comparisonMap.get(item.period) ?? null,
     };
   });
 
@@ -86,26 +95,36 @@ export default function RevenueGrowthChart({ data, granularity, loading }: Reven
                 borderRadius: '0.5rem',
                 color: '#fff'
               }}
-              formatter={(value: any) => `${Number(value).toFixed(2)} RON`}
+              formatter={(value: any, name: any) => {
+                if (name === comparisonLabel) {
+                  return [`${Number(value).toFixed(2)} RON`, comparisonLabel];
+                }
+                return [`${Number(value).toFixed(2)} RON`, 'Revenue'];
+              }}
             />
             <Legend
               wrapperStyle={{ color: '#a1a1aa' }}
             />
+            {hasComparison && (
+              <Line
+                type="monotone"
+                dataKey="comparisonRevenue"
+                stroke="#71717a"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                name={comparisonLabel}
+                dot={false}
+                opacity={0.7}
+                connectNulls={false}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="totalRevenue"
               stroke="#3b82f6"
               strokeWidth={2}
-              name="Total Revenue"
+              name="Revenue"
               dot={{ fill: '#3b82f6', r: 4 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="upsellRevenue"
-              stroke="#f97316"
-              strokeWidth={2}
-              name="Upsell Revenue"
-              dot={{ fill: '#f97316', r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>

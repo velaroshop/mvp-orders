@@ -121,10 +121,16 @@ export async function GET(request: NextRequest) {
         revenueData[hourKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
       }
     } else if (granularity === 'daily') {
-      // Generate all days in the range
-      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-        const dayKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+      // Generate all days using original Romania local date strings (not UTC-converted dates)
+      // startDate/endDate are "YYYY-MM-DD" representing Romania local dates
+      const actualStart = startDate || new Date().toISOString().split("T")[0];
+      const actualEnd = endDate || actualStart;
+      const currentDay = new Date(actualStart + 'T12:00:00Z'); // noon UTC to avoid DST edge cases
+      const lastDay = new Date(actualEnd + 'T12:00:00Z');
+      while (currentDay <= lastDay) {
+        const dayKey = currentDay.toISOString().split('T')[0];
         revenueData[dayKey] = { totalRevenue: 0, upsellRevenue: 0, count: 0 };
+        currentDay.setUTCDate(currentDay.getUTCDate() + 1);
       }
     } else {
       // Generate all months in the range (starting from first order month)

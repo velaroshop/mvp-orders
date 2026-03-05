@@ -14,6 +14,8 @@ import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal
 import SyncStatusModal from "../components/SyncStatusModal";
 import CallOrderModal from "../components/CallOrderModal";
 import CallHistoryModal from "../components/CallHistoryModal";
+import ChangeOrderModal from "../components/ChangeOrderModal";
+import type { ChangeOrderData } from "../components/ChangeOrderModal";
 import Toast from "../components/Toast";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
@@ -101,6 +103,10 @@ export default function AdminPage() {
   const [isDeleteTestModalOpen, setIsDeleteTestModalOpen] = useState(false);
   const [orderToDeleteTest, setOrderToDeleteTest] = useState<string | null>(null);
   const [isDeletingTest, setIsDeletingTest] = useState(false);
+
+  // Change Order Modal state
+  const [isChangeOrderModalOpen, setIsChangeOrderModalOpen] = useState(false);
+  const [changeOrderSelected, setChangeOrderSelected] = useState<Order | null>(null);
 
   // Call Order Modal state
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
@@ -687,6 +693,66 @@ export default function AdminPage() {
     }
   }
 
+  async function handleChangeOrderConfirm(changes: ChangeOrderData): Promise<void> {
+    if (!changeOrderSelected) return;
+
+    const orderId = changeOrderSelected.id;
+    const originalOrder = orders.find(o => o.id === orderId);
+    if (!originalOrder) return;
+
+    // Optimistic update
+    updateOrderLocally(orderId, {
+      productQuantity: changes.productQuantity,
+      subtotal: changes.subtotal,
+      shippingCost: changes.shippingCost,
+      total: changes.total,
+      upsells: changes.upsells as any,
+    });
+
+    // Close modal
+    setIsChangeOrderModalOpen(false);
+    setChangeOrderSelected(null);
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/change`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(changes),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to change order");
+      }
+
+      let message = "Comanda a fost modificată cu succes";
+      if (data.helpshipWarning) {
+        message += ` (Atenție: ${data.helpshipWarning})`;
+      }
+      if (data.newHelpshipOrderId) {
+        updateOrderLocally(orderId, { helpshipOrderId: data.newHelpshipOrderId });
+      }
+
+      setToast({ isOpen: true, type: "success", message });
+    } catch (error) {
+      console.error("Error changing order:", error);
+      // Rollback
+      updateOrderLocally(orderId, {
+        productQuantity: originalOrder.productQuantity,
+        subtotal: originalOrder.subtotal,
+        shippingCost: originalOrder.shippingCost,
+        total: originalOrder.total,
+        upsells: originalOrder.upsells,
+      });
+      setToast({
+        isOpen: true,
+        type: "error",
+        message: error instanceof Error ? error.message : "Eroare la modificarea comenzii",
+      });
+    }
+  }
+
   async function handleCancelConfirm(note: string): Promise<void> {
     if (!cancelOrderId) return;
 
@@ -1203,6 +1269,16 @@ export default function AdminPage() {
     if (action === "delete-test") {
       setOrderToDeleteTest(orderId);
       setIsDeleteTestModalOpen(true);
+      setOpenDropdown(null);
+      return;
+    }
+
+    if (action === "change") {
+      const order = orders.find((o) => o.id === orderId);
+      if (order) {
+        setChangeOrderSelected(order);
+        setIsChangeOrderModalOpen(true);
+      }
       setOpenDropdown(null);
       return;
     }
@@ -2170,6 +2246,14 @@ export default function AdminPage() {
                                 >
                                   Order Note
                                 </button>
+                                {(order.status === "pending" || order.status === "confirmed" || order.status === "hold") && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "change")}
+                                    className="w-full text-left px-3 py-2 text-xs text-amber-400 hover:bg-amber-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    Modifică Comanda
+                                  </button>
+                                )}
                                 {order.helpshipOrderId && (
                                   <>
                                     <button
@@ -2335,6 +2419,17 @@ export default function AdminPage() {
                 }}
                 onConfirm={handleCancelConfirm}
                 orderId={cancelOrderId || ""}
+              />
+
+              {/* Change Order Modal */}
+              <ChangeOrderModal
+                order={changeOrderSelected}
+                isOpen={isChangeOrderModalOpen}
+                onClose={() => {
+                  setIsChangeOrderModalOpen(false);
+                  setChangeOrderSelected(null);
+                }}
+                onConfirm={handleChangeOrderConfirm}
               />
 
               {/* Finalize Queue Modal */}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import type { PartialOrder, OfferCode } from "@/lib/types";
-import { sanitizeStreet } from "@/lib/sanitizeStreet";
 
 interface ConfirmPartialOrderModalProps {
   isOpen: boolean;
@@ -75,21 +74,7 @@ export default function ConfirmPartialOrderModal({
       setPhone(phoneValue);
       setCounty(partialOrder.county || "");
       setCity(partialOrder.city || "");
-      // Auto-split: dacă nu avem detalii adresă, extragem automat cu sanitizeStreet
-      const rawAddress = partialOrder.address || "";
-      if (rawAddress) {
-        const result = sanitizeStreet(rawAddress);
-        if (result.details) {
-          setAddress(result.street);
-          setAddressDetails(result.details);
-        } else {
-          setAddress(rawAddress);
-          setAddressDetails("");
-        }
-      } else {
-        setAddress("");
-        setAddressDetails("");
-      }
+      setAddress(partialOrder.address || "");
       setSelectedOffer(partialOrder.offerCode || "offer_1");
       setNoteLine1("");
       setNoteLine2("");

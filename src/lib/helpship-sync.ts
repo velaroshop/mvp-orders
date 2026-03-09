@@ -119,6 +119,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       county: order.county,
       city: order.city,
       address: order.address,
+      addressDetails: order.address_details || undefined,
       offerCode: order.offer_code,
       productSku: order.product_sku || null,
       productName: order.product_name || null,

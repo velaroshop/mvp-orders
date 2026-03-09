@@ -821,6 +821,7 @@ export default function AdminPage() {
       county: updatedOrder.county,
       city: updatedOrder.city,
       address: updatedOrder.address,
+      addressDetails: updatedOrder.addressDetails,
       postalCode: updatedOrder.postalCode,
       scheduledDate: updatedOrder.scheduledDate,
     };
@@ -868,6 +869,7 @@ export default function AdminPage() {
         county: originalOrder.county,
         city: originalOrder.city,
         address: originalOrder.address,
+        addressDetails: originalOrder.addressDetails,
         postalCode: originalOrder.postalCode,
         scheduledDate: originalOrder.scheduledDate,
       });
@@ -946,6 +948,7 @@ export default function AdminPage() {
           county: savedScheduledOrder.county,
           city: savedScheduledOrder.city,
           address: savedScheduledOrder.address,
+          addressDetails: savedScheduledOrder.addressDetails,
           postalCode: savedScheduledOrder.postalCode,
           scheduledDate: "", // Empty to confirm immediately
         }),

@@ -17,6 +17,7 @@ export interface ConfirmPartialData {
   county: string;
   city: string;
   address: string;
+  addressDetails?: string;
   selectedOffer: OfferCode;
   orderNote?: string;
 }
@@ -33,6 +34,7 @@ export default function ConfirmPartialOrderModal({
   const [county, setCounty] = useState("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [addressDetails, setAddressDetails] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
   const [noteLine1, setNoteLine1] = useState("");
   const [noteLine2, setNoteLine2] = useState("");
@@ -155,6 +157,7 @@ export default function ConfirmPartialOrderModal({
       county: county.trim(),
       city: city.trim(),
       address: address.trim(),
+      addressDetails: addressDetails.trim() || undefined,
       selectedOffer,
       orderNote: note || undefined,
     });
@@ -378,6 +381,20 @@ export default function ConfirmPartialOrderModal({
               {errors.address && (
                 <p className="mt-0.5 text-xs text-red-400">{errors.address}</p>
               )}
+            </div>
+
+            {/* Address Details */}
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                Detalii Adres&#259;
+              </label>
+              <input
+                type="text"
+                value={addressDetails}
+                onChange={(e) => setAddressDetails(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Bloc, scar&#259;, apartament, indica&#539;ii..."
+              />
             </div>
           </div>
 

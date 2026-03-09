@@ -39,7 +39,7 @@ export default function ConfirmOrderModal({
     county: "",
     city: "",
     address: "",
-    streetNumber: "",
+    addressDetails: "",
     postalCode: "",
     scheduledDate: "",
   });
@@ -152,7 +152,7 @@ export default function ConfirmOrderModal({
         county: order.county || "",
         city: order.city || "",
         address: order.address || "",
-        streetNumber: "",
+        addressDetails: order.addressDetails || "",
         postalCode: order.postalCode || "",
         scheduledDate: "",
       };
@@ -188,13 +188,13 @@ export default function ConfirmOrderModal({
 
     try {
       // Trimite datele actualizate la onConfirm
-      const updatedOrder: Partial<Order> & { streetNumber?: string } = {
+      const updatedOrder: Partial<Order> & { addressDetails?: string } = {
         fullName: formData.fullName,
         phone: formData.phone,
         county: formData.county,
         city: formData.city,
         address: formData.address,
-        streetNumber: formData.streetNumber,
+        addressDetails: formData.addressDetails,
         postalCode: formData.postalCode,
         scheduledDate: formData.scheduledDate || undefined,
       };
@@ -519,7 +519,7 @@ export default function ConfirmOrderModal({
                   type="button"
                   onClick={() => {
                     const result = sanitizeStreet(formData.address);
-                    setFormData((prev) => ({ ...prev, address: result.street, streetNumber: result.number }));
+                    setFormData((prev) => ({ ...prev, address: result.street, addressDetails: result.details || prev.addressDetails }));
                   }}
                   className="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
                 >
@@ -568,35 +568,35 @@ export default function ConfirmOrderModal({
 
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Street / Nr. <span className="text-red-400">*</span>
+                  Adres&#259; <span className="text-red-400">*</span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Street"
-                  />
-                  <input
-                    type="text"
-                    value={formData.streetNumber}
-                    onChange={(e) =>
-                      setFormData({ ...formData, streetNumber: e.target.value })
-                    }
-                    className={`w-20 rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 ${
-                      formData.streetNumber.trim()
-                        ? 'border-zinc-700 focus:ring-emerald-500'
-                        : 'border-red-500 focus:ring-red-500'
-                    }`}
-                    placeholder="Nr. *"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Strada &#537;i num&#259;rul"
+                />
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  Initial street: {order.address}
+                  Adresa initial&#259;: {order.address}
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-0.5">
+                  Detalii Adres&#259;
+                </label>
+                <input
+                  type="text"
+                  value={formData.addressDetails}
+                  onChange={(e) =>
+                    setFormData({ ...formData, addressDetails: e.target.value })
+                  }
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Bloc, scar&#259;, apartament, indica&#539;ii..."
+                />
               </div>
 
               <div>
@@ -715,14 +715,10 @@ export default function ConfirmOrderModal({
                  )}
 
                  {/* Required fields warning */}
-                 {(!formData.postalCode.trim() || !formData.streetNumber.trim()) && (
+                 {!formData.postalCode.trim() && (
                    <div className="mt-3 p-2 bg-amber-900/20 border border-amber-700 rounded-md">
                      <p className="text-xs text-amber-400">
-                       <span className="font-medium">Câmpuri obligatorii lipsă:</span>{' '}
-                       {[
-                         !formData.streetNumber.trim() && 'Număr stradă',
-                         !formData.postalCode.trim() && 'Cod poștal',
-                       ].filter(Boolean).join(', ')}
+                       <span className="font-medium">Câmpuri obligatorii lipsă:</span> Cod po&#537;tal
                      </p>
                    </div>
                  )}
@@ -738,7 +734,7 @@ export default function ConfirmOrderModal({
                    </button>
                    <button
                      type="submit"
-                     disabled={isSubmitting || !formData.postalCode.trim() || !formData.streetNumber.trim()}
+                     disabled={isSubmitting || !formData.postalCode.trim()}
                      className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      {isSubmitting ? "Se salvează..." : "Save & Send"}

@@ -203,6 +203,7 @@ class HelpshipClient {
       county: string;
       city: string;
       address: string;
+      addressDetails?: string | null; // Detalii adresă (bloc, scara, apt)
       offerCode: string;
       productSku?: string | null; // SKU-ul produsului pentru Helpship (același pentru toate ofertele)
       productName?: string | null; // Numele produsului din baza noastră
@@ -232,14 +233,15 @@ class HelpshipClient {
       lastName,
     });
 
-    // Parsăm adresa pentru a extrage street, number, etc.
-    // Pentru MVP, punem tot în addressLine1 și street
-    // Extract just the street number (first number sequence), not everything after it
-    const addressParts = orderData.address.match(/^(.+?)\s+(\d+[A-Za-z]?)(?:\s|,|$)/);
-    const street = addressParts ? addressParts[1].trim() : orderData.address;
-    // Limit number to 50 chars max (Helpship API limit)
-    const rawNumber = addressParts ? addressParts[2].trim() : "";
-    const number = rawNumber.substring(0, 50);
+    // Adresă = strada + număr (addressLine1/street)
+    // Detalii adresă = bloc, scara, apt (addressLine2/number)
+    // Fallback: dacă nu avem addressDetails, extragem number cu regex (orders vechi)
+    let addressLine2 = orderData.addressDetails || "";
+    let extractedNumber = "";
+    if (!orderData.addressDetails) {
+      const addressParts = orderData.address.match(/^(.+?)\s+(\d+[A-Za-z]?)(?:\s|,|$)/);
+      extractedNumber = addressParts ? addressParts[2].trim().substring(0, 50) : "";
+    }
 
     // Obține GUID-ul pentru România (sau folosește null dacă nu se găsește)
     let countryId: string | null = null;
@@ -263,8 +265,9 @@ class HelpshipClient {
       currency: "RON",
       mailingAddress: {
         addressLine1: orderData.address,
-        street: street,
-        number: number || "",
+        addressLine2: addressLine2 || undefined,
+        street: orderData.address,
+        number: addressLine2 || extractedNumber || "",
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,

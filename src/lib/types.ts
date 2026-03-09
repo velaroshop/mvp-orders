@@ -52,7 +52,8 @@ export interface Order {
   county: string;
   city: string;
   address: string;
-  streetNumber?: string; // Numărul strazii extras separat
+  streetNumber?: string; // Numărul strazii extras separat (deprecated - use addressDetails)
+  addressDetails?: string; // Detalii adresă: bloc, scară, apt, indicații
   postalCode?: string; // Cod poștal sugerat de Helpship
   productName?: string; // Numele produsului
   productSku?: string; // SKU-ul produsului

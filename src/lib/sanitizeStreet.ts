@@ -140,17 +140,18 @@ function titleCaseStreetName(name: string): string {
 // ============================================================================
 
 /**
- * Result type for sanitization with street address and extracted number
+ * Result type for sanitization with street address, extracted number, and building details
  */
 export interface SanitizeResult {
   street: string;
   number: string;
+  details: string; // Building details: bloc, scara, etaj, apartament, indicații
 }
 
 export function sanitizeStreet(raw: string): SanitizeResult {
   // Step 1: Basic cleanup
   let cleaned = raw.trim();
-  if (!cleaned) return { street: '', number: '' };
+  if (!cleaned) return { street: '', number: '', details: '' };
 
   // Step 2: Normalize whitespace and remove separators
   cleaned = normalizeWhitespace(cleaned);
@@ -171,7 +172,7 @@ export function sanitizeStreet(raw: string): SanitizeResult {
 
   // Step 3: Tokenize
   const tokens = cleaned.split(' ');
-  if (tokens.length === 0) return { street: raw.trim(), number: '' };
+  if (tokens.length === 0) return { street: raw.trim(), number: '', details: '' };
 
   // Step 4: Detect street type (prefix)
   let streetType = '';
@@ -295,45 +296,41 @@ export function sanitizeStreet(raw: string): SanitizeResult {
   }
   const combinedNote = allNotes.length > 0 ? `(${allNotes.join(' - ')})` : '';
 
-  // Step 9: Build output
-  const parts: string[] = [];
+  // Step 9: Build output — street (address) separate from details
+  const streetParts: string[] = [];
 
   // Add street type if found
   if (streetType) {
-    parts.push(streetType);
+    streetParts.push(streetType);
   }
 
   // Add street name with title case
   if (streetNameTokens.length > 0) {
     const streetName = titleCaseStreetName(streetNameTokens.join(' '));
-    parts.push(streetName);
+    streetParts.push(streetName);
   }
 
-  // Add number to street address (keeping it in both places)
+  // Add number to street address (no comma — details go to separate field)
   if (numberToken) {
-    // Add comma after number if we have details or notes
-    if (details || combinedNote) {
-      parts.push('nr. ' + numberToken + ',');
-    } else {
-      parts.push('nr. ' + numberToken);
-    }
+    streetParts.push('nr. ' + numberToken);
   }
 
-  // Add details
+  const street = streetParts.join(' ') || raw.trim();
+
+  // Build details string (bloc, scara, etaj, apt + notes)
+  const detailsParts: string[] = [];
   if (details) {
-    parts.push(details);
+    detailsParts.push(details);
   }
-
-  // Add notes at the end in parentheses
   if (combinedNote) {
-    parts.push(combinedNote);
+    detailsParts.push(combinedNote);
   }
-
-  const street = parts.join(' ') || raw.trim();
+  const detailsString = detailsParts.join(' ');
 
   return {
     street,
-    number: numberToken
+    number: numberToken,
+    details: detailsString,
   };
 }
 

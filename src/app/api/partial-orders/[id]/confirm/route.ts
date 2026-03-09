@@ -29,12 +29,13 @@ export async function POST(
     const body = await request.json();
 
     // Data from modal
-    const { fullName, phone, county, city, address, selectedOffer, orderNote } = body as {
+    const { fullName, phone, county, city, address, addressDetails, selectedOffer, orderNote } = body as {
       fullName: string;
       phone: string;
       county: string;
       city: string;
       address: string;
+      addressDetails?: string;
       selectedOffer: OfferCode;
       orderNote?: string;
     };
@@ -189,6 +190,7 @@ export async function POST(
         county: county,
         city: city,
         address: address,
+        address_details: addressDetails || null,
         postal_code: null, // Will be set by Helpship
         product_name: landingPage.products?.name || partialOrder.product_name,
         product_sku: landingPage.products?.sku || partialOrder.product_sku,

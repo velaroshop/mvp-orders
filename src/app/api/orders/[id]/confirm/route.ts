@@ -30,7 +30,7 @@ export async function POST(
       county,
       city,
       address,
-      streetNumber,
+      addressDetails,
       postalCode,
       scheduledDate,
     } = body;
@@ -42,7 +42,7 @@ export async function POST(
       county: county || '(empty)',
       city: city || '(empty)',
       address: address || '(empty)',
-      streetNumber: streetNumber || '(empty)',
+      addressDetails: addressDetails || '(empty)',
       postalCode: postalCode || '(empty)',
       scheduledDate: scheduledDate || '(empty)',
     });
@@ -89,6 +89,7 @@ export async function POST(
       if (county) updateData.county = county;
       if (city) updateData.city = city;
       if (address) updateData.address = address;
+      if (addressDetails !== undefined) updateData.address_details = addressDetails || null;
       if (postalCode) updateData.postal_code = postalCode;
 
       const { error: updateError } = await supabaseAdmin
@@ -155,7 +156,7 @@ export async function POST(
             county: county || order.county,
             city: city || order.city,
             address: address || order.address,
-            addressLine2: streetNumber || undefined,
+            addressLine2: addressDetails || undefined,
             zip: postalCode,
           },
         };
@@ -190,6 +191,7 @@ export async function POST(
     if (county) updateData.county = county;
     if (city) updateData.city = city;
     if (address) updateData.address = address;
+    if (addressDetails !== undefined) updateData.address_details = addressDetails || null;
     if (postalCode) updateData.postal_code = postalCode;
 
     // Log pentru debugging - ce salvăm în DB

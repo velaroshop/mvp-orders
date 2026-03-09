@@ -146,13 +146,24 @@ export default function ConfirmOrderModal({
       setNoteSaved(false);
 
       // Populare instant din datele din DB
+      // Auto-split: dacă addressDetails e gol, rulăm sanitizeStreet pentru a extrage detaliile automat
+      let initialAddress = order.address || "";
+      let initialDetails = order.addressDetails || "";
+      if (!initialDetails && initialAddress) {
+        const result = sanitizeStreet(initialAddress);
+        if (result.details) {
+          initialAddress = result.street;
+          initialDetails = result.details;
+        }
+      }
+
       const initialData = {
         fullName: order.fullName || "",
         phone: order.phone || "",
         county: order.county || "",
         city: order.city || "",
-        address: order.address || "",
-        addressDetails: order.addressDetails || "",
+        address: initialAddress,
+        addressDetails: initialDetails,
         postalCode: order.postalCode || "",
         scheduledDate: "",
       };

@@ -817,7 +817,7 @@ class HelpshipClient {
             addressLine1: street,
             addressLine2: addressDetails,
             street: street,
-            number: addressDetails,
+            number: "",
             zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,
             city: updates.shippingAddress?.city || currentAddress.city || "",
             province: updates.shippingAddress?.county || currentAddress.province || "",

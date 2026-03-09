@@ -267,7 +267,7 @@ class HelpshipClient {
         addressLine1: orderData.address,
         addressLine2: addressLine2 || undefined,
         street: orderData.address,
-        number: addressLine2 || extractedNumber || "",
+        number: "",
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,

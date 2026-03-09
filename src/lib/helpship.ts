@@ -806,18 +806,18 @@ class HelpshipClient {
           const firstName = nameParts[0] || null;
           const lastName = nameParts.slice(1).join(" ") || null;
           
-          // Street = full address string, Number = extracted number from addressLine2
+          // Street = full address (strada + nr), addressLine2 = detalii adresă (bloc, scara, apt)
           const street = updates.shippingAddress?.address || currentAddress.addressLine1 || "";
-          const number = updates.shippingAddress?.addressLine2 || currentAddress.number || null;
+          const addressDetails = updates.shippingAddress?.addressLine2 ?? currentAddress.addressLine2 ?? null;
 
           // Construim payload-ul pentru updateAddress
           const addressPayload: any = {
             firstName: firstName || currentAddress.firstName || null,
             lastName: lastName || currentAddress.lastName || null,
             addressLine1: street,
-            addressLine2: number,
+            addressLine2: addressDetails,
             street: street,
-            number: number,
+            number: addressDetails,
             zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,
             city: updates.shippingAddress?.city || currentAddress.city || "",
             province: updates.shippingAddress?.county || currentAddress.province || "",

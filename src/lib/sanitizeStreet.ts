@@ -34,6 +34,10 @@ const STREET_TYPE_MAP: Record<string, string> = {
   'bul.': 'Bulevardul',
   'blv': 'Bulevardul',
   'blv.': 'Bulevardul',
+  'bdul': 'Bulevardul',
+  'bdul.': 'Bulevardul',
+  'b-dul': 'Bulevardul',
+  'b-dul.': 'Bulevardul',
   'bulevard': 'Bulevardul',
   'bulevardul': 'Bulevardul',
 

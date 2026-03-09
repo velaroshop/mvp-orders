@@ -265,9 +265,9 @@ class HelpshipClient {
       currency: "RON",
       mailingAddress: {
         addressLine1: orderData.address,
-        addressLine2: addressLine2 || undefined,
+        addressLine2: addressLine2 || extractedNumber || undefined,
         street: orderData.address,
-        number: "",
+        number: addressLine2 || extractedNumber || "",
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,
@@ -817,7 +817,7 @@ class HelpshipClient {
             addressLine1: street,
             addressLine2: addressDetails,
             street: street,
-            number: "",
+            number: addressDetails || "",
             zip: updates.postalCode || updates.shippingAddress?.zip || currentAddress.zip || null,
             city: updates.shippingAddress?.city || currentAddress.city || "",
             province: updates.shippingAddress?.county || currentAddress.province || "",

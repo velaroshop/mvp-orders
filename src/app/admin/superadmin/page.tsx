@@ -351,38 +351,24 @@ export default function SuperadminPage() {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-zinc-500"></div>
             ) : (
               <>
-                <span className={`text-sm font-medium ${
-                  systemSettings?.helpshipEnvironment === "development"
-                    ? "text-amber-400"
-                    : "text-emerald-400"
-                }`}>
-                  {systemSettings?.helpshipEnvironment === "development" ? "DEVELOPMENT" : "PRODUCTION"}
+                <span className="text-sm font-medium text-emerald-400">
+                  PRODUCTION
                 </span>
-                <button
-                  onClick={handleToggleEnvironment}
-                  disabled={isTogglingEnvironment}
-                  className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    systemSettings?.helpshipEnvironment === "production"
-                      ? "bg-emerald-600"
-                      : "bg-amber-600"
-                  }`}
+                <div
+                  className="relative inline-flex h-7 w-14 shrink-0 rounded-full border-2 border-transparent bg-emerald-600 opacity-50 cursor-not-allowed"
+                  title="Locked to Production"
                 >
                   <span
-                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      systemSettings?.helpshipEnvironment === "production"
-                        ? "translate-x-7"
-                        : "translate-x-0"
-                    }`}
+                    className="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 translate-x-7"
                   />
-                </button>
+                </div>
               </>
             )}
           </div>
         </div>
         <div className="mt-4 p-3 bg-zinc-900 rounded-md">
           <p className="text-xs text-zinc-500">
-            <strong className="text-zinc-400">Warning:</strong> Switching to DEVELOPMENT mode will send all orders to the test API.
-            Switch back to PRODUCTION before going live. This setting affects ALL organizations.
+            <strong className="text-zinc-400">Locked:</strong> Helpship API is permanently set to Production mode. This cannot be changed from the UI.
           </p>
         </div>
       </div>

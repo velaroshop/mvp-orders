@@ -87,8 +87,18 @@ export async function GET(request: NextRequest) {
                   await helpshipClient.updateOrder(order.helpship_order_id, {
                     status: "PENDING",
                     paymentStatus: "Pending",
+                    customerName: order.full_name,
+                    customerPhone: order.phone,
+                    postalCode: order.postal_code || undefined,
+                    shippingAddress: {
+                      county: order.county,
+                      city: order.city,
+                      address: order.address,
+                      addressLine2: order.address_details || undefined,
+                      zip: order.postal_code || undefined,
+                    },
                   });
-                  console.log(`[Cron] Order ${order.helpship_order_id} updated to PENDING in Helpship`);
+                  console.log(`[Cron] Order ${order.helpship_order_id} updated to PENDING in Helpship (with address data)`);
                 }
               }
             }

@@ -73,8 +73,6 @@ export async function GET(request: NextRequest) {
         .from("orders")
         .select("total, product_quantity, upsells, status, product_sku, product_name, source, from_partial_id")
         .eq("organization_id", organizationId)
-        .neq("status", "cancelled")
-        .neq("status", "testing")
         .gte("created_at", startDateTime)
         .lte("created_at", endDateTime)
         .range(from, to);
@@ -118,6 +116,11 @@ export async function GET(request: NextRequest) {
 
     const filteredOrders = orders || [];
 
+    // Orders excluding cancelled/testing for revenue/KPI calculations
+    const revenueOrders = filteredOrders.filter((order: any) =>
+      order.status !== "cancelled" && order.status !== "testing"
+    );
+
     // Fetch current product names from products table (canonical names)
     const { data: products } = await supabase
       .from("products")
@@ -131,37 +134,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Calculate stats
-    const totalRevenue = filteredOrders.reduce(
-      (sum, order: any) => sum + (order.total || 0),
-      0
-    );
-    const orderCount = filteredOrders.length;
-    const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
-
-    // Calculate products sold (sum of product_quantity from each order)
-    const productsSold = filteredOrders.reduce((sum, order: any) => {
-      return sum + (order.product_quantity || 0);
-    }, 0);
-
-    // Calculate upsell rate (percentage of orders with at least one upsell)
-    // Check if order has upsells in the upsells JSONB field
-    const ordersWithUpsells = filteredOrders.filter((order: any) => {
-      const upsells = order.upsells || [];
-      return Array.isArray(upsells) && upsells.length > 0;
-    }).length;
-    const upsellRate = orderCount > 0 ? (ordersWithUpsells / orderCount) * 100 : 0;
-
-    // Calculate orders by status
+    // Calculate orders by status (ALL orders, including cancelled/testing)
     const statusCounts: Record<string, number> = {};
     filteredOrders.forEach((order: any) => {
       const status = order.status || "unknown";
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
+    // Calculate stats (excluding cancelled/testing from revenue)
+    const totalRevenue = revenueOrders.reduce(
+      (sum, order: any) => sum + (order.total || 0),
+      0
+    );
+    const orderCount = revenueOrders.length;
+    const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+
+    // Calculate products sold (sum of product_quantity from each order)
+    const productsSold = revenueOrders.reduce((sum, order: any) => {
+      return sum + (order.product_quantity || 0);
+    }, 0);
+
+    // Calculate upsell rate (percentage of orders with at least one upsell)
+    const ordersWithUpsells = revenueOrders.filter((order: any) => {
+      const upsells = order.upsells || [];
+      return Array.isArray(upsells) && upsells.length > 0;
+    }).length;
+    const upsellRate = orderCount > 0 ? (ordersWithUpsells / orderCount) * 100 : 0;
+
     // Calculate revenue by product (grouped by SKU to avoid duplicates from name changes)
     const productRevenue: Record<string, { name: string; revenue: number; unitsSold: number; orders: number; partialOrders: number }> = {};
-    filteredOrders.forEach((order: any) => {
+    revenueOrders.forEach((order: any) => {
       const sku = order.product_sku || order.product_name || "Unknown Product";
       const skuKey = sku.toUpperCase();
       const displayName = skuToName[skuKey] || order.product_name || sku;
@@ -186,7 +188,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate product sales analysis (units sold per product, grouped by SKU)
     const productSales: Record<string, { name: string; totalSold: number }> = {};
-    filteredOrders.forEach((order: any) => {
+    revenueOrders.forEach((order: any) => {
       const sku = order.product_sku || order.product_name || "Unknown Product";
       const skuKey = sku.toUpperCase();
       const displayName = skuToName[skuKey] || order.product_name || sku;
@@ -280,7 +282,7 @@ export async function GET(request: NextRequest) {
       postsaleRevenue: number;
     }> = {};
 
-    filteredOrders.forEach((order: any) => {
+    revenueOrders.forEach((order: any) => {
       const upsells = order.upsells || [];
       if (Array.isArray(upsells)) {
         upsells.forEach((upsell: any) => {

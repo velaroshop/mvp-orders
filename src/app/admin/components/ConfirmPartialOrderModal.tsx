@@ -386,15 +386,24 @@ export default function ConfirmPartialOrderModal({
             {/* Address Details */}
             <div className="mt-3">
               <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                Detalii Adres&#259;
+                Detalii Adres&#259; ({addressDetails.length}/30)
               </label>
               <input
                 type="text"
                 value={addressDetails}
                 onChange={(e) => setAddressDetails(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className={`w-full px-2.5 py-1.5 bg-zinc-800 border rounded-md text-sm text-white focus:outline-none focus:ring-2 ${
+                  addressDetails.length > 30
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-zinc-700 focus:ring-emerald-500'
+                }`}
                 placeholder="Bloc, scar&#259;, apartament, indica&#539;ii..."
               />
+              {addressDetails.length > 30 && (
+                <p className="mt-0.5 text-xs text-red-400">
+                  Max 30 caractere (dep&#259;&#537;e&#537;te cu {addressDetails.length - 30})
+                </p>
+              )}
             </div>
           </div>
 
@@ -554,7 +563,7 @@ export default function ConfirmPartialOrderModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isConfirming}
+            disabled={isConfirming || addressDetails.length > 30}
             className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             {isConfirming ? "Confirming..." : "Save & Send"}

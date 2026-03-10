@@ -586,7 +586,7 @@ export default function ConfirmOrderModal({
 
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-0.5">
-                  Detalii Adres&#259;
+                  Detalii Adres&#259; ({formData.addressDetails.length}/30)
                 </label>
                 <input
                   type="text"
@@ -594,9 +594,18 @@ export default function ConfirmOrderModal({
                   onChange={(e) =>
                     setFormData({ ...formData, addressDetails: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`w-full rounded-md border bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 ${
+                    formData.addressDetails.length > 30
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-zinc-700 focus:ring-emerald-500'
+                  }`}
                   placeholder="Bloc, scar&#259;, apartament, indica&#539;ii..."
                 />
+                {formData.addressDetails.length > 30 && (
+                  <p className="text-xs text-red-400 mt-0.5">
+                    Max 30 caractere (dep&#259;&#537;e&#537;te cu {formData.addressDetails.length - 30})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -715,10 +724,12 @@ export default function ConfirmOrderModal({
                  )}
 
                  {/* Required fields warning */}
-                 {!formData.postalCode.trim() && (
+                 {(!formData.postalCode.trim() || formData.addressDetails.length > 30) && (
                    <div className="mt-3 p-2 bg-amber-900/20 border border-amber-700 rounded-md">
                      <p className="text-xs text-amber-400">
-                       <span className="font-medium">Câmpuri obligatorii lipsă:</span> Cod po&#537;tal
+                       <span className="font-medium">Probleme:</span>
+                       {!formData.postalCode.trim() && " Cod po\u0219tal lipsă."}
+                       {formData.addressDetails.length > 30 && " Detalii adresă prea lungi (max 30 caractere)."}
                      </p>
                    </div>
                  )}
@@ -734,7 +745,7 @@ export default function ConfirmOrderModal({
                    </button>
                    <button
                      type="submit"
-                     disabled={isSubmitting || !formData.postalCode.trim()}
+                     disabled={isSubmitting || !formData.postalCode.trim() || formData.addressDetails.length > 30}
                      className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      {isSubmitting ? "Se salvează..." : "Save & Send"}

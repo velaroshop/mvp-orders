@@ -401,12 +401,22 @@ function parseDetails(tokens: string[]): ParseDetailsResult {
     i++;
   }
 
-  // Build details string in standard order: scara -> bloc -> etaj -> apartament -> interfon
-  const order = ['scara', 'bloc', 'etaj', 'apartament', 'interfon'];
-  const sorted = details.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+  // Build details string in standard order: scara -> bloc -> etaj -> ap.
+  // Interfon is excluded from output (not needed for Helpship)
+  const order = ['scara', 'bloc', 'etaj', 'apartament'];
+  const sorted = details
+    .filter(d => d.type !== 'interfon')
+    .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+
+  const DETAIL_LABEL: Record<string, string> = {
+    'bloc': 'bloc',
+    'scara': 'scara',
+    'etaj': 'etaj',
+    'apartament': 'ap.',
+  };
 
   return {
-    details: sorted.map(d => `${d.type} ${d.value}`).join(', '),
+    details: sorted.map(d => `${DETAIL_LABEL[d.type] || d.type} ${d.value}`).join(', '),
     extraNotes,
   };
 }

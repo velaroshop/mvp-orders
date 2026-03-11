@@ -235,13 +235,8 @@ class HelpshipClient {
 
     // Adresă = strada + număr (addressLine1/street)
     // Detalii adresă = bloc, scara, apt (addressLine2/number)
-    // Fallback: dacă nu avem addressDetails, extragem number cu regex (orders vechi)
-    let addressLine2 = orderData.addressDetails || "";
-    let extractedNumber = "";
-    if (!orderData.addressDetails) {
-      const addressParts = orderData.address.match(/^(.+?)\s+(\d+[A-Za-z]?)(?:\s|,|$)/);
-      extractedNumber = addressParts ? addressParts[2].trim().substring(0, 50) : "";
-    }
+    // addressDetails is only populated when the operator fills it in the confirm modal
+    const addressLine2 = orderData.addressDetails || "";
 
     // Obține GUID-ul pentru România (sau folosește null dacă nu se găsește)
     let countryId: string | null = null;
@@ -265,9 +260,9 @@ class HelpshipClient {
       currency: "RON",
       mailingAddress: {
         addressLine1: orderData.address,
-        addressLine2: addressLine2 || extractedNumber || undefined,
+        addressLine2: addressLine2 || undefined,
         street: orderData.address,
-        number: addressLine2 || extractedNumber || "",
+        number: addressLine2 || "",
         zip: "", // TODO: adăugați cod poștal dacă îl aveți
         city: orderData.city,
         province: orderData.county,

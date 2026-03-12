@@ -124,9 +124,9 @@ export async function POST(
       }, 0);
     }
 
-    const subtotal = price + upsellsTotal;
+    const subtotal = price;
     const shippingCost = landingPage.shipping_price || 0;
-    const total = subtotal + shippingCost;
+    const total = subtotal + upsellsTotal + shippingCost;
 
     // Fetch order_series from store via landing_page
     let orderSeries = "VLR-"; // Default fallback

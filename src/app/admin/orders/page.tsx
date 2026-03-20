@@ -1460,7 +1460,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-zinc-900">
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="max-w-7xl px-4 py-8">
         <header className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>

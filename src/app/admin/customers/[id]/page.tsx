@@ -318,7 +318,7 @@ export default function CustomerDetailsPage() {
                     Status
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                    Tracking
+                    Produse
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                     Dată
@@ -365,27 +365,37 @@ export default function CustomerDetailsPage() {
                         {getStatusLabel(order.status)}
                       </span>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap">
-                      {order.status === "confirmed" && order.helpshipOrderId ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openTrackingModal(order);
-                          }}
-                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-tight whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity ${getTrackingStatusColor(order.trackingStatus)}`}
-                          title="Click pentru detalii tracking"
-                        >
-                          {order.trackingStatus ? (
-                            <>
-                              📦 {getTrackingStatusLabel(order.trackingStatus)}
-                            </>
-                          ) : (
-                            "📦 Tracking"
-                          )}
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-zinc-600">-</span>
-                      )}
+                    <td className="px-3 py-2">
+                      <div className="flex flex-col gap-0.5 max-w-50">
+                        {order.productName && (
+                          <div className="flex items-center gap-1">
+                            <span className="shrink-0 text-[9px] font-semibold text-blue-400">Principal</span>
+                            <span className="text-[10px] text-zinc-300 truncate" title={order.productName}>
+                              {order.productName}
+                            </span>
+                          </div>
+                        )}
+                        {order.upsells && order.upsells
+                          .filter((u: any) => u.type === "presale")
+                          .map((upsell: any, idx: number) => (
+                            <div key={`pre-${idx}`} className="flex items-center gap-1">
+                              <span className="shrink-0 text-[9px] font-semibold text-purple-400">Pre</span>
+                              <span className="text-[10px] text-zinc-300 truncate" title={upsell.name || upsell.productName}>
+                                {upsell.name || upsell.productName}
+                              </span>
+                            </div>
+                          ))}
+                        {order.upsells && order.upsells
+                          .filter((u: any) => u.type === "postsale")
+                          .map((upsell: any, idx: number) => (
+                            <div key={`post-${idx}`} className="flex items-center gap-1">
+                              <span className="shrink-0 text-[9px] font-semibold text-orange-400">Post</span>
+                              <span className="text-[10px] text-zinc-300 truncate" title={upsell.name || upsell.productName}>
+                                {upsell.name || upsell.productName}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       <div className="text-xs text-zinc-300">

@@ -2342,7 +2342,16 @@ export default function AdminPage() {
               Afișare {(currentPage - 1) * ordersPerPage + 1}-{Math.min(currentPage * ordersPerPage, totalOrders)} din {totalOrders} comenzi
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
+              {/* First page button */}
+              <button
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                «
+              </button>
+
               {/* Previous button */}
               <button
                 onClick={() => goToPage(currentPage - 1)}
@@ -2359,6 +2368,15 @@ export default function AdminPage() {
                 className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Următor →
+              </button>
+
+              {/* Last page button */}
+              <button
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                »
               </button>
             </div>
           </div>

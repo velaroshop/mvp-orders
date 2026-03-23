@@ -274,6 +274,31 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Collect all unique SKUs from upsells to look up product names
+    const allSkus = new Set<string>();
+    revenueOrders.forEach((order: any) => {
+      const upsells = order.upsells || [];
+      if (Array.isArray(upsells)) {
+        upsells.forEach((upsell: any) => {
+          if (upsell.productSku) allSkus.add(upsell.productSku);
+        });
+      }
+    });
+
+    // Fetch product names by SKU in a single query
+    const skuToName: Record<string, string> = {};
+    if (allSkus.size > 0) {
+      const { data: products } = await supabaseAdmin
+        .from("products")
+        .select("sku, name")
+        .in("sku", Array.from(allSkus));
+      if (products) {
+        products.forEach((p: any) => {
+          if (p.sku && p.name) skuToName[p.sku] = p.name;
+        });
+      }
+    }
+
     // Calculate upsells split by product and type
     const upsellsByProduct: Record<string, {
       presale: number;
@@ -286,7 +311,7 @@ export async function GET(request: NextRequest) {
       const upsells = order.upsells || [];
       if (Array.isArray(upsells)) {
         upsells.forEach((upsell: any) => {
-          const productName = upsell.product_name || upsell.title || "Unknown Upsell";
+          const productName = (upsell.productSku && skuToName[upsell.productSku]) || upsell.title || "Unknown Upsell";
           const quantity = upsell.quantity || 1;
           const price = upsell.price || 0;
           const type = upsell.type || "presale";

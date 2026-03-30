@@ -142,9 +142,9 @@ export async function GET(request: NextRequest) {
       product = productData;
     }
 
-    // Use Romania timezone for date filtering (UTC+2)
-    const startDateTime = `${startDateStr}T00:00:00+02:00`;
-    const endDateTime = `${endDateStr}T23:59:59+02:00`;
+    // Use Romania timezone for date filtering (UTC+3 summer time)
+    const startDateTime = `${startDateStr}T00:00:00+03:00`;
+    const endDateTime = `${endDateStr}T23:59:59+03:00`;
 
     // Fetch all orders using pagination (Supabase server-side max_rows caps single requests to 1000)
     const allOrders: any[] = [];
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
     const orders = allOrders;
 
     // Group orders by date (Romania time)
-    const ROMANIA_OFFSET_HOURS = 2;
+    const ROMANIA_OFFSET_HOURS = 3;
     const ordersByDate: Map<
       string,
       { revenue: number; count: number; productsSold: number }

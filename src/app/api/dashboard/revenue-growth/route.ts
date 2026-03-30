@@ -37,13 +37,13 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Build datetime range using Romania timezone (UTC+2 winter, UTC+3 summer)
+    // Build datetime range using Romania timezone (UTC+3 summer time)
     // This ensures "Today" shows orders from 00:00 to 23:59 Romania time
     const startDateTime = startDate
-      ? new Date(`${startDate}T00:00:00.000+02:00`).toISOString()
+      ? new Date(`${startDate}T00:00:00.000+03:00`).toISOString()
       : new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
     const endDateTime = endDate
-      ? new Date(`${endDate}T23:59:59.999+02:00`).toISOString()
+      ? new Date(`${endDate}T23:59:59.999+03:00`).toISOString()
       : new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
     // Fetch ALL orders using pagination (Supabase default limit is 1000)
@@ -143,8 +143,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fill in actual order data
-    // Romania timezone offset (UTC+2 for winter, UTC+3 for summer)
-    const ROMANIA_OFFSET_HOURS = 2;
+    // Romania timezone offset (UTC+3 summer time)
+    const ROMANIA_OFFSET_HOURS = 3;
 
     filteredOrders.forEach((order: any) => {
       const createdAt = new Date(order.created_at);

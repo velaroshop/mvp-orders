@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch orders for revenue calculation (same pattern as dashboard/stats)
-    // Use Romania timezone offset (UTC+2) for proper local date filtering
-    const startDateTime = new Date(`${startDate}T00:00:00.000+02:00`).toISOString();
-    const endDateTime = new Date(`${endDate}T23:59:59.999+02:00`).toISOString();
+    // Use Romania timezone offset (UTC+3 summer time) for proper local date filtering
+    const startDateTime = new Date(`${startDate}T00:00:00.000+03:00`).toISOString();
+    const endDateTime = new Date(`${endDate}T23:59:59.999+03:00`).toISOString();
 
     const { data: orders } = await supabaseAdmin
       .from("orders")

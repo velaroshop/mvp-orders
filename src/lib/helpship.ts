@@ -271,12 +271,12 @@ class HelpshipClient {
         lastName: lastName || null, // lastName în mailingAddress!
         name: orderData.customerName || null, // Nume complet în mailingAddress!
         phone: orderData.customerPhone || null, // phone în mailingAddress!
-        email: orderData.orderEmail || "comenzi@store.ro", // Email from store settings or default
+        email: orderData.orderEmail || null, // Email from store settings or default
       },
       firstName: firstName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
       lastName: lastName || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
       phone: orderData.customerPhone || undefined, // Poate fi și la nivel principal (pentru compatibilitate)
-      email: orderData.orderEmail || "comenzi@store.ro", // Email from store settings or default
+      email: orderData.orderEmail || null, // Email from store settings or default
       isTaxPayer: false,
       vatRegistrationNumber: null,
       tradeRegisterNumber: null,
@@ -818,7 +818,7 @@ class HelpshipClient {
             province: updates.shippingAddress?.county || currentAddress.province || "",
             countryId: currentAddress.countryId || null,
             phone: updates.customerPhone || currentAddress.phone || null,
-            email: currentAddress.email || "comenzi@store.ro",
+            email: currentAddress.email || null,
             isTaxpayer: currentAddress.isTaxPayer || false,
             vatRegistrationNumber: currentAddress.vatRegistrationNumber || null,
             tradeRegisterNumber: currentAddress.tradeRegisterNumber || null,

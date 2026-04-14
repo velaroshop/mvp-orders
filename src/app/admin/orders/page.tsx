@@ -227,8 +227,8 @@ export default function AdminPage() {
     }
   };
 
-  async function fetchOrders(query: string = "") {
-    setIsSearching(true);
+  async function fetchOrders(query: string = "", { silent = false } = {}) {
+    if (!silent) setIsSearching(true);
     const params = new URLSearchParams({
       q: query,
       limit: ordersPerPage.toString(),
@@ -252,13 +252,13 @@ export default function AdminPage() {
 
     const response = await fetch(`/api/orders/list?${params}`);
     if (!response.ok) {
-      setIsSearching(false);
+      if (!silent) setIsSearching(false);
       return;
     }
     const data = await response.json();
     setOrders(data.orders ?? []);
     setTotalOrders(data.total ?? 0);
-    setIsSearching(false);
+    if (!silent) setIsSearching(false);
   }
 
   // Fetch KPI stats and revenue data
@@ -856,8 +856,8 @@ export default function AdminPage() {
         message: updatedOrder.scheduledDate ? "Comanda a fost programată cu succes" : "Comanda a fost confirmată cu succes",
       });
 
-      // Refresh orders list and KPI data to pick up any changes
-      fetchOrders(searchQuery);
+      // Refresh orders list silently (no loading state) and KPI data
+      fetchOrders(searchQuery, { silent: true });
       fetchKpiData();
     } catch (error) {
       console.error("Error confirming order:", error);

@@ -856,7 +856,8 @@ export default function AdminPage() {
         message: updatedOrder.scheduledDate ? "Comanda a fost programată cu succes" : "Comanda a fost confirmată cu succes",
       });
 
-      // Refresh KPI data (orders list already updated optimistically)
+      // Refresh orders list silently (no loading state) and KPI data
+      fetchOrders(searchQuery, { silent: true });
       fetchKpiData();
     } catch (error) {
       console.error("Error confirming order:", error);

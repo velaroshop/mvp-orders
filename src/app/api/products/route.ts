@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 // Use service role key for API routes to bypass RLS
 // We still validate organization_id from session
@@ -224,6 +225,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "product",
+      entityId: product.id,
+      action: "create",
+      metadata: { name, sku: normalizedSku },
+    });
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (error) {

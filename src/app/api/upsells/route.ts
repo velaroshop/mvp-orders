@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -203,6 +204,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "upsell",
+      entityId: upsell.id,
+      action: "create",
+      metadata: { title },
+    });
 
     return NextResponse.json({ upsell }, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 // Use service role key for API routes to bypass RLS
 // We still validate organization_id from session
@@ -39,7 +40,7 @@ export async function PUT(
     // Verify the landing page belongs to the user's organization
     const { data: existingPage, error: fetchError } = await supabase
       .from("landing_pages")
-      .select("id, organization_id, slug")
+      .select("*")
       .eq("id", landingPageId)
       .single();
 
@@ -217,6 +218,25 @@ export async function PUT(
       );
     }
 
+    // Build changes object by comparing old vs new values
+    const changes: Record<string, { old: any; new: any }> = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (existingPage[key] !== value) {
+        changes[key] = { old: existingPage[key], new: value };
+      }
+    }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "landing_page",
+      entityId: landingPageId,
+      action: "update",
+      changes: Object.keys(changes).length > 0 ? changes : undefined,
+      metadata: { name: landingPage.name },
+    });
+
     return NextResponse.json({ landingPage });
   } catch (error) {
     console.error("Error in PUT /api/landing-pages/[id]:", error);
@@ -250,7 +270,7 @@ export async function DELETE(
     // Verify the landing page belongs to the user's organization
     const { data: existingPage, error: fetchError } = await supabase
       .from("landing_pages")
-      .select("id, organization_id")
+      .select("id, organization_id, name")
       .eq("id", landingPageId)
       .single();
 
@@ -281,6 +301,16 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "landing_page",
+      entityId: landingPageId,
+      action: "delete",
+      metadata: { name: existingPage.name },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

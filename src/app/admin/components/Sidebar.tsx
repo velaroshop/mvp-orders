@@ -64,6 +64,11 @@ export default function Sidebar() {
       icon: "👨‍💼",
     },
     {
+      name: "Activity Log",
+      href: "/admin/activity-log",
+      icon: "📋",
+    },
+    {
       name: "Settings",
       href: "/admin/settings",
       icon: "⚙️",

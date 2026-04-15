@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 // Use service role key for API routes to bypass RLS
 // We still validate organization_id from session
@@ -39,7 +40,7 @@ export async function PUT(
     // Verify the product belongs to the user's organization
     const { data: existingProduct, error: fetchError } = await supabase
       .from("products")
-      .select("id, organization_id")
+      .select("id, organization_id, name, sku, status")
       .eq("id", productId)
       .single();
 
@@ -129,6 +130,29 @@ export async function PUT(
       );
     }
 
+    // Build changes object comparing old vs new values
+    const changes: Record<string, { old: any; new: any }> = {};
+    if (body.name !== undefined && body.name !== existingProduct.name) {
+      changes.name = { old: existingProduct.name, new: body.name };
+    }
+    if (normalizedSku !== undefined && normalizedSku !== existingProduct.sku) {
+      changes.sku = { old: existingProduct.sku, new: normalizedSku };
+    }
+    if (body.status !== undefined && body.status !== existingProduct.status) {
+      changes.status = { old: existingProduct.status, new: body.status };
+    }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "product",
+      entityId: productId,
+      action: "update",
+      changes,
+      metadata: { name: product.name, sku: product.sku },
+    });
+
     return NextResponse.json({ product });
   } catch (error) {
     console.error("Error in PUT /api/products/[id]:", error);
@@ -162,7 +186,7 @@ export async function DELETE(
     // Verify the product belongs to the user's organization
     const { data: existingProduct, error: fetchError } = await supabase
       .from("products")
-      .select("id, organization_id")
+      .select("id, organization_id, name, sku")
       .eq("id", productId)
       .single();
 
@@ -219,6 +243,16 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "product",
+      entityId: productId,
+      action: "delete",
+      metadata: { name: existingProduct.name, sku: existingProduct.sku },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

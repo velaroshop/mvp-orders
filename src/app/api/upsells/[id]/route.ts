@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,7 +96,7 @@ export async function PUT(
     // Verify upsell exists and belongs to organization
     const { data: existingUpsell } = await supabase
       .from("upsells")
-      .select("id")
+      .select("*")
       .eq("id", id)
       .eq("organization_id", organizationId)
       .single();
@@ -222,6 +223,26 @@ export async function PUT(
       );
     }
 
+    // Build changes object from fields that actually changed
+    const changes: Record<string, { old: any; new: any }> = {};
+    const trackFields = ["landing_page_id", "type", "product_id", "title", "description", "quantity", "srp", "price", "media_url", "active", "display_order"];
+    for (const field of trackFields) {
+      if (field in updates && updates[field] !== existingUpsell[field]) {
+        changes[field] = { old: existingUpsell[field], new: updates[field] };
+      }
+    }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "upsell",
+      entityId: id,
+      action: "update",
+      changes,
+      metadata: { title: upsell.title },
+    });
+
     return NextResponse.json({ upsell });
   } catch (error) {
     console.error("Error in PUT /api/upsells/[id]:", error);
@@ -265,7 +286,7 @@ export async function DELETE(
     // Verify upsell exists and belongs to organization
     const { data: existingUpsell } = await supabase
       .from("upsells")
-      .select("id")
+      .select("id, title")
       .eq("id", id)
       .eq("organization_id", organizationId)
       .single();
@@ -291,6 +312,16 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "upsell",
+      entityId: id,
+      action: "delete",
+      metadata: { title: existingUpsell.title },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

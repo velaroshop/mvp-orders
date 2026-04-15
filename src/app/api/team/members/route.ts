@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { logAudit } from "@/lib/audit-log";
 import bcrypt from "bcryptjs";
 
 // GET /api/team/members - List all members
@@ -202,6 +203,16 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId: activeOrganizationId,
+      userId: currentUserId,
+      userEmail: (session.user as any).email,
+      entityType: "team_member",
+      entityId: newMember.id,
+      action: "create",
+      metadata: { name, email, role },
+    });
 
     return NextResponse.json({
       message: "User created successfully",

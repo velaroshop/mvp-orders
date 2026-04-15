@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 
 // Use service role key for API routes to bypass RLS
 // We still validate organization_id from session
@@ -49,7 +50,7 @@ export async function PATCH(
     // Verify the landing page belongs to the user's organization
     const { data: existingPage, error: fetchError } = await supabase
       .from("landing_pages")
-      .select("id, organization_id")
+      .select("id, organization_id, status, name")
       .eq("id", landingPageId)
       .single();
 
@@ -82,6 +83,17 @@ export async function PATCH(
         { status: 500 }
       );
     }
+
+    logAudit({
+      organizationId,
+      userId: (session.user as any).id,
+      userEmail: (session.user as any).email,
+      entityType: "landing_page",
+      entityId: landingPageId,
+      action: "status_change",
+      changes: { status: { old: existingPage.status, new: status } },
+      metadata: { name: existingPage.name },
+    });
 
     return NextResponse.json({ landingPage });
   } catch (error) {

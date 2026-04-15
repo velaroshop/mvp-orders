@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit-log";
 import bcrypt from "bcryptjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -135,6 +136,16 @@ export async function PUT(
       );
     }
 
+    logAudit({
+      organizationId: activeOrgId,
+      userId,
+      userEmail: (session.user as any).email,
+      entityType: "team_member",
+      entityId: id,
+      action: "update",
+      metadata: { name, email, role },
+    });
+
     return NextResponse.json({
       success: true,
       message: "User updated successfully",
@@ -235,6 +246,15 @@ export async function DELETE(
     // Note: We're not deleting the user from the users table
     // in case they belong to other organizations
     // The user record will remain but they'll lose access to this organization
+
+    logAudit({
+      organizationId: activeOrgId,
+      userId,
+      userEmail: (session.user as any).email,
+      entityType: "team_member",
+      entityId: id,
+      action: "delete",
+    });
 
     return NextResponse.json({
       success: true,

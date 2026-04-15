@@ -139,11 +139,15 @@ export default function ActivityLogPage() {
             <table className="w-full">
               <thead className="bg-zinc-900 border-b border-zinc-700">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Dată</th>
-                  <th className="px-4 py-2.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Utilizator</th>
-                  <th className="px-4 py-2.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Zonă</th>
-                  <th className="px-4 py-2.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Acțiune</th>
-                  <th className="px-4 py-2.5 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Entitate</th>
+                  <th className="px-4 py-2.5" colSpan={5}>
+                    <div className="flex items-center gap-4 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                      <div className="w-36 shrink-0">Dată</div>
+                      <div className="w-44 shrink-0">Utilizator</div>
+                      <div className="w-24 shrink-0">Zonă</div>
+                      <div className="w-28 shrink-0">Acțiune</div>
+                      <div className="flex-1">Entitate</div>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-700">

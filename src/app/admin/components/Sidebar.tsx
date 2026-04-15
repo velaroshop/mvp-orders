@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useMemo } from "react";
@@ -145,11 +146,18 @@ export default function Sidebar() {
         `}
       >
         {/* Logo */}
-        <div className="px-4 py-5 border-b border-zinc-800">
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-bold tracking-tight">EMS</h1>
-            <p className="text-[10px] text-zinc-400 mt-0.5 tracking-wide">
-              ECOM MADE SIMPLE
+        <div className="px-4 py-4 border-b border-zinc-800">
+          <div className="flex flex-col items-center">
+            <Image
+              src="https://academy.ecom-society.com/logo.png"
+              alt="eCom Society"
+              width={48}
+              height={48}
+              className="mb-2"
+            />
+            <h1 className="text-base font-bold tracking-tight">eCom Society</h1>
+            <p className="text-[9px] text-zinc-400 mt-0.5 tracking-widest uppercase">
+              Orders Management
             </p>
           </div>
         </div>

@@ -171,8 +171,8 @@ export default function Sidebar() {
                 }
               `}
             >
-              <span className="text-base">{item.icon}</span>
-              <span className="text-sm font-medium">{item.name}</span>
+              <span className="text-xs">{item.icon}</span>
+              <span className="text-xs font-medium">{item.name}</span>
             </Link>
           ))}
 
@@ -193,8 +193,8 @@ export default function Sidebar() {
                   }
                 `}
               >
-                <span className="text-base">👑</span>
-                <span className="text-sm font-medium">Superadmin</span>
+                <span className="text-xs">👑</span>
+                <span className="text-xs font-medium">Superadmin</span>
               </Link>
               <Link
                 href="/admin/simulator"
@@ -209,8 +209,8 @@ export default function Sidebar() {
                   }
                 `}
               >
-                <span className="text-base">📊</span>
-                <span className="text-sm font-medium">Simulator</span>
+                <span className="text-xs">📊</span>
+                <span className="text-xs font-medium">Simulator</span>
               </Link>
             </>
           )}

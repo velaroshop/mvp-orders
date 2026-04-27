@@ -2035,7 +2035,7 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-1">
                         {/* Cancel Note - Red styling */}
                         {order.cancelledNote && (
-                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5">
+                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 w-fit">
                             {order.cancelledNote.split("\n").map((line, idx) => (
                               <p key={idx} className="text-red-300 text-[10px] font-medium">
                                 {line}
@@ -2057,7 +2057,7 @@ export default function AdminPage() {
 
                           if (!isPredefined) {
                             return (
-                              <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
+                              <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 w-fit">
                                 {lines.map((line, idx) => (
                                   <p key={idx} className="text-yellow-300 text-[10px] font-medium">{line}</p>
                                 ))}
@@ -2066,14 +2066,14 @@ export default function AdminPage() {
                           }
 
                           return (
-                            <div className="flex flex-col gap-1">
-                              {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
-                              {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
-                              {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
-                              {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
-                              {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
+                            <div className="flex flex-col gap-1 items-start">
+                              {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {remainingLines.map((line, idx) => (
-                                <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
+                                <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 w-fit">
                                   <p className="text-yellow-300 text-[10px] font-medium">{line}</p>
                                 </div>
                               ))}

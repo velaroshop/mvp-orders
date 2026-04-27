@@ -10,7 +10,7 @@ interface OrderNoteModalProps {
   currentNote?: string;
 }
 
-const MAX_CHARS_PER_LINE = 20;
+const MAX_CHARS_PER_LINE = 30;
 
 export default function OrderNoteModal({
   isOpen,

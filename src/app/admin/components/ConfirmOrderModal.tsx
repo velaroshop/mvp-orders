@@ -478,13 +478,13 @@ export default function ConfirmOrderModal({
                 <div className="space-y-1.5">
                   <div>
                     <label className="block text-xs text-zinc-400 mb-0.5">
-                      Linia 1 ({noteLine1.length}/20)
+                      Linia 1 ({noteLine1.length}/30)
                     </label>
                     <input
                       type="text"
                       value={noteLine1}
-                      onChange={(e) => setNoteLine1(e.target.value.slice(0, 20))}
-                      maxLength={20}
+                      onChange={(e) => setNoteLine1(e.target.value.slice(0, 30))}
+                      maxLength={30}
                       className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Notă linia 1..."
                     />
@@ -498,13 +498,13 @@ export default function ConfirmOrderModal({
                   </div>
                   <div>
                     <label className="block text-xs text-zinc-400 mb-0.5">
-                      Linia 2 ({noteLine2.length}/20)
+                      Linia 2 ({noteLine2.length}/30)
                     </label>
                     <input
                       type="text"
                       value={noteLine2}
-                      onChange={(e) => setNoteLine2(e.target.value.slice(0, 20))}
-                      maxLength={20}
+                      onChange={(e) => setNoteLine2(e.target.value.slice(0, 30))}
+                      maxLength={30}
                       className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Notă linia 2..."
                     />

@@ -1889,14 +1889,14 @@ export default function AdminPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-700 bg-zinc-900 text-xs font-semibold uppercase text-zinc-400">
               <tr>
-                <th className="px-2 py-2">Order ID</th>
-                <th className="px-2 py-2">Status</th>
-                <th className="px-2 py-2">Customer</th>
+                <th className="px-1 py-2">Order ID</th>
+                <th className="px-1 py-2">Status</th>
+                <th className="px-1 py-2">Customer</th>
                 <th className="px-2 py-2 hidden md:table-cell">Order Note</th>
-                <th className="px-2 py-2 hidden lg:table-cell">Order Source</th>
-                <th className="px-2 py-2">Price</th>
-                <th className="px-2 py-2 hidden sm:table-cell">Order Date</th>
-                <th className="px-2 py-2">Actions</th>
+                <th className="px-1 py-2 hidden lg:table-cell">Order Source</th>
+                <th className="px-1 py-2">Price</th>
+                <th className="px-1 py-2 hidden sm:table-cell">Order Date</th>
+                <th className="px-1 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1916,7 +1916,7 @@ export default function AdminPage() {
                     className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50"
                   >
                     {/* Order ID */}
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <button
                         className="font-medium text-white text-xs hover:text-emerald-400 cursor-pointer transition-colors"
                         title="Click to copy"
@@ -1933,7 +1933,7 @@ export default function AdminPage() {
                     </td>
 
                     {/* Status */}
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <div className="flex flex-col gap-0.5">
                         {/* Tracking Status - shown for confirmed orders, clickable */}
                         {order.status === "confirmed" && order.helpshipOrderId && (
@@ -2031,9 +2031,9 @@ export default function AdminPage() {
                     </td>
 
                     {/* Customer */}
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <div>
-                        <p className="font-medium text-white text-xs truncate max-w-32">{order.fullName}</p>
+                        <p className="font-medium text-white text-xs truncate max-w-24">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
                         {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
                       </div>
@@ -2044,7 +2044,7 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-1">
                         {/* Cancel Note - Red styling */}
                         {order.cancelledNote && (
-                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 max-w-28">
+                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 max-w-44">
                             {order.cancelledNote.split("\n").map((line, idx) => (
                               <p key={idx} className="text-red-300 text-[10px] font-medium truncate">
                                 {line}
@@ -2065,7 +2065,7 @@ export default function AdminPage() {
                           const firstLine = lines[0]?.trim() || "";
                           const styled = noteStyles[firstLine];
                           return styled ? (
-                            <div className="flex flex-col gap-1 max-w-28">
+                            <div className="flex flex-col gap-1 max-w-44">
                               <span className={`${styled} rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block`}>
                                 {firstLine}
                               </span>
@@ -2076,7 +2076,7 @@ export default function AdminPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
+                            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-44">
                               {lines.map((line, idx) => (
                                 <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
                                   {line}
@@ -2093,7 +2093,7 @@ export default function AdminPage() {
                     </td>
 
                     {/* Order Source */}
-                    <td className="px-2 py-1.5 hidden lg:table-cell">
+                    <td className="px-1 py-1.5 hidden lg:table-cell">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-zinc-300 font-medium uppercase">
                           {order.landingKey}
@@ -2131,7 +2131,7 @@ export default function AdminPage() {
                     </td>
 
                     {/* Price */}
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       {(() => {
                         const productSubtotal = order.subtotal || 0;
                         const shipping = order.shippingCost || 0;
@@ -2173,12 +2173,12 @@ export default function AdminPage() {
                     </td>
 
                     {/* Order Date */}
-                    <td className="px-2 py-1.5 hidden sm:table-cell">
+                    <td className="px-1 py-1.5 hidden sm:table-cell">
                       <span className="text-zinc-300 text-[10px]">{formatDate(order.createdAt)}</span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-2 py-1.5">
+                    <td className="px-1 py-1.5">
                       <div className="flex flex-col gap-1">
                         {/* CONFIRM Button - Compact icon on mobile, text on desktop */}
                         {/* Disabled for: queue, testing, confirmed, cancelled, sync_error */}

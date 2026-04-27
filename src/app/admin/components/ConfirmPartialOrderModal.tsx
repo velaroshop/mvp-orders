@@ -52,7 +52,7 @@ export default function ConfirmPartialOrderModal({
     address?: string;
   }>({});
 
-  const MAX_NOTE_CHARS = 20;
+  const MAX_NOTE_CHARS = 30;
 
   function validatePhone(phoneValue: string): string | undefined {
     const phoneDigits = phoneValue.replace(/\D/g, "");

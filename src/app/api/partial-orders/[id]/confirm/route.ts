@@ -59,9 +59,9 @@ export async function POST(
     // Validate order note format if provided
     if (orderNote) {
       const noteLines = orderNote.split("\n");
-      if (noteLines.length > 2 || noteLines.some((l) => l.length > 20)) {
+      if (noteLines.length > 2 || noteLines.some((l) => l.length > 30)) {
         return NextResponse.json(
-          { error: "Order note: max 2 lines, 20 chars each" },
+          { error: "Order note: max 2 lines, 30 chars each" },
           { status: 400 }
         );
       }

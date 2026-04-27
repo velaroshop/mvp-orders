@@ -6,7 +6,7 @@ import { verifyOrderOwnership } from "@/lib/auth-helpers";
 
 /**
  * POST /api/orders/[id]/note - Update order note
- * Note has max 2 lines, 20 characters per line
+ * Note has max 2 lines, 30 characters per line
  */
 export async function POST(
   request: NextRequest,
@@ -39,7 +39,7 @@ export async function POST(
       );
     }
 
-    // Validate note format (max 2 lines, 20 chars each)
+    // Validate note format (max 2 lines, 30 chars each)
     if (note) {
       const lines = note.split("\n");
       if (lines.length > 2) {
@@ -49,9 +49,9 @@ export async function POST(
         );
       }
       for (const line of lines) {
-        if (line.length > 20) {
+        if (line.length > 30) {
           return NextResponse.json(
-            { error: "Each line can have maximum 20 characters" },
+            { error: "Each line can have maximum 30 characters" },
             { status: 400 },
           );
         }

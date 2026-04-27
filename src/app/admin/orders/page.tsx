@@ -2184,7 +2184,7 @@ export default function AdminPage() {
                           onClick={() => handleActionClick(order.id, "confirm")}
                           disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error" || confirming === order.id}
                           title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "cancelled" ? "CANCELLED" : order.status === "sync_error" ? "SYNC ERROR" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
-                          className={`rounded px-1.5 py-0.5 text-[10px] sm:text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
+                          className={`rounded px-1.5 py-0.5 text-[10px] sm:text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap w-fit ${
                             order.status === "queue"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "testing"

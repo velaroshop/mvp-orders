@@ -2024,8 +2024,8 @@ export default function AdminPage() {
                     {/* Customer */}
                     <td className="px-1 py-1.5">
                       <div>
-                        <p className="font-medium text-white text-xs truncate max-w-36">{order.fullName}</p>
-                        <p className="text-zinc-400 text-[10px]">{order.phone}</p>
+                        <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
+                        <p className="text-zinc-400 text-xs">{order.phone}</p>
                         {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
                       </div>
                     </td>

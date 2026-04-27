@@ -2426,6 +2426,7 @@ export default function AdminPage() {
                   setSelectedOrder(null);
                 }}
                 onConfirm={handleModalConfirm}
+                onNoteSaved={() => fetchOrders(searchQuery, { silent: true })}
               />
 
               {/* Hold Order Modal */}

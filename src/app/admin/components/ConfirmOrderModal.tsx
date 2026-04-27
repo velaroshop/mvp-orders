@@ -25,6 +25,7 @@ interface ConfirmOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (updatedOrder: Partial<Order> & { streetNumber?: string }) => Promise<void>;
+  onNoteSaved?: () => void;
 }
 
 export default function ConfirmOrderModal({
@@ -32,6 +33,7 @@ export default function ConfirmOrderModal({
   isOpen,
   onClose,
   onConfirm,
+  onNoteSaved,
 }: ConfirmOrderModalProps) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -458,11 +460,10 @@ export default function ConfirmOrderModal({
                           const data = await res.json();
                           throw new Error(data.error || "Failed to save note");
                         }
-                        setNoteSaved(true);
-                        setTimeout(() => setNoteSaved(false), 3000);
+                        onNoteSaved?.();
+                        onClose();
                       } catch (err) {
                         console.error("Error saving note:", err);
-                      } finally {
                         setIsSavingNote(false);
                       }
                     }}

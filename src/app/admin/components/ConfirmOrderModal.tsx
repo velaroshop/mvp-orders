@@ -467,10 +467,10 @@ export default function ConfirmOrderModal({
                         setIsSavingNote(false);
                       }
                     }}
-                    className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
+                    className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
                       noteSaved
                         ? "bg-emerald-600 text-white"
-                        : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                        : "bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
                     }`}
                   >
                     {isSavingNote ? "..." : noteSaved ? "Saved" : "Save Note"}

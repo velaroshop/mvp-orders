@@ -1880,7 +1880,7 @@ export default function AdminPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-zinc-700 bg-zinc-900 text-xs font-semibold uppercase text-zinc-400">
               <tr>
-                <th className="px-1 py-2">Order ID</th>
+                <th className="pl-3 pr-1 py-2">Order ID</th>
                 <th className="px-1 py-2">Status</th>
                 <th className="px-1 py-2">Customer</th>
                 <th className="px-2 py-2 hidden md:table-cell">Order Note</th>
@@ -1907,7 +1907,7 @@ export default function AdminPage() {
                     className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50"
                   >
                     {/* Order ID */}
-                    <td className="px-1 py-1.5">
+                    <td className="pl-3 pr-1 py-1.5">
                       <button
                         className="font-medium text-white text-xs hover:text-emerald-400 cursor-pointer transition-colors"
                         title="Click to copy"

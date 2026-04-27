@@ -998,15 +998,6 @@ export default function AdminPage() {
   }
 
   // Format date
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleString("ro-RO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
 
   async function handleActionClick(orderId: string, action: string) {
     if (action === "confirm") {
@@ -1893,9 +1884,9 @@ export default function AdminPage() {
                 <th className="px-1 py-2">Status</th>
                 <th className="px-1 py-2">Customer</th>
                 <th className="px-2 py-2 hidden md:table-cell">Order Note</th>
-                <th className="px-1 py-2 hidden lg:table-cell">Order Source</th>
+                <th className="px-1 py-2 hidden lg:table-cell">Source</th>
                 <th className="px-1 py-2">Price</th>
-                <th className="px-1 py-2 hidden sm:table-cell">Order Date</th>
+                <th className="px-1 py-2 hidden sm:table-cell">Date</th>
                 <th className="px-1 py-2">Actions</th>
               </tr>
             </thead>
@@ -2033,7 +2024,7 @@ export default function AdminPage() {
                     {/* Customer */}
                     <td className="px-1 py-1.5">
                       <div>
-                        <p className="font-medium text-white text-xs truncate max-w-24">{order.fullName}</p>
+                        <p className="font-medium text-white text-xs truncate max-w-36">{order.fullName}</p>
                         <p className="text-zinc-400 text-[10px]">{order.phone}</p>
                         {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
                       </div>
@@ -2044,9 +2035,9 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-1">
                         {/* Cancel Note - Red styling */}
                         {order.cancelledNote && (
-                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 max-w-44">
+                          <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5">
                             {order.cancelledNote.split("\n").map((line, idx) => (
-                              <p key={idx} className="text-red-300 text-[10px] font-medium truncate">
+                              <p key={idx} className="text-red-300 text-[10px] font-medium">
                                 {line}
                               </p>
                             ))}
@@ -2066,24 +2057,24 @@ export default function AdminPage() {
 
                           if (!isPredefined) {
                             return (
-                              <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-44">
+                              <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
                                 {lines.map((line, idx) => (
-                                  <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">{line}</p>
+                                  <p key={idx} className="text-yellow-300 text-[10px] font-medium">{line}</p>
                                 ))}
                               </div>
                             );
                           }
 
                           return (
-                            <div className="flex flex-col gap-1 max-w-44">
-                              {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
-                              {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
-                              {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
-                              {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
-                              {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                            <div className="flex flex-col gap-1">
+                              {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
+                              {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
+                              {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
+                              {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
+                              {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold inline-block">{firstLine}</span>}
                               {remainingLines.map((line, idx) => (
                                 <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
-                                  <p className="text-yellow-300 text-[10px] font-medium truncate">{line}</p>
+                                  <p className="text-yellow-300 text-[10px] font-medium">{line}</p>
                                 </div>
                               ))}
                             </div>
@@ -2176,9 +2167,12 @@ export default function AdminPage() {
                       })()}
                     </td>
 
-                    {/* Order Date */}
+                    {/* Date */}
                     <td className="px-1 py-1.5 hidden sm:table-cell">
-                      <span className="text-zinc-300 text-[10px]">{formatDate(order.createdAt)}</span>
+                      <div className="flex flex-col">
+                        <span className="text-zinc-300 text-[10px]">{new Date(order.createdAt).toLocaleDateString("ro-RO", { year: "numeric", month: "2-digit", day: "2-digit" })}</span>
+                        <span className="text-zinc-500 text-[9px]">{new Date(order.createdAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
                     </td>
 
                     {/* Actions */}
@@ -2190,7 +2184,7 @@ export default function AdminPage() {
                           onClick={() => handleActionClick(order.id, "confirm")}
                           disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error" || confirming === order.id}
                           title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "cancelled" ? "CANCELLED" : order.status === "sync_error" ? "SYNC ERROR" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
-                          className={`rounded px-2 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
+                          className={`rounded px-1.5 py-0.5 text-[10px] sm:text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
                             order.status === "queue"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "testing"
@@ -2215,7 +2209,7 @@ export default function AdminPage() {
                           <button
                             onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
                             title="Actions"
-                            className="rounded bg-zinc-600 px-2 py-1 text-[10px] sm:text-[11px] font-medium text-white hover:bg-zinc-500"
+                            className="rounded bg-zinc-600 px-1.5 py-0.5 text-[10px] sm:text-[10px] font-medium text-white hover:bg-zinc-500"
                           >
                             <span className="hidden sm:inline">Actions ▼</span>
                             <span className="sm:hidden">⋮</span>

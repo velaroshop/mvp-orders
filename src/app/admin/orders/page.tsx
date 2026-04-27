@@ -2052,16 +2052,39 @@ export default function AdminPage() {
                             ))}
                           </div>
                         )}
-                        {/* Regular Order Note - Yellow styling */}
-                        {order.orderNote && (
-                          <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
-                            {order.orderNote.split("\n").map((line, idx) => (
-                              <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
-                                {line}
-                              </p>
-                            ))}
-                          </div>
-                        )}
+                        {/* Regular Order Note */}
+                        {order.orderNote && (() => {
+                          const lines = order.orderNote.split("\n");
+                          const noteStyles: Record<string, string> = {
+                            "OK": "bg-emerald-600 text-white",
+                            "TRY 1": "bg-yellow-400 text-yellow-950",
+                            "TRY 2": "bg-orange-500 text-white",
+                            "ANULEAZA": "bg-red-600 text-white",
+                            "NR. INCORECT": "bg-red-600 text-white",
+                          };
+                          const firstLine = lines[0]?.trim() || "";
+                          const styled = noteStyles[firstLine];
+                          return styled ? (
+                            <div className="flex flex-col gap-1 max-w-28">
+                              <span className={`${styled} rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block`}>
+                                {firstLine}
+                              </span>
+                              {lines.slice(1).filter(Boolean).map((line, idx) => (
+                                <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
+                                  <p className="text-yellow-300 text-[10px] font-medium truncate">{line}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-28">
+                              {lines.map((line, idx) => (
+                                <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
+                                  {line}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         {/* Show dash if no notes */}
                         {!order.orderNote && !order.cancelledNote && (
                           <span className="text-zinc-500 text-[10px]">—</span>

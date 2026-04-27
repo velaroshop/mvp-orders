@@ -2055,32 +2055,36 @@ export default function AdminPage() {
                         {/* Regular Order Note */}
                         {order.orderNote && (() => {
                           const lines = order.orderNote.split("\n");
-                          const noteStyles: Record<string, string> = {
-                            "OK": "bg-emerald-600 text-white",
-                            "TRY 1": "bg-yellow-400 text-yellow-950",
-                            "TRY 2": "bg-orange-500 text-white",
-                            "ANULEAZA": "bg-red-600 text-white",
-                            "NR. INCORECT": "bg-red-600 text-white",
-                          };
                           const firstLine = lines[0]?.trim() || "";
-                          const styled = noteStyles[firstLine];
-                          return styled ? (
+                          const remainingLines = lines.slice(1).filter(Boolean);
+                          const isOK = firstLine === "OK";
+                          const isTry1 = firstLine === "TRY 1";
+                          const isTry2 = firstLine === "TRY 2";
+                          const isAnuleaza = firstLine === "ANULEAZA";
+                          const isNrIncorect = firstLine === "NR. INCORECT";
+                          const isPredefined = isOK || isTry1 || isTry2 || isAnuleaza || isNrIncorect;
+
+                          if (!isPredefined) {
+                            return (
+                              <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-44">
+                                {lines.map((line, idx) => (
+                                  <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">{line}</p>
+                                ))}
+                              </div>
+                            );
+                          }
+
+                          return (
                             <div className="flex flex-col gap-1 max-w-44">
-                              <span className={`${styled} rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block`}>
-                                {firstLine}
-                              </span>
-                              {lines.slice(1).filter(Boolean).map((line, idx) => (
+                              {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                              {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                              {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                              {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                              {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold truncate inline-block">{firstLine}</span>}
+                              {remainingLines.map((line, idx) => (
                                 <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5">
                                   <p className="text-yellow-300 text-[10px] font-medium truncate">{line}</p>
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 max-w-44">
-                              {lines.map((line, idx) => (
-                                <p key={idx} className="text-yellow-300 text-[10px] font-medium truncate">
-                                  {line}
-                                </p>
                               ))}
                             </div>
                           );

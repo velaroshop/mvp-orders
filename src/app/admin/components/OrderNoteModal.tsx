@@ -46,7 +46,7 @@ export default function OrderNoteModal({
 
     try {
       // Combine lines into note (filter empty lines)
-      const note = [line1.trim().toUpperCase(), line2.trim().toUpperCase()]
+      const note = [line1.trim(), line2.trim()]
         .filter(line => line.length > 0)
         .join("\n");
 

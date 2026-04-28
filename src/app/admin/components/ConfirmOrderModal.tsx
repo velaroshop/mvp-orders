@@ -146,6 +146,7 @@ export default function ConfirmOrderModal({
       setNoteLine1(noteLines[0] || "");
       setNoteLine2(noteLines[1] || "");
       setNoteSaved(false);
+      setIsSavingNote(false);
 
       // Populare instant din datele din DB
       const initialData = {

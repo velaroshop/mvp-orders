@@ -496,6 +496,7 @@ export default function ConfirmOrderModal({
                       <button type="button" onClick={() => setNoteLine1("TRY 2")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors">TRY 2</button>
                       <button type="button" onClick={() => setNoteLine1("ANULEAZA")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">ANULEAZA</button>
                       <button type="button" onClick={() => setNoteLine1("NR. INCORECT")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">NR. INCORECT</button>
+                      <button type="button" onClick={() => setNoteLine1("DUPLICAT")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-500 text-white hover:bg-purple-600 transition-colors">DUPLICAT</button>
                     </div>
                   </div>
                   <div>

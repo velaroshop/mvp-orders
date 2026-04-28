@@ -2053,7 +2053,8 @@ export default function AdminPage() {
                           const isTry2 = firstLine === "TRY 2";
                           const isAnuleaza = firstLine === "ANULEAZA";
                           const isNrIncorect = firstLine === "NR. INCORECT";
-                          const isPredefined = isOK || isTry1 || isTry2 || isAnuleaza || isNrIncorect;
+                          const isDuplicat = firstLine === "DUPLICAT";
+                          const isPredefined = isOK || isTry1 || isTry2 || isAnuleaza || isNrIncorect || isDuplicat;
 
                           if (!isPredefined) {
                             return (
@@ -2072,6 +2073,7 @@ export default function AdminPage() {
                               {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isDuplicat && <span className="bg-purple-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {remainingLines.map((line, idx) => (
                                 <div key={idx} className="bg-yellow-500/20 border border-yellow-500/50 rounded px-1.5 py-0.5 w-fit">
                                   <p className="text-yellow-300 text-[10px] font-medium">{line}</p>

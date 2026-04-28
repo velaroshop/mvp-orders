@@ -147,7 +147,7 @@ export default function ConfirmPartialOrderModal({
       return;
     }
 
-    const note = [noteLine1.trim(), noteLine2.trim()]
+    const note = [noteLine1.trim().toUpperCase(), noteLine2.trim().toUpperCase()]
       .filter((l) => l.length > 0)
       .join("\n");
 

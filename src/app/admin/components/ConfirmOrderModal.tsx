@@ -435,7 +435,7 @@ export default function ConfirmOrderModal({
 
               {/* Order Note - Independent save */}
               <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">📝</span>
                     <h4 className="text-xs font-semibold text-white">
@@ -450,7 +450,7 @@ export default function ConfirmOrderModal({
                       setIsSavingNote(true);
                       setNoteSaved(false);
                       try {
-                        const note = [noteLine1.trim(), noteLine2.trim()].filter(Boolean).join("\n") || null;
+                        const note = [noteLine1.trim().toUpperCase(), noteLine2.trim().toUpperCase()].filter(Boolean).join("\n") || null;
                         const res = await fetch(`/api/orders/${order.id}/note`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },

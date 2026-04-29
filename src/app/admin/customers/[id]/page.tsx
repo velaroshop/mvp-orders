@@ -360,9 +360,39 @@ export default function CustomerDetailsPage() {
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       <span
-                        className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${getStatusColor(order.status)}`}
+                        className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${
+                          order.status === "queue"
+                            ? "bg-violet-600 text-white"
+                            : order.status === "testing"
+                            ? "bg-blue-600 text-white"
+                            : order.status === "confirmed"
+                            ? "bg-emerald-600 text-white"
+                            : order.status === "scheduled"
+                            ? "bg-cyan-600 text-white"
+                            : order.status === "cancelled"
+                            ? "bg-red-600 text-white"
+                            : order.status === "hold"
+                            ? "bg-orange-600 text-white"
+                            : order.status === "sync_error"
+                            ? "bg-rose-600 text-white"
+                            : "bg-amber-500 text-white"
+                        }`}
                       >
-                        {getStatusLabel(order.status)}
+                        {order.status === "queue"
+                          ? "Queue"
+                          : order.status === "testing"
+                          ? "🧪 Testing"
+                          : order.status === "pending"
+                          ? "Pending"
+                          : order.status === "scheduled"
+                          ? "Scheduled"
+                          : order.status === "cancelled"
+                          ? "Cancelled"
+                          : order.status === "hold"
+                          ? "Hold"
+                          : order.status === "sync_error"
+                          ? "Sync Error"
+                          : "Confirmed"}
                       </span>
                     </td>
                     <td className="px-3 py-2">

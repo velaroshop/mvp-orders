@@ -401,8 +401,8 @@ export default function CustomerDetailsPage() {
           <p className="text-zinc-400">Acest client nu are comenzi încă.</p>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-visible">
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="w-full">
               <thead className="bg-zinc-900 border-b border-zinc-700">
                 <tr>

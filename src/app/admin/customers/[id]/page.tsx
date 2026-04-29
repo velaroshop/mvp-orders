@@ -43,6 +43,7 @@ export default function CustomerDetailsPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [confirmModalOrder, setConfirmModalOrder] = useState<Order | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     fetchCustomerDetails();
@@ -401,8 +402,8 @@ export default function CustomerDetailsPage() {
           <p className="text-zinc-400">Acest client nu are comenzi încă.</p>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-visible">
-          <div className="overflow-x-auto overflow-y-visible">
+        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-zinc-900 border-b border-zinc-700">
                 <tr>
@@ -521,13 +522,17 @@ export default function CustomerDetailsPage() {
                         </button>
                         <div className="relative actions-dropdown">
                           <button
-                            onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                            onClick={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setDropdownPos({ top: rect.bottom + 4, left: rect.right - 176 });
+                              setOpenDropdown(openDropdown === order.id ? null : order.id);
+                            }}
                             className="rounded bg-zinc-600 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-zinc-500"
                           >
                             Actions ▼
                           </button>
                           {openDropdown === order.id && (
-                            <div className="absolute right-0 top-full mt-1 w-44 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50">
+                            <div style={{ position: "fixed", top: dropdownPos.top, left: dropdownPos.left }} className="w-44 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50">
                               <div className="py-1">
                                 {order.status !== "testing" && order.status !== "cancelled" && order.status !== "sync_error" && (
                                   <button onClick={() => handleOrderAction(order.id, "confirm")} disabled={order.status === "queue"} className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed">

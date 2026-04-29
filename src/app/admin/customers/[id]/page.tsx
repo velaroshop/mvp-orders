@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Customer, Order } from "@/lib/types";
 import { getTrackingUrl } from "@/lib/tracking-url";
+import ConfirmOrderModal from "../../components/ConfirmOrderModal";
 
 export default function CustomerDetailsPage() {
   const params = useParams();
@@ -36,6 +37,12 @@ export default function CustomerDetailsPage() {
     type: "success",
     message: "",
   });
+
+  // Actions state
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [confirmModalOrder, setConfirmModalOrder] = useState<Order | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomerDetails();
@@ -192,6 +199,103 @@ export default function CustomerDetailsPage() {
     setTrackingModalData(null);
   }
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (openDropdown && !(e.target as Element)?.closest(".actions-dropdown")) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
+
+  async function handleConfirmOrder(updatedOrder: Partial<Order> & { streetNumber?: string }) {
+    if (!confirmModalOrder) return;
+    setConfirming(confirmModalOrder.id);
+    try {
+      const response = await fetch(`/api/orders/${confirmModalOrder.id}/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedOrder),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to confirm order");
+      }
+      setToast({ isOpen: true, type: "success", message: "Comanda a fost confirmată cu succes" });
+      fetchCustomerDetails();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Eroare la confirmarea comenzii";
+      setToast({ isOpen: true, type: "error", message: msg });
+    } finally {
+      setConfirming(null);
+    }
+  }
+
+  async function handleOrderAction(orderId: string, action: string) {
+    setOpenDropdown(null);
+
+    if (action === "confirm") {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        setConfirmModalOrder(order);
+        setIsConfirmModalOpen(true);
+      }
+      return;
+    }
+
+    if (action === "cancel") {
+      if (!confirm("Sigur vrei să anulezi această comandă?")) return;
+      try {
+        const res = await fetch(`/api/orders/${orderId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        setToast({ isOpen: true, type: "success", message: "Comanda a fost anulată" });
+        fetchCustomerDetails();
+      } catch (error) {
+        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+      }
+      return;
+    }
+
+    if (action === "uncancel") {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/uncancel`, { method: "POST" });
+        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        setToast({ isOpen: true, type: "success", message: "Comanda a fost restabilită" });
+        fetchCustomerDetails();
+      } catch (error) {
+        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+      }
+      return;
+    }
+
+    if (action === "hold") {
+      if (!confirm("Sigur vrei să pui comanda pe hold?")) return;
+      try {
+        const res = await fetch(`/api/orders/${orderId}/hold`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        setToast({ isOpen: true, type: "success", message: "Comanda a fost pusă pe hold" });
+        fetchCustomerDetails();
+      } catch (error) {
+        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+      }
+      return;
+    }
+
+    if (action === "unhold") {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/unhold`, { method: "POST" });
+        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        setToast({ isOpen: true, type: "success", message: "Comanda a fost scoasă din hold" });
+        fetchCustomerDetails();
+      } catch (error) {
+        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+      }
+      return;
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl">
@@ -318,10 +422,10 @@ export default function CustomerDetailsPage() {
                     Status
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                    Produse
+                    Dată
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                    Dată
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -395,41 +499,57 @@ export default function CustomerDetailsPage() {
                           : "Confirmed"}
                       </span>
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-col gap-0.5 max-w-50">
-                        {order.productName && (
-                          <div className="flex items-center gap-1">
-                            <span className="shrink-0 text-[9px] font-semibold text-blue-400">Principal</span>
-                            <span className="text-[10px] text-zinc-300 truncate" title={order.productName}>
-                              {order.productName}
-                            </span>
-                          </div>
-                        )}
-                        {order.upsells && order.upsells
-                          .filter((u: any) => u.type === "presale")
-                          .map((upsell: any, idx: number) => (
-                            <div key={`pre-${idx}`} className="flex items-center gap-1">
-                              <span className="shrink-0 text-[9px] font-semibold text-purple-400">Pre</span>
-                              <span className="text-[10px] text-zinc-300 truncate" title={upsell.name || upsell.productName}>
-                                {upsell.name || upsell.productName}
-                              </span>
-                            </div>
-                          ))}
-                        {order.upsells && order.upsells
-                          .filter((u: any) => u.type === "postsale")
-                          .map((upsell: any, idx: number) => (
-                            <div key={`post-${idx}`} className="flex items-center gap-1">
-                              <span className="shrink-0 text-[9px] font-semibold text-orange-400">Post</span>
-                              <span className="text-[10px] text-zinc-300 truncate" title={upsell.name || upsell.productName}>
-                                {upsell.name || upsell.productName}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       <div className="text-xs text-zinc-300">
                         {formatDate(order.createdAt)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleOrderAction(order.id, "confirm")}
+                          disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error" || confirming === order.id}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap w-fit ${
+                            order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error"
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                              : order.status === "scheduled"
+                              ? "bg-cyan-600 text-white hover:bg-cyan-700"
+                              : "bg-emerald-600 text-white hover:bg-emerald-700"
+                          }`}
+                        >
+                          {confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "cancelled" ? "✕" : order.status === "sync_error" ? "⚠" : order.status === "scheduled" ? "NOW" : "CONFIRM"}
+                        </button>
+                        <div className="relative actions-dropdown">
+                          <button
+                            onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                            className="rounded bg-zinc-600 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-zinc-500"
+                          >
+                            Actions ▼
+                          </button>
+                          {openDropdown === order.id && (
+                            <div className="absolute right-0 top-full mt-1 w-44 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50">
+                              <div className="py-1">
+                                {order.status !== "testing" && order.status !== "cancelled" && order.status !== "sync_error" && (
+                                  <button onClick={() => handleOrderAction(order.id, "confirm")} disabled={order.status === "queue"} className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Order Confirm
+                                  </button>
+                                )}
+                                <button onClick={() => handleOrderAction(order.id, "cancel")} className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600">
+                                  Order Cancel
+                                </button>
+                                <button onClick={() => handleOrderAction(order.id, "uncancel")} disabled={order.status !== "cancelled"} className={`w-full text-left px-3 py-2 text-xs ${order.status !== "cancelled" ? "text-zinc-500 cursor-not-allowed" : "text-zinc-200 hover:bg-zinc-600"}`}>
+                                  Order Uncancel
+                                </button>
+                                <button onClick={() => handleOrderAction(order.id, "hold")} className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600">
+                                  Order Hold
+                                </button>
+                                <button onClick={() => handleOrderAction(order.id, "unhold")} disabled={order.status !== "hold"} className={`w-full text-left px-3 py-2 text-xs ${order.status !== "hold" ? "text-zinc-500 cursor-not-allowed" : "text-zinc-200 hover:bg-zinc-600"}`}>
+                                  Order Unhold
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -717,6 +837,18 @@ export default function CustomerDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Order Modal */}
+      <ConfirmOrderModal
+        order={confirmModalOrder}
+        isOpen={isConfirmModalOpen}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setConfirmModalOrder(null);
+        }}
+        onConfirm={handleConfirmOrder}
+        onNoteSaved={() => fetchCustomerDetails()}
+      />
 
       {/* Toast */}
       {toast.isOpen && (

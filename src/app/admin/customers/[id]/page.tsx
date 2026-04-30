@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Customer, Order } from "@/lib/types";
 import { getTrackingUrl } from "@/lib/tracking-url";
 import ConfirmOrderModal from "../../components/ConfirmOrderModal";
+import CancelOrderModal from "../../components/CancelOrderModal";
 
 export default function CustomerDetailsPage() {
   const params = useParams();
@@ -44,6 +45,8 @@ export default function CustomerDetailsPage() {
   const [confirmModalOrder, setConfirmModalOrder] = useState<Order | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomerDetails();
@@ -247,15 +250,8 @@ export default function CustomerDetailsPage() {
     }
 
     if (action === "cancel") {
-      if (!confirm("Sigur vrei să anulezi această comandă?")) return;
-      try {
-        const res = await fetch(`/api/orders/${orderId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-        if (!res.ok) throw new Error((await res.json()).error || "Failed");
-        setToast({ isOpen: true, type: "success", message: "Comanda a fost anulată" });
-        fetchCustomerDetails();
-      } catch (error) {
-        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
-      }
+      setCancelOrderId(orderId);
+      setIsCancelModalOpen(true);
       return;
     }
 
@@ -294,6 +290,25 @@ export default function CustomerDetailsPage() {
         setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
       }
       return;
+    }
+  }
+
+  async function handleCancelConfirm(note: string): Promise<void> {
+    if (!cancelOrderId) return;
+    try {
+      const res = await fetch(`/api/orders/${cancelOrderId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed to cancel order");
+      setToast({ isOpen: true, type: "success", message: "Comanda a fost anulată" });
+      fetchCustomerDetails();
+    } catch (error) {
+      setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare la anularea comenzii" });
+    } finally {
+      setIsCancelModalOpen(false);
+      setCancelOrderId(null);
     }
   }
 
@@ -853,6 +868,17 @@ export default function CustomerDetailsPage() {
         }}
         onConfirm={handleConfirmOrder}
         onNoteSaved={() => fetchCustomerDetails()}
+      />
+
+      {/* Cancel Order Modal */}
+      <CancelOrderModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancelOrderId(null);
+        }}
+        onConfirm={handleCancelConfirm}
+        orderId={cancelOrderId || ""}
       />
 
       {/* Toast */}

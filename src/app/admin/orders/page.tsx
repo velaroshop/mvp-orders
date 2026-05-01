@@ -21,11 +21,12 @@ import CompactRevenueChart from "../components/CompactRevenueChart";
 
 export default function AdminPage() {
   const { data: session } = useSession();
+  const userRole = (session?.user as any)?.activeRole;
   const isSuperadmin = useMemo(() => {
-    const userRole = (session?.user as any)?.activeRole;
     const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
     return userRole === "owner" && isSuperadminOrg === true;
   }, [session]);
+  const isStoreManager = userRole === "store_manager";
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -1553,7 +1554,7 @@ export default function AdminPage() {
                       {/* Total Revenue */}
                       <div className="bg-zinc-900/50 rounded p-2">
                         <p className="text-[10px] text-zinc-400 mb-0.5">Total Revenue</p>
-                        <p className="text-lg font-bold text-emerald-500">
+                        <p className={`text-lg font-bold text-emerald-500 ${isStoreManager ? "blur-sm select-none" : ""}`}>
                           {kpiStats.totalRevenue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
                         </p>
                       </div>
@@ -1561,7 +1562,7 @@ export default function AdminPage() {
                       {/* Average Order Value */}
                       <div className="bg-zinc-900/50 rounded p-2">
                         <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Order Value</p>
-                        <p className="text-lg font-bold text-white">
+                        <p className={`text-lg font-bold text-white ${isStoreManager ? "blur-sm select-none" : ""}`}>
                           {kpiStats.avgOrderValue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
                         </p>
                       </div>
@@ -1657,6 +1658,7 @@ export default function AdminPage() {
                 yesterdayData={yesterdayRevenueData}
                 granularity={todayRevenueData.granularity}
                 loading={revenueLoading}
+                hideRevenue={isStoreManager}
               />
             </div>
           </div>

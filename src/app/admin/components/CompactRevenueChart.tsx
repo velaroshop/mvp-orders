@@ -13,14 +13,17 @@ interface CompactRevenueChartProps {
   yesterdayData?: RevenueData[];
   granularity: 'hourly' | 'daily' | 'monthly';
   loading?: boolean;
+  hideRevenue?: boolean;
 }
 
-export default function CompactRevenueChart({ data, yesterdayData, granularity, loading }: CompactRevenueChartProps) {
+export default function CompactRevenueChart({ data, yesterdayData, granularity, loading, hideRevenue }: CompactRevenueChartProps) {
   // Build a map of yesterday's data by period (hour)
   const yesterdayMap = new Map<string, number>();
+  const yesterdayOrdersMap = new Map<string, number>();
   if (yesterdayData) {
     yesterdayData.forEach(item => {
       yesterdayMap.set(item.period, item.totalRevenue);
+      yesterdayOrdersMap.set(item.period, item.orderCount);
     });
   }
 
@@ -43,6 +46,7 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
       ...item,
       displayLabel,
       yesterdayRevenue: yesterdayMap.get(item.period) ?? null,
+      yesterdayOrders: yesterdayOrdersMap.get(item.period) ?? null,
     };
   });
 
@@ -70,7 +74,7 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
     <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-4">
       {/* Header */}
       <div className="mb-3">
-        <h3 className="text-sm font-semibold text-white">Today&apos;s Revenue</h3>
+        <h3 className="text-sm font-semibold text-white">{hideRevenue ? "Today's Orders" : "Today's Revenue"}</h3>
         <p className="text-xs text-zinc-400 mt-0.5">Hourly breakdown</p>
       </div>
 
@@ -89,6 +93,7 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
               stroke="#a1a1aa"
               tick={{ fill: '#a1a1aa', fontSize: 10 }}
               width={35}
+              allowDecimals={hideRevenue ? false : true}
             />
             <Tooltip
               contentStyle={{
@@ -99,16 +104,18 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
                 fontSize: '12px'
               }}
               formatter={(value: any, name: any) => {
-                if (name === 'Yesterday') {
-                  return [`${Number(value).toFixed(2)} RON`, 'Yesterday'];
+                if (hideRevenue) {
+                  if (name === 'Yesterday') return [`${Number(value)} comenzi`, 'Ieri'];
+                  return [`${Number(value)} comenzi`, 'Azi'];
                 }
+                if (name === 'Yesterday') return [`${Number(value).toFixed(2)} RON`, 'Yesterday'];
                 return [`${Number(value).toFixed(2)} RON`, 'Revenue'];
               }}
             />
             {hasYesterday && (
               <Line
                 type="monotone"
-                dataKey="yesterdayRevenue"
+                dataKey={hideRevenue ? "yesterdayOrders" : "yesterdayRevenue"}
                 stroke="#71717a"
                 strokeWidth={1.5}
                 strokeDasharray="4 4"
@@ -120,10 +127,10 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
             )}
             <Line
               type="monotone"
-              dataKey="totalRevenue"
+              dataKey={hideRevenue ? "orderCount" : "totalRevenue"}
               stroke="#3b82f6"
               strokeWidth={2}
-              name="Revenue"
+              name={hideRevenue ? "Orders" : "Revenue"}
               dot={{ fill: '#3b82f6', r: 3 }}
             />
           </LineChart>
@@ -134,10 +141,16 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
       <div className="mt-3 pt-3 border-t border-zinc-700">
         <div className="flex items-center justify-between text-xs">
           <div>
-            <span className="text-white font-semibold">{todayTotal.toFixed(2)} RON</span>
-            <span className="text-zinc-500 ml-1">({todayOrders} comenzi)</span>
+            {hideRevenue ? (
+              <span className="text-white font-semibold">{todayOrders} comenzi</span>
+            ) : (
+              <>
+                <span className="text-white font-semibold">{todayTotal.toFixed(2)} RON</span>
+                <span className="text-zinc-500 ml-1">({todayOrders} comenzi)</span>
+              </>
+            )}
           </div>
-          {hasYesterday && yesterdayTotal > 0 && (
+          {hasYesterday && yesterdayTotal > 0 && !hideRevenue && (
             <span className={`font-semibold ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>
               {isUp ? '+' : ''}{diffPercent.toFixed(1)}%
             </span>
@@ -146,8 +159,14 @@ export default function CompactRevenueChart({ data, yesterdayData, granularity, 
         {hasYesterday && (
           <div className="flex items-center justify-between text-xs mt-1">
             <div>
-              <span className="text-zinc-400">Ieri: {yesterdayTotal.toFixed(2)} RON</span>
-              <span className="text-zinc-500 ml-1">({yesterdayOrders} comenzi)</span>
+              {hideRevenue ? (
+                <span className="text-zinc-400">Ieri: {yesterdayOrders} comenzi</span>
+              ) : (
+                <>
+                  <span className="text-zinc-400">Ieri: {yesterdayTotal.toFixed(2)} RON</span>
+                  <span className="text-zinc-500 ml-1">({yesterdayOrders} comenzi)</span>
+                </>
+              )}
             </div>
           </div>
         )}

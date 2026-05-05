@@ -40,7 +40,7 @@ function PreviewContent() {
         padding: "20px",
       }}
     >
-      <div id="velaro-thank-you" style={{ width: "100%", maxWidth: 600 }} />
+      <div id="preview-thank-you" style={{ width: "100%", maxWidth: 600 }} />
     </div>
   );
 }

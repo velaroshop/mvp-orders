@@ -1,12 +1,12 @@
 /**
- * Velaro Widget Embed Script
+ * Widget Embed Script
  *
  * This script handles iframe initialization with tracking parameter propagation
  * from the parent landing page URL to the embedded widget iframe.
  *
  * Usage:
- * <script src="https://mvp-orders.vercel.app/embed.js"></script>
- * <div id="velaro-widget-YOUR_SLUG"></div>
+ * <script src="https://app.ecom-society.com/embed.js"></script>
+ * <div id="{ORG_SLUG}-widget-{LANDING_PAGE_SLUG}"></div>
  */
 
 (function() {
@@ -81,9 +81,12 @@
   /**
    * Build iframe src URL with tracking params
    */
-  function buildIframeSrc(slug, trackingParams) {
+  function buildIframeSrc(slug, orgSlug, trackingParams) {
     const url = new URL(`${WIDGET_DOMAIN}/widget`);
     url.searchParams.set('slug', slug);
+    if (orgSlug) {
+      url.searchParams.set('org', orgSlug);
+    }
 
     // Add all tracking params to URL
     Object.keys(trackingParams).forEach(key => {
@@ -98,13 +101,13 @@
   /**
    * Initialize iframe with tracking
    */
-  function initializeWidget(container, slug) {
+  function initializeWidget(container, slug, orgSlug) {
     const tracking = getTrackingParams();
-    const iframeSrc = buildIframeSrc(slug, tracking);
+    const iframeSrc = buildIframeSrc(slug, orgSlug, tracking);
 
     // Create iframe element
     const iframe = document.createElement('iframe');
-    iframe.id = `velaro-widget-${slug}-iframe`;
+    iframe.id = `${container.id}-iframe`;
     iframe.src = iframeSrc;
     iframe.width = '100%';
     iframe.style.border = 'none';
@@ -161,25 +164,39 @@
   }
 
   /**
+   * Parse container ID to extract org slug and landing page slug
+   * Format: {org-slug}-widget-{lp-slug}
+   * Example: velaro-widget-goldfoil → org: "velaro", slug: "goldfoil"
+   * Example: my-shop-widget-cream → org: "my-shop", slug: "cream"
+   */
+  function parseContainerId(id) {
+    const widgetIndex = id.indexOf('-widget-');
+    if (widgetIndex === -1) return null;
+    const orgSlug = id.substring(0, widgetIndex);
+    const lpSlug = id.substring(widgetIndex + '-widget-'.length);
+    if (!orgSlug || !lpSlug) return null;
+    return { orgSlug, lpSlug };
+  }
+
+  /**
    * Initialize all widgets on page load
    */
   function init() {
-    // Find all widget containers
-    const containers = document.querySelectorAll('[id^="velaro-widget-"]');
+    // Find all widget containers matching {org}-widget-{slug} pattern
+    const containers = document.querySelectorAll('[id*="-widget-"]');
     const iframes = [];
 
     containers.forEach(container => {
-      // Extract slug from container ID
-      // Format: velaro-widget-{slug}
-      const slug = container.id.replace('velaro-widget-', '');
+      // Parse org slug and landing page slug from container ID
+      const parsed = parseContainerId(container.id);
 
-      if (!slug) {
-        console.error('Velaro Widget: Invalid container ID format. Expected: velaro-widget-{slug}');
+      if (!parsed) {
+        console.error('Widget: Invalid container ID format. Expected: {org-slug}-widget-{landing-page-slug}');
         return;
       }
 
       // Initialize widget
-      const iframe = initializeWidget(container, slug);
+      const iframe = initializeWidget(container, parsed.lpSlug, parsed.orgSlug);
       iframes.push(iframe);
     });
 
@@ -199,6 +216,6 @@
   // Expose global API for manual initialization if needed
   window.VelaroWidget = {
     init: init,
-    version: '1.0.0'
+    version: '2.0.0'
   };
 })();

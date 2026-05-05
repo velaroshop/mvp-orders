@@ -1,12 +1,12 @@
 /**
- * Velaro Thank You Page Embed Script
+ * Thank You Page Embed Script
  *
  * This script handles post-purchase upsell offers and confirmation messages
  * on the thank you page after order placement.
  *
  * Usage:
- * <script src="https://mvp-orders.vercel.app/thank-you-embed.js"></script>
- * <div id="velaro-thank-you"></div>
+ * <script src="https://app.ecom-society.com/thank-you-embed.js"></script>
+ * <div id="{ORG_SLUG}-thank-you"></div>
  *
  * The script reads the order ID from URL query parameter: ?order=xxx
  */
@@ -41,6 +41,7 @@
   let countdown = 0;
   let countdownInterval = null;
   let isPreviewMode = false;
+  let thankYouContainer = null;
 
   /**
    * Fetch order data from API
@@ -333,7 +334,7 @@
         handleDeclinePostsale(data.orderId);
       });
     } else {
-      console.error('Velaro Thank You: Buttons not found in DOM');
+      console.error('Thank You: Buttons not found in DOM');
     }
 
     // Start countdown
@@ -374,7 +375,7 @@
    * @param {object} [acceptedPostsale] - postsale upsell that was just accepted { name, quantity, price }
    */
   function showConfirmationMessage(customerName, acceptedPostsale) {
-    const container = document.getElementById('velaro-thank-you');
+    const container = thankYouContainer;
     if (!container) return;
 
     // Clear countdown
@@ -534,10 +535,13 @@
    * Initialize the thank you page widget
    */
   async function init() {
-    const container = document.getElementById('velaro-thank-you');
+    // Find the thank-you container dynamically: any element with ID ending in "-thank-you"
+    // Format: {org-slug}-thank-you (e.g., velaro-thank-you, my-shop-thank-you)
+    thankYouContainer = document.querySelector('[id$="-thank-you"]');
+    const container = thankYouContainer;
 
     if (!container) {
-      console.error('Velaro Thank You: Container element #velaro-thank-you not found');
+      console.error('Thank You: Container element with ID ending in "-thank-you" not found');
       return;
     }
 
@@ -547,7 +551,7 @@
     isPreviewMode = !!previewId;
 
     if (!orderId && !previewId) {
-      console.error('Velaro Thank You: No order ID found in URL');
+      console.error('Thank You: No order ID found in URL');
       container.innerHTML = '<div style="padding: 40px; text-align: center; color: #dc2626;">Eroare: Comanda nu a fost găsită.</div>';
       return;
     }

@@ -22,13 +22,37 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    const orgSlug = request.nextUrl.searchParams.get("org");
 
-    // Fetch landing page first (we need IDs for parallel queries)
-    const { data: landingPage, error } = await supabase
+    // If org slug provided, resolve organization ID first
+    let organizationId: string | null = null;
+    if (orgSlug) {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("id")
+        .eq("slug", orgSlug)
+        .single();
+
+      if (!org) {
+        return NextResponse.json(
+          { error: "Organization not found" },
+          { status: 404 }
+        );
+      }
+      organizationId = org.id;
+    }
+
+    // Fetch landing page (filtered by org if provided, otherwise by slug only for backward compatibility)
+    let query = supabase
       .from("landing_pages")
       .select("*, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3, price_1, price_2, price_3, fb_pixel_id, client_side_tracking")
-      .eq("slug", slug)
-      .single();
+      .eq("slug", slug);
+
+    if (organizationId) {
+      query = query.eq("organization_id", organizationId);
+    }
+
+    const { data: landingPage, error } = await query.single();
 
     if (error || !landingPage) {
       console.error("[API] Landing page not found. Error:", error);

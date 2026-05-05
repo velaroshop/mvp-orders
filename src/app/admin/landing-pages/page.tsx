@@ -67,6 +67,8 @@ export default function LandingPagesPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const activePlan = (session?.user as any)?.activePlan || "pro";
+  const activeOrgId = (session?.user as any)?.activeOrganizationId;
+  const orgSlug = ((session?.user as any)?.organizations || []).find((o: any) => o.id === activeOrgId)?.slug || "";
   const isProPlan = activePlan === "pro";
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
   const [upsellsByLandingPage, setUpsellsByLandingPage] = useState<Record<string, Upsell[]>>({});
@@ -387,13 +389,13 @@ export default function LandingPagesPage() {
     const origin = window.location.origin;
 
     if (type === "thankyou") {
-      return `<!-- Velaro Thank You Page Embed (Post-Purchase) -->
+      return `<!-- Thank You Page Embed (Post-Purchase) -->
 <script src="${origin}/thank-you-embed.js"></script>
-<div id="velaro-thank-you"></div>`;
+<div id="${orgSlug}-thank-you"></div>`;
     }
 
-    const containerId = `velaro-widget-${slug}`;
-    return `<!-- Velaro Widget Embed with Tracking -->
+    const containerId = `${orgSlug}-widget-${slug}`;
+    return `<!-- Widget Embed with Tracking -->
 <script src="${origin}/embed.js"></script>
 <div id="${containerId}"></div>`;
   }

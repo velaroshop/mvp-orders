@@ -73,6 +73,7 @@ interface LandingPage {
 function WidgetFormContent() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug");
+  const org = searchParams.get("org");
 
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
@@ -406,7 +407,10 @@ function WidgetFormContent() {
   async function fetchLandingPage() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/landing-pages/public/${slug}`);
+      const apiUrl = org
+        ? `/api/landing-pages/public/${slug}?org=${encodeURIComponent(org)}`
+        : `/api/landing-pages/public/${slug}`;
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
         throw new Error("Landing page not found");

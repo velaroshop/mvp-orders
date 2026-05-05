@@ -23,11 +23,13 @@ export default function SimulatorPage() {
   }, [session, status, router, isSuperadmin]);
 
   // Editable KPI values
-  const [totalRevenue, setTotalRevenue] = useState(6706.6);
   const [avgOrderValue, setAvgOrderValue] = useState(100.1);
   const [orderCount, setOrderCount] = useState(67);
   const [productsSold, setProductsSold] = useState(140);
   const [upsellRate, setUpsellRate] = useState(19.4);
+
+  // Total Revenue calculated automatically
+  const totalRevenue = orderCount * avgOrderValue;
 
   // Filter display values
   const today = new Date().toISOString().split("T")[0];
@@ -50,6 +52,7 @@ export default function SimulatorPage() {
     { key: "wtd", label: "Week To Date" },
     { key: "mtd", label: "Month To Date" },
     { key: "all", label: "All Time" },
+    { key: "custom", label: "Custom" },
   ];
 
   // Format date for display (DD/MM/YYYY)
@@ -161,14 +164,10 @@ export default function SimulatorPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Total Revenue</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={totalRevenue}
-                  onChange={(e) => setTotalRevenue(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
-                />
+                <label className="block text-xs text-zinc-400 mb-1">Total Revenue <span className="text-zinc-600">(auto)</span></label>
+                <div className="w-full px-3 py-2 text-sm bg-zinc-950 border border-zinc-700 rounded text-emerald-400 font-medium">
+                  {totalRevenue.toFixed(2)}
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Avg. Order Value</label>

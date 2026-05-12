@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
@@ -541,6 +542,7 @@ export default function AdminPage() {
 
   async function handleConfirmClick(order: Order) {
     setSelectedOrder(order);
+    setIsViewMode(false);
 
     // For scheduled orders, show beautiful modal
     if (order.status === "scheduled") {
@@ -1906,7 +1908,12 @@ export default function AdminPage() {
                 currentOrders.map((order, orderIndex) => (
                   <tr
                     key={order.id}
-                    className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50"
+                    className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50 cursor-pointer"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setIsViewMode(true);
+                      setIsModalOpen(true);
+                    }}
                   >
                     {/* Order ID */}
                     <td className="pl-3 pr-1 py-1.5">
@@ -2182,7 +2189,7 @@ export default function AdminPage() {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-1 py-1.5">
+                    <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex flex-col gap-1">
                         {/* CONFIRM Button - Compact icon on mobile, text on desktop */}
                         {/* Disabled for: queue, testing, confirmed, cancelled, sync_error */}
@@ -2427,9 +2434,11 @@ export default function AdminPage() {
               <ConfirmOrderModal
                 order={selectedOrder}
                 isOpen={isModalOpen}
+                readOnly={isViewMode}
                 onClose={() => {
                   setIsModalOpen(false);
                   setSelectedOrder(null);
+                  setIsViewMode(false);
                 }}
                 onConfirm={handleModalConfirm}
                 onNoteSaved={() => fetchOrders(searchQuery, { silent: true })}

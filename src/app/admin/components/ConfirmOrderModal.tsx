@@ -26,6 +26,7 @@ interface ConfirmOrderModalProps {
   onClose: () => void;
   onConfirm: (updatedOrder: Partial<Order> & { streetNumber?: string }) => Promise<void>;
   onNoteSaved?: () => void;
+  readOnly?: boolean;
 }
 
 export default function ConfirmOrderModal({
@@ -34,6 +35,7 @@ export default function ConfirmOrderModal({
   onClose,
   onConfirm,
   onNoteSaved,
+  readOnly = false,
 }: ConfirmOrderModalProps) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -261,10 +263,11 @@ export default function ConfirmOrderModal({
                   <input
                     type="text"
                     value={formData.fullName}
+                    readOnly={readOnly}
                     onChange={(e) =>
                       setFormData({ ...formData, fullName: e.target.value })
                     }
-                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className={`w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 ${readOnly ? "opacity-60 cursor-default" : ""}`}
                     placeholder="Full Name"
                   />
                 </div>
@@ -277,6 +280,7 @@ export default function ConfirmOrderModal({
                     <input
                       type="tel"
                       value={formData.phone}
+                      readOnly={readOnly}
                       onChange={(e) => {
                         // Accept only digits and max 10 characters
                         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -322,6 +326,7 @@ export default function ConfirmOrderModal({
                   <input
                     type="date"
                     value={formData.scheduledDate}
+                    disabled={readOnly}
                     onChange={(e) =>
                       setFormData({ ...formData, scheduledDate: e.target.value })
                     }
@@ -547,10 +552,11 @@ export default function ConfirmOrderModal({
                   <input
                     type="text"
                     value={formData.county}
+                    readOnly={readOnly}
                     onChange={(e) =>
                       setFormData({ ...formData, county: e.target.value })
                     }
-                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className={`w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 ${readOnly ? "opacity-60 cursor-default" : ""}`}
                     placeholder="County"
                   />
                   <p className="text-xs text-zinc-500 mt-0.5 truncate">
@@ -565,10 +571,11 @@ export default function ConfirmOrderModal({
                   <input
                     type="text"
                     value={formData.city}
+                    readOnly={readOnly}
                     onChange={(e) =>
                       setFormData({ ...formData, city: e.target.value })
                     }
-                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className={`w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 ${readOnly ? "opacity-60 cursor-default" : ""}`}
                     placeholder="City"
                   />
                   <p className="text-xs text-zinc-500 mt-0.5 truncate">
@@ -584,10 +591,11 @@ export default function ConfirmOrderModal({
                 <input
                   type="text"
                   value={formData.address}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`w-full rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 ${readOnly ? "opacity-60 cursor-default" : ""}`}
                   placeholder="Strada &#537;i num&#259;rul"
                 />
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -602,6 +610,7 @@ export default function ConfirmOrderModal({
                 <input
                   type="text"
                   value={formData.addressDetails}
+                  readOnly={readOnly}
                   onChange={(e) =>
                     setFormData({ ...formData, addressDetails: e.target.value })
                   }
@@ -609,7 +618,7 @@ export default function ConfirmOrderModal({
                     formData.addressDetails.length > 30
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-zinc-700 focus:ring-emerald-500'
-                  }`}
+                  } ${readOnly ? "opacity-60 cursor-default" : ""}`}
                   placeholder="Bloc, scar&#259;, apartament, indica&#539;ii..."
                 />
                 {formData.addressDetails.length > 30 && (
@@ -626,6 +635,7 @@ export default function ConfirmOrderModal({
                 <input
                   type="text"
                   value={formData.postalCode}
+                  readOnly={readOnly}
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                     setFormData({ ...formData, postalCode: value });
@@ -635,7 +645,7 @@ export default function ConfirmOrderModal({
                     formData.postalCode.trim()
                       ? 'border-zinc-700 focus:ring-emerald-500'
                       : 'border-red-500 focus:ring-red-500'
-                  }`}
+                  } ${readOnly ? "opacity-60 cursor-default" : ""}`}
                   placeholder="Introdu sau selectează din sugestii"
                 />
 
@@ -754,13 +764,15 @@ export default function ConfirmOrderModal({
                    >
                      Cancel
                    </button>
-                   <button
-                     type="submit"
-                     disabled={isSubmitting || !formData.postalCode.trim() || formData.addressDetails.length > 30}
-                     className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                   >
-                     {isSubmitting ? "Se salvează..." : "Save & Send"}
-                   </button>
+                   {!readOnly && (
+                     <button
+                       type="submit"
+                       disabled={isSubmitting || !formData.postalCode.trim() || formData.addressDetails.length > 30}
+                       className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       {isSubmitting ? "Se salvează..." : "Save & Send"}
+                     </button>
+                   )}
                  </div>
         </form>
       </div>

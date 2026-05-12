@@ -494,8 +494,9 @@ export default function ConfirmOrderModal({
                       <button type="button" onClick={() => setNoteLine1("OK")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">OK</button>
                       <button type="button" onClick={() => setNoteLine1("TRY 1")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-yellow-400 text-yellow-950 hover:bg-yellow-500 transition-colors">TRY 1</button>
                       <button type="button" onClick={() => setNoteLine1("TRY 2")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors">TRY 2</button>
+                      <button type="button" onClick={() => setNoteLine1("TRY 3")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors">TRY 3</button>
                       <button type="button" onClick={() => setNoteLine1("ANULEAZA")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">ANULEAZA</button>
-                      <button type="button" onClick={() => setNoteLine1("NR. INCORECT")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">NR. INCORECT</button>
+                      <button type="button" onClick={() => setNoteLine1("NR. GRESIT")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">NR. GRESIT</button>
                       <button type="button" onClick={() => setNoteLine1("DUPLICAT")} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-500 text-white hover:bg-purple-600 transition-colors">DUPLICAT</button>
                     </div>
                   </div>

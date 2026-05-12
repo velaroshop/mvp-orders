@@ -2053,10 +2053,11 @@ export default function AdminPage() {
                           const isOK = firstLine === "OK";
                           const isTry1 = firstLine === "TRY 1";
                           const isTry2 = firstLine === "TRY 2";
+                          const isTry3 = firstLine === "TRY 3";
                           const isAnuleaza = firstLine === "ANULEAZA";
-                          const isNrIncorect = firstLine === "NR. INCORECT";
+                          const isNrIncorect = firstLine === "NR. INCORECT" || firstLine === "NR. GRESIT";
                           const isDuplicat = firstLine === "DUPLICAT";
-                          const isPredefined = isOK || isTry1 || isTry2 || isAnuleaza || isNrIncorect || isDuplicat;
+                          const isPredefined = isOK || isTry1 || isTry2 || isTry3 || isAnuleaza || isNrIncorect || isDuplicat;
 
                           if (!isPredefined) {
                             return (
@@ -2073,6 +2074,7 @@ export default function AdminPage() {
                               {isOK && <span className="bg-emerald-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isTry1 && <span className="bg-yellow-400 text-yellow-950 rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isTry2 && <span className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
+                              {isTry3 && <span className="bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isAnuleaza && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isNrIncorect && <span className="bg-red-600 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}
                               {isDuplicat && <span className="bg-purple-500 text-white rounded px-1.5 py-0.5 text-[10px] font-semibold w-fit">{firstLine}</span>}

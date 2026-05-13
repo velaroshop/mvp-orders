@@ -99,6 +99,7 @@ export interface Order {
   callAttempts?: number;
   lastCallAt?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface PartialOrder {

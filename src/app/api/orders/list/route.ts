@@ -125,6 +125,7 @@ export async function GET(request: Request) {
       callAttempts: row.call_attempts ?? 0,
       lastCallAt: row.last_call_at ?? undefined,
       createdAt: row.created_at,
+      updatedAt: row.updated_at ?? undefined,
     }));
 
     return NextResponse.json({
@@ -234,6 +235,7 @@ async function fallbackSearch(
     callAttempts: row.call_attempts ?? 0,
     lastCallAt: row.last_call_at ?? undefined,
     createdAt: row.created_at,
+    updatedAt: row.updated_at ?? undefined,
   }));
 
   return NextResponse.json({

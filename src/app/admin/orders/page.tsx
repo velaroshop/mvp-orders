@@ -2185,7 +2185,7 @@ export default function AdminPage() {
                       <div className="flex flex-col">
                         <span className="text-zinc-300 text-[10px]">{new Date(order.createdAt).toLocaleDateString("ro-RO", { year: "numeric", month: "2-digit", day: "2-digit" })}</span>
                         <span className="text-zinc-500 text-[9px]">{new Date(order.createdAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}</span>
-                        {order.updatedAt && order.updatedAt !== order.createdAt && (
+                        {order.updatedAt && Math.abs(new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) > 60000 && (
                           <span className="text-zinc-500 text-[9px] mt-0.5">✏️ {new Date(order.updatedAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" })}, {new Date(order.updatedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}</span>
                         )}
                       </div>

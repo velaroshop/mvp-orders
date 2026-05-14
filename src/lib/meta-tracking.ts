@@ -283,7 +283,7 @@ export async function sendMetaPurchaseEvent(params: {
     };
 
     // Send to Meta CAPI
-    const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
+    const url = `https://graph.facebook.com/v25.0/${pixelId}/events?access_token=${accessToken}`;
 
     console.log('[Meta CAPI] Sending Purchase event:', {
       orderId,

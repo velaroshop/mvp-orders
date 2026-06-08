@@ -1003,6 +1003,27 @@ export default function AdminPage() {
   // Format date
 
   async function handleActionClick(orderId: string, action: string) {
+    if (action === "blacklist") {
+      const order = orders.find((o) => o.id === orderId);
+      if (!order?.customerId) return;
+      const reason = prompt("Motiv blacklist (opțional):");
+      if (reason === null) { setOpenDropdown(null); return; }
+      try {
+        const res = await fetch(`/api/customers/${order.customerId}/blacklist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: reason || undefined }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        setToast({ isOpen: true, type: "success", message: "Client adăugat pe blacklist" });
+        fetchOrders(searchQuery, { silent: true });
+      } catch (error) {
+        setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+      }
+      setOpenDropdown(null);
+      return;
+    }
+
     if (action === "confirm") {
       const order = orders.find((o) => o.id === orderId);
       if (order) {
@@ -2286,6 +2307,14 @@ export default function AdminPage() {
                                 >
                                   Order Note
                                 </button>
+                                {order.customerId && (
+                                  <button
+                                    onClick={() => handleActionClick(order.id, "blacklist")}
+                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"
+                                  >
+                                    🚫 Blacklist Customer
+                                  </button>
+                                )}
                                 {(order.status === "pending" || order.status === "confirmed" || order.status === "hold") && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "change")}

@@ -677,7 +677,13 @@ export default function AdsDashboardPage() {
             <input
               type="date"
               value={customStart}
-              onChange={(e) => setCustomStart(e.target.value)}
+              onChange={(e) => {
+                const newStart = e.target.value;
+                setCustomStart(newStart);
+                if (newStart && (!customEnd || newStart > customEnd)) {
+                  setCustomEnd(newStart);
+                }
+              }}
               className="px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white"
             />
             <span className="text-zinc-500">-</span>
@@ -687,7 +693,7 @@ export default function AdsDashboardPage() {
               onChange={(e) => {
                 const newEnd = e.target.value;
                 setCustomEnd(newEnd);
-                if (newEnd && customStart && newEnd < customStart) {
+                if (newEnd && (!customStart || newEnd < customStart)) {
                   setCustomStart(newEnd);
                 }
               }}

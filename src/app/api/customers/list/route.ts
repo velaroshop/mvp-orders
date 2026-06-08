@@ -149,6 +149,7 @@ export async function GET(request: Request) {
       totalSpent: customerConfirmedTotals.get(row.id) || 0,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      isBlacklisted: row.is_blacklisted || false,
     }));
 
     console.log(`[Customers List] Returned ${mappedCustomers.length} customers (search: "${searchQuery}", total: ${totalCount})`);

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 
-type EntityType = "landing_page" | "product" | "upsell" | "store" | "team_member";
-type AuditAction = "create" | "update" | "delete" | "status_change" | "toggle_active";
+type EntityType = "landing_page" | "product" | "upsell" | "store" | "team_member" | "customer";
+type AuditAction = "create" | "update" | "delete" | "status_change" | "toggle_active" | "blacklist" | "unblacklist";
 
 interface AuditLogParams {
   organizationId: string;

@@ -27,7 +27,7 @@ export async function POST(
     // Verify order exists and is in queue or testing status
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status")
+      .select("id, status, customer_id")
       .eq("id", orderId)
       .single();
 
@@ -60,6 +60,33 @@ export async function POST(
         },
         { status: 200, headers }
       );
+    }
+
+    // Check if customer is blacklisted
+    if (order.customer_id) {
+      const { data: customer } = await supabaseAdmin
+        .from("customers")
+        .select("is_blacklisted")
+        .eq("id", order.customer_id)
+        .single();
+
+      if (customer?.is_blacklisted) {
+        console.log("[Finalize] Customer is blacklisted, auto-cancelling order:", orderId);
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            status: "cancelled",
+            cancelled_note: "BLACKLIST",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+
+        return NextResponse.json({
+          success: true,
+          orderId,
+          message: "Order auto-cancelled (blacklisted customer)",
+        }, { headers });
+      }
     }
 
     // Sync order to Helpship (will update status to 'pending' on success)

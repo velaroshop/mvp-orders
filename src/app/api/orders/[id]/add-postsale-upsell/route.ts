@@ -56,7 +56,7 @@ export async function POST(
     // Get the order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, organization_id, upsells, helpship_order_id, total, status, queue_expires_at")
+      .select("id, organization_id, upsells, helpship_order_id, total, status, queue_expires_at, customer_id")
       .eq("id", orderId)
       .single();
 
@@ -175,6 +175,33 @@ export async function POST(
         { error: "Failed to update order" },
         { status: 500, headers }
       );
+    }
+
+    // Check if customer is blacklisted before syncing
+    if (order.customer_id) {
+      const { data: customer } = await supabaseAdmin
+        .from("customers")
+        .select("is_blacklisted")
+        .eq("id", order.customer_id)
+        .single();
+
+      if (customer?.is_blacklisted) {
+        console.log("[Postsale] Customer is blacklisted, auto-cancelling order:", orderId);
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            status: "cancelled",
+            cancelled_note: "BLACKLIST",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+
+        return NextResponse.json({
+          success: true,
+          orderId,
+          message: "Order auto-cancelled (blacklisted customer)",
+        }, { headers });
+      }
     }
 
     console.log("[Postsale] Upsell added to order, now syncing to Helpship");

@@ -33,6 +33,9 @@ export interface Customer {
   totalSpent: number;
   createdAt: string;
   updatedAt: string;
+  isBlacklisted?: boolean;
+  blacklistedAt?: string;
+  blacklistedReason?: string;
 }
 
 export interface LandingPage {

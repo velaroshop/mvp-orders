@@ -70,6 +70,9 @@ export async function GET(
       totalSpent: 0, // Will be calculated from confirmed orders
       createdAt: customerData.created_at,
       updatedAt: customerData.updated_at,
+      isBlacklisted: customerData.is_blacklisted || false,
+      blacklistedAt: customerData.blacklisted_at || null,
+      blacklistedReason: customerData.blacklisted_reason || null,
     };
 
     // Calculate totalSpent only from confirmed orders

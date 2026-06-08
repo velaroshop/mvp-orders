@@ -312,6 +312,24 @@ export default function CustomerDetailsPage() {
     }
   }
 
+  async function handleToggleBlacklist() {
+    const reason = customer?.isBlacklisted ? undefined : prompt(`Motiv blacklist (opțional):`);
+    if (!customer?.isBlacklisted && reason === null) return; // user cancelled prompt
+
+    try {
+      const res = await fetch(`/api/customers/${customerId}/blacklist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason || undefined }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      setToast({ isOpen: true, type: "success", message: `Client ${customer?.isBlacklisted ? "scos de pe" : "adăugat pe"} blacklist` });
+      fetchCustomerDetails();
+    } catch (error) {
+      setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl">
@@ -353,6 +371,27 @@ export default function CustomerDetailsPage() {
         <h1 className="text-3xl font-bold text-white">Detalii Client</h1>
       </div>
 
+      {/* Blacklist Banner */}
+      {customer.isBlacklisted && (
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-red-300 font-semibold">🚫 Client pe Blacklist</p>
+            {customer.blacklistedReason && (
+              <p className="text-red-400 text-sm mt-1">Motiv: {customer.blacklistedReason}</p>
+            )}
+            {customer.blacklistedAt && (
+              <p className="text-red-500 text-xs mt-1">Din: {formatDate(customer.blacklistedAt)}</p>
+            )}
+          </div>
+          <button
+            onClick={handleToggleBlacklist}
+            className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors"
+          >
+            Scoate de pe Blacklist
+          </button>
+        </div>
+      )}
+
       {/* Customer Info Card */}
       <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -385,7 +424,8 @@ export default function CustomerDetailsPage() {
           </div>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-zinc-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-6 pt-6 border-t border-zinc-700 flex items-center justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
           <div>
             <div className="text-sm text-zinc-400 mb-1">Prima Comandă</div>
             <div className="text-sm text-zinc-300">
@@ -402,6 +442,15 @@ export default function CustomerDetailsPage() {
                 : "-"}
             </div>
           </div>
+          </div>
+          {!customer.isBlacklisted && (
+            <button
+              onClick={handleToggleBlacklist}
+              className="ml-4 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors whitespace-nowrap"
+            >
+              🚫 Blacklist
+            </button>
+          )}
         </div>
       </div>
 

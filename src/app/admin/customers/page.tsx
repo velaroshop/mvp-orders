@@ -236,8 +236,13 @@ function CustomersPageContent() {
                       className="hover:bg-zinc-700/50 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white">
-                          {customer.name || "-"}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">
+                            {customer.name || "-"}
+                          </span>
+                          {(customer as any).isBlacklisted && (
+                            <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">BLACKLIST</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

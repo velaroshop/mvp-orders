@@ -348,13 +348,13 @@ export default function AdsDashboardPage() {
         setShowAttributeModal(false);
         setAttributeMessage(null);
         setSelectedProductId("");
+        setIsAttributing(false);
       }, 2000);
     } catch (err) {
       setAttributeMessage({
         type: "error",
         text: err instanceof Error ? err.message : "Failed to attribute spend",
       });
-    } finally {
       setIsAttributing(false);
     }
   }
@@ -684,7 +684,13 @@ export default function AdsDashboardPage() {
             <input
               type="date"
               value={customEnd}
-              onChange={(e) => setCustomEnd(e.target.value)}
+              onChange={(e) => {
+                const newEnd = e.target.value;
+                setCustomEnd(newEnd);
+                if (newEnd && customStart && newEnd < customStart) {
+                  setCustomStart(newEnd);
+                }
+              }}
               className="px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white"
             />
           </div>

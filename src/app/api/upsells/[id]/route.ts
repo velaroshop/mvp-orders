@@ -223,6 +223,17 @@ export async function PUT(
       );
     }
 
+    // Radio behavior: when activating a postsale upsell, deactivate all other postsale upsells on the same landing page
+    if (active === true && existingUpsell.type === "postsale" && existingUpsell.landing_page_id) {
+      await supabase
+        .from("upsells")
+        .update({ active: false })
+        .eq("landing_page_id", existingUpsell.landing_page_id)
+        .eq("type", "postsale")
+        .eq("organization_id", organizationId)
+        .neq("id", id);
+    }
+
     // Build changes object from fields that actually changed
     const changes: Record<string, { old: any; new: any }> = {};
     const trackFields = ["landing_page_id", "type", "product_id", "title", "description", "quantity", "srp", "price", "media_url", "active", "display_order"];

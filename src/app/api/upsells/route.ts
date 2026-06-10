@@ -205,6 +205,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Radio behavior: when creating an active postsale, deactivate other postsale upsells on same landing page
+    if (active && type === "postsale") {
+      await supabase
+        .from("upsells")
+        .update({ active: false })
+        .eq("landing_page_id", landing_page_id)
+        .eq("type", "postsale")
+        .eq("organization_id", organizationId)
+        .neq("id", upsell.id);
+    }
+
     logAudit({
       organizationId,
       userId: (session.user as any).id,

@@ -718,24 +718,13 @@ export default function LandingPagesPage() {
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
                                   Postsale Upsells
                                 </h4>
-                                {(() => {
-                                  const postsaleUpsells = (upsellsByLandingPage[page.id] || []).filter(u => u.type === "postsale");
-                                  const hasPostsale = postsaleUpsells.length > 0;
-                                  return (
-                                    <button
-                                      onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
-                                      disabled={hasPostsale}
-                                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                        hasPostsale
-                                          ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                                          : "bg-emerald-600 text-white hover:bg-emerald-700"
-                                      }`}
-                                      title={hasPostsale ? "Poți avea doar un singur postsale upsell" : "Adaugă postsale upsell"}
-                                    >
-                                      + Adaugă Postsale
-                                    </button>
-                                  );
-                                })()}
+                                <button
+                                  onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
+                                  className="px-3 py-1 rounded text-xs font-medium transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+                                  title="Adaugă postsale upsell"
+                                >
+                                  + Adaugă Postsale
+                                </button>
                               </div>
                               <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
                                 {(() => {
@@ -1285,14 +1274,10 @@ export default function LandingPagesPage() {
                   return <p className="text-sm text-zinc-400 italic">Nu există alte landing pages disponibile</p>;
                 }
 
-                const isPostsale = copyUpsellModal.type === "postsale";
-
                 return (
                   <div className="space-y-1">
                     {otherPages.map((lp) => {
-                      const lpUpsells = upsellsByLandingPage[lp.id] || [];
-                      const hasPostsale = lpUpsells.some(u => u.type === "postsale");
-                      const disabled = isPostsale && hasPostsale;
+                      const disabled = false;
                       const checked = selectedCopyTargets.includes(lp.id);
 
                       return (
@@ -1324,11 +1309,6 @@ export default function LandingPagesPage() {
                             <p className="text-sm text-white truncate">{lp.name}</p>
                             <p className="text-xs text-zinc-500 truncate">{lp.slug}</p>
                           </div>
-                          {disabled && (
-                            <span className="text-[10px] px-2 py-0.5 bg-zinc-700 text-zinc-400 rounded shrink-0">
-                              Are deja postsale
-                            </span>
-                          )}
                         </label>
                       );
                     })}

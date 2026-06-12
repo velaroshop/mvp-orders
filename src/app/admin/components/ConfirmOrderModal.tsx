@@ -20,6 +20,11 @@ interface PostalCodeResult {
 }
 import { sanitizeStreet } from "@/lib/sanitizeStreet";
 
+interface DuplicateInfo {
+  count: number;
+  days: number;
+}
+
 interface ConfirmOrderModalProps {
   order: Order | null;
   isOpen: boolean;
@@ -27,6 +32,7 @@ interface ConfirmOrderModalProps {
   onConfirm: (updatedOrder: Partial<Order> & { streetNumber?: string }) => Promise<void>;
   onNoteSaved?: () => void;
   readOnly?: boolean;
+  duplicateInfo?: DuplicateInfo | null;
 }
 
 export default function ConfirmOrderModal({
@@ -36,6 +42,7 @@ export default function ConfirmOrderModal({
   onConfirm,
   onNoteSaved,
   readOnly = false,
+  duplicateInfo,
 }: ConfirmOrderModalProps) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -241,6 +248,16 @@ export default function ConfirmOrderModal({
             ✕
           </button>
         </div>
+
+        {/* Duplicate Warning Banner */}
+        {duplicateInfo && duplicateInfo.count > 0 && (
+          <div className="mx-4 mt-3 p-2.5 bg-amber-900/30 border border-amber-700/50 rounded-lg flex items-center gap-2">
+            <span className="text-amber-400 text-sm">⚠️</span>
+            <p className="text-amber-300 text-xs">
+              Clientul are alte <span className="font-bold">{duplicateInfo.count}</span> comenzi în ultimele {duplicateInfo.days} zile
+            </p>
+          </div>
+        )}
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-4">

@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
+  const [viewDuplicateInfo, setViewDuplicateInfo] = useState<{ count: number; days: number } | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
@@ -1930,10 +1931,23 @@ export default function AdminPage() {
                   <tr
                     key={order.id}
                     className="border-t border-zinc-700 text-xs text-zinc-300 last:border-b hover:bg-zinc-700/50 cursor-pointer"
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedOrder(order);
                       setIsViewMode(true);
+                      setViewDuplicateInfo(null);
                       setIsModalOpen(true);
+                      // Check duplicates in background
+                      if (order.customerId) {
+                        try {
+                          const res = await fetch(`/api/orders/check-duplicates?customerId=${order.customerId}&currentOrderId=${order.id}`);
+                          if (res.ok) {
+                            const data = await res.json();
+                            if (data.hasDuplicates && data.orders.length > 0) {
+                              setViewDuplicateInfo({ count: data.orders.length, days: data.duplicateOrderDays });
+                            }
+                          }
+                        } catch {}
+                      }
                     }}
                   >
                     {/* Order ID */}
@@ -2467,10 +2481,12 @@ export default function AdminPage() {
                 order={selectedOrder}
                 isOpen={isModalOpen}
                 readOnly={isViewMode}
+                duplicateInfo={isViewMode ? viewDuplicateInfo : undefined}
                 onClose={() => {
                   setIsModalOpen(false);
                   setSelectedOrder(null);
                   setIsViewMode(false);
+                  setViewDuplicateInfo(null);
                 }}
                 onConfirm={handleModalConfirm}
                 onNoteSaved={() => fetchOrders(searchQuery, { silent: true })}

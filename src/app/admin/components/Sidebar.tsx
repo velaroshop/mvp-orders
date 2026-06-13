@@ -226,7 +226,7 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-zinc-800">
-          <p className="text-[13px] text-zinc-400 text-center italic">Sell smarter, not harder.</p>
+          <p className="text-[13px] text-zinc-400 text-center italic font-bold">Sell smarter, not harder!</p>
         </div>
       </aside>
     </>

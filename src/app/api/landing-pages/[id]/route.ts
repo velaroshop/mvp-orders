@@ -195,6 +195,9 @@ export async function PUT(
     if (body.price2 !== undefined) updateData.price_2 = body.price2;
     if (body.price3 !== undefined) updateData.price_3 = body.price3;
     if (body.shippingPrice !== undefined) updateData.shipping_price = body.shippingPrice;
+    if (body.free_shipping_offer_1 !== undefined) updateData.free_shipping_offer_1 = body.free_shipping_offer_1;
+    if (body.free_shipping_offer_2 !== undefined) updateData.free_shipping_offer_2 = body.free_shipping_offer_2;
+    if (body.free_shipping_offer_3 !== undefined) updateData.free_shipping_offer_3 = body.free_shipping_offer_3;
     if (body.postPurchaseStatus !== undefined) updateData.post_purchase_status = body.postPurchaseStatus;
     
     // Conversion Tracking

@@ -201,6 +201,9 @@ export default function EditLandingPagePage() {
           price2: formData.price_2,
           price3: formData.price_3,
           shippingPrice: formData.shipping_price,
+          free_shipping_offer_1: (formData as any).free_shipping_offer_1 || false,
+          free_shipping_offer_2: (formData as any).free_shipping_offer_2 || false,
+          free_shipping_offer_3: (formData as any).free_shipping_offer_3 || false,
           postPurchaseStatus: formData.post_purchase_status,
           fbPixelId: formData.fb_pixel_id || "",
           fbConversionToken: formData.fb_conversion_token || "",
@@ -825,6 +828,45 @@ export default function EditLandingPagePage() {
                 />
                 <p className="text-xs text-zinc-500 mt-1">
                   The price the customer will pay for shipping (max 99).
+                </p>
+              </div>
+
+              {/* Free Shipping per Offer */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-2">
+                  Transport Gratuit
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(formData as any)?.free_shipping_offer_1 || false}
+                      onChange={(e) => setFormData({ ...formData!, free_shipping_offer_1: e.target.checked } as any)}
+                      className="rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                    />
+                    <span className="text-sm text-zinc-300">Oferta 1</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(formData as any)?.free_shipping_offer_2 || false}
+                      onChange={(e) => setFormData({ ...formData!, free_shipping_offer_2: e.target.checked } as any)}
+                      className="rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                    />
+                    <span className="text-sm text-zinc-300">Oferta 2</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(formData as any)?.free_shipping_offer_3 || false}
+                      onChange={(e) => setFormData({ ...formData!, free_shipping_offer_3: e.target.checked } as any)}
+                      className="rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                    />
+                    <span className="text-sm text-zinc-300">Oferta 3</span>
+                  </label>
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Ofertele selectate vor avea transport gratuit (0 Lei).
                 </p>
               </div>
 

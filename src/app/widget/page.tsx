@@ -41,6 +41,9 @@ interface LandingPage {
   price_2: number;
   price_3: number;
   shipping_price: number;
+  free_shipping_offer_1?: boolean;
+  free_shipping_offer_2?: boolean;
+  free_shipping_offer_3?: boolean;
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -370,7 +373,7 @@ function WidgetFormContent() {
         productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
         subtotal: getCurrentPrice(),
-        shippingCost: landingPage.shipping_price,
+        shippingCost: getShippingPrice(),
         total: getTotalPrice(),
         lastCompletedField: lastField,
       };
@@ -612,7 +615,7 @@ function WidgetFormContent() {
         productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
         subtotal: getCurrentPrice(),
-        shippingCost: landingPage.shipping_price,
+        shippingCost: getShippingPrice(),
         total: getTotalPrice(),
         lastCompletedField: lastField,
       };
@@ -664,8 +667,21 @@ function WidgetFormContent() {
     }
   }
 
+  function hasFreeShipping() {
+    if (!landingPage) return false;
+    if (selectedOffer === "offer_1") return landingPage.free_shipping_offer_1 || false;
+    if (selectedOffer === "offer_2") return landingPage.free_shipping_offer_2 || false;
+    if (selectedOffer === "offer_3") return landingPage.free_shipping_offer_3 || false;
+    return false;
+  }
+
+  function getShippingPrice() {
+    if (hasFreeShipping()) return 0;
+    return landingPage?.shipping_price || 0;
+  }
+
   function getTotalPrice() {
-    return getCurrentPrice() + (landingPage?.shipping_price || 0) + getUpsellsTotal();
+    return getCurrentPrice() + getShippingPrice() + getUpsellsTotal();
   }
 
   function calculateDiscount() {
@@ -852,7 +868,7 @@ function WidgetFormContent() {
       address: address.trim(),
       upsells: selectedUpsellsData,
       subtotal: getCurrentPrice(),
-      shippingCost: landingPage.shipping_price,
+      shippingCost: getShippingPrice(),
       total: getTotalPrice(),
       // Meta tracking data
       tracking: trackingData,
@@ -1307,11 +1323,13 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_1")}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
-                  borderColor: primaryColor,
+                  borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor,
                   backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
                 } : {
-                  borderColor: '#e5e7eb',
-                  backgroundColor: '#fff'
+                  borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : '#e5e7eb',
+                  backgroundColor: '#fff',
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1328,6 +1346,9 @@ function WidgetFormContent() {
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
+                {landingPage.free_shipping_offer_1 && (
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                )}
               </button>
 
               <button
@@ -1335,11 +1356,13 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_2")}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
-                  borderColor: primaryColor,
+                  borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor,
                   backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
                 } : {
-                  borderColor: '#e5e7eb',
-                  backgroundColor: '#fff'
+                  borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : '#e5e7eb',
+                  backgroundColor: '#fff',
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1356,6 +1379,9 @@ function WidgetFormContent() {
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
+                {landingPage.free_shipping_offer_2 && (
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                )}
               </button>
 
               <button
@@ -1363,11 +1389,13 @@ function WidgetFormContent() {
                 onClick={() => setSelectedOffer("offer_3")}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
-                  borderColor: primaryColor,
+                  borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor,
                   backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
                 } : {
-                  borderColor: '#e5e7eb',
-                  backgroundColor: '#fff'
+                  borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : '#e5e7eb',
+                  backgroundColor: '#fff',
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1384,6 +1412,9 @@ function WidgetFormContent() {
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
+                {landingPage.free_shipping_offer_3 && (
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                )}
               </button>
             </div>
 
@@ -1524,7 +1555,11 @@ function WidgetFormContent() {
                 Preț produse: <span className="font-bold">{currentPrice.toFixed(2)} Lei</span>
               </div>
               <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-                Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span>
+                {hasFreeShipping() ? (
+                  <>Livrare curier rapid: <span className="line-through opacity-50">{landingPage.shipping_price.toFixed(2)} Lei</span> <span className="font-bold text-emerald-400">GRATUIT</span></>
+                ) : (
+                  <>Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span></>
+                )}
               </div>
               {getUpsellsTotal() > 0 && (
                 <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>

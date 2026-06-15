@@ -143,6 +143,9 @@ export async function POST(request: NextRequest) {
       price2,
       price3,
       shippingPrice,
+      freeShippingOffer1 = false,
+      freeShippingOffer2 = false,
+      freeShippingOffer3 = false,
       postPurchaseStatus = false,
       // Conversion Tracking
       fbPixelId,
@@ -265,6 +268,9 @@ export async function POST(request: NextRequest) {
     insertData.price_2 = price2;
     insertData.price_3 = price3;
     insertData.shipping_price = shippingPrice;
+    insertData.free_shipping_offer_1 = freeShippingOffer1;
+    insertData.free_shipping_offer_2 = freeShippingOffer2;
+    insertData.free_shipping_offer_3 = freeShippingOffer3;
     if (postPurchaseStatus !== undefined) insertData.post_purchase_status = postPurchaseStatus;
     
     // Conversion Tracking (optional)

@@ -22,7 +22,7 @@ export interface FBPixelConfig {
  * @param pixelId - Facebook Pixel ID
  * @param testEventCode - Optional test event code for Meta Test Events
  */
-export function initFacebookPixel(pixelId: string, testEventCode?: string): void {
+export function initFacebookPixel(pixelId: string, testEventCode?: string, advancedMatchData?: { ph?: string; fn?: string; ln?: string; ct?: string; st?: string; zp?: string; country?: string }): void {
   if (typeof window === 'undefined' || !pixelId) {
     console.log('[FB Pixel] Skipping - window undefined or no pixel ID');
     return;
@@ -86,8 +86,24 @@ export function initFacebookPixel(pixelId: string, testEventCode?: string): void
   noscript.appendChild(img);
   document.body.appendChild(noscript);
 
-  // Initialize the pixel
-  window.fbq('init', pixelId);
+  // Initialize the pixel with Advanced Matching data if available
+  if (advancedMatchData && Object.keys(advancedMatchData).length > 0) {
+    window.fbq('init', pixelId, advancedMatchData);
+    console.log('[FB Pixel] ✅ Advanced Matching enabled with:', Object.keys(advancedMatchData));
+  } else {
+    window.fbq('init', pixelId);
+  }
+}
+
+/**
+ * Update Advanced Matching data on the pixel
+ * Call this when user data becomes available (e.g., at form submission)
+ */
+export function updatePixelUserData(pixelId: string, userData: { ph?: string; fn?: string; ln?: string; ct?: string; st?: string; zp?: string; country?: string }): void {
+  if (typeof window !== 'undefined' && window.fbq && pixelId && Object.keys(userData).length > 0) {
+    window.fbq('init', pixelId, userData);
+    console.log('[FB Pixel] ✅ Advanced Matching updated with:', Object.keys(userData));
+  }
 }
 
 /**

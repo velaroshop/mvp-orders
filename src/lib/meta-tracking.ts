@@ -74,7 +74,9 @@ export function buildUserData(params: {
   fullName?: string;
   city?: string;
   county?: string;
+  postalCode?: string;
   countryCode?: string;
+  externalId?: string;
   fbp?: string;
   fbc?: string;
   clientIpAddress?: string;
@@ -111,8 +113,17 @@ export function buildUserData(params: {
     userData.st = hashSHA256(params.county);
   }
 
+  if (params.postalCode) {
+    userData.zp = hashSHA256(params.postalCode);
+  }
+
   // Country code (ISO 3166-1 alpha-2)
   userData.country = hashSHA256(params.countryCode?.toLowerCase() || 'ro');
+
+  // External ID for cross-device matching (hashed)
+  if (params.externalId) {
+    userData.external_id = hashSHA256(params.externalId);
+  }
 
   // Facebook browser ID and click ID (not hashed)
   if (params.fbp) {
@@ -212,7 +223,9 @@ export async function sendMetaPurchaseEvent(params: {
       fullName: order.full_name,
       city: order.city,
       county: order.county,
+      postalCode: order.postal_code,
       countryCode: 'ro',
+      externalId: order.customer_id,
       fbp: trackingData.fbp || order.fbc,
       fbc: order.fbc,
       clientIpAddress: trackingData.clientIpAddress,

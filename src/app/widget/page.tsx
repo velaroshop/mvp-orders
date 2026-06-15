@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
 import {
   initFacebookPixel,
+  updatePixelUserData,
   trackPageView,
   trackViewContent,
   trackInitiateCheckout,
@@ -767,6 +768,19 @@ function WidgetFormContent() {
         }
       }
       return;
+    }
+
+    // Update Pixel with Advanced Matching data (user info now available from form)
+    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+      const nameParts = fullName.trim().split(' ');
+      updatePixelUserData(landingPage.fb_pixel_id, {
+        ph: phone.replace(/\D/g, ''),
+        fn: nameParts[0]?.toLowerCase(),
+        ln: nameParts.length > 1 ? nameParts.slice(1).join(' ').toLowerCase() : undefined,
+        ct: city.toLowerCase(),
+        st: county.toLowerCase(),
+        country: 'ro',
+      });
     }
 
     // Track InitiateCheckout event

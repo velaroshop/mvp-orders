@@ -1324,12 +1324,14 @@ function WidgetFormContent() {
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
                   borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor,
+                  borderWidth: landingPage.free_shipping_offer_1 ? 3 : undefined,
                   backgroundColor: backgroundColor,
-                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
                   borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : '#e5e7eb',
+                  borderWidth: landingPage.free_shipping_offer_1 ? 3 : undefined,
                   backgroundColor: '#fff',
-                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1347,7 +1349,7 @@ function WidgetFormContent() {
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_1 && (
-                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
                 )}
               </button>
 
@@ -1357,12 +1359,14 @@ function WidgetFormContent() {
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
                   borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor,
+                  borderWidth: landingPage.free_shipping_offer_2 ? 3 : undefined,
                   backgroundColor: backgroundColor,
-                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
                   borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : '#e5e7eb',
+                  borderWidth: landingPage.free_shipping_offer_2 ? 3 : undefined,
                   backgroundColor: '#fff',
-                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1380,7 +1384,7 @@ function WidgetFormContent() {
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_2 && (
-                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
                 )}
               </button>
 
@@ -1390,12 +1394,14 @@ function WidgetFormContent() {
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
                   borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor,
+                  borderWidth: landingPage.free_shipping_offer_3 ? 3 : undefined,
                   backgroundColor: backgroundColor,
-                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 12px rgba(16, 185, 129, 0.4)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
                   borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : '#e5e7eb',
+                  borderWidth: landingPage.free_shipping_offer_3 ? 3 : undefined,
                   backgroundColor: '#fff',
-                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 8px rgba(16, 185, 129, 0.25)' : undefined,
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
                 {/* Label on border */}
@@ -1413,7 +1419,7 @@ function WidgetFormContent() {
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_3 && (
-                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase">🚚 Transport Gratuit</div>
+                  <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
                 )}
               </button>
             </div>

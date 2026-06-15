@@ -1330,7 +1330,7 @@ function WidgetFormContent() {
                 } : {
                   borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : '#e5e7eb',
                   borderWidth: landingPage.free_shipping_offer_1 ? 3 : undefined,
-                  backgroundColor: '#fff',
+                  backgroundColor: landingPage.free_shipping_offer_1 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_1 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
@@ -1365,7 +1365,7 @@ function WidgetFormContent() {
                 } : {
                   borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : '#e5e7eb',
                   borderWidth: landingPage.free_shipping_offer_2 ? 3 : undefined,
-                  backgroundColor: '#fff',
+                  backgroundColor: landingPage.free_shipping_offer_2 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_2 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
@@ -1400,7 +1400,7 @@ function WidgetFormContent() {
                 } : {
                   borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : '#e5e7eb',
                   borderWidth: landingPage.free_shipping_offer_3 ? 3 : undefined,
-                  backgroundColor: '#fff',
+                  backgroundColor: landingPage.free_shipping_offer_3 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_3 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >

@@ -1321,19 +1321,23 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_1")}
-                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
-                  borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor,
-                  borderWidth: landingPage.free_shipping_offer_1 ? 3 : undefined,
+                  border: `3px solid ${landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor}`,
                   backgroundColor: backgroundColor,
                   boxShadow: landingPage.free_shipping_offer_1 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
-                  borderColor: landingPage.free_shipping_offer_1 ? '#10b981' : '#e5e7eb',
-                  borderWidth: landingPage.free_shipping_offer_1 ? 3 : undefined,
-                  backgroundColor: landingPage.free_shipping_offer_1 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
+                  border: landingPage.free_shipping_offer_1 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_1 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_1 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_1 && selectedOffer !== "offer_1" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
@@ -1356,19 +1360,23 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_2")}
-                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
-                  borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor,
-                  borderWidth: landingPage.free_shipping_offer_2 ? 3 : undefined,
+                  border: `3px solid ${landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor}`,
                   backgroundColor: backgroundColor,
                   boxShadow: landingPage.free_shipping_offer_2 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
-                  borderColor: landingPage.free_shipping_offer_2 ? '#10b981' : '#e5e7eb',
-                  borderWidth: landingPage.free_shipping_offer_2 ? 3 : undefined,
-                  backgroundColor: landingPage.free_shipping_offer_2 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
+                  border: landingPage.free_shipping_offer_2 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_2 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_2 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_2 && selectedOffer !== "offer_2" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
@@ -1391,19 +1399,23 @@ function WidgetFormContent() {
               <button
                 type="button"
                 onClick={() => setSelectedOffer("offer_3")}
-                className="relative p-2 sm:p-3 pt-4 sm:pt-5 border-2 rounded-lg transition-all text-center"
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
-                  borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor,
-                  borderWidth: landingPage.free_shipping_offer_3 ? 3 : undefined,
+                  border: `3px solid ${landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor}`,
                   backgroundColor: backgroundColor,
                   boxShadow: landingPage.free_shipping_offer_3 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
                 } : {
-                  borderColor: landingPage.free_shipping_offer_3 ? '#10b981' : '#e5e7eb',
-                  borderWidth: landingPage.free_shipping_offer_3 ? 3 : undefined,
-                  backgroundColor: landingPage.free_shipping_offer_3 ? 'rgba(16, 185, 129, 0.05)' : '#fff',
+                  border: landingPage.free_shipping_offer_3 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_3 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
                   boxShadow: landingPage.free_shipping_offer_3 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
                 }}
               >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_3 && selectedOffer !== "offer_3" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
                 {/* Label on border */}
                 <div
                   className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"

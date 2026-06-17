@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Edge Runtime for zero cold starts
+export const runtime = "edge";
+
 // Public endpoint - use service role to bypass RLS for public access
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -135,7 +138,11 @@ export async function GET(
         meta_test_mode: metaTestMode,
         meta_test_event_code: metaTestEventCode,
       },
-      presaleUpsells, // Include presale upsells in response
+      presaleUpsells,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (error) {
     console.error("Error in GET /api/landing-pages/public/[slug]:", error);

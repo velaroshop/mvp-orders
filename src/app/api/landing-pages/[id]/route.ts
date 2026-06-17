@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { logAudit } from "@/lib/audit-log";
+import { revalidatePath } from "next/cache";
 
 // Use service role key for API routes to bypass RLS
 // We still validate organization_id from session
@@ -241,6 +242,13 @@ export async function PUT(
       changes: Object.keys(changes).length > 0 ? changes : undefined,
       metadata: { name: landingPage.name },
     });
+
+    // Purge cache for the public endpoint so changes are visible instantly
+    try {
+      revalidatePath(`/api/landing-pages/public/${landingPage.slug}`);
+    } catch (e) {
+      // Non-fatal: cache will expire naturally
+    }
 
     return NextResponse.json({ landingPage });
   } catch (error) {

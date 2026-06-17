@@ -179,11 +179,11 @@
         landingPageId: analyticsLandingPageId,
         ...data.formData,
       };
-      // Send update via sendBeacon
+      // Send update via sendBeacon (text/plain to avoid CORS preflight)
       if (navigator.sendBeacon) {
         navigator.sendBeacon(
           WIDGET_DOMAIN + '/api/analytics/sessions',
-          new Blob([JSON.stringify(formData)], { type: 'application/json' })
+          new Blob([JSON.stringify(formData)], { type: 'text/plain' })
         );
       }
     }
@@ -330,21 +330,19 @@
       outcome: outcome || 'abandoned',
     };
 
-    // Use sendBeacon for reliable delivery on unload
+    // Use sendBeacon with text/plain to avoid CORS preflight
     console.log('[Analytics] Sending session:', outcome, data);
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(
-        WIDGET_DOMAIN + '/api/analytics/sessions',
-        new Blob([JSON.stringify(data)], { type: 'application/json' })
-      );
-      console.log('[Analytics] sendBeacon result:', sent);
-    } else {
-      // Fallback for browsers without sendBeacon
+    const sent = navigator.sendBeacon && navigator.sendBeacon(
+      WIDGET_DOMAIN + '/api/analytics/sessions',
+      new Blob([JSON.stringify(data)], { type: 'text/plain' })
+    );
+    console.log('[Analytics] sendBeacon result:', sent);
+    if (!sent) {
       fetch(WIDGET_DOMAIN + '/api/analytics/sessions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
         keepalive: true,
+        mode: 'no-cors',
       }).catch(function() {});
     }
   }

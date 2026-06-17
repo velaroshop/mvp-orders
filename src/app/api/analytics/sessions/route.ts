@@ -14,7 +14,15 @@ const CORS_HEADERS = {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Accept both application/json and text/plain (sendBeacon uses text/plain to avoid CORS preflight)
+    let body: any;
+    const contentType = request.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      body = await request.json();
+    } else {
+      const text = await request.text();
+      body = JSON.parse(text);
+    }
     const { sessionId, landingPageId, ...sessionData } = body;
 
     if (!sessionId || !landingPageId) {

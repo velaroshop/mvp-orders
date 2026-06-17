@@ -11,6 +11,7 @@ export default function PartialsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, openUp: false });
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPartial, setSelectedPartial] = useState<PartialOrder | null>(null);
@@ -678,11 +679,21 @@ export default function PartialsPage() {
                         {/* Actions Dropdown */}
                         <div className="relative">
                           <button
-                            onClick={() =>
-                              setOpenDropdown(
-                                openDropdown === partial.id ? null : partial.id
-                              )
-                            }
+                            onClick={(e) => {
+                              if (openDropdown === partial.id) {
+                                setOpenDropdown(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                const openUp = spaceBelow < 250;
+                                setDropdownPos({
+                                  top: openUp ? rect.top : rect.bottom + 4,
+                                  left: rect.right - 176,
+                                  openUp,
+                                });
+                                setOpenDropdown(partial.id);
+                              }
+                            }}
                             className="p-0.5 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors"
                           >
                             <svg
@@ -701,9 +712,15 @@ export default function PartialsPage() {
                           </button>
 
                           {openDropdown === partial.id && (
-                            <div className={`absolute right-0 w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-50 ${
-                              partialIndex < 3 ? 'top-full mt-1' : 'bottom-full mb-1'
-                            }`}>
+                            <div
+                              style={{
+                                position: 'fixed',
+                                top: dropdownPos.openUp ? undefined : dropdownPos.top,
+                                bottom: dropdownPos.openUp ? (window.innerHeight - dropdownPos.top) + 4 : undefined,
+                                left: Math.max(4, dropdownPos.left),
+                              }}
+                              className="w-44 bg-zinc-800 rounded-md shadow-lg border border-zinc-700 py-0.5 z-50"
+                            >
                               <button
                                 onClick={() =>
                                   handleStatusChange(partial.id, "call_later")

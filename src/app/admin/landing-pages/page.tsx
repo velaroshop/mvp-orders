@@ -904,6 +904,33 @@ export default function LandingPagesPage() {
                                     }`} />
                                   </button>
                                 </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-zinc-400">📋 Form Variant</span>
+                                  <select
+                                    value={(page as any).form_variant || 1}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={async (e) => {
+                                      e.stopPropagation();
+                                      const newVariant = parseInt(e.target.value);
+                                      try {
+                                        await fetch(`/api/landing-pages/${page.id}`, {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ form_variant: newVariant }),
+                                        });
+                                        setLandingPages(prev => prev.map(lp =>
+                                          lp.id === page.id ? { ...lp, form_variant: newVariant } as any : lp
+                                        ));
+                                      } catch (err) {
+                                        console.error("Failed to update form variant:", err);
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 rounded text-xs text-white"
+                                  >
+                                    <option value={1}>V1 — Classic</option>
+                                    <option value={2}>V2 — Oferte sus</option>
+                                  </select>
+                                </div>
                               </div>
                             )}
 

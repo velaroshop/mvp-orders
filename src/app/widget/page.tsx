@@ -45,6 +45,7 @@ interface LandingPage {
   free_shipping_offer_2?: boolean;
   free_shipping_offer_3?: boolean;
   analytics_tracking?: boolean;
+  form_variant?: number;
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -1114,10 +1115,60 @@ function WidgetFormContent() {
     return color;
   };
 
+  const isV2 = landingPage.form_variant === 2;
+
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-xl mx-auto">
-        {/* Price Header - COMPACT & EYE-CATCHING */}
+
+        {/* V2 Header — Explicit old/new price, dynamic with selected offer */}
+        {isV2 && (
+          <div className="relative rounded-lg shadow-lg p-3 pt-5 mb-3 sm:mb-4" style={{ backgroundColor }}>
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+              <span
+                className="px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+                  boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
+                }}
+              >
+                REDUCERE {discount}%
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2">
+              <div className="text-center">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.6 }}>Preț vechi</p>
+                <span className="text-lg sm:text-xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+                  {landingPage.srp.toFixed(2)} Lei
+                </span>
+              </div>
+              <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+              <div className="text-center">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.8 }}>Preț nou</p>
+                <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
+                  {getCurrentPrice().toFixed(2)} LEI
+                </span>
+              </div>
+            </div>
+
+            {hasFreeShipping() && (
+              <div className="text-center mb-1">
+                <span className="text-sm font-bold text-emerald-400 animate-pulse">🚚 TRANSPORT GRATUIT</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-base sm:text-lg">⭐⭐⭐⭐⭐</span>
+            </div>
+            <div className="flex items-center justify-center text-xs sm:text-sm mt-1" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="font-medium">Peste 9.847 clienți mulțumiți</span>
+            </div>
+          </div>
+        )}
+
+        {/* V1 Header — Original */}
+        {!isV2 && (
         <div className="relative rounded-lg shadow-lg p-3 pt-5 mb-3 sm:mb-4" style={{ backgroundColor }}>
           {/* Discount Badge - Positioned on top edge */}
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
@@ -1173,6 +1224,7 @@ function WidgetFormContent() {
             </div>
           </div>
         </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -1185,10 +1237,10 @@ function WidgetFormContent() {
           className="space-y-4 sm:space-y-6"
         >
           {/* Unified Card: Delivery + Offers + Upsells + Summary */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isV2 ? "flex flex-col" : ""}`}>
 
           {/* Delivery Information */}
-          <div className="p-3 sm:p-4">
+          <div className="p-3 sm:p-4" style={isV2 ? { order: 2 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
@@ -1403,7 +1455,7 @@ function WidgetFormContent() {
           </div>
 
           {/* Quantity Selection */}
-          <div className="border-t border-zinc-200 p-3 sm:p-4">
+          <div className={`${isV2 ? "" : "border-t"} border-zinc-200 p-3 sm:p-4`} style={isV2 ? { order: 1 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               SELECTAȚI OFERTA DORITĂ
             </h2>
@@ -1530,7 +1582,7 @@ function WidgetFormContent() {
 
           {/* Presale Upsells */}
           {presaleUpsells.length > 0 && (
-            <div className="border-t border-zinc-200 p-3 sm:p-4">
+            <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 3 } : undefined}>
               {/* Header */}
               <div className="mb-2 text-center">
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
@@ -1654,7 +1706,7 @@ function WidgetFormContent() {
           )}
 
           {/* Order Summary */}
-          <div className="p-2.5 sm:p-3" style={{ backgroundColor }}>
+          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor, order: 4 } : { backgroundColor }}>
             <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>

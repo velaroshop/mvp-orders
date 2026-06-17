@@ -123,6 +123,22 @@ export default function AnalyticsPage() {
     }
   }
 
+  async function handleDeleteSessions() {
+    if (!selectedLP) return;
+    const lpName = landingPages.find(lp => lp.id === selectedLP)?.name || "";
+    if (!confirm(`Sigur vrei să ștergi toate sesiunile pentru "${lpName}"?\n\nAceastă acțiune este ireversibilă.`)) return;
+    try {
+      const res = await fetch(`/api/analytics/sessions?landingPageId=${selectedLP}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setSessions([]);
+      setSummary(null);
+      setAiAnalysis(null);
+    } catch (err) {
+      console.error("Error deleting sessions:", err);
+      alert("Eroare la ștergerea sesiunilor.");
+    }
+  }
+
   if (status === "loading" || !isSuperadmin) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -174,6 +190,13 @@ export default function AnalyticsPage() {
             className="px-4 py-2 bg-violet-600 text-white rounded-md text-sm font-medium hover:bg-violet-700 transition-colors"
           >
             Refresh
+          </button>
+          <button
+            onClick={handleDeleteSessions}
+            disabled={!selectedLP || !sessions.length}
+            className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            🗑️ Șterge sesiunile
           </button>
         </div>
       </div>

@@ -192,6 +192,47 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/analytics/sessions — Delete all sessions for a landing page (superadmin only)
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = (session.user as any)?.activeRole;
+    const isSuperadminOrg = (session.user as any)?.isSuperadminOrg;
+    if (!(userRole === "owner" && isSuperadminOrg)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const activeOrganizationId = (session.user as any).activeOrganizationId;
+    const landingPageId = request.nextUrl.searchParams.get("landingPageId");
+
+    if (!landingPageId) {
+      return NextResponse.json({ error: "landingPageId is required" }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from("analytics_sessions")
+      .delete()
+      .eq("organization_id", activeOrganizationId)
+      .eq("landing_page_id", landingPageId);
+
+    if (error) {
+      console.error("[Analytics] Delete error:", error);
+      return NextResponse.json({ error: "Failed to delete sessions" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[Analytics] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }

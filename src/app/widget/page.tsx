@@ -44,6 +44,7 @@ interface LandingPage {
   free_shipping_offer_1?: boolean;
   free_shipping_offer_2?: boolean;
   free_shipping_offer_3?: boolean;
+  analytics_tracking?: boolean;
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -101,6 +102,17 @@ function WidgetFormContent() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+
+  // Analytics tracking
+  const analyticsSessionId = useRef<string | null>(null);
+  const analyticsFieldTimes = useRef<Record<string, number>>({});
+  const analyticsFieldStart = useRef<string | null>(null);
+  const analyticsFieldStartTime = useRef<number>(0);
+  const analyticsFieldsCompleted = useRef<string[]>([]);
+  const analyticsValidationErrors = useRef<string[]>([]);
+  const analyticsOfferChanges = useRef<string[]>(["offer_1"]);
+  const analyticsUpsellsSelected = useRef<string[]>([]);
+  const analyticsUpsellsDeselected = useRef<string[]>([]);
 
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
@@ -423,6 +435,15 @@ function WidgetFormContent() {
       const data = await response.json();
       setLandingPage(data.landingPage);
 
+      // Notify parent (embed.js) to activate analytics tracking if enabled
+      if (data.landingPage?.analytics_tracking && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'analytics-config',
+          enabled: true,
+          landingPageId: data.landingPage.id,
+        }, '*');
+      }
+
       // Use presale upsells from the same response (optimized - no extra request)
       if (data.presaleUpsells) {
         setPresaleUpsells(data.presaleUpsells);
@@ -568,8 +589,10 @@ function WidgetFormContent() {
       const newSet = new Set(prev);
       if (newSet.has(upsellId)) {
         newSet.delete(upsellId);
+        analyticsUpsellsDeselected.current = [...analyticsUpsellsDeselected.current, upsellId];
       } else {
         newSet.add(upsellId);
+        analyticsUpsellsSelected.current = [...analyticsUpsellsSelected.current, upsellId];
       }
       return newSet;
     });
@@ -684,6 +707,57 @@ function WidgetFormContent() {
     return getCurrentPrice() + getShippingPrice() + getUpsellsTotal();
   }
 
+  // Analytics: track field focus/blur timing
+  function analyticsOnFieldFocus(fieldName: string) {
+    if (!landingPage?.analytics_tracking) return;
+    analyticsFieldStart.current = fieldName;
+    analyticsFieldStartTime.current = Date.now();
+    if (!analyticsFieldsCompleted.current.includes(fieldName)) {
+      analyticsFieldsCompleted.current = [...analyticsFieldsCompleted.current, fieldName];
+    }
+  }
+
+  function analyticsOnFieldBlur(fieldName: string) {
+    if (!landingPage?.analytics_tracking) return;
+    if (analyticsFieldStart.current === fieldName && analyticsFieldStartTime.current > 0) {
+      const elapsed = Math.round((Date.now() - analyticsFieldStartTime.current) / 1000);
+      analyticsFieldTimes.current = { ...analyticsFieldTimes.current, [fieldName]: (analyticsFieldTimes.current[fieldName] || 0) + elapsed };
+    }
+    analyticsFieldStart.current = null;
+  }
+
+  function analyticsSendFormUpdate(extraData?: Record<string, any>) {
+    if (!landingPage?.analytics_tracking || window.parent === window) return;
+    window.parent.postMessage({
+      type: 'analytics-form-update',
+      formData: {
+        form_started: analyticsFieldsCompleted.current.length > 0,
+        fields_completed: analyticsFieldsCompleted.current,
+        field_abandoned_at: analyticsFieldStart.current || (analyticsFieldsCompleted.current.length > 0 ? analyticsFieldsCompleted.current[analyticsFieldsCompleted.current.length - 1] : null),
+        time_per_field: analyticsFieldTimes.current,
+        validation_errors: analyticsValidationErrors.current,
+        offer_selected: selectedOffer,
+        offer_changes: analyticsOfferChanges.current,
+        upsells_viewed: presaleUpsells.length,
+        upsells_selected: analyticsUpsellsSelected.current,
+        upsells_deselected: analyticsUpsellsDeselected.current,
+        ...extraData,
+      },
+    }, '*');
+  }
+
+  // Listen for analytics session ID from parent (embed.js)
+  useEffect(() => {
+    if (!landingPage?.analytics_tracking) return;
+    function handleMessage(event: MessageEvent) {
+      if (event.data?.type === 'analytics-session' && event.data.sessionId) {
+        analyticsSessionId.current = event.data.sessionId;
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [landingPage?.analytics_tracking]);
+
   function calculateDiscount() {
     if (!landingPage) return 0;
     const currentPrice = getCurrentPrice();
@@ -785,6 +859,9 @@ function WidgetFormContent() {
       }
       return;
     }
+
+    // Send analytics form data before submission
+    analyticsSendFormUpdate({ outcome: 'submitting' });
 
     // Update Pixel with Advanced Matching data (user info now available from form)
     if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
@@ -909,6 +986,9 @@ function WidgetFormContent() {
         console.error("[Order] Failed to send purchase event:", err);
         // Continue with redirect even if tracking fails
       }
+
+      // Send analytics with purchased outcome
+      analyticsSendFormUpdate({ outcome: 'purchased', order_id: orderId, total_value: getTotalPrice() });
 
       // Redirect to thank you page immediately after tracking
       if (landingPage.stores?.url) {
@@ -1143,10 +1223,12 @@ function WidgetFormContent() {
                     if (!errors.phone) {
                       e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                     }
+                    analyticsOnFieldFocus("phone");
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("phone", phone);
+                    analyticsOnFieldBlur("phone");
                   }}
                 />
                 {errors.phone ? (
@@ -1183,10 +1265,12 @@ function WidgetFormContent() {
                     if (!errors.fullName) {
                       e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                     }
+                    analyticsOnFieldFocus("fullName");
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("fullName", fullName);
+                    analyticsOnFieldBlur("fullName");
                   }}
                 />
                 {errors.fullName && (
@@ -1222,10 +1306,12 @@ function WidgetFormContent() {
                       if (!errors.county) {
                         e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                       }
+                      analyticsOnFieldFocus("county");
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.boxShadow = '';
                       handleFieldBlur("county", county);
+                      analyticsOnFieldBlur("county");
                     }}
                   />
                   {errors.county && (
@@ -1260,10 +1346,12 @@ function WidgetFormContent() {
                       if (!errors.city) {
                         e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                       }
+                      analyticsOnFieldFocus("city");
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.boxShadow = '';
                       handleFieldBlur("city", city);
+                      analyticsOnFieldBlur("city");
                     }}
                   />
                   {errors.city && (
@@ -1299,10 +1387,12 @@ function WidgetFormContent() {
                     if (!errors.address) {
                       e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                     }
+                    analyticsOnFieldFocus("address");
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
                     handleFieldBlur("address", address);
+                    analyticsOnFieldBlur("address");
                   }}
                 />
                 {errors.address && (
@@ -1320,7 +1410,7 @@ function WidgetFormContent() {
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_1")}
+                onClick={() => { setSelectedOffer("offer_1"); analyticsOfferChanges.current = [...analyticsOfferChanges.current, "offer_1"]; }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor}`,
@@ -1359,7 +1449,7 @@ function WidgetFormContent() {
 
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_2")}
+                onClick={() => { setSelectedOffer("offer_2"); analyticsOfferChanges.current = [...analyticsOfferChanges.current, "offer_2"]; }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor}`,
@@ -1398,7 +1488,7 @@ function WidgetFormContent() {
 
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_3")}
+                onClick={() => { setSelectedOffer("offer_3"); analyticsOfferChanges.current = [...analyticsOfferChanges.current, "offer_3"]; }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor}`,

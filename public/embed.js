@@ -159,7 +159,32 @@
 
     // Handle purchase redirect to thank you page
     if (data.type === 'purchase' && data.thankYouUrl) {
+      // Send analytics with purchased outcome before redirecting
+      if (analyticsEnabled) sendAnalyticsSession('purchased');
       window.location.href = data.thankYouUrl;
+    }
+
+    // Handle analytics activation from widget
+    if (data.type === 'analytics-config' && data.enabled && data.landingPageId) {
+      if (!analyticsEnabled) {
+        startAnalyticsTracking(data.landingPageId);
+      }
+    }
+
+    // Handle analytics form data update from widget
+    if (data.type === 'analytics-form-update' && analyticsEnabled && analyticsSessionId) {
+      const formData = {
+        sessionId: analyticsSessionId,
+        landingPageId: analyticsLandingPageId,
+        ...data.formData,
+      };
+      // Send update via sendBeacon
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          WIDGET_DOMAIN + '/api/analytics/sessions',
+          new Blob([JSON.stringify(formData)], { type: 'application/json' })
+        );
+      }
     }
   }
 
@@ -205,6 +230,110 @@
       window.addEventListener('message', (event) => handlePostMessage(event, iframes));
     }
   }
+
+  // ==========================================
+  // Analytics Tracking (activated via postMessage from widget)
+  // ==========================================
+  let analyticsEnabled = false;
+  let analyticsSessionId = null;
+  let analyticsLandingPageId = null;
+  let analyticsStartTime = Date.now();
+  let analyticsMaxScroll = 0;
+  let analyticsClicks = 0;
+  let analyticsScrolledToForm = false;
+
+  function generateSessionId() {
+    return 'sess_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
+  }
+
+  function startAnalyticsTracking(landingPageId) {
+    analyticsEnabled = true;
+    analyticsLandingPageId = landingPageId;
+    analyticsSessionId = generateSessionId();
+    analyticsStartTime = Date.now();
+
+    // Track scroll
+    window.addEventListener('scroll', function() {
+      if (!analyticsEnabled) return;
+      const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+      if (scrollPercent > analyticsMaxScroll) analyticsMaxScroll = scrollPercent;
+
+      // Check if scrolled to form (iframe visible in viewport)
+      const iframes = document.querySelectorAll('[id*="-widget-"] iframe');
+      iframes.forEach(function(iframe) {
+        const rect = iframe.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          analyticsScrolledToForm = true;
+        }
+      });
+    }, { passive: true });
+
+    // Track clicks
+    document.addEventListener('click', function() {
+      if (analyticsEnabled) analyticsClicks++;
+    });
+
+    // Send session data on page unload
+    window.addEventListener('beforeunload', function() {
+      sendAnalyticsSession('abandoned');
+    });
+
+    // Also send via visibilitychange for mobile
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden' && analyticsEnabled) {
+        sendAnalyticsSession('abandoned');
+      }
+    });
+
+    // Pass session ID to widget iframe
+    const iframes = document.querySelectorAll('[id*="-widget-"] iframe');
+    iframes.forEach(function(iframe) {
+      iframe.contentWindow.postMessage({
+        type: 'analytics-session',
+        sessionId: analyticsSessionId,
+        landingPageId: analyticsLandingPageId,
+      }, '*');
+    });
+  }
+
+  function sendAnalyticsSession(outcome) {
+    if (!analyticsEnabled || !analyticsSessionId) return;
+
+    const ua = navigator.userAgent;
+    const isMobile = /Mobile|Android|iPhone/i.test(ua);
+    const browser = /Chrome/i.test(ua) ? 'Chrome' : /Firefox/i.test(ua) ? 'Firefox' : /Safari/i.test(ua) ? 'Safari' : 'Other';
+
+    const data = {
+      sessionId: analyticsSessionId,
+      landingPageId: analyticsLandingPageId,
+      device: isMobile ? 'mobile' : 'desktop',
+      browser: browser,
+      screen_size: window.innerWidth + 'x' + window.innerHeight,
+      referrer: document.referrer || null,
+      time_on_page: Math.round((Date.now() - analyticsStartTime) / 1000),
+      scroll_max: analyticsMaxScroll,
+      scroll_to_form: analyticsScrolledToForm,
+      clicks_on_page: analyticsClicks,
+      outcome: outcome || 'abandoned',
+    };
+
+    // Use sendBeacon for reliable delivery on unload
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        WIDGET_DOMAIN + '/api/analytics/sessions',
+        new Blob([JSON.stringify(data)], { type: 'application/json' })
+      );
+    }
+  }
+
+  // Make sendAnalyticsSession accessible for widget postMessage updates
+  window.__analyticsSession = {
+    getSessionId: function() { return analyticsSessionId; },
+    sendSession: sendAnalyticsSession,
+    updateOutcome: function(outcome) {
+      sendAnalyticsSession(outcome);
+    }
+  };
 
   // Auto-initialize when DOM is ready
   if (document.readyState === 'loading') {

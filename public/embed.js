@@ -160,7 +160,10 @@
     // Handle purchase redirect to thank you page
     if (data.type === 'purchase' && data.thankYouUrl) {
       // Send analytics with purchased outcome before redirecting
-      if (analyticsEnabled) sendAnalyticsSession('purchased');
+      if (analyticsEnabled) {
+        analyticsFinalOutcome = 'purchased';
+        sendAnalyticsSession('purchased');
+      }
       window.location.href = data.thankYouUrl;
     }
 
@@ -174,6 +177,10 @@
 
     // Handle analytics form data update from widget
     if (data.type === 'analytics-form-update' && analyticsEnabled && analyticsSessionId) {
+      // Track if purchase happened to prevent beforeunload overwrite
+      if (data.formData && data.formData.outcome === 'purchased') {
+        analyticsFinalOutcome = 'purchased';
+      }
       const formData = {
         sessionId: analyticsSessionId,
         landingPageId: analyticsLandingPageId,
@@ -242,6 +249,7 @@
   let analyticsMaxScroll = 0;
   let analyticsClicks = 0;
   let analyticsScrolledToForm = false;
+  let analyticsFinalOutcome = null;
 
   function generateSessionId() {
     return 'sess_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
@@ -274,14 +282,16 @@
       if (analyticsEnabled) analyticsClicks++;
     });
 
-    // Send session data on page unload
+    // Send session data on page unload (don't overwrite purchased)
     window.addEventListener('beforeunload', function() {
-      sendAnalyticsSession('abandoned');
+      if (analyticsFinalOutcome !== 'purchased') {
+        sendAnalyticsSession('abandoned');
+      }
     });
 
-    // Also send via visibilitychange for mobile
+    // Also send via visibilitychange for mobile (don't overwrite purchased)
     document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'hidden' && analyticsEnabled) {
+      if (document.visibilityState === 'hidden' && analyticsEnabled && analyticsFinalOutcome !== 'purchased') {
         sendAnalyticsSession('abandoned');
       }
     });

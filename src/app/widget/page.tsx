@@ -729,12 +729,13 @@ function WidgetFormContent() {
 
   function analyticsSendFormUpdate(extraData?: Record<string, any>) {
     if (!landingPage?.analytics_tracking || window.parent === window) return;
+    const isPurchased = extraData?.outcome === 'purchased';
     window.parent.postMessage({
       type: 'analytics-form-update',
       formData: {
         form_started: analyticsFieldsCompleted.current.length > 0,
         fields_completed: analyticsFieldsCompleted.current,
-        field_abandoned_at: analyticsFieldStart.current || (analyticsFieldsCompleted.current.length > 0 ? analyticsFieldsCompleted.current[analyticsFieldsCompleted.current.length - 1] : null),
+        field_abandoned_at: isPurchased ? null : (analyticsFieldStart.current || (analyticsFieldsCompleted.current.length > 0 ? analyticsFieldsCompleted.current[analyticsFieldsCompleted.current.length - 1] : null)),
         time_per_field: analyticsFieldTimes.current,
         validation_errors: analyticsValidationErrors.current,
         offer_selected: selectedOffer,

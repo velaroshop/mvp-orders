@@ -246,6 +246,8 @@
   let analyticsSessionId = null;
   let analyticsLandingPageId = null;
   let analyticsStartTime = Date.now();
+  let analyticsActiveTime = 0;
+  let analyticsLastActiveAt = Date.now();
   let analyticsMaxScroll = 0;
   let analyticsClicks = 0;
   let analyticsScrolledToForm = false;
@@ -260,6 +262,8 @@
     analyticsLandingPageId = landingPageId;
     analyticsSessionId = generateSessionId();
     analyticsStartTime = Date.now();
+    analyticsActiveTime = 0;
+    analyticsLastActiveAt = Date.now();
 
     // Track scroll
     window.addEventListener('scroll', function() {
@@ -289,10 +293,17 @@
       }
     });
 
-    // Also send via visibilitychange for mobile (don't overwrite purchased)
+    // Track active time + send on visibility change
     document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'hidden' && analyticsEnabled && analyticsFinalOutcome !== 'purchased') {
-        sendAnalyticsSession('abandoned');
+      if (document.visibilityState === 'hidden') {
+        // Pause: accumulate active time
+        analyticsActiveTime += Date.now() - analyticsLastActiveAt;
+        if (analyticsEnabled && analyticsFinalOutcome !== 'purchased') {
+          sendAnalyticsSession('abandoned');
+        }
+      } else {
+        // Resume: restart active timer
+        analyticsLastActiveAt = Date.now();
       }
     });
 
@@ -333,7 +344,7 @@
       browser: browser,
       screen_size: window.innerWidth + 'x' + window.innerHeight,
       referrer: document.referrer || null,
-      time_on_page: Math.round((Date.now() - analyticsStartTime) / 1000),
+      time_on_page: Math.round((analyticsActiveTime + (Date.now() - analyticsLastActiveAt)) / 1000),
       scroll_max: analyticsMaxScroll,
       scroll_to_form: analyticsScrolledToForm,
       clicks_on_page: analyticsClicks,

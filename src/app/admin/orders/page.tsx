@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [viewDuplicateInfo, setViewDuplicateInfo] = useState<{ count: number; days: number } | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, openUp: false });
   const [holdOrderId, setHoldOrderId] = useState<string | null>(null);
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
 
@@ -2258,7 +2259,21 @@ export default function AdminPage() {
                         {/* Actions Dropdown - Compact */}
                         <div className="relative actions-dropdown">
                           <button
-                            onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
+                            onClick={(e) => {
+                              if (openDropdown === order.id) {
+                                setOpenDropdown(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                const openUp = spaceBelow < 300;
+                                setDropdownPos({
+                                  top: openUp ? rect.top : rect.bottom + 4,
+                                  left: rect.right - 192,
+                                  openUp,
+                                });
+                                setOpenDropdown(order.id);
+                              }
+                            }}
                             title="Actions"
                             className="rounded bg-zinc-600 px-1.5 py-0.5 text-[10px] sm:text-[10px] font-medium text-white hover:bg-zinc-500"
                           >
@@ -2266,9 +2281,15 @@ export default function AdminPage() {
                             <span className="sm:hidden">⋮</span>
                           </button>
                           {openDropdown === order.id && (
-                            <div className={`absolute right-0 w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50 ${
-                              orderIndex < 3 ? 'top-full mt-1' : 'bottom-full mb-1'
-                            }`}>
+                            <div
+                              style={{
+                                position: 'fixed',
+                                top: dropdownPos.openUp ? undefined : dropdownPos.top,
+                                bottom: dropdownPos.openUp ? (window.innerHeight - dropdownPos.top) + 4 : undefined,
+                                left: Math.max(4, dropdownPos.left),
+                              }}
+                              className="w-48 bg-zinc-700 border border-zinc-600 rounded-md shadow-lg z-50"
+                            >
                               <div className="py-1">
                                 {/* Hide Order Confirm for testing, cancelled, sync_error orders */}
                                 {order.status !== "testing" && order.status !== "cancelled" && order.status !== "sync_error" && (

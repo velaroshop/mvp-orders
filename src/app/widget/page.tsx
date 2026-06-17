@@ -1100,6 +1100,7 @@ function WidgetFormContent() {
   const currentPrice = getCurrentPrice();
   const totalPrice = getTotalPrice();
   const discount = calculateDiscount();
+  const discountV2 = landingPage ? Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100) : 0;
 
   // Get colors from store with fallback to defaults
   const storeColors = landingPage.stores;
@@ -1132,7 +1133,7 @@ function WidgetFormContent() {
                   boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
                 }}
               >
-                REDUCERE {discount}%
+                REDUCERE {discountV2}%
               </span>
             </div>
 
@@ -1497,6 +1498,9 @@ function WidgetFormContent() {
                 {landingPage.free_shipping_offer_1 && (
                   <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
                 )}
+                {isV2 && selectedOffer === "offer_1" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
+                )}
               </button>
 
               <button
@@ -1536,6 +1540,9 @@ function WidgetFormContent() {
                 {landingPage.free_shipping_offer_2 && (
                   <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
                 )}
+                {isV2 && selectedOffer === "offer_2" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
+                )}
               </button>
 
               <button
@@ -1574,6 +1581,9 @@ function WidgetFormContent() {
                 </div>
                 {landingPage.free_shipping_offer_3 && (
                   <div className="mt-1 text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase animate-pulse">🚚 Transport Gratuit</div>
+                )}
+                {isV2 && selectedOffer === "offer_3" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
                 )}
               </button>
             </div>

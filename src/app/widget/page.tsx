@@ -1123,7 +1123,7 @@ function WidgetFormContent() {
 
         {/* V2 Header — Explicit old/new price, dynamic with selected offer */}
         {isV2 && (
-          <div className="relative rounded-lg shadow-lg p-3 pt-5 mb-3 sm:mb-4" style={{ backgroundColor }}>
+          <div className="relative rounded-lg shadow-lg p-2.5 pt-5 mb-2 sm:mb-3" style={{ backgroundColor }}>
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
               <span
                 className="px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"
@@ -1136,7 +1136,7 @@ function WidgetFormContent() {
               </span>
             </div>
 
-            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-1.5">
               <div className="text-center">
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.6 }}>Preț vechi</p>
                 <span className="text-lg sm:text-xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
@@ -1147,7 +1147,7 @@ function WidgetFormContent() {
               <div className="text-center">
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.8 }}>Preț nou</p>
                 <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
-                  {getCurrentPrice().toFixed(2)} LEI
+                  {landingPage.price_1.toFixed(2)} LEI
                 </span>
               </div>
             </div>
@@ -1159,10 +1159,10 @@ function WidgetFormContent() {
             )}
 
             <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="text-yellow-400 text-base sm:text-lg">⭐⭐⭐⭐⭐</span>
+              <span className="text-yellow-400 text-sm sm:text-base">⭐⭐⭐⭐⭐</span>
             </div>
-            <div className="flex items-center justify-center text-xs sm:text-sm mt-1" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              <span className="font-medium">Peste 9.847 clienți mulțumiți</span>
+            <div className="flex items-center justify-center text-[10px] sm:text-xs mt-0.5" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="font-medium">Peste 10.000 de clienți din România sunt mulțumiți de acest produs</span>
             </div>
           </div>
         )}
@@ -1240,7 +1240,7 @@ function WidgetFormContent() {
           <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isV2 ? "flex flex-col" : ""}`}>
 
           {/* Delivery Information */}
-          <div className="p-3 sm:p-4" style={isV2 ? { order: 2 } : undefined}>
+          <div className={isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"} style={isV2 ? { order: 2 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
@@ -1291,7 +1291,7 @@ function WidgetFormContent() {
               </div>
               <div>
                 <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                  Nume și Prenume
+                  Nume complet
                 </label>
                 <input
                   type="text"
@@ -1455,7 +1455,7 @@ function WidgetFormContent() {
           </div>
 
           {/* Quantity Selection */}
-          <div className={`${isV2 ? "" : "border-t"} border-zinc-200 p-3 sm:p-4`} style={isV2 ? { order: 1 } : undefined}>
+          <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               SELECTAȚI OFERTA DORITĂ
             </h2>

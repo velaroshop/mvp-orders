@@ -166,6 +166,7 @@
 
     // Handle analytics activation from widget
     if (data.type === 'analytics-config' && data.enabled && data.landingPageId) {
+      console.log('[Analytics] Received config from widget, LP:', data.landingPageId);
       if (!analyticsEnabled) {
         startAnalyticsTracking(data.landingPageId);
       }
@@ -294,6 +295,18 @@
         landingPageId: analyticsLandingPageId,
       }, '*');
     });
+
+    // Initial save after 5 seconds (confirms tracking works)
+    setTimeout(function() {
+      if (analyticsEnabled) sendAnalyticsSession('browsing');
+    }, 5000);
+
+    // Periodic save every 30 seconds (safety net)
+    setInterval(function() {
+      if (analyticsEnabled) sendAnalyticsSession('browsing');
+    }, 30000);
+
+    console.log('[Analytics] Tracking started for LP:', landingPageId, 'Session:', analyticsSessionId);
   }
 
   function sendAnalyticsSession(outcome) {
@@ -318,11 +331,21 @@
     };
 
     // Use sendBeacon for reliable delivery on unload
+    console.log('[Analytics] Sending session:', outcome, data);
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(
+      const sent = navigator.sendBeacon(
         WIDGET_DOMAIN + '/api/analytics/sessions',
         new Blob([JSON.stringify(data)], { type: 'application/json' })
       );
+      console.log('[Analytics] sendBeacon result:', sent);
+    } else {
+      // Fallback for browsers without sendBeacon
+      fetch(WIDGET_DOMAIN + '/api/analytics/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        keepalive: true,
+      }).catch(function() {});
     }
   }
 

@@ -419,7 +419,8 @@ export default function NewLandingPagePage() {
             </div>
           </div>
 
-          {/* Offer Settings */}
+          {/* Offer Settings — Hidden for retargeting */}
+          {formData.formVariant !== 10 && (
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
               Offer Settings
@@ -544,8 +545,10 @@ export default function NewLandingPagePage() {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Pricing & Shipping */}
+          {/* Pricing & Shipping — Hidden for retargeting */}
+          {formData.formVariant !== 10 && (
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
               Pricing & Shipping
@@ -742,6 +745,7 @@ export default function NewLandingPagePage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Retargeting Settings — Only visible when formVariant === 10 */}
           {formData.formVariant === 10 && (

@@ -665,7 +665,8 @@ export default function LandingPagesPage() {
                             {/* Upsells Sections - only visible on PRO plan */}
                             {isProPlan ? (
                             <>
-                            {/* Presale Section */}
+                            {/* Presale Section — Hidden for retargeting */}
+                            {(page as any).form_variant !== 10 && (
                             <div className="pt-3 border-t border-zinc-700/50">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
@@ -782,6 +783,8 @@ export default function LandingPagesPage() {
                                 })()}
                               </div>
                             </div>
+
+                            )}
 
                             {/* Postsale Section */}
                             <div className="pt-3 border-t border-zinc-700/50">

@@ -58,6 +58,11 @@ interface LandingPage {
   retarget_countdown_hours?: number;
   retarget_gift_product_id?: string;
   retarget_gift_quantity?: number;
+  gift_product?: {
+    id: string;
+    name: string;
+    sku?: string;
+  };
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -945,6 +950,18 @@ function WidgetFormContent() {
         type: "presale",
       }));
 
+    // Add gift product as free upsell for retargeting LPs
+    if (isRetargeting && landingPage.gift_product) {
+      selectedUpsellsData.push({
+        upsellId: `gift_${landingPage.gift_product.id}`,
+        title: `🎁 CADOU: ${landingPage.gift_product.name}`,
+        quantity: landingPage.retarget_gift_quantity || 1,
+        price: 0,
+        productSku: landingPage.gift_product.sku || null,
+        type: "presale",
+      });
+    }
+
     // Build complete event source URL for Meta CAPI attribution
     // Priority: 1) landing_url from embed.js (has full URL with params)
     //           2) Reconstruct from referrer + captured tracking params
@@ -1238,12 +1255,19 @@ function WidgetFormContent() {
               </span>
             </div>
 
-            <div className="text-center text-sm mb-2" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+            <div className="text-center text-sm mb-1" style={{ color: textOnDarkColor, opacity: 0.8 }}>
               {landingPage.retarget_quantity || 1}x {landingPage.products?.name || "Produs"}
               {landingPage.retarget_free_shipping && (
                 <span className="ml-2 text-emerald-400 font-bold">• TRANSPORT GRATUIT</span>
               )}
             </div>
+            {landingPage.gift_product && (
+              <div className="text-center mb-2">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 rounded-full text-sm font-bold" style={{ color: textOnDarkColor }}>
+                  🎁 CADOU: {landingPage.retarget_gift_quantity || 1}x {landingPage.gift_product.name}
+                </span>
+              </div>
+            )}
 
             {/* Countdown Timer */}
             {timeLeft > 0 && (
@@ -1349,6 +1373,12 @@ function WidgetFormContent() {
                     <span>{landingPage.retarget_quantity || 1}x {landingPage.products?.name}</span>
                     <span className="font-bold">{(landingPage.retarget_price || 0).toFixed(2)} Lei</span>
                   </div>
+                  {landingPage.gift_product && (
+                    <div className="flex justify-between">
+                      <span>🎁 {landingPage.retarget_gift_quantity || 1}x {landingPage.gift_product.name}</span>
+                      <span className="font-bold text-emerald-400">GRATUIT</span>
+                    </div>
+                  )}
                   {getUpsellsTotal() > 0 && (
                     <div className="flex justify-between">
                       <span>Oferte speciale</span>

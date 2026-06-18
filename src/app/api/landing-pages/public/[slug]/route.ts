@@ -66,7 +66,7 @@ export async function GET(
     }
 
     // PARALLEL: Fetch product, store, presale upsells, and org plan simultaneously
-    const [productResult, storeResult, upsellsResult, orgResult] = await Promise.all([
+    const [productResult, storeResult, upsellsResult, orgResult, giftProductResult] = await Promise.all([
       // Product query
       landingPage.product_id
         ? supabase
@@ -99,12 +99,22 @@ export async function GET(
         .from("organizations")
         .select("plan")
         .eq("id", landingPage.organization_id)
-        .single()
+        .single(),
+
+      // Gift product query (for retargeting LPs)
+      landingPage.retarget_gift_product_id
+        ? supabase
+            .from("products")
+            .select("id, name, sku, status")
+            .eq("id", landingPage.retarget_gift_product_id)
+            .single()
+        : Promise.resolve({ data: null })
     ]);
 
     const productData = productResult.data;
     const storeData = storeResult.data;
     const orgPlan = orgResult.data?.plan || "pro";
+    const giftProduct = giftProductResult?.data || null;
 
     // Filter upsells based on product status (only "active" products)
     // If organization is on basic plan, return empty presale upsells
@@ -135,6 +145,7 @@ export async function GET(
         ...landingPage,
         products: productData,
         stores: storeData,
+        gift_product: giftProduct,
         meta_test_mode: metaTestMode,
         meta_test_event_code: metaTestEventCode,
       },

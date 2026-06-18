@@ -401,9 +401,9 @@ function parseDetails(tokens: string[]): ParseDetailsResult {
     i++;
   }
 
-  // Build details string in standard order: scara -> bloc -> etaj -> ap.
+  // Build details string in standard order: bloc -> scara -> etaj -> ap.
   // Interfon is excluded from output (not needed for Helpship)
-  const order = ['scara', 'bloc', 'etaj', 'apartament'];
+  const order = ['bloc', 'scara', 'etaj', 'apartament'];
   const sorted = details
     .filter(d => d.type !== 'interfon')
     .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));

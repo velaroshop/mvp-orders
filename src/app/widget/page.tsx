@@ -1295,14 +1295,14 @@ function WidgetFormContent() {
                   <label className="block text-sm font-medium text-zinc-700 mb-1">Telefon *</label>
                   <input type="tel" value={phone} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 10); setPhone(v); }} maxLength={10} placeholder="07XXXXXXXX"
                     onFocus={() => analyticsOnFieldFocus("phone")} onBlur={() => { handleFieldBlur("phone", phone); analyticsOnFieldBlur("phone"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base ${errors.phone ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
+                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.phone ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
                   {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-1">Nume complet *</label>
                   <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="Nume și prenume"
                     onFocus={() => analyticsOnFieldFocus("fullName")} onBlur={() => { handleFieldBlur("fullName", fullName); analyticsOnFieldBlur("fullName"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
+                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
                   {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1310,61 +1310,23 @@ function WidgetFormContent() {
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Județ *</label>
                     <input type="text" value={county} onChange={(e) => setCounty(e.target.value)} maxLength={100} placeholder="Județ"
                       onFocus={() => analyticsOnFieldFocus("county")} onBlur={() => { handleFieldBlur("county", county); analyticsOnFieldBlur("county"); }}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-base ${errors.county ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
+                      className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.county ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Localitate *</label>
                     <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100} placeholder="Oraș / Comună"
                       onFocus={() => analyticsOnFieldFocus("city")} onBlur={() => { handleFieldBlur("city", city); analyticsOnFieldBlur("city"); }}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-base ${errors.city ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
+                      className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.city ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-1">Adresă completă *</label>
                   <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} placeholder="Strada, nr, bloc, scara, apt"
                     onFocus={() => analyticsOnFieldFocus("address")} onBlur={() => { handleFieldBlur("address", address); analyticsOnFieldBlur("address"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base ${errors.address ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
+                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.address ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
                   {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                 </div>
               </div>
-
-              {/* Presale Upsells */}
-              {presaleUpsells.length > 0 && (
-                <div className="border-t border-zinc-200 mt-3 pt-3">
-                  <style jsx>{`
-                    @keyframes marchingAnts {
-                      0% { stroke-dashoffset: 0; }
-                      100% { stroke-dashoffset: 20; }
-                    }
-                  `}</style>
-                  <p className="text-sm font-bold text-zinc-900 mb-2 text-center">⚡ Adaugă la comandă</p>
-                  <div className="space-y-2">
-                    {presaleUpsells.map((upsell) => {
-                      const isSelected = selectedUpsells.has(upsell.id);
-                      return (
-                        <button key={upsell.id} type="button" onClick={() => toggleUpsell(upsell.id)}
-                          className="relative w-full p-2 rounded-lg text-left transition-all"
-                          style={{ background: isSelected ? backgroundColor : '#fff', border: isSelected ? `2px solid ${primaryColor}` : 'none' }}>
-                          {!isSelected && (
-                            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
-                              <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke={primaryColor} strokeWidth="2" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
-                            </svg>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300'}`}>
-                              {isSelected && <span className="text-white text-xs">✓</span>}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>{upsell.title}</p>
-                              <p className="text-xs" style={{ color: isSelected ? textOnDarkColor : '#71717a', opacity: 0.8 }}>{upsell.price.toFixed(2)} Lei</p>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Order Summary */}
               <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor }}>
@@ -1379,19 +1341,13 @@ function WidgetFormContent() {
                       <span className="font-bold text-emerald-400">GRATUIT</span>
                     </div>
                   )}
-                  {getUpsellsTotal() > 0 && (
-                    <div className="flex justify-between">
-                      <span>Oferte speciale</span>
-                      <span className="font-bold">{getUpsellsTotal().toFixed(2)} Lei</span>
-                    </div>
-                  )}
                   <div className="flex justify-between">
                     <span>Transport</span>
                     <span className="font-bold">{landingPage.retarget_free_shipping ? <span className="text-emerald-400">GRATUIT</span> : `${rtShipping.toFixed(2)} Lei`}</span>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-white/20 text-lg font-black">
                     <span>TOTAL</span>
-                    <span>{(rtTotal + getUpsellsTotal()).toFixed(2)} LEI</span>
+                    <span>{rtTotal.toFixed(2)} LEI</span>
                   </div>
                 </div>
               </div>

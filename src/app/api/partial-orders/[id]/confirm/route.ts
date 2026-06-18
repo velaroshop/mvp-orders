@@ -89,6 +89,7 @@ export async function POST(
       .from("landing_pages")
       .select("*, products(*)")
       .eq("slug", partialOrder.landing_key)
+      .eq("organization_id", activeOrganizationId)
       .single();
 
     if (lpError || !landingPage) {

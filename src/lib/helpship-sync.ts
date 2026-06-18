@@ -31,6 +31,7 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       .from("landing_pages")
       .select("organization_id, store_id")
       .eq("slug", order.landing_key)
+      .eq("organization_id", order.organization_id)
       .single();
 
     if (landingError || !landingPage) {

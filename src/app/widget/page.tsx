@@ -116,6 +116,32 @@ function WidgetFormContent() {
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
 
+  // Retargeting countdown timer (hooks at top level to avoid conditional hook error)
+  const countdownEndRef = useRef<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (!landingPage || landingPage.form_variant !== 10) return;
+    // Initialize countdown end time
+    const key = `rt_countdown_${landingPage.id}`;
+    const stored = sessionStorage.getItem(key);
+    if (stored) {
+      countdownEndRef.current = stored;
+    } else {
+      const end = (Date.now() + (landingPage.retarget_countdown_hours || 24) * 60 * 60 * 1000).toString();
+      sessionStorage.setItem(key, end);
+      countdownEndRef.current = end;
+    }
+    // Start countdown interval
+    const diff = parseInt(countdownEndRef.current) - Date.now();
+    setTimeLeft(diff > 0 ? diff : 0);
+    const interval = setInterval(() => {
+      const d = parseInt(countdownEndRef.current!) - Date.now();
+      setTimeLeft(d > 0 ? d : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [landingPage?.id, landingPage?.form_variant]);
+
   // Analytics tracking
   const analyticsSessionId = useRef<string | null>(null);
   const analyticsFieldTimes = useRef<Record<string, number>>({});
@@ -1164,35 +1190,6 @@ function WidgetFormContent() {
 
   const isV2 = landingPage.form_variant === 2;
   const isRetargeting = landingPage.form_variant === 10;
-
-  // Countdown timer for retargeting (hooks must be at top level, not conditional)
-  const countdownKey = isRetargeting ? `rt_countdown_${landingPage.id}` : '';
-  const countdownEndRef = useRef<string | null>(null);
-  if (isRetargeting && typeof window !== 'undefined' && !countdownEndRef.current) {
-    const stored = sessionStorage.getItem(countdownKey);
-    if (stored) {
-      countdownEndRef.current = stored;
-    } else {
-      const end = (Date.now() + (landingPage.retarget_countdown_hours || 24) * 60 * 60 * 1000).toString();
-      sessionStorage.setItem(countdownKey, end);
-      countdownEndRef.current = end;
-    }
-  }
-
-  const [timeLeft, setTimeLeft] = useState(() => {
-    if (!countdownEndRef.current) return 0;
-    const diff = parseInt(countdownEndRef.current) - Date.now();
-    return diff > 0 ? diff : 0;
-  });
-
-  useEffect(() => {
-    if (!isRetargeting || !countdownEndRef.current) return;
-    const interval = setInterval(() => {
-      const diff = parseInt(countdownEndRef.current!) - Date.now();
-      setTimeLeft(diff > 0 ? diff : 0);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isRetargeting]);
 
   // ==========================================
   // RETARGETING LAYOUT (form_variant = 10)

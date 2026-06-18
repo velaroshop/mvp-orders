@@ -87,10 +87,21 @@ export async function POST(
     // Fetch landing page to get product details and pricing for selected offer
     const { data: landingPage, error: lpError } = await supabaseAdmin
       .from("landing_pages")
-      .select("*, products(*)")
+      .select("*")
       .eq("slug", partialOrder.landing_key)
       .eq("organization_id", activeOrganizationId)
       .single();
+
+    // Fetch product separately
+    let productData = null;
+    if (landingPage?.product_id) {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("*")
+        .eq("id", landingPage.product_id)
+        .single();
+      productData = product;
+    }
 
     if (lpError || !landingPage) {
       console.error("Error fetching landing page:", lpError);
@@ -194,8 +205,8 @@ export async function POST(
         address: address,
         address_details: addressDetails || null,
         postal_code: null, // Will be set by Helpship
-        product_name: landingPage.products?.name || partialOrder.product_name,
-        product_sku: landingPage.products?.sku || partialOrder.product_sku,
+        product_name: productData?.name || partialOrder.product_name,
+        product_sku: productData?.sku || partialOrder.product_sku,
         product_quantity: quantity,
         upsells: partialOrder.upsells || [],
         subtotal: subtotal,

@@ -1165,6 +1165,35 @@ function WidgetFormContent() {
   const isV2 = landingPage.form_variant === 2;
   const isRetargeting = landingPage.form_variant === 10;
 
+  // Countdown timer for retargeting (hooks must be at top level, not conditional)
+  const countdownKey = isRetargeting ? `rt_countdown_${landingPage.id}` : '';
+  const countdownEndRef = useRef<string | null>(null);
+  if (isRetargeting && typeof window !== 'undefined' && !countdownEndRef.current) {
+    const stored = sessionStorage.getItem(countdownKey);
+    if (stored) {
+      countdownEndRef.current = stored;
+    } else {
+      const end = (Date.now() + (landingPage.retarget_countdown_hours || 24) * 60 * 60 * 1000).toString();
+      sessionStorage.setItem(countdownKey, end);
+      countdownEndRef.current = end;
+    }
+  }
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!countdownEndRef.current) return 0;
+    const diff = parseInt(countdownEndRef.current) - Date.now();
+    return diff > 0 ? diff : 0;
+  });
+
+  useEffect(() => {
+    if (!isRetargeting || !countdownEndRef.current) return;
+    const interval = setInterval(() => {
+      const diff = parseInt(countdownEndRef.current!) - Date.now();
+      setTimeLeft(diff > 0 ? diff : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRetargeting]);
+
   // ==========================================
   // RETARGETING LAYOUT (form_variant = 10)
   // ==========================================
@@ -1174,28 +1203,6 @@ function WidgetFormContent() {
       : 0;
     const rtShipping = landingPage.retarget_free_shipping ? 0 : (landingPage.shipping_price || 0);
     const rtTotal = (landingPage.retarget_price || 0) + rtShipping;
-
-    // Countdown timer (per visitor, stored in sessionStorage)
-    const countdownKey = `rt_countdown_${landingPage.id}`;
-    let countdownEnd = typeof window !== 'undefined' ? sessionStorage.getItem(countdownKey) : null;
-    if (!countdownEnd) {
-      const end = Date.now() + (landingPage.retarget_countdown_hours || 24) * 60 * 60 * 1000;
-      if (typeof window !== 'undefined') sessionStorage.setItem(countdownKey, end.toString());
-      countdownEnd = end.toString();
-    }
-
-    const [timeLeft, setTimeLeft] = useState(() => {
-      const diff = parseInt(countdownEnd!) - Date.now();
-      return diff > 0 ? diff : 0;
-    });
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        const diff = parseInt(countdownEnd!) - Date.now();
-        setTimeLeft(diff > 0 ? diff : 0);
-      }, 1000);
-      return () => clearInterval(interval);
-    }, [countdownEnd]);
 
     const hours = Math.floor(timeLeft / (1000 * 60 * 60));
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));

@@ -909,6 +909,7 @@ export default function LandingPagesPage() {
                                     }`} />
                                   </button>
                                 </div>
+                                {(page as any).form_variant !== 10 && (
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-zinc-400">📋 Form Variant</span>
                                   <select
@@ -936,6 +937,7 @@ export default function LandingPagesPage() {
                                     <option value={2}>V2 — Oferte sus</option>
                                   </select>
                                 </div>
+                                )}
                               </div>
                             )}
 

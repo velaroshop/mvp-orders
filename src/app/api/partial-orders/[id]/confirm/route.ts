@@ -87,27 +87,15 @@ export async function POST(
     // Fetch landing page to get product details and pricing for selected offer
     const { data: landingPage, error: lpError } = await supabaseAdmin
       .from("landing_pages")
-      .select("*")
+      .select("*, products(*)")
       .eq("slug", partialOrder.landing_key)
       .eq("organization_id", activeOrganizationId)
       .single();
 
-    // Fetch product separately
-    let productData = null;
-    if (landingPage?.product_id) {
-      const { data: product } = await supabaseAdmin
-        .from("products")
-        .select("*")
-        .eq("id", landingPage.product_id)
-        .single();
-      productData = product;
-    }
-
     if (lpError || !landingPage) {
       console.error("Error fetching landing page:", lpError);
-      console.error("Debug: landing_key =", partialOrder.landing_key, "org_id =", activeOrganizationId);
       return NextResponse.json(
-        { error: `Landing page not found (slug: ${partialOrder.landing_key}, org: ${activeOrganizationId})` },
+        { error: "Landing page not found" },
         { status: 404 }
       );
     }
@@ -205,8 +193,8 @@ export async function POST(
         address: address,
         address_details: addressDetails || null,
         postal_code: null, // Will be set by Helpship
-        product_name: productData?.name || partialOrder.product_name,
-        product_sku: productData?.sku || partialOrder.product_sku,
+        product_name: landingPage.products?.name || partialOrder.product_name,
+        product_sku: landingPage.products?.sku || partialOrder.product_sku,
         product_quantity: quantity,
         upsells: partialOrder.upsells || [],
         subtotal: subtotal,

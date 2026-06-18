@@ -94,8 +94,9 @@ export async function POST(
 
     if (lpError || !landingPage) {
       console.error("Error fetching landing page:", lpError);
+      console.error("Debug: landing_key =", partialOrder.landing_key, "org_id =", activeOrganizationId);
       return NextResponse.json(
-        { error: "Landing page not found" },
+        { error: `Landing page not found (slug: ${partialOrder.landing_key}, org: ${activeOrganizationId})` },
         { status: 404 }
       );
     }

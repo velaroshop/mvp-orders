@@ -546,7 +546,8 @@ export default function LandingPagesPage() {
                       <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
                         <td colSpan={4} className="px-4 py-3">
                           <div className="space-y-3">
-                            {/* Pricing Details */}
+                            {/* Pricing Details — Basic LPs only */}
+                            {(page as any).form_variant !== 10 && (
                             <div>
                               <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
                                 Detalii prețuri
@@ -626,6 +627,40 @@ export default function LandingPagesPage() {
                                 </div>
                               </div>
                             </div>
+                            )}
+
+                            {/* Retargeting Details — Retargeting LPs only */}
+                            {(page as any).form_variant === 10 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-violet-400 mb-2 uppercase tracking-wide">
+                                🎯 Detalii Retargeting
+                              </h4>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div>
+                                  <p className="text-[10px] text-zinc-500 uppercase">Preț Ofertă</p>
+                                  <p className="text-sm font-medium text-white">{((page as any).retarget_price || 0).toFixed(2)} RON</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-zinc-500 uppercase">Cantitate</p>
+                                  <p className="text-sm font-medium text-white">{(page as any).retarget_quantity || 1}x</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-zinc-500 uppercase">Transport</p>
+                                  <p className="text-sm font-medium text-white">{(page as any).retarget_free_shipping ? <span className="text-emerald-400">GRATUIT</span> : `${(page.shipping_price || 0).toFixed(2)} RON`}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-zinc-500 uppercase">Countdown</p>
+                                  <p className="text-sm font-medium text-white">{(page as any).retarget_countdown_hours || 24}h</p>
+                                </div>
+                              </div>
+                              {(page as any).retarget_srp > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-[10px] text-zinc-500 uppercase">Preț vechi (SRP)</p>
+                                  <p className="text-sm font-medium text-zinc-400 line-through">{((page as any).retarget_srp || 0).toFixed(2)} RON</p>
+                                </div>
+                              )}
+                            </div>
+                            )}
 
                             {/* Upsells Sections - only visible on PRO plan */}
                             {isProPlan ? (

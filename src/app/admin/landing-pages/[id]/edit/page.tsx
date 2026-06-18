@@ -518,7 +518,8 @@ export default function EditLandingPagePage() {
             </div>
           </div>
 
-          {/* Offer Settings */}
+          {/* Offer Settings — Hidden for retargeting */}
+          {(formData as any)?.form_variant !== 10 && (
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
               Offer Settings
@@ -643,8 +644,10 @@ export default function EditLandingPagePage() {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Offer Quantities */}
+          {/* Offer Quantities — Hidden for retargeting */}
+          {(formData as any)?.form_variant !== 10 && (
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
               Offer Quantities
@@ -707,8 +710,10 @@ export default function EditLandingPagePage() {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Pricing & Shipping */}
+          {/* Pricing & Shipping — Hidden for retargeting */}
+          {(formData as any)?.form_variant !== 10 && (
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
               Pricing & Shipping
@@ -909,6 +914,7 @@ export default function EditLandingPagePage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Retargeting Settings — Only visible for retargeting LPs */}
           {(formData as any)?.form_variant === 10 && (

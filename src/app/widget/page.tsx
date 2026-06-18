@@ -46,23 +46,6 @@ interface LandingPage {
   free_shipping_offer_3?: boolean;
   analytics_tracking?: boolean;
   form_variant?: number;
-  // Retargeting fields
-  retarget_headline?: string;
-  retarget_subheadline?: string;
-  retarget_quantity?: number;
-  retarget_price?: number;
-  retarget_srp?: number;
-  retarget_free_shipping?: boolean;
-  retarget_button_text?: string;
-  retarget_urgency_text?: string;
-  retarget_countdown_hours?: number;
-  retarget_gift_product_id?: string;
-  retarget_gift_quantity?: number;
-  gift_product?: {
-    id: string;
-    name: string;
-    sku?: string;
-  };
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -120,32 +103,6 @@ function WidgetFormContent() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
-
-  // Retargeting countdown timer (hooks at top level to avoid conditional hook error)
-  const countdownEndRef = useRef<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-
-  useEffect(() => {
-    if (!landingPage || landingPage.form_variant !== 10) return;
-    // Initialize countdown end time
-    const key = `rt_countdown_${landingPage.id}`;
-    const stored = sessionStorage.getItem(key);
-    if (stored) {
-      countdownEndRef.current = stored;
-    } else {
-      const end = (Date.now() + (landingPage.retarget_countdown_hours || 24) * 60 * 60 * 1000).toString();
-      sessionStorage.setItem(key, end);
-      countdownEndRef.current = end;
-    }
-    // Start countdown interval
-    const diff = parseInt(countdownEndRef.current) - Date.now();
-    setTimeLeft(diff > 0 ? diff : 0);
-    const interval = setInterval(() => {
-      const d = parseInt(countdownEndRef.current!) - Date.now();
-      setTimeLeft(d > 0 ? d : 0);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [landingPage?.id, landingPage?.form_variant]);
 
   // Analytics tracking
   const analyticsSessionId = useRef<string | null>(null);
@@ -426,7 +383,7 @@ function WidgetFormContent() {
         address: address.trim() || undefined,
         productName: landingPage.products?.name,
         productSku: landingPage.products?.sku,
-        productQuantity: landingPage.form_variant === 10 ? (landingPage.retarget_quantity || 1) : (selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3),
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
         subtotal: getCurrentPrice(),
         shippingCost: getShippingPrice(),
@@ -679,7 +636,7 @@ function WidgetFormContent() {
         address: address.trim() || undefined,
         productName: landingPage.products?.name,
         productSku: landingPage.products?.sku,
-        productQuantity: landingPage.form_variant === 10 ? (landingPage.retarget_quantity || 1) : (selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3),
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
         subtotal: getCurrentPrice(),
         shippingCost: getShippingPrice(),
@@ -722,7 +679,6 @@ function WidgetFormContent() {
 
   function getCurrentPrice() {
     if (!landingPage) return 0;
-    if (landingPage.form_variant === 10) return landingPage.retarget_price || 0;
     switch (selectedOffer) {
       case "offer_1":
         return landingPage.price_1;
@@ -737,7 +693,6 @@ function WidgetFormContent() {
 
   function hasFreeShipping() {
     if (!landingPage) return false;
-    if (landingPage.form_variant === 10) return landingPage.retarget_free_shipping || false;
     if (selectedOffer === "offer_1") return landingPage.free_shipping_offer_1 || false;
     if (selectedOffer === "offer_2") return landingPage.free_shipping_offer_2 || false;
     if (selectedOffer === "offer_3") return landingPage.free_shipping_offer_3 || false;
@@ -949,18 +904,6 @@ function WidgetFormContent() {
         productSku: upsell.product?.sku || null,
         type: "presale",
       }));
-
-    // Add gift product as free upsell for retargeting LPs
-    if (isRetargeting && landingPage.gift_product) {
-      selectedUpsellsData.push({
-        upsellId: `gift_${landingPage.gift_product.id}`,
-        title: `🎁 CADOU: ${landingPage.gift_product.name}`,
-        quantity: landingPage.retarget_gift_quantity || 1,
-        price: 0,
-        productSku: landingPage.gift_product.sku || null,
-        type: "presale",
-      });
-    }
 
     // Build complete event source URL for Meta CAPI attribution
     // Priority: 1) landing_url from embed.js (has full URL with params)
@@ -1206,190 +1149,7 @@ function WidgetFormContent() {
   };
 
   const isV2 = landingPage.form_variant === 2;
-  const isRetargeting = landingPage.form_variant === 10;
 
-  // ==========================================
-  // RETARGETING LAYOUT (form_variant = 10)
-  // ==========================================
-  if (isRetargeting) {
-    const rtDiscount = landingPage.retarget_srp && landingPage.retarget_price
-      ? Math.round(((landingPage.retarget_srp - landingPage.retarget_price) / landingPage.retarget_srp) * 100)
-      : 0;
-    const rtShipping = landingPage.retarget_free_shipping ? 0 : (landingPage.shipping_price || 0);
-    const rtTotal = (landingPage.retarget_price || 0) + rtShipping;
-
-    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-    return (
-      <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
-        <div className="max-w-xl mx-auto">
-          {/* Retargeting Header */}
-          <div className="relative rounded-lg shadow-lg p-4 pt-6 mb-3" style={{ backgroundColor }}>
-            {rtDiscount > 0 && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                <span className="px-4 py-1 text-white rounded-full text-sm sm:text-base font-bold shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}>
-                  -{rtDiscount}% REDUCERE
-                </span>
-              </div>
-            )}
-
-            <h2 className="text-xl sm:text-2xl font-black text-center mb-1" style={{ color: textOnDarkColor }}>
-              🔥 {landingPage.retarget_headline}
-            </h2>
-            <p className="text-sm sm:text-base text-center mb-3 font-medium" style={{ color: textOnDarkColor, opacity: 0.9 }}>
-              {landingPage.retarget_subheadline}
-            </p>
-
-            {/* Price */}
-            <div className="flex items-center justify-center gap-3 mb-2">
-              {landingPage.retarget_srp && landingPage.retarget_srp > 0 && (
-                <span className="text-lg line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
-                  {landingPage.retarget_srp.toFixed(2)} Lei
-                </span>
-              )}
-              <span className="text-3xl sm:text-4xl font-black" style={{ color: textOnDarkColor }}>
-                {(landingPage.retarget_price || 0).toFixed(2)} LEI
-              </span>
-            </div>
-
-            <div className="text-center text-sm mb-1" style={{ color: textOnDarkColor, opacity: 0.8 }}>
-              {landingPage.retarget_quantity || 1}x {landingPage.products?.name || "Produs"}
-              {landingPage.retarget_free_shipping && (
-                <span className="ml-2 text-emerald-400 font-bold">• TRANSPORT GRATUIT</span>
-              )}
-            </div>
-            {landingPage.gift_product && (
-              <div className="text-center mb-2">
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 rounded-full text-sm font-bold" style={{ color: textOnDarkColor }}>
-                  🎁 CADOU: {landingPage.retarget_gift_quantity || 1}x {landingPage.gift_product.name}
-                </span>
-              </div>
-            )}
-
-            {/* Countdown Timer */}
-            {timeLeft > 0 && (
-              <div className="text-center">
-                <p className="text-[10px] uppercase tracking-wide mb-1" style={{ color: textOnDarkColor, opacity: 0.6 }}>
-                  {landingPage.retarget_urgency_text}
-                </p>
-                <div className="inline-flex items-center gap-1 bg-black/20 rounded-lg px-3 py-1.5">
-                  <span className="text-xl sm:text-2xl font-mono font-bold" style={{ color: textOnDarkColor }}>
-                    {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
-              <h3 className="text-base sm:text-lg font-bold text-zinc-900 mb-3 text-center">
-                Completează datele pentru livrare
-              </h3>
-              <div className="space-y-2.5">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Telefon *</label>
-                  <input type="tel" value={phone} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 10); setPhone(v); }} maxLength={10} placeholder="07XXXXXXXX"
-                    onFocus={() => analyticsOnFieldFocus("phone")} onBlur={() => { handleFieldBlur("phone", phone); analyticsOnFieldBlur("phone"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.phone ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
-                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Nume complet *</label>
-                  <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="Nume și prenume"
-                    onFocus={() => analyticsOnFieldFocus("fullName")} onBlur={() => { handleFieldBlur("fullName", fullName); analyticsOnFieldBlur("fullName"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
-                  {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Județ *</label>
-                    <input type="text" value={county} onChange={(e) => setCounty(e.target.value)} maxLength={100} placeholder="Județ"
-                      onFocus={() => analyticsOnFieldFocus("county")} onBlur={() => { handleFieldBlur("county", county); analyticsOnFieldBlur("county"); }}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.county ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Localitate *</label>
-                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100} placeholder="Oraș / Comună"
-                      onFocus={() => analyticsOnFieldFocus("city")} onBlur={() => { handleFieldBlur("city", city); analyticsOnFieldBlur("city"); }}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.city ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Adresă completă *</label>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} placeholder="Strada, nr, bloc, scara, apt"
-                    onFocus={() => analyticsOnFieldFocus("address")} onBlur={() => { handleFieldBlur("address", address); analyticsOnFieldBlur("address"); }}
-                    className={`w-full px-3 py-2.5 border rounded-lg text-base placeholder:text-zinc-400 ${errors.address ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`} />
-                  {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
-                </div>
-              </div>
-
-              {/* Order Summary */}
-              <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor }}>
-                <div className="space-y-1 text-sm" style={{ color: textOnDarkColor }}>
-                  <div className="flex justify-between">
-                    <span>{landingPage.retarget_quantity || 1}x {landingPage.products?.name}</span>
-                    <span className="font-bold">{(landingPage.retarget_price || 0).toFixed(2)} Lei</span>
-                  </div>
-                  {landingPage.gift_product && (
-                    <div className="flex justify-between">
-                      <span>🎁 {landingPage.retarget_gift_quantity || 1}x {landingPage.gift_product.name}</span>
-                      <span className="font-bold text-emerald-400">GRATUIT</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Transport</span>
-                    <span className="font-bold">{landingPage.retarget_free_shipping ? <span className="text-emerald-400">GRATUIT</span> : `${rtShipping.toFixed(2)} Lei`}</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-white/20 text-lg font-black">
-                    <span>TOTAL</span>
-                    <span>{rtTotal.toFixed(2)} LEI</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Error */}
-              {error && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg text-center">
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button type="submit" disabled={submitting}
-                className="w-full mt-3 py-3 sm:py-4 rounded-lg text-lg sm:text-xl font-black text-white uppercase tracking-wide transition-all animate-pulse disabled:opacity-50"
-                style={{ backgroundColor: accentColor }}>
-                {submitting ? "Se procesează..." : landingPage.retarget_button_text || "COMANDĂ ACUM"}
-              </button>
-
-              <div className="text-center mt-2">
-                <p className="text-zinc-500 text-xs">✓ Plată la livrare • ✓ Livrare 1-3 zile</p>
-              </div>
-            </div>
-          </form>
-
-          {/* Success Popup */}
-          {showSuccessPopup && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-zinc-900 mb-2">Se procesează comanda...</h3>
-                <p className="text-zinc-600 text-sm">Vei fi redirecționat în câteva secunde</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // BASIC LAYOUTS (V1 & V2)
-  // ==========================================
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-xl mx-auto">

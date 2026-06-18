@@ -113,9 +113,7 @@ export default function LandingPagesPage() {
         throw new Error(errorMsg);
       }
 
-      const allPages = data.landingPages || [];
-      // Filter out retargeting LPs for non-superadmins
-      setLandingPages(isSuperadmin ? allPages : allPages.filter((lp: any) => lp.form_variant !== 10));
+      setLandingPages(data.landingPages || []);
 
       // Fetch upsells for all landing pages
       fetchAllUpsells();
@@ -491,11 +489,8 @@ export default function LandingPagesPage() {
                       className="hover:bg-zinc-700/50 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white flex items-center gap-2">
+                        <div className="text-sm font-medium text-white">
                           {page.name}
-                          {(page as any).form_variant === 10 && (
-                            <span className="px-1.5 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded uppercase">Retargeting</span>
-                          )}
                         </div>
                         <div className="text-xs text-zinc-400 mt-0.5">
                           {page.slug}
@@ -546,8 +541,7 @@ export default function LandingPagesPage() {
                       <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
                         <td colSpan={4} className="px-4 py-3">
                           <div className="space-y-3">
-                            {/* Pricing Details — Basic LPs only */}
-                            {(page as any).form_variant !== 10 && (
+                            {/* Pricing Details */}
                             <div>
                               <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
                                 Detalii prețuri
@@ -627,46 +621,11 @@ export default function LandingPagesPage() {
                                 </div>
                               </div>
                             </div>
-                            )}
-
-                            {/* Retargeting Details — Retargeting LPs only */}
-                            {(page as any).form_variant === 10 && (
-                            <div>
-                              <h4 className="text-xs font-semibold text-violet-400 mb-2 uppercase tracking-wide">
-                                🎯 Detalii Retargeting
-                              </h4>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div>
-                                  <p className="text-[10px] text-zinc-500 uppercase">Preț Ofertă</p>
-                                  <p className="text-sm font-medium text-white">{((page as any).retarget_price || 0).toFixed(2)} RON</p>
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-zinc-500 uppercase">Cantitate</p>
-                                  <p className="text-sm font-medium text-white">{(page as any).retarget_quantity || 1}x</p>
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-zinc-500 uppercase">Transport</p>
-                                  <p className="text-sm font-medium text-white">{(page as any).retarget_free_shipping ? <span className="text-emerald-400">GRATUIT</span> : `${(page.shipping_price || 0).toFixed(2)} RON`}</p>
-                                </div>
-                                <div>
-                                  <p className="text-[10px] text-zinc-500 uppercase">Countdown</p>
-                                  <p className="text-sm font-medium text-white">{(page as any).retarget_countdown_hours || 24}h</p>
-                                </div>
-                              </div>
-                              {(page as any).retarget_srp > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-[10px] text-zinc-500 uppercase">Preț vechi (SRP)</p>
-                                  <p className="text-sm font-medium text-zinc-400 line-through">{((page as any).retarget_srp || 0).toFixed(2)} RON</p>
-                                </div>
-                              )}
-                            </div>
-                            )}
 
                             {/* Upsells Sections - only visible on PRO plan */}
                             {isProPlan ? (
                             <>
-                            {/* Presale Section — Hidden for retargeting */}
-                            {(page as any).form_variant !== 10 && (
+                            {/* Presale Section */}
                             <div className="pt-3 border-t border-zinc-700/50">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
@@ -783,8 +742,6 @@ export default function LandingPagesPage() {
                                 })()}
                               </div>
                             </div>
-
-                            )}
 
                             {/* Postsale Section */}
                             <div className="pt-3 border-t border-zinc-700/50">
@@ -947,7 +904,6 @@ export default function LandingPagesPage() {
                                     }`} />
                                   </button>
                                 </div>
-                                {(page as any).form_variant !== 10 && (
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-zinc-400">📋 Form Variant</span>
                                   <select
@@ -975,7 +931,6 @@ export default function LandingPagesPage() {
                                     <option value={2}>V2 — Oferte sus</option>
                                   </select>
                                 </div>
-                                )}
                               </div>
                             )}
 

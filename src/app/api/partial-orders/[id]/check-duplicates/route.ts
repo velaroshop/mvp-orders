@@ -58,7 +58,6 @@ export async function GET(
         .from("landing_pages")
         .select("store_id")
         .eq("slug", partialOrder.landing_key)
-        .eq("organization_id", activeOrganizationId)
         .single();
 
       if (landingPage?.store_id) {

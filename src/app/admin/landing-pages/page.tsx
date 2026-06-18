@@ -113,7 +113,9 @@ export default function LandingPagesPage() {
         throw new Error(errorMsg);
       }
 
-      setLandingPages(data.landingPages || []);
+      const allPages = data.landingPages || [];
+      // Filter out retargeting LPs for non-superadmins
+      setLandingPages(isSuperadmin ? allPages : allPages.filter((lp: any) => lp.form_variant !== 10));
 
       // Fetch upsells for all landing pages
       fetchAllUpsells();
@@ -489,8 +491,11 @@ export default function LandingPagesPage() {
                       className="hover:bg-zinc-700/50 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white">
+                        <div className="text-sm font-medium text-white flex items-center gap-2">
                           {page.name}
+                          {(page as any).form_variant === 10 && (
+                            <span className="px-1.5 py-0.5 bg-violet-600 text-white text-[9px] font-bold rounded uppercase">Retargeting</span>
+                          )}
                         </div>
                         <div className="text-xs text-zinc-400 mt-0.5">
                           {page.slug}

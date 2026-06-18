@@ -147,6 +147,19 @@ export async function POST(request: NextRequest) {
       freeShippingOffer2 = false,
       freeShippingOffer3 = false,
       postPurchaseStatus = false,
+      // Retargeting fields
+      formVariant = 1,
+      retargetHeadline,
+      retargetSubheadline,
+      retargetQuantity,
+      retargetPrice,
+      retargetSrp,
+      retargetFreeShipping,
+      retargetButtonText,
+      retargetUrgencyText,
+      retargetCountdownHours,
+      retargetGiftProductId,
+      retargetGiftQuantity,
       // Conversion Tracking
       fbPixelId,
       fbConversionToken,
@@ -272,7 +285,23 @@ export async function POST(request: NextRequest) {
     insertData.free_shipping_offer_2 = freeShippingOffer2;
     insertData.free_shipping_offer_3 = freeShippingOffer3;
     if (postPurchaseStatus !== undefined) insertData.post_purchase_status = postPurchaseStatus;
-    
+
+    // Form variant & Retargeting fields
+    insertData.form_variant = formVariant;
+    if (formVariant === 10) {
+      if (retargetHeadline) insertData.retarget_headline = retargetHeadline;
+      if (retargetSubheadline) insertData.retarget_subheadline = retargetSubheadline;
+      if (retargetQuantity) insertData.retarget_quantity = retargetQuantity;
+      if (retargetPrice !== undefined) insertData.retarget_price = retargetPrice;
+      if (retargetSrp !== undefined) insertData.retarget_srp = retargetSrp;
+      if (retargetFreeShipping !== undefined) insertData.retarget_free_shipping = retargetFreeShipping;
+      if (retargetButtonText) insertData.retarget_button_text = retargetButtonText;
+      if (retargetUrgencyText) insertData.retarget_urgency_text = retargetUrgencyText;
+      if (retargetCountdownHours) insertData.retarget_countdown_hours = retargetCountdownHours;
+      if (retargetGiftProductId) insertData.retarget_gift_product_id = retargetGiftProductId;
+      if (retargetGiftQuantity) insertData.retarget_gift_quantity = retargetGiftQuantity;
+    }
+
     // Conversion Tracking (optional)
     if (fbPixelId !== undefined) insertData.fb_pixel_id = fbPixelId || null;
     if (fbConversionToken !== undefined) insertData.fb_conversion_token = fbConversionToken || null;

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Product {
   id: string;
@@ -17,6 +18,12 @@ interface Store {
 
 export default function NewLandingPagePage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isSuperadmin = useMemo(() => {
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    return userRole === "owner" && isSuperadminOrg === true;
+  }, [session]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -47,6 +54,20 @@ export default function NewLandingPagePage() {
     freeShippingOffer2: false,
     freeShippingOffer3: false,
     postPurchaseStatus: false,
+    // Form type
+    formVariant: 1,
+    // Retargeting fields
+    retargetHeadline: "OFERTĂ EXCLUSIVĂ",
+    retargetSubheadline: "Doar azi: ofertă specială!",
+    retargetQuantity: "1",
+    retargetPrice: "",
+    retargetSrp: "",
+    retargetFreeShipping: true,
+    retargetButtonText: "COMANDĂ ACUM",
+    retargetUrgencyText: "Ofertă valabilă doar azi!",
+    retargetCountdownHours: "24",
+    retargetGiftProductId: "",
+    retargetGiftQuantity: "1",
     // Conversion Tracking
     fbPixelId: "",
     fbConversionToken: "",
@@ -109,11 +130,16 @@ export default function NewLandingPagePage() {
         },
         body: JSON.stringify({
           ...formData,
-          srp: parseFloat(formData.srp),
-          price1: parseFloat(formData.price1),
-          price2: parseFloat(formData.price2),
-          price3: parseFloat(formData.price3),
-          shippingPrice: parseFloat(formData.shippingPrice),
+          srp: parseFloat(formData.srp) || 0,
+          price1: parseFloat(formData.price1) || 0,
+          price2: parseFloat(formData.price2) || 0,
+          price3: parseFloat(formData.price3) || 0,
+          shippingPrice: parseFloat(formData.shippingPrice) || 0,
+          retargetPrice: parseFloat(formData.retargetPrice) || 0,
+          retargetSrp: parseFloat(formData.retargetSrp) || 0,
+          retargetQuantity: parseInt(formData.retargetQuantity) || 1,
+          retargetCountdownHours: parseInt(formData.retargetCountdownHours) || 24,
+          retargetGiftQuantity: parseInt(formData.retargetGiftQuantity) || 1,
         }),
       });
 
@@ -168,6 +194,41 @@ export default function NewLandingPagePage() {
       {/* Form */}
       <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50">
         <form onSubmit={handleSubmit}>
+          {/* Landing Page Type Selector — Superadmin only */}
+          {isSuperadmin && (
+            <div className="p-4 border-b border-zinc-700/50">
+              <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
+                Tip Landing Page
+              </h2>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, formVariant: 1 })}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                    formData.formVariant !== 10
+                      ? "border-emerald-500 bg-emerald-600/10 text-emerald-400"
+                      : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
+                  }`}
+                >
+                  📋 Basic
+                  <p className="text-[10px] text-zinc-500 mt-0.5">Formular standard cu 3 oferte</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, formVariant: 10 })}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                    formData.formVariant === 10
+                      ? "border-violet-500 bg-violet-600/10 text-violet-400"
+                      : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
+                  }`}
+                >
+                  🎯 Retargeting
+                  <p className="text-[10px] text-zinc-500 mt-0.5">Ofertă unică, countdown, produs cadou</p>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Basic Information */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
@@ -681,6 +742,77 @@ export default function NewLandingPagePage() {
               </div>
             </div>
           </div>
+
+          {/* Retargeting Settings — Only visible when formVariant === 10 */}
+          {formData.formVariant === 10 && (
+            <div className="p-4 border-b border-zinc-700/50">
+              <h2 className="text-sm font-semibold text-violet-400 mb-3 uppercase tracking-wide">
+                🎯 Retargeting Settings
+              </h2>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Headline *</label>
+                    <input type="text" value={formData.retargetHeadline} onChange={(e) => setFormData({ ...formData, retargetHeadline: e.target.value })} maxLength={50} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="OFERTĂ EXCLUSIVĂ" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Subheadline *</label>
+                    <input type="text" value={formData.retargetSubheadline} onChange={(e) => setFormData({ ...formData, retargetSubheadline: e.target.value })} maxLength={100} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="Doar azi: ofertă specială!" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Cantitate</label>
+                    <input type="number" min="1" value={formData.retargetQuantity} onChange={(e) => setFormData({ ...formData, retargetQuantity: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Preț ofertă *</label>
+                    <input type="number" step="0.01" min="0" value={formData.retargetPrice} onChange={(e) => setFormData({ ...formData, retargetPrice: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="69.00" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Preț vechi (SRP)</label>
+                    <input type="number" step="0.01" min="0" value={formData.retargetSrp} onChange={(e) => setFormData({ ...formData, retargetSrp: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="138.00" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Text buton</label>
+                    <input type="text" value={formData.retargetButtonText} onChange={(e) => setFormData({ ...formData, retargetButtonText: e.target.value })} maxLength={30} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="COMANDĂ ACUM" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Countdown (ore)</label>
+                    <input type="number" min="1" max="72" value={formData.retargetCountdownHours} onChange={(e) => setFormData({ ...formData, retargetCountdownHours: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Text urgență</label>
+                  <input type="text" value={formData.retargetUrgencyText} onChange={(e) => setFormData({ ...formData, retargetUrgencyText: e.target.value })} maxLength={60} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" placeholder="Ofertă valabilă doar azi!" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={formData.retargetFreeShipping} onChange={(e) => setFormData({ ...formData, retargetFreeShipping: e.target.checked })} className="rounded border-zinc-600 bg-zinc-800 text-emerald-500" />
+                  <span className="text-sm text-zinc-300">Transport gratuit</span>
+                </div>
+                <div className="border-t border-zinc-700/50 pt-3">
+                  <h3 className="text-xs font-semibold text-zinc-400 mb-2 uppercase">🎁 Produs Cadou (opțional)</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1">Produs cadou</label>
+                      <select value={formData.retargetGiftProductId} onChange={(e) => setFormData({ ...formData, retargetGiftProductId: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white">
+                        <option value="">Fără cadou</option>
+                        {products.filter(p => p.status === "active").map(p => (
+                          <option key={p.id} value={p.id}>{p.name} {p.sku && `(${p.sku})`}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1">Cantitate cadou</label>
+                      <input type="number" min="1" value={formData.retargetGiftQuantity} onChange={(e) => setFormData({ ...formData, retargetGiftQuantity: e.target.value })} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conversion Tracking */}
           <div className="p-4 border-b border-zinc-700/50">

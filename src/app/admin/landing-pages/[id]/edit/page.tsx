@@ -205,6 +205,18 @@ export default function EditLandingPagePage() {
           free_shipping_offer_2: (formData as any).free_shipping_offer_2 || false,
           free_shipping_offer_3: (formData as any).free_shipping_offer_3 || false,
           postPurchaseStatus: formData.post_purchase_status,
+          // Retargeting fields
+          retarget_headline: (formData as any).retarget_headline,
+          retarget_subheadline: (formData as any).retarget_subheadline,
+          retarget_quantity: (formData as any).retarget_quantity,
+          retarget_price: (formData as any).retarget_price,
+          retarget_srp: (formData as any).retarget_srp,
+          retarget_free_shipping: (formData as any).retarget_free_shipping,
+          retarget_button_text: (formData as any).retarget_button_text,
+          retarget_urgency_text: (formData as any).retarget_urgency_text,
+          retarget_countdown_hours: (formData as any).retarget_countdown_hours,
+          retarget_gift_product_id: (formData as any).retarget_gift_product_id || null,
+          retarget_gift_quantity: (formData as any).retarget_gift_quantity,
           fbPixelId: formData.fb_pixel_id || "",
           fbConversionToken: formData.fb_conversion_token || "",
           clientSideTracking: formData.client_side_tracking,
@@ -897,6 +909,59 @@ export default function EditLandingPagePage() {
               </div>
             </div>
           </div>
+
+          {/* Retargeting Settings — Only visible for retargeting LPs */}
+          {(formData as any)?.form_variant === 10 && (
+            <div className="p-4 border-b border-zinc-700/50">
+              <h2 className="text-sm font-semibold text-violet-400 mb-3 uppercase tracking-wide">
+                🎯 Retargeting Settings
+              </h2>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Headline</label>
+                    <input type="text" value={(formData as any)?.retarget_headline || ""} onChange={(e) => setFormData({ ...formData!, retarget_headline: e.target.value } as any)} maxLength={50} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Subheadline</label>
+                    <input type="text" value={(formData as any)?.retarget_subheadline || ""} onChange={(e) => setFormData({ ...formData!, retarget_subheadline: e.target.value } as any)} maxLength={100} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Cantitate</label>
+                    <input type="number" min="1" value={(formData as any)?.retarget_quantity || 1} onChange={(e) => setFormData({ ...formData!, retarget_quantity: parseInt(e.target.value) || 1 } as any)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Preț ofertă</label>
+                    <input type="number" step="0.01" min="0" value={(formData as any)?.retarget_price || ""} onChange={(e) => setFormData({ ...formData!, retarget_price: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Preț vechi (SRP)</label>
+                    <input type="number" step="0.01" min="0" value={(formData as any)?.retarget_srp || ""} onChange={(e) => setFormData({ ...formData!, retarget_srp: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Text buton</label>
+                    <input type="text" value={(formData as any)?.retarget_button_text || ""} onChange={(e) => setFormData({ ...formData!, retarget_button_text: e.target.value } as any)} maxLength={30} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-300 mb-1">Countdown (ore)</label>
+                    <input type="number" min="1" max="72" value={(formData as any)?.retarget_countdown_hours || 24} onChange={(e) => setFormData({ ...formData!, retarget_countdown_hours: parseInt(e.target.value) || 24 } as any)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Text urgență</label>
+                  <input type="text" value={(formData as any)?.retarget_urgency_text || ""} onChange={(e) => setFormData({ ...formData!, retarget_urgency_text: e.target.value } as any)} maxLength={60} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={(formData as any)?.retarget_free_shipping || false} onChange={(e) => setFormData({ ...formData!, retarget_free_shipping: e.target.checked } as any)} className="rounded border-zinc-600 bg-zinc-800 text-emerald-500" />
+                  <span className="text-sm text-zinc-300">Transport gratuit</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conversion Tracking */}
           <div className="p-4 border-b border-zinc-700/50">

@@ -208,6 +208,18 @@ export async function PUT(
     if (body.serverSideTracking !== undefined) updateData.server_side_tracking = body.serverSideTracking;
     if (body.analytics_tracking !== undefined) updateData.analytics_tracking = body.analytics_tracking;
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
+    // Retargeting fields
+    if (body.retarget_headline !== undefined) updateData.retarget_headline = body.retarget_headline;
+    if (body.retarget_subheadline !== undefined) updateData.retarget_subheadline = body.retarget_subheadline;
+    if (body.retarget_quantity !== undefined) updateData.retarget_quantity = body.retarget_quantity;
+    if (body.retarget_price !== undefined) updateData.retarget_price = body.retarget_price;
+    if (body.retarget_srp !== undefined) updateData.retarget_srp = body.retarget_srp;
+    if (body.retarget_free_shipping !== undefined) updateData.retarget_free_shipping = body.retarget_free_shipping;
+    if (body.retarget_button_text !== undefined) updateData.retarget_button_text = body.retarget_button_text;
+    if (body.retarget_urgency_text !== undefined) updateData.retarget_urgency_text = body.retarget_urgency_text;
+    if (body.retarget_countdown_hours !== undefined) updateData.retarget_countdown_hours = body.retarget_countdown_hours;
+    if (body.retarget_gift_product_id !== undefined) updateData.retarget_gift_product_id = body.retarget_gift_product_id || null;
+    if (body.retarget_gift_quantity !== undefined) updateData.retarget_gift_quantity = body.retarget_gift_quantity;
 
     const { data: landingPage, error } = await supabase
       .from("landing_pages")

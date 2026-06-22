@@ -43,10 +43,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Calculate date range
+    // Calculate date range (exclude today — incomplete day skews daily average)
     const endDate = new Date();
+    endDate.setDate(endDate.getDate() - 1); // Yesterday
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days + 1); // Include today
+    startDate.setDate(startDate.getDate() - days); // N days before today
 
     const startDateTime = startDate.toISOString().split("T")[0] + "T00:00:00.000Z";
     const endDateTime = endDate.toISOString().split("T")[0] + "T23:59:59.999Z";

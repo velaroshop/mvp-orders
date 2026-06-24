@@ -44,9 +44,16 @@ export async function POST(request: NextRequest) {
       subtotal,
       shippingCost,
       total,
-      tracking,
+      tracking: rawTracking,
       eventSourceUrl,
     } = body;
+
+    // Enrich tracking data with client IP and User-Agent from browser request
+    const tracking = {
+      ...(rawTracking || {}),
+      clientIpAddress: clientIP || undefined,
+      clientUserAgent: request.headers.get("user-agent") || undefined,
+    };
 
     if (
       !landingKey ||

@@ -1485,7 +1485,7 @@ export default function AdminPage() {
                 ORDERS
               </h1>
               <p className="mt-1 text-sm text-zinc-400">
-                {totalOrders} total comenzi{searchQuery && ` (${orders.length} rezultate)`} • Pagina {currentPage} din {totalPages}
+                {totalOrders} total comenzi{searchQuery && ` (${orders.length} rezultate)`}{totalPages > 1 && ` • Pagina ${currentPage} din ${totalPages}`}
               </p>
             </div>
             <button
@@ -2435,6 +2435,13 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Order count when no pagination needed */}
+        {totalPages <= 1 && totalOrders > 0 && (
+          <div className="mt-4 text-sm text-zinc-400 text-center">
+            {totalOrders} {totalOrders === 1 ? "comandă" : "comenzi"}
+          </div>
+        )}
 
         {/* Pagination Controls - Simple Previous/Next */}
         {totalPages > 1 && (

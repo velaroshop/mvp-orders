@@ -872,8 +872,11 @@ function WidgetFormContent() {
       subtotal: getCurrentPrice(),
       shippingCost: getShippingPrice(),
       total: getTotalPrice(),
-      // Meta tracking data
-      tracking: trackingData,
+      // Meta tracking data + form timing for bot detection
+      tracking: {
+        ...trackingData,
+        formSubmittedAt: Date.now(),
+      },
       // Use complete parent page URL for accurate Meta CAPI attribution
       eventSourceUrl: buildEventSourceUrl(),
     };

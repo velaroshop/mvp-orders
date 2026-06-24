@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { findOrCreateCustomer, updateCustomerStats } from "@/lib/customer";
 import { checkRateLimit, getClientIP, getRateLimitHeaders } from "@/lib/rate-limit";
+import { detectBot } from "@/lib/bot-detection";
 import type { OfferCode } from "@/lib/types";
 
 // Rate limit config: 10 comenzi per IP per minut
@@ -49,11 +50,25 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Enrich tracking data with client IP and User-Agent from browser request
+    const userAgent = request.headers.get("user-agent") || undefined;
     const tracking = {
       ...(rawTracking || {}),
       clientIpAddress: clientIP || undefined,
-      clientUserAgent: request.headers.get("user-agent") || undefined,
+      clientUserAgent: userAgent,
     };
+
+    // Bot detection — flag suspected bots in tracking_data (order still created, CAPI skipped)
+    const botCheck = detectBot({
+      userAgent: userAgent || null,
+      clientIP: clientIP,
+      formSubmittedAt: rawTracking?.formSubmittedAt,
+      phone,
+    });
+    if (botCheck.isSuspectedBot) {
+      tracking.botSuspected = true;
+      tracking.botReasons = botCheck.reasons;
+      console.warn(`[Bot Detection] Suspected bot order from IP ${clientIP}:`, botCheck.reasons);
+    }
 
     if (
       !landingKey ||

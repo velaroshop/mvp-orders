@@ -103,17 +103,22 @@ export async function POST(
     }
 
     // Send Meta CAPI Purchase event (if landing page has Meta tracking configured)
+    // Skip CAPI for suspected bot orders to avoid poisoning Meta's algorithm
     try {
       const { data: fullOrder } = await supabaseAdmin
         .from("orders")
         .select(`
           landing_key,
-          event_source_url
+          event_source_url,
+          tracking_data
         `)
         .eq("id", orderId)
         .single();
 
-      if (fullOrder?.landing_key) {
+      // Skip CAPI for bot-suspected orders
+      if (fullOrder?.tracking_data?.botSuspected) {
+        console.log("[Finalize] Skipping Meta CAPI for bot-suspected order:", orderId);
+      } else if (fullOrder?.landing_key) {
         const { data: landingPage } = await supabaseAdmin
           .from("landing_pages")
           .select("fb_pixel_id, fb_conversion_token, organization_id")

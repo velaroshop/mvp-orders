@@ -48,6 +48,16 @@
     const fbp = getCookie('_fbp');
     if (fbp) tracking.fbp = fbp;
 
+    // _fbc: try cookie first, construct from fbclid as fallback
+    // Format: fb.1.{timestamp_ms}.{fbclid}
+    const fbcCookie = getCookie('_fbc');
+    if (fbcCookie) {
+      tracking.fbc = fbcCookie;
+    } else if (fbclid) {
+      // Construct _fbc manually if pixel hasn't written the cookie yet (race condition / ITP)
+      tracking.fbc = 'fb.1.' + Date.now() + '.' + fbclid;
+    }
+
     // UTM parameters
     const utmSource = params.get('utm_source');
     if (utmSource) tracking.utm_source = utmSource;

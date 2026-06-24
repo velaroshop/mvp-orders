@@ -226,8 +226,8 @@ export async function sendMetaPurchaseEvent(params: {
       postalCode: order.postal_code,
       countryCode: 'ro',
       externalId: order.customer_id,
-      fbp: trackingData.fbp || order.fbc,
-      fbc: order.fbc,
+      fbp: trackingData.fbp || undefined,
+      fbc: order.fbc || trackingData.fbc || undefined,
       clientIpAddress: trackingData.clientIpAddress,
       clientUserAgent: trackingData.clientUserAgent,
     });

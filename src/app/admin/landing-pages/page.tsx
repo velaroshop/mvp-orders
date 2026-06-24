@@ -872,38 +872,9 @@ export default function LandingPagesPage() {
                             </div>
                             )}
 
-                            {/* Analytics Tracking Toggle — Superadmin only */}
+                            {/* Superadmin options */}
                             {isSuperadmin && (
                               <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-zinc-400">📊 Analytics Tracking</span>
-                                  <button
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const newValue = !(page as any).analytics_tracking;
-                                      try {
-                                        await fetch(`/api/landing-pages/${page.id}`, {
-                                          method: "PUT",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ analytics_tracking: newValue }),
-                                        });
-                                        // Refresh landing pages
-                                        setLandingPages(prev => prev.map(lp =>
-                                          lp.id === page.id ? { ...lp, analytics_tracking: newValue } as any : lp
-                                        ));
-                                      } catch (err) {
-                                        console.error("Failed to toggle analytics:", err);
-                                      }
-                                    }}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                      (page as any).analytics_tracking ? "bg-emerald-600" : "bg-zinc-600"
-                                    }`}
-                                  >
-                                    <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                                      (page as any).analytics_tracking ? "translate-x-4.5" : "translate-x-0.5"
-                                    }`} />
-                                  </button>
-                                </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-zinc-400">📋 Form Variant</span>
                                   <select

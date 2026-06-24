@@ -206,7 +206,6 @@ export async function PUT(
     if (body.fbConversionToken !== undefined) updateData.fb_conversion_token = body.fbConversionToken || null;
     if (body.clientSideTracking !== undefined) updateData.client_side_tracking = body.clientSideTracking;
     if (body.serverSideTracking !== undefined) updateData.server_side_tracking = body.serverSideTracking;
-    if (body.analytics_tracking !== undefined) updateData.analytics_tracking = body.analytics_tracking;
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
 
     const { data: landingPage, error } = await supabase

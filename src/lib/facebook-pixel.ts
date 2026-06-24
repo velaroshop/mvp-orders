@@ -107,23 +107,31 @@ export function updatePixelUserData(pixelId: string, userData: { ph?: string; fn
 }
 
 /**
+ * Generate a unique event ID for deduplication
+ * Uses prefix + timestamp + random to ensure uniqueness
+ */
+let eventCounter = 0;
+export function generateEventId(prefix: string): string {
+  eventCounter++;
+  return `${prefix}_${Date.now()}_${eventCounter}`;
+}
+
+/**
  * Track PageView event
  */
 export function trackPageView(): void {
   if (typeof window !== 'undefined' && window.fbq) {
+    const eventID = generateEventId('pv');
     console.log('[FB Pixel] PageView', window.__fbTestEventCode ? '(Test Mode)' : '');
-
-    if (window.__fbTestEventCode) {
-      window.fbq('track', 'PageView', {}, { eventID: `pv_${Date.now()}`, test_event_code: window.__fbTestEventCode });
-    } else {
-      window.fbq('track', 'PageView');
-    }
+    window.fbq('track', 'PageView', {}, {
+      eventID,
+      ...(window.__fbTestEventCode ? { test_event_code: window.__fbTestEventCode } : {}),
+    });
   }
 }
 
 /**
  * Track ViewContent event
- * @param params - Event parameters
  */
 export function trackViewContent(params?: {
   content_name?: string;
@@ -133,22 +141,17 @@ export function trackViewContent(params?: {
   currency?: string;
 }): void {
   if (typeof window !== 'undefined' && window.fbq) {
+    const eventID = generateEventId('vc');
     console.log('[FB Pixel] ViewContent', params, window.__fbTestEventCode ? '(Test Mode)' : '');
-
-    if (window.__fbTestEventCode) {
-      window.fbq('track', 'ViewContent', params || {}, {
-        eventID: `vc_${Date.now()}`,
-        test_event_code: window.__fbTestEventCode
-      });
-    } else {
-      window.fbq('track', 'ViewContent', params || {});
-    }
+    window.fbq('track', 'ViewContent', params || {}, {
+      eventID,
+      ...(window.__fbTestEventCode ? { test_event_code: window.__fbTestEventCode } : {}),
+    });
   }
 }
 
 /**
  * Track InitiateCheckout event
- * @param params - Event parameters
  */
 export function trackInitiateCheckout(params?: {
   content_ids?: string[];
@@ -158,16 +161,12 @@ export function trackInitiateCheckout(params?: {
   currency?: string;
 }): void {
   if (typeof window !== 'undefined' && window.fbq) {
+    const eventID = generateEventId('ic');
     console.log('[FB Pixel] InitiateCheckout', params, window.__fbTestEventCode ? '(Test Mode)' : '');
-
-    if (window.__fbTestEventCode) {
-      window.fbq('track', 'InitiateCheckout', params || {}, {
-        eventID: `ic_${Date.now()}`,
-        test_event_code: window.__fbTestEventCode
-      });
-    } else {
-      window.fbq('track', 'InitiateCheckout', params || {});
-    }
+    window.fbq('track', 'InitiateCheckout', params || {}, {
+      eventID,
+      ...(window.__fbTestEventCode ? { test_event_code: window.__fbTestEventCode } : {}),
+    });
   }
 }
 

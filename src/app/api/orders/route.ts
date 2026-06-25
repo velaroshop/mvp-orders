@@ -50,10 +50,12 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Enrich tracking data with client IP and User-Agent from browser request
+    // Prefer IPv6 for Meta CAPI matching (Meta recommends IPv6 over IPv4)
     const userAgent = request.headers.get("user-agent") || undefined;
+    const ipv6 = request.headers.get("x-forwarded-for")?.split(",").map(ip => ip.trim()).find(ip => ip.includes(":")) || undefined;
     const tracking = {
       ...(rawTracking || {}),
-      clientIpAddress: clientIP || undefined,
+      clientIpAddress: ipv6 || clientIP || undefined,
       clientUserAgent: userAgent,
     };
 

@@ -120,9 +120,9 @@ export function buildUserData(params: {
   // Country code (ISO 3166-1 alpha-2)
   userData.country = hashSHA256(params.countryCode?.toLowerCase() || 'ro');
 
-  // External ID for cross-device matching (hashed)
+  // External ID for cross-device matching (NOT hashed — Meta requires plain text)
   if (params.externalId) {
-    userData.external_id = hashSHA256(params.externalId);
+    userData.external_id = params.externalId;
   }
 
   // Facebook browser ID and click ID (not hashed)

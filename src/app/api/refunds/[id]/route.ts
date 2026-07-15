@@ -17,7 +17,7 @@ export async function GET(
     const activeOrganizationId = (session.user as any).activeOrganizationId;
     const activeRole = (session.user as any).activeRole;
 
-    if (!["owner", "admin"].includes(activeRole)) {
+    if (!["owner", "admin", "store_manager"].includes(activeRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -56,7 +56,7 @@ export async function PATCH(
     const activeRole = (session.user as any).activeRole;
     const userId = (session.user as any).id;
 
-    if (!["owner", "admin"].includes(activeRole)) {
+    if (!["owner", "admin", "store_manager"].includes(activeRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

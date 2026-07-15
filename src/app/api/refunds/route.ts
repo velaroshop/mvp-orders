@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "No active organization" }, { status: 400 });
     }
 
-    if (!["owner", "admin"].includes(activeRole)) {
+    if (!["owner", "admin", "store_manager"].includes(activeRole)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

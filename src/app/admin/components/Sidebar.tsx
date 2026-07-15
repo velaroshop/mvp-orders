@@ -123,7 +123,13 @@ export default function Sidebar() {
     return userRole === "owner" && isSuperadminOrg === true;
   }, [session]);
 
-  const isActive = (href: string) => pathname.startsWith(href);
+  const isActive = (href: string) => {
+    // Special case: /admin/refunds/settings should not highlight /admin/refunds
+    if (href === "/admin/refunds" && pathname.startsWith("/admin/refunds/settings")) {
+      return false;
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <>
@@ -217,6 +223,26 @@ export default function Sidebar() {
               )}
             </Link>
           ))}
+
+          {/* Refund Settings sub-link */}
+          {menuItems.some((item) => item.href === "/admin/refunds") && (
+            <Link
+              href="/admin/refunds/settings"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-lg ml-4
+                transition-all duration-200 text-[11px]
+                ${
+                  pathname.startsWith("/admin/refunds/settings")
+                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                }
+              `}
+            >
+              <span className="text-[10px]">&#9881;</span>
+              <span className="font-medium">Setari</span>
+            </Link>
+          )}
 
           {/* SUPERADMIN link - only for OWNER from superadmin organization */}
           {showSuperadminLink && (

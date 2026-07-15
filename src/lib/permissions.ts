@@ -15,6 +15,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/admin/ads-dashboard": ["owner", "admin"],
   "/admin/activity-log": ["owner", "admin"],
   "/admin/refunds": ["owner", "admin"],
+  "/admin/refunds/settings": ["owner", "admin"],
 
   // Route accessible to owner only
   "/admin/settings/team": ["owner"],

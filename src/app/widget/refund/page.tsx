@@ -157,7 +157,7 @@ function RefundFormContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Cererea a fost trimisa!</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Cererea ta a fost inregistrata!</h2>
           <p className="text-gray-600 mb-4">
             Numarul tichetului tau este:
           </p>
@@ -165,8 +165,8 @@ function RefundFormContent() {
             {ticketNumber}
           </p>
           <p className="text-sm text-gray-500">
-            Vei primi un email de confirmare cu detaliile cererii tale.
-            Te vom contacta in cel mai scurt timp.
+            Pastreaza acest numar de tichet. Te vom contacta in cel mai scurt timp
+            pentru a finaliza procesul de returnare.
           </p>
         </div>
       </div>

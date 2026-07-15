@@ -2,6 +2,69 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import RichTextEditor from "../components/RichTextEditor";
+
+function SortableMotiveItem({
+  id,
+  motive,
+  onRemove,
+}: {
+  id: string;
+  motive: string;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="px-1 py-1.5 text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing"
+        title="Trage pentru a reordona"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+        </svg>
+      </button>
+      <span className="flex-1 px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded text-sm text-white">
+        {motive}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="px-2 py-1.5 text-red-400 hover:text-red-300 text-sm"
+      >
+        X
+      </button>
+    </div>
+  );
+}
 
 export default function RefundSettingsPage() {
   const [refundResendKey, setRefundResendKey] = useState("");
@@ -13,6 +76,7 @@ export default function RefundSettingsPage() {
   const [refundFormTitle, setRefundFormTitle] = useState("Formular Returnare Produs");
   const [refundFormSubtitle, setRefundFormSubtitle] = useState("");
   const [refundMotives, setRefundMotives] = useState<string[]>(["Produs defect", "Produs gresit livrat", "Nu corespunde descrierii", "M-am razgandit"]);
+  const [motiveIds, setMotiveIds] = useState<string[]>([]);
   const [newMotive, setNewMotive] = useState("");
   const [refundTermsUrl, setRefundTermsUrl] = useState("");
   const [refundPrimaryColor, setRefundPrimaryColor] = useState("#000000");
@@ -43,7 +107,9 @@ export default function RefundSettingsPage() {
         setRefundTicketPrefix(s.refund_ticket_prefix || "RET");
         setRefundFormTitle(s.refund_form_title || "Formular Returnare Produs");
         setRefundFormSubtitle(s.refund_form_subtitle || "");
-        setRefundMotives(s.refund_motives || []);
+        const motives = s.refund_motives || [];
+        setRefundMotives(motives);
+        setMotiveIds(motives.map((_: string, i: number) => `motive-${i}`));
         setRefundTermsUrl(s.refund_terms_url || "");
         setRefundPrimaryColor(s.refund_primary_color || "#000000");
         setRefundLogoUrl(s.refund_logo_url || "");
@@ -119,6 +185,22 @@ export default function RefundSettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = motiveIds.indexOf(active.id as string);
+    const newIndex = motiveIds.indexOf(over.id as string);
+
+    setMotiveIds(arrayMove(motiveIds, oldIndex, newIndex));
+    setRefundMotives(arrayMove(refundMotives, oldIndex, newIndex));
   }
 
   if (loading) {
@@ -295,24 +377,32 @@ export default function RefundSettingsPage() {
         </div>
       </div>
 
-      {/* Motives Section */}
+      {/* Motives Section - Drag & Drop */}
       <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Motive returnare</h2>
-          <div className="space-y-2 mb-3">
-            {refundMotives.map((m, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="flex-1 px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded text-sm text-white">{m}</span>
-                <button
-                  type="button"
-                  onClick={() => setRefundMotives(refundMotives.filter((_, j) => j !== i))}
-                  className="px-2 py-1.5 text-red-400 hover:text-red-300 text-sm"
-                >
-                  X
-                </button>
+          <h2 className="text-lg font-semibold text-white mb-1">Motive returnare</h2>
+          <p className="text-xs text-zinc-500 mb-4">Trage pentru a reordona motivele</p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={motiveIds} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2 mb-3">
+                {refundMotives.map((m, i) => (
+                  <SortableMotiveItem
+                    key={motiveIds[i]}
+                    id={motiveIds[i]}
+                    motive={m}
+                    onRemove={() => {
+                      setRefundMotives(refundMotives.filter((_, j) => j !== i));
+                      setMotiveIds(motiveIds.filter((_, j) => j !== i));
+                    }}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
           <div className="flex gap-2">
             <input
               type="text"
@@ -322,6 +412,7 @@ export default function RefundSettingsPage() {
                 if (e.key === "Enter" && newMotive.trim()) {
                   e.preventDefault();
                   setRefundMotives([...refundMotives, newMotive.trim()]);
+                  setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
                   setNewMotive("");
                 }
               }}
@@ -333,6 +424,7 @@ export default function RefundSettingsPage() {
               onClick={() => {
                 if (newMotive.trim()) {
                   setRefundMotives([...refundMotives, newMotive.trim()]);
+                  setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
                   setNewMotive("");
                 }
               }}
@@ -361,13 +453,10 @@ export default function RefundSettingsPage() {
               />
             </div>
             <div>
-              <label htmlFor="refundEmailClientBody" className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
-              <textarea
-                id="refundEmailClientBody"
-                rows={6}
-                value={refundEmailClientBody}
-                onChange={(e) => setRefundEmailClientBody(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400 font-mono text-sm"
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
+              <RichTextEditor
+                content={refundEmailClientBody}
+                onChange={setRefundEmailClientBody}
               />
             </div>
           </div>
@@ -391,13 +480,10 @@ export default function RefundSettingsPage() {
               />
             </div>
             <div>
-              <label htmlFor="refundEmailAdminBody" className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
-              <textarea
-                id="refundEmailAdminBody"
-                rows={8}
-                value={refundEmailAdminBody}
-                onChange={(e) => setRefundEmailAdminBody(e.target.value)}
-                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400 font-mono text-sm"
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
+              <RichTextEditor
+                content={refundEmailAdminBody}
+                onChange={setRefundEmailAdminBody}
               />
             </div>
           </div>

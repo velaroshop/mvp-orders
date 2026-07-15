@@ -13,26 +13,25 @@ interface RefundEmailData {
   from_name: string;
 }
 
-function replaceVariables(template: string, data: RefundEmailData): string {
-  return template
-    .replace(/\{\{ticket_number\}\}/g, data.ticket_number || "")
-    .replace(/\{\{full_name\}\}/g, data.full_name || "")
-    .replace(/\{\{email\}\}/g, data.email || "")
-    .replace(/\{\{phone\}\}/g, data.phone || "-")
-    .replace(/\{\{order_number\}\}/g, data.order_number || "-")
-    .replace(/\{\{product_name\}\}/g, data.product_name || "")
-    .replace(/\{\{motive\}\}/g, data.motive || "")
-    .replace(/\{\{description\}\}/g, data.description || "-")
-    .replace(/\{\{created_at\}\}/g, data.created_at || "")
-    .replace(/\{\{from_name\}\}/g, data.from_name || "");
-}
-
-function textToHtml(text: string): string {
+function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\n/g, "<br>");
+    .replace(/>/g, "&gt;");
+}
+
+function replaceVariables(template: string, data: RefundEmailData): string {
+  return template
+    .replace(/\{\{ticket_number\}\}/g, escapeHtml(data.ticket_number || ""))
+    .replace(/\{\{full_name\}\}/g, escapeHtml(data.full_name || ""))
+    .replace(/\{\{email\}\}/g, escapeHtml(data.email || ""))
+    .replace(/\{\{phone\}\}/g, escapeHtml(data.phone || "-"))
+    .replace(/\{\{order_number\}\}/g, escapeHtml(data.order_number || "-"))
+    .replace(/\{\{product_name\}\}/g, escapeHtml(data.product_name || ""))
+    .replace(/\{\{motive\}\}/g, escapeHtml(data.motive || ""))
+    .replace(/\{\{description\}\}/g, escapeHtml(data.description || "-"))
+    .replace(/\{\{created_at\}\}/g, escapeHtml(data.created_at || ""))
+    .replace(/\{\{from_name\}\}/g, escapeHtml(data.from_name || ""));
 }
 
 export async function sendRefundClientEmail(
@@ -52,7 +51,7 @@ export async function sendRefundClientEmail(
       from: `${fromName} <${fromEmail}>`,
       to: data.email,
       subject,
-      html: textToHtml(body),
+      html: body,
     });
 
     return { success: true };
@@ -83,7 +82,7 @@ export async function sendRefundAdminEmail(
       from: `${fromName} <${fromEmail}>`,
       to: notificationEmail,
       subject,
-      html: textToHtml(body),
+      html: body,
     });
 
     return { success: true };

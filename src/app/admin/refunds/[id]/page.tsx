@@ -250,7 +250,7 @@ export default function RefundDetailPage({ params }: { params: Promise<{ id: str
           onChange={(e) => setAdminNotes(e.target.value)}
           rows={4}
           className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
-          placeholder="Adauga note interne (vizibile doar pentru admin)..."
+          placeholder="Adauga note interne..."
         />
         {notesMessage && (
           <div className={`mb-3 p-2 rounded text-sm ${

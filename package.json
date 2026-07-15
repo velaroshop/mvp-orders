@@ -14,11 +14,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/supabase-js": "^2.90.1",
-    "@tailwindcss/typography": "^0.5.20",
-    "@tiptap/extension-underline": "^3.27.4",
-    "@tiptap/pm": "^3.27.4",
-    "@tiptap/react": "^3.27.4",
-    "@tiptap/starter-kit": "^3.27.4",
     "bcryptjs": "^3.0.3",
     "next": "16.1.1",
     "next-auth": "^4.24.13",
@@ -26,7 +21,6 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
-    "resend": "^6.17.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

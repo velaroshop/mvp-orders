@@ -19,8 +19,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import RichTextEditor from "../components/RichTextEditor";
-
 function SortableMotiveItem({
   id,
   motive,
@@ -67,11 +65,6 @@ function SortableMotiveItem({
 }
 
 export default function RefundSettingsPage() {
-  const [refundResendKey, setRefundResendKey] = useState("");
-  const [hasExistingResendKey, setHasExistingResendKey] = useState(false);
-  const [refundNotificationEmail, setRefundNotificationEmail] = useState("");
-  const [refundFromEmail, setRefundFromEmail] = useState("");
-  const [refundFromName, setRefundFromName] = useState("");
   const [refundTicketPrefix, setRefundTicketPrefix] = useState("RET");
   const [refundFormTitle, setRefundFormTitle] = useState("Formular Returnare Produs");
   const [refundFormSubtitle, setRefundFormSubtitle] = useState("");
@@ -81,19 +74,12 @@ export default function RefundSettingsPage() {
   const [refundTermsUrl, setRefundTermsUrl] = useState("");
   const [refundPrimaryColor, setRefundPrimaryColor] = useState("#000000");
   const [refundLogoUrl, setRefundLogoUrl] = useState("");
-  const [refundEmailClientSubject, setRefundEmailClientSubject] = useState("");
-  const [refundEmailClientBody, setRefundEmailClientBody] = useState("");
-  const [refundEmailAdminSubject, setRefundEmailAdminSubject] = useState("");
-  const [refundEmailAdminBody, setRefundEmailAdminBody] = useState("");
   const [nextTicketPreview, setNextTicketPreview] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [iframeCopied, setIframeCopied] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [testingEmail, setTestingEmail] = useState(false);
-  const [testEmailResult, setTestEmailResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
   useEffect(() => {
     async function loadSettings() {
       try {
@@ -101,11 +87,6 @@ export default function RefundSettingsPage() {
         if (!response.ok) return;
         const data = await response.json();
         const s = data.settings;
-        setHasExistingResendKey(!!s.resend_api_key);
-        setRefundResendKey("");
-        setRefundNotificationEmail(s.refund_notification_email || "");
-        setRefundFromEmail(s.refund_from_email || "");
-        setRefundFromName(s.refund_from_name || "");
         setRefundTicketPrefix(s.refund_ticket_prefix || "RET");
         setRefundFormTitle(s.refund_form_title || "Formular Returnare Produs");
         setRefundFormSubtitle(s.refund_form_subtitle || "");
@@ -115,10 +96,6 @@ export default function RefundSettingsPage() {
         setRefundTermsUrl(s.refund_terms_url || "");
         setRefundPrimaryColor(s.refund_primary_color || "#000000");
         setRefundLogoUrl(s.refund_logo_url || "");
-        setRefundEmailClientSubject(s.refund_email_client_subject || "");
-        setRefundEmailClientBody(s.refund_email_client_body || "");
-        setRefundEmailAdminSubject(s.refund_email_admin_subject || "");
-        setRefundEmailAdminBody(s.refund_email_admin_body || "");
         setNextTicketPreview(s.next_ticket_preview || "");
         setOrgSlug(s.org_slug || "");
       } catch (error) {
@@ -136,9 +113,6 @@ export default function RefundSettingsPage() {
     setMessage(null);
     try {
       const body: Record<string, any> = {
-        refund_notification_email: refundNotificationEmail,
-        refund_from_email: refundFromEmail,
-        refund_from_name: refundFromName,
         refund_ticket_prefix: refundTicketPrefix,
         refund_form_title: refundFormTitle,
         refund_form_subtitle: refundFormSubtitle,
@@ -146,15 +120,7 @@ export default function RefundSettingsPage() {
         refund_terms_url: refundTermsUrl,
         refund_primary_color: refundPrimaryColor,
         refund_logo_url: refundLogoUrl,
-        refund_email_client_subject: refundEmailClientSubject,
-        refund_email_client_body: refundEmailClientBody,
-        refund_email_admin_subject: refundEmailAdminSubject,
-        refund_email_admin_body: refundEmailAdminBody,
       };
-
-      if (refundResendKey) {
-        body.resend_api_key = refundResendKey;
-      }
 
       const res = await fetch("/api/settings/refund", {
         method: "PUT",
@@ -168,10 +134,6 @@ export default function RefundSettingsPage() {
       }
 
       setMessage({ type: "success", text: "Setarile de returnare au fost salvate!" });
-      if (refundResendKey) {
-        setHasExistingResendKey(true);
-        setRefundResendKey("");
-      }
 
       // Reload to get updated ticket preview
       const reloadRes = await fetch("/api/settings/refund");
@@ -222,101 +184,6 @@ export default function RefundSettingsPage() {
         </Link>
         <h1 className="text-3xl font-bold text-white">Setari Returnari</h1>
         <p className="text-zinc-400 mt-1">Configureaza formularul de returnare, emailurile si codul embed</p>
-      </div>
-
-      {/* RESEND / Email Section */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Email (Resend)</h2>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="refundResendKey" className="block text-sm font-medium text-zinc-300 mb-1">
-                Resend API Key
-                {hasExistingResendKey && <span className="ml-2 text-xs text-emerald-400">(Configured ✓)</span>}
-              </label>
-              <input
-                type="password"
-                id="refundResendKey"
-                autoComplete="new-password"
-                value={refundResendKey}
-                onChange={(e) => setRefundResendKey(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder={hasExistingResendKey ? "Introdu cheie noua pentru update" : "re_xxxxxxxx"}
-              />
-            </div>
-            <div>
-              <label htmlFor="refundFromEmail" className="block text-sm font-medium text-zinc-300 mb-1">Email expeditor</label>
-              <input
-                type="email"
-                id="refundFromEmail"
-                value={refundFromEmail}
-                onChange={(e) => setRefundFromEmail(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="returnari@domeniu.ro"
-              />
-            </div>
-            <div>
-              <label htmlFor="refundFromName" className="block text-sm font-medium text-zinc-300 mb-1">Nume expeditor</label>
-              <input
-                type="text"
-                id="refundFromName"
-                value={refundFromName}
-                onChange={(e) => setRefundFromName(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="Numele magazinului"
-              />
-            </div>
-            <div>
-              <label htmlFor="refundNotificationEmail" className="block text-sm font-medium text-zinc-300 mb-1">Email notificare admin</label>
-              <input
-                type="email"
-                id="refundNotificationEmail"
-                value={refundNotificationEmail}
-                onChange={(e) => setRefundNotificationEmail(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="admin@domeniu.ro"
-              />
-              <p className="text-xs text-zinc-400 mt-1">Adresa la care primesti notificari cand vine o cerere noua</p>
-            </div>
-
-            {/* Test Email Button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                disabled={testingEmail}
-                onClick={async () => {
-                  setTestingEmail(true);
-                  setTestEmailResult(null);
-                  try {
-                    const res = await fetch("/api/settings/refund/test-email", { method: "POST" });
-                    const data = await res.json();
-                    if (data.success) {
-                      setTestEmailResult({ type: "success", text: data.message });
-                    } else {
-                      setTestEmailResult({ type: "error", text: `[${data.step}] ${data.error}` });
-                    }
-                  } catch {
-                    setTestEmailResult({ type: "error", text: "Eroare la trimiterea requestului" });
-                  } finally {
-                    setTestingEmail(false);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-              >
-                {testingEmail ? "Se trimite..." : "Trimite email test"}
-              </button>
-              {testEmailResult && (
-                <div className={`mt-2 p-3 rounded-md text-sm ${
-                  testEmailResult.type === "success"
-                    ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
-                    : "bg-red-900/20 border border-red-700 text-red-300"
-                }`}>
-                  {testEmailResult.text}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Ticket Number Section */}
@@ -471,60 +338,6 @@ export default function RefundSettingsPage() {
             >
               + Adauga
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Email Template - Client */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-2">Template email client</h2>
-          <p className="text-xs text-zinc-500 mb-4">Variabile disponibile: {"{{ticket_number}}"}, {"{{full_name}}"}, {"{{product_name}}"}, {"{{motive}}"}, {"{{from_name}}"}</p>
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="refundEmailClientSubject" className="block text-sm font-medium text-zinc-300 mb-1">Subiect</label>
-              <input
-                type="text"
-                id="refundEmailClientSubject"
-                value={refundEmailClientSubject}
-                onChange={(e) => setRefundEmailClientSubject(e.target.value)}
-                className="w-full max-w-lg px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
-              <RichTextEditor
-                content={refundEmailClientBody}
-                onChange={setRefundEmailClientBody}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Email Template - Admin */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-2">Template email admin</h2>
-          <p className="text-xs text-zinc-500 mb-4">Variabile: {"{{ticket_number}}"}, {"{{full_name}}"}, {"{{email}}"}, {"{{phone}}"}, {"{{order_number}}"}, {"{{product_name}}"}, {"{{motive}}"}, {"{{description}}"}, {"{{created_at}}"}</p>
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="refundEmailAdminSubject" className="block text-sm font-medium text-zinc-300 mb-1">Subiect</label>
-              <input
-                type="text"
-                id="refundEmailAdminSubject"
-                value={refundEmailAdminSubject}
-                onChange={(e) => setRefundEmailAdminSubject(e.target.value)}
-                className="w-full max-w-lg px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
-              <RichTextEditor
-                content={refundEmailAdminBody}
-                onChange={setRefundEmailAdminBody}
-              />
-            </div>
           </div>
         </div>
       </div>

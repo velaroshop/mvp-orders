@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { sendRefundClientEmail, sendRefundAdminEmail } from "@/lib/email/refund";
 
 // In-memory rate limiting
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
@@ -113,56 +112,6 @@ export async function POST(request: Request) {
     if (insertError) {
       console.error("Error creating refund request:", insertError);
       return NextResponse.json({ error: "Eroare la salvarea cererii" }, { status: 500 });
-    }
-
-    // Send emails if RESEND is configured
-    console.log("[Refund Email] resend_api_key present:", !!settings?.resend_api_key, "| refund_from_email:", settings?.refund_from_email || "EMPTY", "| refund_notification_email:", settings?.refund_notification_email || "EMPTY");
-    if (settings?.resend_api_key && settings?.refund_from_email) {
-      const emailData = {
-        ticket_number: ticketNumber,
-        full_name: full_name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone?.trim() || "",
-        order_number: order_number?.trim() || "",
-        product_name: product_name.trim(),
-        motive,
-        description: description?.trim() || "",
-        created_at: new Date().toLocaleString("ro-RO", { timeZone: "Europe/Bucharest" }),
-        from_name: settings.refund_from_name || "",
-      };
-
-      // Send client confirmation email
-      const clientResult = await sendRefundClientEmail(
-        settings.resend_api_key,
-        settings.refund_from_email,
-        settings.refund_from_name || "Returnari",
-        settings.refund_email_client_subject || "Cererea ta de returnare a fost inregistrata",
-        settings.refund_email_client_body || "",
-        emailData
-      );
-
-      console.log("[Refund Email] Client email result:", clientResult);
-      if (!clientResult.success) {
-        console.error("Failed to send client email:", clientResult.error);
-      }
-
-      // Send admin notification email
-      if (settings.refund_notification_email) {
-        const adminResult = await sendRefundAdminEmail(
-          settings.resend_api_key,
-          settings.refund_from_email,
-          settings.refund_from_name || "Returnari",
-          settings.refund_notification_email,
-          settings.refund_email_admin_subject || "Cerere noua de returnare - {{full_name}}",
-          settings.refund_email_admin_body || "",
-          emailData
-        );
-
-        console.log("[Refund Email] Admin email result:", adminResult);
-        if (!adminResult.success) {
-          console.error("Failed to send admin email:", adminResult.error);
-        }
-      }
     }
 
     return NextResponse.json({

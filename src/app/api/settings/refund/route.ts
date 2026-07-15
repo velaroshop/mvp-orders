@@ -34,7 +34,6 @@ export async function GET() {
     }
 
     const data = rawData as any;
-    const hasResendKey = !!(data?.resend_api_key);
     const currentYear = new Date().getFullYear();
     const prefix = data?.refund_ticket_prefix || "RET";
     const counter = (data?.refund_ticket_counter || 0) + 1;
@@ -42,10 +41,6 @@ export async function GET() {
 
     return NextResponse.json({
       settings: {
-        resend_api_key: hasResendKey ? "configured" : "",
-        refund_notification_email: data?.refund_notification_email || "",
-        refund_from_email: data?.refund_from_email || "",
-        refund_from_name: data?.refund_from_name || "",
         refund_ticket_prefix: data?.refund_ticket_prefix || "RET",
         refund_form_title: data?.refund_form_title || "Formular Returnare Produs",
         refund_form_subtitle: data?.refund_form_subtitle || "",
@@ -53,10 +48,6 @@ export async function GET() {
         refund_terms_url: data?.refund_terms_url || "",
         refund_primary_color: data?.refund_primary_color || "#000000",
         refund_logo_url: data?.refund_logo_url || "",
-        refund_email_client_subject: data?.refund_email_client_subject || "Cererea ta de returnare a fost inregistrata",
-        refund_email_client_body: data?.refund_email_client_body || "",
-        refund_email_admin_subject: data?.refund_email_admin_subject || "Cerere noua de returnare - {{full_name}}",
-        refund_email_admin_body: data?.refund_email_admin_body || "",
         next_ticket_preview: nextTicketPreview,
         org_slug: org?.slug || "",
       },
@@ -93,12 +84,6 @@ export async function PUT(request: Request) {
     };
 
     // Only update fields that are provided
-    if (body.resend_api_key !== undefined && body.resend_api_key !== "configured") {
-      updateFields.resend_api_key = body.resend_api_key;
-    }
-    if (body.refund_notification_email !== undefined) updateFields.refund_notification_email = body.refund_notification_email;
-    if (body.refund_from_email !== undefined) updateFields.refund_from_email = body.refund_from_email;
-    if (body.refund_from_name !== undefined) updateFields.refund_from_name = body.refund_from_name;
     if (body.refund_ticket_prefix !== undefined) {
       // Validate: exactly 3 uppercase letters
       const prefix = body.refund_ticket_prefix.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
@@ -118,10 +103,6 @@ export async function PUT(request: Request) {
     if (body.refund_terms_url !== undefined) updateFields.refund_terms_url = body.refund_terms_url;
     if (body.refund_primary_color !== undefined) updateFields.refund_primary_color = body.refund_primary_color;
     if (body.refund_logo_url !== undefined) updateFields.refund_logo_url = body.refund_logo_url;
-    if (body.refund_email_client_subject !== undefined) updateFields.refund_email_client_subject = body.refund_email_client_subject;
-    if (body.refund_email_client_body !== undefined) updateFields.refund_email_client_body = body.refund_email_client_body;
-    if (body.refund_email_admin_subject !== undefined) updateFields.refund_email_admin_subject = body.refund_email_admin_subject;
-    if (body.refund_email_admin_body !== undefined) updateFields.refund_email_admin_body = body.refund_email_admin_body;
 
     // Check if settings exist
     const { data: existing } = await supabaseAdmin

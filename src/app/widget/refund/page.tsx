@@ -35,6 +35,10 @@ function RefundFormContent() {
   const [motive, setMotive] = useState("");
   const [description, setDescription] = useState("");
 
+  // Security: honeypot + timestamp
+  const [honeypot, setHoneypot] = useState("");
+  const [formLoadedAt] = useState(() => Date.now());
+
   // Force white background and no scroll on body (overrides dark mode from root layout)
   useEffect(() => {
     document.documentElement.style.background = "#ffffff";
@@ -104,6 +108,8 @@ function RefundFormContent() {
           product_name: productName,
           motive,
           description,
+          _hp: honeypot,
+          _t: formLoadedAt,
         }),
       });
 
@@ -236,7 +242,11 @@ function RefundFormContent() {
             type="tel"
             id="phone"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9+\s()-]/g, "").slice(0, 15);
+              setPhone(val);
+            }}
+            maxLength={15}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
             style={{ "--tw-ring-color": primaryColor } as any}
             placeholder="Ex: 0722123456"
@@ -307,6 +317,17 @@ function RefundFormContent() {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
             style={{ "--tw-ring-color": primaryColor } as any}
             placeholder="Descrie problema in detaliu..."
+          />
+        </div>
+
+        {/* Honeypot - hidden from humans, bots fill it */}
+        <div style={{ position: "absolute", left: "-9999px" }} aria-hidden="true">
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
           />
         </div>
 

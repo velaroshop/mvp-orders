@@ -36,7 +36,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { org_slug, full_name, email, phone, order_number, product_name, motive, description } = body;
+    const { org_slug, full_name, email, phone, order_number, product_name, motive, description, _hp, _t } = body;
+
+    // Honeypot check — if filled, it's a bot (respond 200 to not tip off)
+    if (_hp) {
+      return NextResponse.json({ success: true, ticket_number: "OK" });
+    }
+
+    // Time check — form filled in under 3 seconds is likely a bot
+    if (_t && Date.now() - _t < 3000) {
+      return NextResponse.json({ success: true, ticket_number: "OK" });
+    }
 
     // Validate required fields
     if (!org_slug || !full_name || !email || !product_name || !motive) {
@@ -46,10 +56,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Sanitize: strip HTML tags from all text fields
+    const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "");
+
+    const cleanFullName = stripHtml(full_name).trim().slice(0, 200);
+    const cleanEmail = email.trim().toLowerCase().slice(0, 254);
+    const cleanPhone = phone ? phone.replace(/[^0-9+\s()-]/g, "").slice(0, 15) : null;
+    const cleanOrderNumber = order_number ? stripHtml(order_number).trim().slice(0, 100) : null;
+    const cleanProductName = stripHtml(product_name).trim().slice(0, 500);
+    const cleanMotive = stripHtml(motive).trim().slice(0, 500);
+    const cleanDescription = description ? stripHtml(description).trim().slice(0, 2000) : null;
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(cleanEmail)) {
       return NextResponse.json({ error: "Adresa de email invalida" }, { status: 400 });
+    }
+
+    // Validate phone format (if provided)
+    if (cleanPhone && !/^[0-9+\s()-]{6,15}$/.test(cleanPhone)) {
+      return NextResponse.json({ error: "Numar de telefon invalid" }, { status: 400 });
     }
 
     // Get organization by slug
@@ -96,13 +122,13 @@ export async function POST(request: Request) {
       .insert({
         organization_id: org.id,
         ticket_number: ticketNumber,
-        full_name: full_name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone?.trim() || null,
-        order_number: order_number?.trim() || null,
-        product_name: product_name.trim(),
-        motive,
-        description: description?.trim() || null,
+        full_name: cleanFullName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        order_number: cleanOrderNumber,
+        product_name: cleanProductName,
+        motive: cleanMotive,
+        description: cleanDescription,
         status: "new",
         ip_address: ip,
       })

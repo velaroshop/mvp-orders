@@ -116,6 +116,7 @@ export async function POST(request: Request) {
     }
 
     // Send emails if RESEND is configured
+    console.log("[Refund Email] resend_api_key present:", !!settings?.resend_api_key, "| refund_from_email:", settings?.refund_from_email || "EMPTY", "| refund_notification_email:", settings?.refund_notification_email || "EMPTY");
     if (settings?.resend_api_key && settings?.refund_from_email) {
       const emailData = {
         ticket_number: ticketNumber,
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
         emailData
       );
 
+      console.log("[Refund Email] Client email result:", clientResult);
       if (!clientResult.success) {
         console.error("Failed to send client email:", clientResult.error);
       }
@@ -156,6 +158,7 @@ export async function POST(request: Request) {
           emailData
         );
 
+        console.log("[Refund Email] Admin email result:", adminResult);
         if (!adminResult.success) {
           console.error("Failed to send admin email:", adminResult.error);
         }

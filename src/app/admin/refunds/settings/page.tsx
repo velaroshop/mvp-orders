@@ -91,6 +91,8 @@ export default function RefundSettingsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [iframeCopied, setIframeCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -275,6 +277,43 @@ export default function RefundSettingsPage() {
                 placeholder="admin@domeniu.ro"
               />
               <p className="text-xs text-zinc-400 mt-1">Adresa la care primesti notificari cand vine o cerere noua</p>
+            </div>
+
+            {/* Test Email Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={testingEmail}
+                onClick={async () => {
+                  setTestingEmail(true);
+                  setTestEmailResult(null);
+                  try {
+                    const res = await fetch("/api/settings/refund/test-email", { method: "POST" });
+                    const data = await res.json();
+                    if (data.success) {
+                      setTestEmailResult({ type: "success", text: data.message });
+                    } else {
+                      setTestEmailResult({ type: "error", text: `[${data.step}] ${data.error}` });
+                    }
+                  } catch {
+                    setTestEmailResult({ type: "error", text: "Eroare la trimiterea requestului" });
+                  } finally {
+                    setTestingEmail(false);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {testingEmail ? "Se trimite..." : "Trimite email test"}
+              </button>
+              {testEmailResult && (
+                <div className={`mt-2 p-3 rounded-md text-sm ${
+                  testEmailResult.type === "success"
+                    ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
+                    : "bg-red-900/20 border border-red-700 text-red-300"
+                }`}>
+                  {testEmailResult.text}
+                </div>
+              )}
             </div>
           </div>
         </div>

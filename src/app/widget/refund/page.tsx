@@ -210,6 +210,7 @@ function RefundFormContent() {
             type="text"
             id="fullName"
             required
+            maxLength={50}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
@@ -226,6 +227,7 @@ function RefundFormContent() {
             type="email"
             id="email"
             required
+            maxLength={50}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
@@ -260,6 +262,7 @@ function RefundFormContent() {
           <input
             type="text"
             id="orderNumber"
+            maxLength={50}
             value={orderNumber}
             onChange={(e) => setOrderNumber(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
@@ -276,6 +279,7 @@ function RefundFormContent() {
             type="text"
             id="productName"
             required
+            maxLength={100}
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"
@@ -312,6 +316,7 @@ function RefundFormContent() {
           <textarea
             id="description"
             rows={3}
+            maxLength={2000}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900"

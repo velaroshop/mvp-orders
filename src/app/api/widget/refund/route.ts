@@ -59,12 +59,12 @@ export async function POST(request: Request) {
     // Sanitize: strip HTML tags from all text fields
     const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "");
 
-    const cleanFullName = stripHtml(full_name).trim().slice(0, 200);
-    const cleanEmail = email.trim().toLowerCase().slice(0, 254);
+    const cleanFullName = stripHtml(full_name).trim().slice(0, 50);
+    const cleanEmail = email.trim().toLowerCase().slice(0, 50);
     const cleanPhone = phone ? phone.replace(/[^0-9+\s()-]/g, "").slice(0, 15) : null;
-    const cleanOrderNumber = order_number ? stripHtml(order_number).trim().slice(0, 100) : null;
-    const cleanProductName = stripHtml(product_name).trim().slice(0, 500);
-    const cleanMotive = stripHtml(motive).trim().slice(0, 500);
+    const cleanOrderNumber = order_number ? stripHtml(order_number).trim().slice(0, 50) : null;
+    const cleanProductName = stripHtml(product_name).trim().slice(0, 100);
+    const cleanMotive = stripHtml(motive).trim().slice(0, 100);
     const cleanDescription = description ? stripHtml(description).trim().slice(0, 2000) : null;
 
     // Validate email format

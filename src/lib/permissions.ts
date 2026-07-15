@@ -14,6 +14,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/admin/settings": ["owner", "admin"],
   "/admin/ads-dashboard": ["owner", "admin"],
   "/admin/activity-log": ["owner", "admin"],
+  "/admin/refunds": ["owner", "admin"],
 
   // Route accessible to owner only
   "/admin/settings/team": ["owner"],
@@ -78,6 +79,10 @@ export function canViewCustomers(userRole: UserRole): boolean {
 }
 
 export function canEditCustomers(userRole: UserRole): boolean {
+  return ["owner", "admin"].includes(userRole);
+}
+
+export function canManageRefunds(userRole: UserRole): boolean {
   return ["owner", "admin"].includes(userRole);
 }
 

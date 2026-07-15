@@ -33,6 +33,30 @@ export default function SettingsPage() {
   const [metaAdsMessage, setMetaAdsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [metaAdsTokenExpiresAt, setMetaAdsTokenExpiresAt] = useState<string | null>(null);
 
+  // Refund settings state
+  const [refundResendKey, setRefundResendKey] = useState("");
+  const [hasExistingResendKey, setHasExistingResendKey] = useState(false);
+  const [refundNotificationEmail, setRefundNotificationEmail] = useState("");
+  const [refundFromEmail, setRefundFromEmail] = useState("");
+  const [refundFromName, setRefundFromName] = useState("");
+  const [refundTicketPrefix, setRefundTicketPrefix] = useState("RET");
+  const [refundFormTitle, setRefundFormTitle] = useState("Formular Returnare Produs");
+  const [refundFormSubtitle, setRefundFormSubtitle] = useState("");
+  const [refundMotives, setRefundMotives] = useState<string[]>(["Produs defect", "Produs gresit livrat", "Nu corespunde descrierii", "M-am razgandit"]);
+  const [newMotive, setNewMotive] = useState("");
+  const [refundTermsUrl, setRefundTermsUrl] = useState("");
+  const [refundPrimaryColor, setRefundPrimaryColor] = useState("#000000");
+  const [refundLogoUrl, setRefundLogoUrl] = useState("");
+  const [refundEmailClientSubject, setRefundEmailClientSubject] = useState("");
+  const [refundEmailClientBody, setRefundEmailClientBody] = useState("");
+  const [refundEmailAdminSubject, setRefundEmailAdminSubject] = useState("");
+  const [refundEmailAdminBody, setRefundEmailAdminBody] = useState("");
+  const [nextTicketPreview, setNextTicketPreview] = useState("");
+  const [orgSlug, setOrgSlug] = useState("");
+  const [isSavingRefund, setIsSavingRefund] = useState(false);
+  const [refundMessage, setRefundMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [iframeCopied, setIframeCopied] = useState(false);
+
   useEffect(() => {
     // Load settings from API
     async function loadSettings() {
@@ -64,7 +88,37 @@ export default function SettingsPage() {
       }
     }
 
+    async function loadRefundSettings() {
+      try {
+        const response = await fetch("/api/settings/refund");
+        if (!response.ok) return;
+        const data = await response.json();
+        const s = data.settings;
+        setHasExistingResendKey(!!s.resend_api_key);
+        setRefundResendKey("");
+        setRefundNotificationEmail(s.refund_notification_email || "");
+        setRefundFromEmail(s.refund_from_email || "");
+        setRefundFromName(s.refund_from_name || "");
+        setRefundTicketPrefix(s.refund_ticket_prefix || "RET");
+        setRefundFormTitle(s.refund_form_title || "Formular Returnare Produs");
+        setRefundFormSubtitle(s.refund_form_subtitle || "");
+        setRefundMotives(s.refund_motives || []);
+        setRefundTermsUrl(s.refund_terms_url || "");
+        setRefundPrimaryColor(s.refund_primary_color || "#000000");
+        setRefundLogoUrl(s.refund_logo_url || "");
+        setRefundEmailClientSubject(s.refund_email_client_subject || "");
+        setRefundEmailClientBody(s.refund_email_client_body || "");
+        setRefundEmailAdminSubject(s.refund_email_admin_subject || "");
+        setRefundEmailAdminBody(s.refund_email_admin_body || "");
+        setNextTicketPreview(s.next_ticket_preview || "");
+        setOrgSlug(s.org_slug || "");
+      } catch (error) {
+        console.error("Error loading refund settings:", error);
+      }
+    }
+
     loadSettings();
+    loadRefundSettings();
   }, []);
 
   async function handleValidateCredentials() {
@@ -738,6 +792,373 @@ export default function SettingsPage() {
             className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {isSavingMetaAds ? "Se salvează..." : "Save Meta Ads Settings"}
+          </button>
+        </div>
+      </div>
+
+      {/* Returnare Section */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6">
+        <div className="p-6 border-b border-zinc-700">
+          <h2 className="text-xl font-semibold text-white mb-1">Returnare Produse</h2>
+          <p className="text-sm text-zinc-400 mb-6">Configureaza formularul de returnare si notificarile email</p>
+
+          <div className="space-y-6">
+            {/* RESEND API Key */}
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Email (Resend)</h3>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="refundResendKey" className="block text-sm font-medium text-zinc-300 mb-1">
+                    Resend API Key
+                    {hasExistingResendKey && <span className="ml-2 text-xs text-emerald-400">(Configured ✓)</span>}
+                  </label>
+                  <input
+                    type="password"
+                    id="refundResendKey"
+                    autoComplete="new-password"
+                    value={refundResendKey}
+                    onChange={(e) => setRefundResendKey(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder={hasExistingResendKey ? "Introdu cheie noua pentru update" : "re_xxxxxxxx"}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundFromEmail" className="block text-sm font-medium text-zinc-300 mb-1">Email expeditor</label>
+                  <input
+                    type="email"
+                    id="refundFromEmail"
+                    value={refundFromEmail}
+                    onChange={(e) => setRefundFromEmail(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder="returnari@domeniu.ro"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundFromName" className="block text-sm font-medium text-zinc-300 mb-1">Nume expeditor</label>
+                  <input
+                    type="text"
+                    id="refundFromName"
+                    value={refundFromName}
+                    onChange={(e) => setRefundFromName(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder="Numele magazinului"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundNotificationEmail" className="block text-sm font-medium text-zinc-300 mb-1">Email notificare admin</label>
+                  <input
+                    type="email"
+                    id="refundNotificationEmail"
+                    value={refundNotificationEmail}
+                    onChange={(e) => setRefundNotificationEmail(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder="admin@domeniu.ro"
+                  />
+                  <p className="text-xs text-zinc-400 mt-1">Adresa la care primesti notificari cand vine o cerere noua</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ticket Number */}
+            <div className="border-t border-zinc-700 pt-6">
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Numar tichet</h3>
+              <div className="flex items-center gap-3">
+                <div>
+                  <label htmlFor="refundTicketPrefix" className="block text-sm font-medium text-zinc-300 mb-1">Prefix (3 litere)</label>
+                  <input
+                    type="text"
+                    id="refundTicketPrefix"
+                    value={refundTicketPrefix}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
+                      setRefundTicketPrefix(val);
+                    }}
+                    maxLength={3}
+                    className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white text-center font-mono"
+                    placeholder="RET"
+                  />
+                </div>
+                <div className="pt-6">
+                  <span className="text-zinc-400 font-mono">-{new Date().getFullYear()}-0001</span>
+                </div>
+              </div>
+              {nextTicketPreview && (
+                <p className="text-xs text-zinc-500 mt-2">Urmatorul tichet: <span className="text-zinc-300 font-mono">{nextTicketPreview}</span></p>
+              )}
+            </div>
+
+            {/* Form Settings */}
+            <div className="border-t border-zinc-700 pt-6">
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Formular</h3>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="refundFormTitle" className="block text-sm font-medium text-zinc-300 mb-1">Titlu formular</label>
+                  <input
+                    type="text"
+                    id="refundFormTitle"
+                    value={refundFormTitle}
+                    onChange={(e) => setRefundFormTitle(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundFormSubtitle" className="block text-sm font-medium text-zinc-300 mb-1">Subtitlu formular</label>
+                  <input
+                    type="text"
+                    id="refundFormSubtitle"
+                    value={refundFormSubtitle}
+                    onChange={(e) => setRefundFormSubtitle(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder="Text descriptiv sub titlu (optional)"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundTermsUrl" className="block text-sm font-medium text-zinc-300 mb-1">Link politica returnare</label>
+                  <input
+                    type="url"
+                    id="refundTermsUrl"
+                    value={refundTermsUrl}
+                    onChange={(e) => setRefundTermsUrl(e.target.value)}
+                    className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                    placeholder="https://site.ro/politica-returnare (optional)"
+                  />
+                </div>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <label htmlFor="refundPrimaryColor" className="block text-sm font-medium text-zinc-300 mb-1">Culoare accent</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        id="refundPrimaryColor"
+                        value={refundPrimaryColor}
+                        onChange={(e) => setRefundPrimaryColor(e.target.value)}
+                        className="w-10 h-10 rounded cursor-pointer bg-zinc-700 border border-zinc-600"
+                      />
+                      <span className="text-xs text-zinc-400 font-mono">{refundPrimaryColor}</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="refundLogoUrl" className="block text-sm font-medium text-zinc-300 mb-1">Logo URL</label>
+                    <input
+                      type="url"
+                      id="refundLogoUrl"
+                      value={refundLogoUrl}
+                      onChange={(e) => setRefundLogoUrl(e.target.value)}
+                      className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                      placeholder="https://site.ro/logo.png (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Motives */}
+            <div className="border-t border-zinc-700 pt-6">
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Motive returnare</h3>
+              <div className="space-y-2 mb-3">
+                {refundMotives.map((m, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="flex-1 px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded text-sm text-white">{m}</span>
+                    <button
+                      type="button"
+                      onClick={() => setRefundMotives(refundMotives.filter((_, j) => j !== i))}
+                      className="px-2 py-1.5 text-red-400 hover:text-red-300 text-sm"
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMotive}
+                  onChange={(e) => setNewMotive(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newMotive.trim()) {
+                      e.preventDefault();
+                      setRefundMotives([...refundMotives, newMotive.trim()]);
+                      setNewMotive("");
+                    }
+                  }}
+                  className="flex-1 max-w-sm px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Adauga motiv nou..."
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newMotive.trim()) {
+                      setRefundMotives([...refundMotives, newMotive.trim()]);
+                      setNewMotive("");
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
+                >
+                  + Adauga
+                </button>
+              </div>
+            </div>
+
+            {/* Email Templates */}
+            <div className="border-t border-zinc-700 pt-6">
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Template email client</h3>
+              <p className="text-xs text-zinc-500 mb-2">Variabile disponibile: {"{{ticket_number}}"}, {"{{full_name}}"}, {"{{product_name}}"}, {"{{motive}}"}, {"{{from_name}}"}</p>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="refundEmailClientSubject" className="block text-sm font-medium text-zinc-300 mb-1">Subiect</label>
+                  <input
+                    type="text"
+                    id="refundEmailClientSubject"
+                    value={refundEmailClientSubject}
+                    onChange={(e) => setRefundEmailClientSubject(e.target.value)}
+                    className="w-full max-w-lg px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundEmailClientBody" className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
+                  <textarea
+                    id="refundEmailClientBody"
+                    rows={6}
+                    value={refundEmailClientBody}
+                    onChange={(e) => setRefundEmailClientBody(e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400 font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-700 pt-6">
+              <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Template email admin</h3>
+              <p className="text-xs text-zinc-500 mb-2">Variabile: {"{{ticket_number}}"}, {"{{full_name}}"}, {"{{email}}"}, {"{{phone}}"}, {"{{order_number}}"}, {"{{product_name}}"}, {"{{motive}}"}, {"{{description}}"}, {"{{created_at}}"}</p>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="refundEmailAdminSubject" className="block text-sm font-medium text-zinc-300 mb-1">Subiect</label>
+                  <input
+                    type="text"
+                    id="refundEmailAdminSubject"
+                    value={refundEmailAdminSubject}
+                    onChange={(e) => setRefundEmailAdminSubject(e.target.value)}
+                    className="w-full max-w-lg px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="refundEmailAdminBody" className="block text-sm font-medium text-zinc-300 mb-1">Continut</label>
+                  <textarea
+                    id="refundEmailAdminBody"
+                    rows={8}
+                    value={refundEmailAdminBody}
+                    onChange={(e) => setRefundEmailAdminBody(e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400 font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Embed Code */}
+            {orgSlug && (
+              <div className="border-t border-zinc-700 pt-6">
+                <h3 className="text-sm font-semibold text-zinc-200 uppercase tracking-wide mb-3">Cod Embed (iframe)</h3>
+                <div className="bg-zinc-900 border border-zinc-600 rounded-md p-3">
+                  <code className="text-xs text-emerald-300 break-all">
+                    {`<iframe src="${typeof window !== "undefined" ? window.location.origin : ""}/widget/refund?org=${orgSlug}" width="100%" height="700" frameborder="0" style="border:none;"></iframe>`}
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = `<iframe src="${window.location.origin}/widget/refund?org=${orgSlug}" width="100%" height="700" frameborder="0" style="border:none;"></iframe>`;
+                    navigator.clipboard.writeText(code);
+                    setIframeCopied(true);
+                    setTimeout(() => setIframeCopied(false), 2000);
+                  }}
+                  className="mt-2 px-4 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
+                >
+                  {iframeCopied ? "Copiat! ✓" : "Copiaza codul iframe"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Refund Message */}
+        {refundMessage && (
+          <div className="p-6 border-b border-zinc-700">
+            <div className={`p-3 rounded-md text-sm ${
+              refundMessage.type === "success"
+                ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
+                : "bg-red-900/20 border border-red-700 text-red-300"
+            }`}>
+              {refundMessage.text}
+            </div>
+          </div>
+        )}
+
+        {/* Save Refund Settings Button */}
+        <div className="p-6 bg-zinc-800/50 flex justify-end">
+          <button
+            type="button"
+            disabled={isSavingRefund}
+            onClick={async () => {
+              setIsSavingRefund(true);
+              setRefundMessage(null);
+              try {
+                const body: Record<string, any> = {
+                  refund_notification_email: refundNotificationEmail,
+                  refund_from_email: refundFromEmail,
+                  refund_from_name: refundFromName,
+                  refund_ticket_prefix: refundTicketPrefix,
+                  refund_form_title: refundFormTitle,
+                  refund_form_subtitle: refundFormSubtitle,
+                  refund_motives: refundMotives,
+                  refund_terms_url: refundTermsUrl,
+                  refund_primary_color: refundPrimaryColor,
+                  refund_logo_url: refundLogoUrl,
+                  refund_email_client_subject: refundEmailClientSubject,
+                  refund_email_client_body: refundEmailClientBody,
+                  refund_email_admin_subject: refundEmailAdminSubject,
+                  refund_email_admin_body: refundEmailAdminBody,
+                };
+
+                // Only send resend key if user typed a new one
+                if (refundResendKey) {
+                  body.resend_api_key = refundResendKey;
+                }
+
+                const res = await fetch("/api/settings/refund", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                });
+
+                if (!res.ok) {
+                  const data = await res.json();
+                  throw new Error(data.error || "Failed to save");
+                }
+
+                setRefundMessage({ type: "success", text: "Setarile de returnare au fost salvate!" });
+                if (refundResendKey) {
+                  setHasExistingResendKey(true);
+                  setRefundResendKey("");
+                }
+
+                // Reload to get updated ticket preview
+                const reloadRes = await fetch("/api/settings/refund");
+                if (reloadRes.ok) {
+                  const reloadData = await reloadRes.json();
+                  setNextTicketPreview(reloadData.settings.next_ticket_preview || "");
+                }
+              } catch (error) {
+                setRefundMessage({
+                  type: "error",
+                  text: error instanceof Error ? error.message : "Eroare la salvare",
+                });
+              } finally {
+                setIsSavingRefund(false);
+              }
+            }}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          >
+            {isSavingRefund ? "Se salveaza..." : "Salveaza setarile de returnare"}
           </button>
         </div>
       </div>

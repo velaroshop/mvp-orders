@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { hasRoutePermission } from "@/lib/permissions";
 import type { UserRole } from "@/lib/types";
@@ -12,6 +12,29 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session } = useSession();
+  const [newRefundsCount, setNewRefundsCount] = useState(0);
+
+  // Fetch new refunds count for badge
+  useEffect(() => {
+    const userRole = (session?.user as any)?.activeRole as UserRole;
+    if (!userRole || !["owner", "admin"].includes(userRole)) return;
+
+    async function fetchCount() {
+      try {
+        const res = await fetch("/api/refunds?count_only=new");
+        if (res.ok) {
+          const data = await res.json();
+          setNewRefundsCount(data.count || 0);
+        }
+      } catch {
+        // silently fail
+      }
+    }
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, [session]);
 
   const allMenuItems = [
     {
@@ -63,6 +86,12 @@ export default function Sidebar() {
       name: "Team",
       href: "/admin/settings/team",
       icon: "👨‍💼",
+    },
+    {
+      name: "Returnari",
+      href: "/admin/refunds",
+      icon: "↩️",
+      badge: true,
     },
     {
       name: "Activity Log",
@@ -181,6 +210,11 @@ export default function Sidebar() {
             >
               <span className="text-xs">{item.icon}</span>
               <span className="text-xs font-medium">{item.name}</span>
+              {"badge" in item && item.badge && newRefundsCount > 0 && (
+                <span className="ml-auto px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] text-center">
+                  {newRefundsCount}
+                </span>
+              )}
             </Link>
           ))}
 

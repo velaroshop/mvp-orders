@@ -54,18 +54,25 @@ function RefundFormContent() {
     loadConfig();
   }, [orgSlug]);
 
-  // Auto-resize iframe
+  // Auto-resize iframe — notify parent of content height
   useEffect(() => {
     function notifyParent() {
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "refund-form-resize", height }, "*");
+      // Small delay to let DOM settle after render
+      requestAnimationFrame(() => {
+        const height = document.documentElement.scrollHeight;
+        window.parent.postMessage({ type: "refund-form-resize", height }, "*");
+      });
     }
 
     notifyParent();
     const observer = new MutationObserver(notifyParent);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    window.addEventListener("resize", notifyParent);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", notifyParent);
+    };
   }, [submitted, loading]);
 
   async function handleSubmit(e: React.FormEvent) {

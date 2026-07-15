@@ -495,15 +495,15 @@ export default function RefundSettingsPage() {
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Cod Embed (iframe)</h2>
-            <div className="bg-zinc-900 border border-zinc-600 rounded-md p-3">
-              <code className="text-xs text-emerald-300 break-all">
-                {`<iframe src="${typeof window !== "undefined" ? window.location.origin : ""}/widget/refund?org=${orgSlug}" width="100%" height="700" frameborder="0" style="border:none;"></iframe>`}
-              </code>
+            <p className="text-xs text-zinc-500 mb-3">Copiaza codul de mai jos si lipeste-l in pagina Shopify. Iframe-ul se redimensioneaza automat, fara scroll.</p>
+            <div className="bg-zinc-900 border border-zinc-600 rounded-md p-3 overflow-x-auto">
+              <pre className="text-xs text-emerald-300 whitespace-pre-wrap break-all">{`<iframe id="refund-form" src="${typeof window !== "undefined" ? window.location.origin : ""}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>
+<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`}</pre>
             </div>
             <button
               type="button"
               onClick={() => {
-                const code = `<iframe src="${window.location.origin}/widget/refund?org=${orgSlug}" width="100%" height="700" frameborder="0" style="border:none;"></iframe>`;
+                const code = `<iframe id="refund-form" src="${window.location.origin}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>\n<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`;
                 navigator.clipboard.writeText(code);
                 setIframeCopied(true);
                 setTimeout(() => setIframeCopied(false), 2000);

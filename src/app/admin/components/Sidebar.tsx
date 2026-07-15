@@ -200,49 +200,49 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className="px-2 py-4 space-y-1">
           {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`
-                flex items-center gap-2 px-3 py-2 rounded-lg
-                transition-all duration-200
-                ${
-                  isActive(item.href)
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                    : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                }
-              `}
-            >
-              <span className="text-xs">{item.icon}</span>
-              <span className="text-xs font-medium">{item.name}</span>
-              {"badge" in item && item.badge && newRefundsCount > 0 && (
-                <span className="ml-auto px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] text-center">
-                  {newRefundsCount}
-                </span>
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`
+                  flex items-center gap-2 px-3 py-2 rounded-lg
+                  transition-all duration-200
+                  ${
+                    isActive(item.href)
+                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                      : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  }
+                `}
+              >
+                <span className="text-xs">{item.icon}</span>
+                <span className="text-xs font-medium">{item.name}</span>
+                {"badge" in item && item.badge && newRefundsCount > 0 && (
+                  <span className="ml-auto px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] text-center">
+                    {newRefundsCount}
+                  </span>
+                )}
+              </Link>
+              {/* Refund Settings sub-link - right after Returnari */}
+              {item.href === "/admin/refunds" && (
+                <Link
+                  href="/admin/refunds/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-lg ml-4 mt-0.5
+                    transition-all duration-200 text-[11px]
+                    ${
+                      pathname.startsWith("/admin/refunds/settings")
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                        : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    }
+                  `}
+                >
+                  <span className="text-[10px]">&#9881;</span>
+                  <span className="font-medium">Setari</span>
+                </Link>
               )}
-            </Link>
+            </div>
           ))}
-
-          {/* Refund Settings sub-link */}
-          {menuItems.some((item) => item.href === "/admin/refunds") && (
-            <Link
-              href="/admin/refunds/settings"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`
-                flex items-center gap-2 px-3 py-1.5 rounded-lg ml-4
-                transition-all duration-200 text-[11px]
-                ${
-                  pathname.startsWith("/admin/refunds/settings")
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-                }
-              `}
-            >
-              <span className="text-[10px]">&#9881;</span>
-              <span className="font-medium">Setari</span>
-            </Link>
-          )}
 
           {/* SUPERADMIN link - only for OWNER from superadmin organization */}
           {showSuperadminLink && (

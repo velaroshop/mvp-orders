@@ -35,6 +35,15 @@ function RefundFormContent() {
   const [motive, setMotive] = useState("");
   const [description, setDescription] = useState("");
 
+  // Force white background and no scroll on body (overrides dark mode from root layout)
+  useEffect(() => {
+    document.documentElement.style.background = "#ffffff";
+    document.body.style.background = "#ffffff";
+    document.body.style.color = "#111827";
+    document.body.style.overflow = "hidden";
+    document.body.style.margin = "0";
+  }, []);
+
   useEffect(() => {
     if (!orgSlug) return;
 

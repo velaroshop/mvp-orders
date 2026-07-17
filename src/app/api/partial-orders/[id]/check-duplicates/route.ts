@@ -51,9 +51,17 @@ export async function GET(
       });
     }
 
-    // Get store settings for duplicate check days via landing page
-    let duplicateCheckDays = 14; // Default value
-    if (partialOrder.landing_key) {
+    // Get organization-level duplicate_check_days (primary setting)
+    const { data: orgData } = await supabaseAdmin
+      .from("organizations")
+      .select("duplicate_check_days")
+      .eq("id", activeOrganizationId)
+      .single();
+
+    let duplicateCheckDays = (orgData as any)?.duplicate_check_days;
+
+    // Fallback: store-level setting via landing page, then default 14
+    if (!duplicateCheckDays && partialOrder.landing_key) {
       const { data: landingPage } = await supabaseAdmin
         .from("landing_pages")
         .select("store_id")
@@ -72,6 +80,7 @@ export async function GET(
         }
       }
     }
+    if (!duplicateCheckDays) duplicateCheckDays = 14;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - duplicateCheckDays);
 

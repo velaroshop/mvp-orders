@@ -33,22 +33,23 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get store settings to determine duplicate_order_days
-    const { data: stores, error: storeError } = await supabaseAdmin
-      .from("stores")
-      .select("duplicate_order_days")
-      .eq("organization_id", activeOrganizationId)
-      .limit(1);
+    // Get organization-level duplicate_check_days (primary setting)
+    const { data: org } = await supabaseAdmin
+      .from("organizations")
+      .select("duplicate_check_days")
+      .eq("id", activeOrganizationId)
+      .single();
 
-    if (storeError) {
-      console.error("Error fetching store settings:", storeError);
-      return NextResponse.json(
-        { error: "Failed to fetch store settings" },
-        { status: 500 },
-      );
+    // Fallback: store-level setting, then default 14
+    let duplicateOrderDays = (org as any)?.duplicate_check_days;
+    if (!duplicateOrderDays) {
+      const { data: stores } = await supabaseAdmin
+        .from("stores")
+        .select("duplicate_order_days")
+        .eq("organization_id", activeOrganizationId)
+        .limit(1);
+      duplicateOrderDays = stores?.[0]?.duplicate_order_days || 14;
     }
-
-    const duplicateOrderDays = stores?.[0]?.duplicate_order_days || 14;
 
     // Calculate the date threshold
     const thresholdDate = new Date();

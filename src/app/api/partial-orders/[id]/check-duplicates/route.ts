@@ -51,37 +51,14 @@ export async function GET(
       });
     }
 
-    // Get duplicate check days: store setting first, then org fallback, then default 14
-    let duplicateCheckDays = 0;
+    // Get duplicate check days from organization setting
+    const { data: orgData } = await supabaseAdmin
+      .from("organizations")
+      .select("duplicate_check_days")
+      .eq("id", activeOrganizationId)
+      .single();
 
-    if (partialOrder.landing_key) {
-      const { data: landingPage } = await supabaseAdmin
-        .from("landing_pages")
-        .select("store_id")
-        .eq("slug", partialOrder.landing_key)
-        .single();
-
-      if (landingPage?.store_id) {
-        const { data: store } = await supabaseAdmin
-          .from("stores")
-          .select("duplicate_order_days")
-          .eq("id", landingPage.store_id)
-          .single();
-
-        if (store?.duplicate_order_days) {
-          duplicateCheckDays = store.duplicate_order_days;
-        }
-      }
-    }
-
-    if (!duplicateCheckDays) {
-      const { data: orgData } = await supabaseAdmin
-        .from("organizations")
-        .select("duplicate_check_days")
-        .eq("id", activeOrganizationId)
-        .single();
-      duplicateCheckDays = (orgData as any)?.duplicate_check_days || 14;
-    }
+    const duplicateCheckDays = (orgData as any)?.duplicate_check_days || 14;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - duplicateCheckDays);
 

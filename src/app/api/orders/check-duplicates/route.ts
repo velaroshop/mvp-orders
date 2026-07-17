@@ -33,22 +33,14 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get duplicate check days: store setting first, then org fallback, then default 14
-    const { data: stores } = await supabaseAdmin
-      .from("stores")
-      .select("id, duplicate_order_days")
-      .eq("organization_id", activeOrganizationId);
+    // Get duplicate check days from organization setting
+    const { data: org } = await supabaseAdmin
+      .from("organizations")
+      .select("duplicate_check_days")
+      .eq("id", activeOrganizationId)
+      .single();
 
-    let duplicateOrderDays = stores?.[0]?.duplicate_order_days;
-
-    if (!duplicateOrderDays) {
-      const { data: org } = await supabaseAdmin
-        .from("organizations")
-        .select("duplicate_check_days")
-        .eq("id", activeOrganizationId)
-        .single();
-      duplicateOrderDays = (org as any)?.duplicate_check_days || 14;
-    }
+    const duplicateOrderDays = (org as any)?.duplicate_check_days || 14;
 
     // Calculate the date threshold
     const thresholdDate = new Date();
@@ -70,17 +62,6 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await query;
-
-    // Debug info (temporary)
-    const debugInfo = {
-      customerId,
-      currentOrderId,
-      duplicateOrderDays,
-      thresholdISO,
-      storesFound: stores?.length || 0,
-      storeValues: stores?.map(s => ({ id: s.id, days: s.duplicate_order_days })),
-      ordersFound: data?.length || 0,
-    };
 
     if (error) {
       console.error("Error checking duplicate orders:", error);
@@ -121,7 +102,6 @@ export async function GET(request: Request) {
       duplicateCount: orders.length,
       duplicateOrderDays,
       orders,
-      _debug: debugInfo,
     });
   } catch (error) {
     console.error("Error in check-duplicates API:", error);

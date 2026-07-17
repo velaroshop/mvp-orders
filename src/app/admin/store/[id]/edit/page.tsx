@@ -240,25 +240,7 @@ export default function EditStorePage() {
                 )}
               </div>
 
-              {/* Duplicate Order Detection Days */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Zile pentru Detectare Comenzi Duplicate *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={formData.duplicate_order_days}
-                  onChange={(e) => setFormData({ ...formData, duplicate_order_days: parseInt(e.target.value) || 14 })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="14"
-                  required
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Numărul de zile înapoi pentru detectarea comenzilor duplicate de la același client (implicit: 14 zile).
-                </p>
-              </div>
+              {/* Duplicate Order Detection Days - moved to Settings page */}
             </div>
           </div>
 

@@ -32,6 +32,10 @@ export default function SettingsPage() {
   const [isSavingMetaAds, setIsSavingMetaAds] = useState(false);
   const [metaAdsMessage, setMetaAdsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [metaAdsTokenExpiresAt, setMetaAdsTokenExpiresAt] = useState<string | null>(null);
+  // Duplicate check days
+  const [duplicateCheckDays, setDuplicateCheckDays] = useState(14);
+  const [isSavingDuplicateDays, setIsSavingDuplicateDays] = useState(false);
+  const [duplicateDaysMessage, setDuplicateDaysMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     // Load settings from API
@@ -64,7 +68,20 @@ export default function SettingsPage() {
       }
     }
 
+    async function loadDuplicateDays() {
+      try {
+        const response = await fetch("/api/settings/duplicate-days");
+        if (response.ok) {
+          const data = await response.json();
+          setDuplicateCheckDays(data.duplicate_check_days || 14);
+        }
+      } catch (error) {
+        console.error("Error loading duplicate days:", error);
+      }
+    }
+
     loadSettings();
+    loadDuplicateDays();
   }, []);
 
   async function handleValidateCredentials() {
@@ -545,6 +562,77 @@ export default function SettingsPage() {
               className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isSavingVat ? "Se salvează..." : "Save VAT Settings"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Duplicate Order Detection */}
+      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mt-6">
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setIsSavingDuplicateDays(true);
+          setDuplicateDaysMessage(null);
+          try {
+            const response = await fetch("/api/settings/duplicate-days", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ duplicate_check_days: duplicateCheckDays }),
+            });
+            if (!response.ok) {
+              const data = await response.json();
+              throw new Error(data.error || "Failed to save");
+            }
+            setDuplicateDaysMessage({ type: "success", text: "Setarea a fost salvata." });
+          } catch (error) {
+            setDuplicateDaysMessage({ type: "error", text: error instanceof Error ? error.message : "Eroare la salvare." });
+          } finally {
+            setIsSavingDuplicateDays(false);
+          }
+        }}>
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Detectare Comenzi Duplicate
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="duplicateCheckDays" className="block text-sm font-medium text-zinc-300 mb-1">
+                  Numar de zile pentru verificare duplicate
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    id="duplicateCheckDays"
+                    min={1}
+                    max={365}
+                    value={duplicateCheckDays}
+                    onChange={(e) => setDuplicateCheckDays(parseInt(e.target.value) || 14)}
+                    className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                  <span className="text-sm text-zinc-400">zile</span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Cand confirmi o comanda, sistemul verifica daca acelasi client a mai plasat o comanda in ultimele X zile si te avertizeaza.
+                </p>
+              </div>
+
+              {duplicateDaysMessage && (
+                <div className={`p-3 rounded-md text-sm ${duplicateDaysMessage.type === "success" ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300" : "bg-red-900/20 border border-red-700 text-red-300"}`}>
+                  {duplicateDaysMessage.text}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 bg-zinc-800/50 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSavingDuplicateDays}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              {isSavingDuplicateDays ? "Se salvează..." : "Salvează"}
             </button>
           </div>
         </form>

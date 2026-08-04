@@ -38,15 +38,26 @@ async function getAdminUsers(): Promise<string> {
   try {
     const { data: members } = await supabaseAdmin
       .from("organization_members")
-      .select("role, users(email), organizations(name)")
+      .select("user_id, organization_id, role")
       .in("role", ["owner", "admin"])
       .eq("is_active", true);
 
     if (!members || members.length === 0) return "";
 
+    const userIds = [...new Set(members.map((m: any) => m.user_id))];
+    const orgIds = [...new Set(members.map((m: any) => m.organization_id))];
+
+    const [{ data: users }, { data: orgs }] = await Promise.all([
+      supabaseAdmin.from("users").select("id, email").in("id", userIds),
+      supabaseAdmin.from("organizations").select("id, name").in("id", orgIds),
+    ]);
+
+    const userMap = Object.fromEntries((users || []).map((u: any) => [u.id, u.email]));
+    const orgMap = Object.fromEntries((orgs || []).map((o: any) => [o.id, o.name]));
+
     return members
-      .filter((m: any) => m.users?.email !== HC_USER_EMAIL)
-      .map((m: any) => `${m.users?.email}|${m.organizations?.name}|${m.role}`)
+      .filter((m: any) => userMap[m.user_id] !== HC_USER_EMAIL)
+      .map((m: any) => `${userMap[m.user_id] || "?"}|${orgMap[m.organization_id] || "?"}|${m.role}`)
       .join("; ");
   } catch {
     return "";

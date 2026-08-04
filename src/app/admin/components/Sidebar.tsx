@@ -264,22 +264,6 @@ export default function Sidebar() {
                 <span className="text-xs">👑</span>
                 <span className="text-xs font-medium">Superadmin</span>
               </Link>
-              <Link
-                href="/admin/simulator"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded-lg
-                  transition-all duration-200
-                  ${
-                    isActive("/admin/simulator")
-                      ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
-                      : "text-amber-400 hover:bg-zinc-800 hover:text-amber-300"
-                  }
-                `}
-              >
-                <span className="text-xs">📊</span>
-                <span className="text-xs font-medium">Simulator</span>
-              </Link>
             </>
           )}
         </nav>

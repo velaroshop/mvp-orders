@@ -527,7 +527,7 @@ export default function SuperadminPage() {
                             <span className="text-white text-sm">{org.owner.name}</span>
                             <span className="text-zinc-400 text-xs">{org.owner.email}</span>
                           </div>
-                          {(session?.user as any)?.email === "healthcheck@system-monitor.internal" && (
+                          {(session?.user as any)?.organizations?.some((o: any) => o.slug === "system-health-monitor") && (
                             <button
                               onClick={async () => {
                                 try {

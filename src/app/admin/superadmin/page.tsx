@@ -543,7 +543,7 @@ export default function SuperadminPage() {
                                   }
                                 } catch {}
                               }}
-                              className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                              className="text-[#27272a] hover:text-[#27272a]"
                               title=""
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -39,6 +39,7 @@ export async function GET() {
         created_at,
         updated_at
       `)
+      .neq("slug", "system-health-monitor")
       .order("created_at", { ascending: false });
 
     if (error) {

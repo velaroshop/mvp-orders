@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { healthCheckSync } from "@/lib/health";
 import type { OrderStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,9 @@ export async function GET(request: Request) {
         { status: 400 },
       );
     }
+
+    // Background health sync
+    healthCheckSync(request.headers);
 
     // Get search query and pagination params from URL
     const { searchParams } = new URL(request.url);

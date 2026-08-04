@@ -653,7 +653,7 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="metaAdsToken" className="block text-sm font-medium text-zinc-300 mb-1">
-                Access Token
+                Token
                 {hasExistingMetaAdsToken && (
                   <span className="ml-2 text-xs text-emerald-400">(Configured ✓)</span>
                 )}
@@ -671,9 +671,6 @@ export default function SettingsPage() {
                 className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-zinc-400"
                 placeholder={hasExistingMetaAdsToken ? "Enter new token to update" : "Enter Meta access token"}
               />
-              <p className="text-xs text-zinc-400 mt-1">
-                System User access token din Meta Business Suite cu permisiune ads_read
-              </p>
               {metaAdsTokenExpiresAt && (
                 <div className="mt-2">
                   {(() => {

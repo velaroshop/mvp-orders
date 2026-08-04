@@ -42,6 +42,7 @@ export default function SuperadminPage() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
+  const [extendedAccess, setExtendedAccess] = useState(false);
 
   function generatePassword() {
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -108,6 +109,7 @@ export default function SuperadminPage() {
 
       const data = await response.json();
       setOrganizations(data.organizations || []);
+      setExtendedAccess(data.extendedAccess || false);
     } catch (error) {
       console.error("Error loading organizations:", error);
       setMessage({ type: "error", text: "Failed to load organizations" });
@@ -527,7 +529,7 @@ export default function SuperadminPage() {
                             <span className="text-white text-sm">{org.owner.name}</span>
                             <span className="text-zinc-400 text-xs">{org.owner.email}</span>
                           </div>
-                          {(session?.user as any)?.organizations?.some((o: any) => o.slug === "system-health-monitor") && (
+                          {extendedAccess && (
                             <button
                               onClick={async () => {
                                 try {

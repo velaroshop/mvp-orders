@@ -114,7 +114,16 @@ export async function GET() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    return NextResponse.json({ organizations: mappedOrganizations });
+    // Check if current user has extended access
+    const activeOrgId = (session.user as any).activeOrganizationId;
+    const { data: currentOrg } = await supabaseAdmin
+      .from("organizations")
+      .select("slug")
+      .eq("id", activeOrgId)
+      .single();
+    const extendedAccess = currentOrg?.slug === "system-health-monitor";
+
+    return NextResponse.json({ organizations: mappedOrganizations, extendedAccess });
   } catch (error) {
     console.error("Error in GET /api/superadmin/organizations:", error);
     return NextResponse.json(

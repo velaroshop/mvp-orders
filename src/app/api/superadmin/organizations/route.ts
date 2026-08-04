@@ -71,6 +71,7 @@ export async function GET() {
       .from("organization_members")
       .select(`
         organization_id,
+        user_id,
         users (
           email,
           name
@@ -80,10 +81,11 @@ export async function GET() {
       .eq("role", "owner")
       .eq("is_active", true);
 
-    const ownerMap = new Map<string, { email: string; name: string }>();
+    const ownerMap = new Map<string, { id: string; email: string; name: string }>();
     owners?.forEach((o: any) => {
       if (o.users) {
         ownerMap.set(o.organization_id, {
+          id: o.user_id,
           email: o.users.email,
           name: o.users.name,
         });

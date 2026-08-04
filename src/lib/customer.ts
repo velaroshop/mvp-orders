@@ -35,6 +35,7 @@ export async function findOrCreateCustomer({
       totalSpent: parseFloat(existing.total_spent?.toString() || "0"),
       createdAt: existing.created_at,
       updatedAt: existing.updated_at,
+      isBlacklisted: existing.is_blacklisted || false,
     };
   }
 

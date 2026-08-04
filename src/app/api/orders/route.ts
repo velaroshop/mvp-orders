@@ -210,6 +210,51 @@ export async function POST(request: NextRequest) {
       phone,
     });
 
+    // Step 2.5: If customer is blacklisted, create order as cancelled immediately
+    if (customer.isBlacklisted) {
+      console.log("[Order] Blacklisted customer detected:", phone);
+      const order = await createOrder({
+        organizationId: landingPage.organization_id,
+        customerId: customer.id,
+        landingKey,
+        offerCode,
+        phone,
+        fullName,
+        county,
+        city,
+        address,
+        upsells,
+        subtotal: Number(subtotal) || 0,
+        shippingCost: Number(shippingCost) || 0,
+        total: Number(total) || 0,
+        productName,
+        productSku,
+        productQuantity,
+        trackingData: tracking,
+        eventSourceUrl,
+      });
+
+      // Cancel the order immediately with BLACKLIST note
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          status: "cancelled",
+          cancelled_note: "BLACKLIST",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id);
+
+      // Still return success to the client (don't reveal blacklist status)
+      return NextResponse.json(
+        {
+          orderId: order.id,
+          status: "queue",
+          queueExpiresAt: order.queueExpiresAt,
+        },
+        { status: 201 },
+      );
+    }
+
     // Step 3: Create order with customer reference
     const order = await createOrder({
       organizationId: landingPage.organization_id,

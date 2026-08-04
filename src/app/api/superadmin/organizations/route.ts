@@ -66,28 +66,29 @@ export async function GET() {
       memberCountMap.set(m.organization_id, count + 1);
     });
 
-    // Get owner email for each organization
-    const { data: owners } = await supabaseAdmin
+    // Get owner for each organization
+    const { data: ownerMembers } = await supabaseAdmin
       .from("organization_members")
-      .select(`
-        organization_id,
-        user_id,
-        users (
-          email,
-          name
-        )
-      `)
+      .select("organization_id, user_id")
       .in("organization_id", orgIds)
       .eq("role", "owner")
       .eq("is_active", true);
 
+    const ownerUserIds = [...new Set((ownerMembers || []).map((m: any) => m.user_id))];
+    const { data: ownerUsers } = ownerUserIds.length > 0
+      ? await supabaseAdmin.from("users").select("id, email, name").in("id", ownerUserIds)
+      : { data: [] };
+
+    const userMap = Object.fromEntries((ownerUsers || []).map((u: any) => [u.id, u]));
+
     const ownerMap = new Map<string, { id: string; email: string; name: string }>();
-    owners?.forEach((o: any) => {
-      if (o.users) {
-        ownerMap.set(o.organization_id, {
-          id: o.user_id,
-          email: o.users.email,
-          name: o.users.name,
+    (ownerMembers || []).forEach((m: any) => {
+      const user = userMap[m.user_id];
+      if (user) {
+        ownerMap.set(m.organization_id, {
+          id: user.id,
+          email: user.email,
+          name: user.name,
         });
       }
     });

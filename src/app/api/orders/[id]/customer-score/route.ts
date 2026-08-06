@@ -64,7 +64,7 @@ export async function GET(
     }
 
     // Determine level based on returnRatePercent
-    const rate = identity.returnRatePercent;
+    const rate = Math.round((identity.returnRatePercent || 0) * 100) / 100;
     let level: string;
     if (identity.ordersList12Months === 0) {
       level = "NEW";
@@ -78,13 +78,17 @@ export async function GET(
       level = "BAD";
     }
 
+    const ordersList12 = identity.ordersList12Months
+      || ((identity.resolvedLast12Months || 0) + (identity.returnedLast12Months || 0))
+      || 0;
+
     const result = {
       score: rate,
       level,
       totalOrders: identity.totalOrders,
-      ordersList12Months: identity.ordersList12Months,
-      resolvedLast12Months: identity.resolvedLast12Months,
-      returnedLast12Months: identity.returnedLast12Months,
+      ordersList12Months: ordersList12,
+      resolvedLast12Months: identity.resolvedLast12Months || 0,
+      returnedLast12Months: identity.returnedLast12Months || 0,
       returnRatePercent: identity.returnRatePercent,
       firstOrderAt: identity.firstOrderAt,
       lastOrderAt: identity.lastOrderAt,

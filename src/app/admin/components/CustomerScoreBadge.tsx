@@ -138,8 +138,12 @@ export function ScoreBanner({ orderId }: { orderId: string }) {
             <span className="text-white">{data.ordersLast12Months}</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-zinc-400">Expediate</span>
+            <span className="text-white">{data.resolvedLast12Months}</span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-zinc-400">Livrate cu succes</span>
-            <span className="text-emerald-400">{data.resolvedLast12Months}</span>
+            <span className="text-emerald-400">{(data.resolvedLast12Months || 0) - (data.returnedLast12Months || 0)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">Returnate</span>

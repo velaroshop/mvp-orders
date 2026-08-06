@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Order } from "@/lib/types";
+import { ScoreBanner } from "./CustomerScoreBadge";
 interface PostalCodeResult {
   postal_code: string;
   county: string;
@@ -256,6 +257,13 @@ export default function ConfirmOrderModal({
             <p className="text-amber-300 text-xs">
               Clientul are alte <span className="font-bold">{duplicateInfo.count}</span> comenzi în ultimele {duplicateInfo.days} zile
             </p>
+          </div>
+        )}
+
+        {/* Customer Score */}
+        {order && (
+          <div className="mx-4 mt-3">
+            <ScoreBanner orderId={order.id} />
           </div>
         )}
 

@@ -13,6 +13,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import ConfirmScheduledOrderModal from "../components/ConfirmScheduledOrderModal";
 import SyncStatusModal from "../components/SyncStatusModal";
 import CallOrderModal from "../components/CallOrderModal";
+import { ScoreDot } from "../components/CustomerScoreBadge";
 import CallHistoryModal from "../components/CallHistoryModal";
 import ChangeOrderModal from "../components/ChangeOrderModal";
 import type { ChangeOrderData } from "../components/ChangeOrderModal";
@@ -2068,10 +2069,12 @@ export default function AdminPage() {
 
                     {/* Customer */}
                     <td className="px-1 py-1.5">
-                      <div>
-                        <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
-                        <p className="text-zinc-400 text-xs">{order.phone}</p>
-                        {/* Call status badge — HIDDEN: AI phone calls feature disabled temporarily */}
+                      <div className="flex items-start gap-1.5">
+                        {order.status === "pending" && <div className="mt-1.5"><ScoreDot orderId={order.id} /></div>}
+                        <div>
+                          <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
+                          <p className="text-zinc-400 text-xs">{order.phone}</p>
+                        </div>
                       </div>
                     </td>
 

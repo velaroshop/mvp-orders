@@ -992,6 +992,38 @@ class HelpshipClient {
 
     return results;
   }
+
+  /**
+   * Get customer identity (order history stats) by Helpship order ID
+   */
+  async getCustomerIdentity(helpshipOrderId: string): Promise<{
+    customerIdentityId: string;
+    phone: string;
+    totalOrders: number;
+    firstOrderAt: string | null;
+    lastOrderAt: string | null;
+    ordersList12Months: number;
+    resolvedLast12Months: number;
+    returnedLast12Months: number;
+    returnRatePercent: number;
+  } | null> {
+    try {
+      const response = await this.makeAuthenticatedRequest(
+        `/api/CustomerIdentity/byOrder/${helpshipOrderId}`,
+        { method: "GET" }
+      );
+
+      if (!response.ok) {
+        console.error(`[Helpship] CustomerIdentity failed: ${response.status}`);
+        return null;
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error(`[Helpship] Error getting customer identity:`, err);
+      return null;
+    }
+  }
 }
 
 // Exportăm clasa pentru a putea crea instanțe cu credențiale custom

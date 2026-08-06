@@ -43,6 +43,11 @@ export default function SuperadminPage() {
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
   const [extendedAccess, setExtendedAccess] = useState(false);
+  // Score thresholds
+  const [scoreThresholdGood, setScoreThresholdGood] = useState(25);
+  const [scoreThresholdPoor, setScoreThresholdPoor] = useState(50);
+  const [isSavingThresholds, setIsSavingThresholds] = useState(false);
+  const [thresholdsMessage, setThresholdsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   function generatePassword() {
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -130,6 +135,8 @@ export default function SuperadminPage() {
 
       const data = await response.json();
       setSystemSettings(data.settings);
+      if (data.settings?.scoreThresholdGood !== undefined) setScoreThresholdGood(data.settings.scoreThresholdGood);
+      if (data.settings?.scoreThresholdPoor !== undefined) setScoreThresholdPoor(data.settings.scoreThresholdPoor);
     } catch (error) {
       console.error("Error loading system settings:", error);
     } finally {
@@ -689,6 +696,75 @@ export default function SuperadminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Customer Score Thresholds */}
+      <div className="bg-zinc-800 rounded-lg border border-zinc-700 mt-6 p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">Customer Score Thresholds</h2>
+        <p className="text-sm text-zinc-400 mb-4">Plafoane pentru rata de retur (%). PERFECT = 0%, NEW = fara istoric.</p>
+        <div className="flex items-center gap-6">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              GOOD (max %)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={scoreThresholdGood}
+              onChange={(e) => setScoreThresholdGood(parseInt(e.target.value) || 25)}
+              className="w-20 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <p className="text-xs text-blue-300 mt-1">1% - {scoreThresholdGood}%</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              POOR (max %)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={scoreThresholdPoor}
+              onChange={(e) => setScoreThresholdPoor(parseInt(e.target.value) || 50)}
+              className="w-20 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <p className="text-xs text-amber-300 mt-1">{scoreThresholdGood + 1}% - {scoreThresholdPoor}%</p>
+          </div>
+          <div className="pt-6">
+            <p className="text-xs text-red-300">BAD: &gt;{scoreThresholdPoor}%</p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={async () => {
+                setIsSavingThresholds(true);
+                setThresholdsMessage(null);
+                try {
+                  const res = await fetch("/api/superadmin/system-settings", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ scoreThresholdGood, scoreThresholdPoor }),
+                  });
+                  if (!res.ok) throw new Error("Failed to save");
+                  setThresholdsMessage({ type: "success", text: "Salvat!" });
+                } catch {
+                  setThresholdsMessage({ type: "error", text: "Eroare la salvare" });
+                } finally {
+                  setIsSavingThresholds(false);
+                }
+              }}
+              disabled={isSavingThresholds}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              {isSavingThresholds ? "..." : "Salvează"}
+            </button>
+          </div>
+        </div>
+        {thresholdsMessage && (
+          <div className={`mt-3 p-2 rounded text-sm ${thresholdsMessage.type === "success" ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300" : "bg-red-900/20 border border-red-700 text-red-300"}`}>
+            {thresholdsMessage.text}
           </div>
         )}
       </div>

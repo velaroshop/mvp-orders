@@ -48,9 +48,11 @@ export async function GET() {
       );
     }
 
-    const settings: SystemSettings = {
+    const settings = {
       id: data.id,
       helpshipEnvironment: data.helpship_environment as HelpshipEnvironment,
+      scoreThresholdGood: (data as any).score_threshold_good ?? 25,
+      scoreThresholdPoor: (data as any).score_threshold_poor ?? 50,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -88,14 +90,28 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { helpshipEnvironment } = body;
+    const { helpshipEnvironment, scoreThresholdGood, scoreThresholdPoor } = body;
 
-    // Validate helpshipEnvironment
-    if (!helpshipEnvironment || !["development", "production"].includes(helpshipEnvironment)) {
-      return NextResponse.json(
-        { error: "Invalid helpship environment. Must be 'development' or 'production'." },
-        { status: 400 }
-      );
+    // Build update fields
+    const updateFields: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (helpshipEnvironment !== undefined) {
+      if (!["development", "production"].includes(helpshipEnvironment)) {
+        return NextResponse.json(
+          { error: "Invalid helpship environment. Must be 'development' or 'production'." },
+          { status: 400 }
+        );
+      }
+      updateFields.helpship_environment = helpshipEnvironment;
+    }
+
+    if (scoreThresholdGood !== undefined) {
+      updateFields.score_threshold_good = Math.max(1, Math.min(100, parseInt(scoreThresholdGood) || 25));
+    }
+    if (scoreThresholdPoor !== undefined) {
+      updateFields.score_threshold_poor = Math.max(1, Math.min(100, parseInt(scoreThresholdPoor) || 50));
     }
 
     // Get the existing settings row ID
@@ -115,10 +131,7 @@ export async function PUT(request: Request) {
     // Update the settings
     const { data, error } = await supabaseAdmin
       .from("system_settings")
-      .update({
-        helpship_environment: helpshipEnvironment,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateFields)
       .eq("id", existingSettings.id)
       .select()
       .single();
@@ -131,9 +144,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    const settings: SystemSettings = {
+    const settings = {
       id: data.id,
       helpshipEnvironment: data.helpship_environment as HelpshipEnvironment,
+      scoreThresholdGood: (data as any).score_threshold_good ?? 25,
+      scoreThresholdPoor: (data as any).score_threshold_poor ?? 50,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

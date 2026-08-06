@@ -1000,9 +1000,9 @@ class HelpshipClient {
     customerIdentityId: string;
     phone: string;
     totalOrders: number;
-    firstOrderAt: string | null;
-    lastOrderAt: string | null;
-    ordersList12Months: number;
+    firstOrderOn: string | null;
+    lastOrderOn: string | null;
+    ordersLast12Months: number;
     resolvedLast12Months: number;
     returnedLast12Months: number;
     returnRatePercent: number;

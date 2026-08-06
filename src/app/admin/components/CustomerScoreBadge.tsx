@@ -6,12 +6,12 @@ interface ScoreData {
   score: number | null;
   level: "NEW" | "PERFECT" | "GOOD" | "POOR" | "BAD";
   totalOrders?: number;
-  ordersList12Months?: number;
+  ordersLast12Months?: number;
   resolvedLast12Months?: number;
   returnedLast12Months?: number;
   returnRatePercent?: number;
-  firstOrderAt?: string | null;
-  lastOrderAt?: string | null;
+  firstOrderOn?: string | null;
+  lastOrderOn?: string | null;
   phone?: string;
 }
 
@@ -57,7 +57,7 @@ export function ScoreDot({ orderId }: { orderId: string }) {
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-900 border border-zinc-600 rounded text-xs text-zinc-200 whitespace-nowrap z-50 shadow-lg">
           {data.level === "NEW"
             ? "Client nou"
-            : `Retur: ${data.returnRatePercent}% (${data.returnedLast12Months} din ${data.ordersList12Months})`
+            : `Retur: ${data.returnRatePercent}% (${data.returnedLast12Months} din ${data.ordersLast12Months})`
           }
         </div>
       )}
@@ -115,7 +115,7 @@ export function ScoreBanner({ orderId }: { orderId: string }) {
         <span className={`text-xs font-semibold ${config.text}`}>{config.label}</span>
         {data.level !== "NEW" ? (
           <span className="text-xs text-zinc-400 ml-1">
-            Retur: {data.returnRatePercent}% ({data.returnedLast12Months} din {data.ordersList12Months} comenzi, 12 luni)
+            Retur: {data.returnRatePercent}% ({data.returnedLast12Months} din {data.ordersLast12Months} comenzi, 12 luni)
           </span>
         ) : (
           <span className="text-xs text-zinc-500 ml-1">Client nou — fara istoric</span>
@@ -135,7 +135,7 @@ export function ScoreBanner({ orderId }: { orderId: string }) {
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">Comenzi 12 luni</span>
-            <span className="text-white">{data.ordersList12Months}</span>
+            <span className="text-white">{data.ordersLast12Months}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-400">Livrate cu succes</span>
@@ -149,16 +149,16 @@ export function ScoreBanner({ orderId }: { orderId: string }) {
             <span className="text-zinc-400">Rata retur</span>
             <span className={`font-semibold ${config.text}`}>{data.returnRatePercent}%</span>
           </div>
-          {data.firstOrderAt && (
+          {data.firstOrderOn && (
             <div className="flex justify-between">
               <span className="text-zinc-400">Prima comanda</span>
-              <span className="text-zinc-300">{new Date(data.firstOrderAt).toLocaleDateString("ro-RO")}</span>
+              <span className="text-zinc-300">{new Date(data.firstOrderOn).toLocaleDateString("ro-RO")}</span>
             </div>
           )}
-          {data.lastOrderAt && (
+          {data.lastOrderOn && (
             <div className="flex justify-between">
               <span className="text-zinc-400">Ultima comanda</span>
-              <span className="text-zinc-300">{new Date(data.lastOrderAt).toLocaleDateString("ro-RO")}</span>
+              <span className="text-zinc-300">{new Date(data.lastOrderOn).toLocaleDateString("ro-RO")}</span>
             </div>
           )}
         </div>

@@ -57,7 +57,7 @@ export function ScoreDot({ orderId }: { orderId: string }) {
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-900 border border-zinc-600 rounded text-xs text-zinc-200 whitespace-nowrap z-50 shadow-lg">
           {data.level === "NEW"
             ? "Client nou"
-            : `Retur: ${data.returnRatePercent}% (${data.returnedLast12Months} din ${data.ordersLast12Months})`
+            : `Retur: ${data.returnRatePercent}% (${data.returnedLast12Months} din ${data.resolvedLast12Months} expediate)`
           }
         </div>
       )}
@@ -115,7 +115,7 @@ export function ScoreBanner({ orderId }: { orderId: string }) {
         <span className={`text-xs font-semibold ${config.text}`}>{config.label}</span>
         {data.level !== "NEW" ? (
           <span className="text-xs text-zinc-400 ml-1">
-            Retur: {data.returnRatePercent}% ({data.returnedLast12Months} din {data.ordersLast12Months} comenzi, 12 luni)
+            Retur: {data.returnRatePercent}% ({data.returnedLast12Months} din {data.resolvedLast12Months} expediate, 12 luni)
           </span>
         ) : (
           <span className="text-xs text-zinc-500 ml-1">Client nou — fara istoric</span>

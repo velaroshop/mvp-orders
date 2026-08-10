@@ -86,6 +86,7 @@ function WidgetFormContent() {
   const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [success, setSuccess] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
@@ -744,7 +745,8 @@ function WidgetFormContent() {
     event.preventDefault();
 
     if (!landingPage) return;
-    if (submitting) return;
+    if (submitting || submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     setErrors({});
@@ -951,7 +953,8 @@ function WidgetFormContent() {
           ? err.message
           : "A apărut o eroare neașteptată. Încearcă din nou.",
       );
-    } finally {
+      // Only reset on error so user can retry
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

@@ -14,6 +14,9 @@ const RATE_LIMIT_CONFIG = {
   windowSeconds: 60,
 };
 
+// In-flight order lock: prevents concurrent order creation for same phone+landing
+const orderLocks = new Set<string>();
+
 export async function POST(request: NextRequest) {
   // Rate limiting - verifică înainte de orice procesare
   const clientIP = getClientIP(request);
@@ -178,6 +181,18 @@ export async function POST(request: NextRequest) {
         orderSeries = store.order_series;
       }
     }
+
+    // Step 0.5: In-flight lock to prevent concurrent duplicate submissions
+    const lockKey = `${cleanPhone}:${landingKey}`;
+    if (orderLocks.has(lockKey)) {
+      return NextResponse.json(
+        { error: "Comanda se proceseaza deja" },
+        { status: 409 },
+      );
+    }
+    orderLocks.add(lockKey);
+    // Auto-release lock after 10 seconds
+    setTimeout(() => orderLocks.delete(lockKey), 10000);
 
     // Step 1: Check for duplicate order (same phone + landing page within last 2 minutes)
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();

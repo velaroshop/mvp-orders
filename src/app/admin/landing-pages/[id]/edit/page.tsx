@@ -45,6 +45,7 @@ interface LandingPage {
   fb_conversion_token?: string;
   client_side_tracking: boolean;
   server_side_tracking: boolean;
+  default_offer?: string;
 }
 
 export default function EditLandingPagePage() {
@@ -204,6 +205,7 @@ export default function EditLandingPagePage() {
           free_shipping_offer_1: (formData as any).free_shipping_offer_1 || false,
           free_shipping_offer_2: (formData as any).free_shipping_offer_2 || false,
           free_shipping_offer_3: (formData as any).free_shipping_offer_3 || false,
+          defaultOffer: formData.default_offer || "offer_1",
           postPurchaseStatus: formData.post_purchase_status,
           fbPixelId: formData.fb_pixel_id || "",
           fbConversionToken: formData.fb_conversion_token || "",
@@ -628,6 +630,22 @@ export default function EditLandingPagePage() {
                 <p className="text-xs text-zinc-500 mt-1">
                   Max 30 characters
                 </p>
+              </div>
+
+              {/* Default Offer Selection */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  Oferta preselectata in formular
+                </label>
+                <select
+                  value={formData.default_offer || "offer_1"}
+                  onChange={(e) => setFormData({ ...formData, default_offer: e.target.value })}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white text-sm"
+                >
+                  <option value="offer_1">Oferta 1 — {formData.offer_heading_1 || "Ieftin"}</option>
+                  <option value="offer_2">Oferta 2 — {formData.offer_heading_2 || "Avantajos"}</option>
+                  <option value="offer_3">Oferta 3 — {formData.offer_heading_3 || "Super ofertă"}</option>
+                </select>
               </div>
             </div>
           </div>

@@ -425,6 +425,11 @@ function WidgetFormContent() {
       const data = await response.json();
       setLandingPage(data.landingPage);
 
+      // Set default offer from landing page config
+      if (data.landingPage.default_offer) {
+        setSelectedOffer(data.landingPage.default_offer as OfferCode);
+      }
+
       // Use presale upsells from the same response (optimized - no extra request)
       if (data.presaleUpsells) {
         setPresaleUpsells(data.presaleUpsells);

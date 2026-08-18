@@ -45,6 +45,7 @@ export default function ConfirmOrderModal({
   readOnly = false,
   duplicateInfo,
 }: ConfirmOrderModalProps) {
+  const [customerOrderCount, setCustomerOrderCount] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -173,9 +174,22 @@ export default function ConfirmOrderModal({
       setPostalCodes([]);
       setPostalCodeError(null);
       setSubmitError(null);
+      setCustomerOrderCount(null);
 
       if (initialData.address && initialData.city && initialData.county) {
         searchPostalCodes(initialData.address, initialData.city, initialData.county);
+      }
+
+      // Fetch customer order count (non-blocking)
+      if (order.customerId) {
+        fetch(`/api/customers/${order.customerId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.customer?.totalOrders != null) {
+              setCustomerOrderCount(data.customer.totalOrders);
+            }
+          })
+          .catch(() => {/* non-critical */});
       }
     }
   }, [order, isOpen]);
@@ -274,9 +288,27 @@ export default function ConfirmOrderModal({
             <div className="space-y-3">
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-sm">👤</span>
-                <h3 className="text-sm font-semibold text-white">
-                  Personal Information
-                </h3>
+                {order.customerId ? (
+                  <h3 className="text-sm font-semibold">
+                    <a
+                      href={`/admin/customers/${order.customerId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
+                    >
+                      {order.fullName || "Client"}
+                    </a>
+                    {customerOrderCount != null && (
+                      <span className="text-zinc-400 font-normal ml-1">
+                        ({customerOrderCount} {customerOrderCount === 1 ? "comandă" : "comenzi"})
+                      </span>
+                    )}
+                  </h3>
+                ) : (
+                  <h3 className="text-sm font-semibold text-white">
+                    Personal Information
+                  </h3>
+                )}
               </div>
 
               {/* Full Name & Phone on same line */}

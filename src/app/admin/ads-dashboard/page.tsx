@@ -741,16 +741,19 @@ export default function AdsDashboardPage() {
             borderColor={getRoasBg(filteredKpis.metaRoas)}
           />
           <KPICard
-            label="CPA"
-            value={
-              filteredKpis.cpa !== null
-                ? `${formatNumber(filteredKpis.cpa, 2)} RON`
-                : "N/A"
-            }
+            label="Store Revenue"
+            value={`${formatNumber(filteredKpis.revenue, 2)} RON`}
+            valueColor="text-emerald-400"
           />
           <KPICard
-            label="CPM"
-            value={`${formatNumber(filteredKpis.cpm, 2)} RON`}
+            label="Store ROAS"
+            value={
+              filteredKpis.roas !== null
+                ? `${filteredKpis.roas.toFixed(2)}x`
+                : "N/A"
+            }
+            valueColor={getRoasColor(filteredKpis.roas)}
+            borderColor={getRoasBg(filteredKpis.roas)}
           />
           <KPICard
             label="CTR"
@@ -899,7 +902,7 @@ export default function AdsDashboardPage() {
                     className="px-3 py-3 text-right cursor-pointer hover:text-white"
                     onClick={() => handleSort("cpc")}
                   >
-                    CPC <SortIcon col="cpc" />
+                    CPA <SortIcon col="cpc" />
                   </th>
                   <th
                     className="px-3 py-3 text-right cursor-pointer hover:text-white"
@@ -953,7 +956,7 @@ export default function AdsDashboardPage() {
                       {c.ctr.toFixed(2)}%
                     </td>
                     <td className="px-3 py-2.5 text-right text-zinc-300">
-                      {formatNumber(c.cpc, 2)}
+                      {c.metaPurchases > 0 ? formatNumber(c.spend / c.metaPurchases, 2) : "—"}
                     </td>
                     <td className="px-3 py-2.5 text-right text-zinc-300">
                       {c.metaPurchases}
@@ -1018,7 +1021,7 @@ export default function AdsDashboardPage() {
                     {filteredKpis ? `${filteredKpis.ctr.toFixed(2)}%` : "-"}
                   </td>
                   <td className="px-3 py-2.5 text-right text-white">
-                    {filteredKpis ? formatNumber(filteredKpis.cpc, 2) : "-"}
+                    {filteredKpis ? (filteredKpis.cpa !== null ? formatNumber(filteredKpis.cpa, 2) : "—") : "-"}
                   </td>
                   <td className="px-3 py-2.5 text-right text-white">
                     {filteredCampaigns.reduce(

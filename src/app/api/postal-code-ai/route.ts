@@ -42,7 +42,7 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
 {"postalCode":"XXXXXX","explanation":"explicație scurtă în română (max 2 propoziții)","confidence":"high|medium|low"}`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

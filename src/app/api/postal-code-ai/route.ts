@@ -35,11 +35,13 @@ export async function POST(request: NextRequest) {
     }
 
     const addressParts = [address, city, `județul ${county}`].filter(Boolean).join(", ");
-    const prompt = `Ești un expert în sistemul de coduri poștale din România (Poșta Română).
-Găsește codul poștal corect pentru următoarea adresă din România: ${addressParts}.
-Codurile poștale românești au 6 cifre. Răspunde cu codul exact, nu aproximativ.
-Explică pe scurt de ce ai ales acel cod (localitatea, zona).
-Nivelul de certitudine: high dacă ești sigur, medium dacă există mai multe variante, low dacă adresa e ambiguă.`;
+
+    // Prompt instructs Gemini to search and return JSON at the very end
+    const prompt = `Caută codul poștal corect pentru această adresă din România: ${addressParts}.
+Folosește căutarea web pentru a verifica codul exact în baza de date a Poștei Române.
+La final, răspunde OBLIGATORIU cu un bloc JSON pe o singură linie în formatul exact de mai jos (fără alte caractere după):
+{"postalCode":"XXXXXX","explanation":"explicatie scurta in romana","confidence":"high"}
+Unde confidence este: high dacă ești sigur, medium dacă există incertitudine, low dacă adresa e ambiguă.`;
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
@@ -48,19 +50,10 @@ Nivelul de certitudine: high dacă ești sigur, medium dacă există mai multe v
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 512,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                postalCode: { type: "STRING" },
-                explanation: { type: "STRING" },
-                confidence: { type: "STRING", enum: ["high", "medium", "low"] },
-              },
-              required: ["postalCode", "explanation", "confidence"],
-            },
+            maxOutputTokens: 1024,
           },
         }),
       }
@@ -74,7 +67,10 @@ Nivelul de certitudine: high dacă ești sigur, medium dacă există mai multe v
     }
 
     const geminiData = await geminiRes.json();
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    // Collect all text parts (grounding may split response across parts)
+    const parts: any[] = geminiData?.candidates?.[0]?.content?.parts || [];
+    const rawText = parts.map((p: any) => p.text || "").join("");
     console.log("[postal-code-ai] Gemini raw response:", rawText);
 
     if (!rawText) {
@@ -82,11 +78,19 @@ Nivelul de certitudine: high dacă ești sigur, medium dacă există mai multe v
       return NextResponse.json({ error: `Gemini răspuns gol (motiv: ${finishReason || "unknown"})` }, { status: 502 });
     }
 
+    // Extract JSON object from text — greedy match, last occurrence wins
+    const allMatches = [...rawText.matchAll(/\{[^{}]*"postalCode"[^{}]*\}/g)];
+    const jsonMatch = allMatches.length > 0 ? allMatches[allMatches.length - 1][0] : null;
+
+    if (!jsonMatch) {
+      return NextResponse.json({ error: `Nu am găsit JSON în răspuns: ${rawText.slice(0, 300)}` }, { status: 502 });
+    }
+
     let parsed: any;
     try {
-      parsed = JSON.parse(rawText);
+      parsed = JSON.parse(jsonMatch);
     } catch {
-      return NextResponse.json({ error: `Răspuns neparsabil: ${rawText.slice(0, 200)}` }, { status: 502 });
+      return NextResponse.json({ error: `JSON invalid: ${jsonMatch.slice(0, 200)}` }, { status: 502 });
     }
 
     const postalCode = String(parsed.postalCode || "").replace(/\D/g, "").slice(0, 6);

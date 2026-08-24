@@ -62,14 +62,25 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
 
     const geminiData = await geminiRes.json();
     const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    console.log("[postal-code-ai] Gemini raw response:", rawText);
 
-    // Parse JSON from response (strip markdown fences if present)
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: "Could not parse Gemini response" }, { status: 502 });
+    if (!rawText) {
+      const finishReason = geminiData?.candidates?.[0]?.finishReason;
+      return NextResponse.json({ error: `Gemini returned empty response (reason: ${finishReason || "unknown"})` }, { status: 502 });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    // Parse JSON from response (strip markdown fences if present)
+    const jsonMatch = rawText.match(/\{[\s\S]*?\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({ error: `Gemini response unparseable: ${rawText.slice(0, 200)}` }, { status: 502 });
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      return NextResponse.json({ error: `JSON parse failed: ${jsonMatch[0].slice(0, 200)}` }, { status: 502 });
+    }
     const postalCode = String(parsed.postalCode || "").replace(/\D/g, "").slice(0, 6);
     const explanation = String(parsed.explanation || "");
     const confidence = ["high", "medium", "low"].includes(parsed.confidence)

@@ -65,8 +65,8 @@ export async function GET(
       );
     }
 
-    // PARALLEL: Fetch product, store, presale upsells, and org plan simultaneously
-    const [productResult, storeResult, upsellsResult, orgResult] = await Promise.all([
+    // PARALLEL: Fetch product, store, presale upsells, org plan, and settings simultaneously
+    const [productResult, storeResult, upsellsResult, orgResult, settingsResult] = await Promise.all([
       // Product query
       landingPage.product_id
         ? supabase
@@ -85,7 +85,7 @@ export async function GET(
             .single()
         : Promise.resolve({ data: null }),
 
-      // Presale upsells query (matching the public upsells API structure)
+      // Presale upsells query
       supabase
         .from("upsells")
         .select("id, title, description, quantity, price, srp, media_url, active, product:products!product_id(id, name, sku, status)")
@@ -99,12 +99,21 @@ export async function GET(
         .from("organizations")
         .select("plan")
         .eq("id", landingPage.organization_id)
-        .single()
+        .single(),
+
+      // Settings query — moved into parallel using organization_id from landing page
+      supabase
+        .from("settings")
+        .select("meta_test_mode, meta_test_event_code")
+        .eq("organization_id", landingPage.organization_id)
+        .single(),
     ]);
 
     const productData = productResult.data;
     const storeData = storeResult.data;
     const orgPlan = orgResult.data?.plan || "pro";
+    const metaTestMode = settingsResult.data?.meta_test_mode || false;
+    const metaTestEventCode = settingsResult.data?.meta_test_event_code || null;
 
     // Filter upsells based on product status (only "active" products)
     // If organization is on basic plan, return empty presale upsells
@@ -112,23 +121,6 @@ export async function GET(
       const productStatus = upsell.product?.status;
       return productStatus === "active";
     });
-
-    // Fetch settings only if we have organization_id (still parallel-safe)
-    let metaTestMode = false;
-    let metaTestEventCode = null;
-
-    if (storeData?.organization_id) {
-      const { data: settings } = await supabase
-        .from("settings")
-        .select("meta_test_mode, meta_test_event_code")
-        .eq("organization_id", storeData.organization_id)
-        .single();
-
-      if (settings) {
-        metaTestMode = settings.meta_test_mode || false;
-        metaTestEventCode = settings.meta_test_event_code || null;
-      }
-    }
 
     return NextResponse.json({
       landingPage: {

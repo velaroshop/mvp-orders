@@ -149,7 +149,7 @@ function WidgetFormContent() {
     }
   }, [slug]);
 
-  // Supabase Realtime Presence — track live visitors per landing page
+  // Supabase Realtime Presence — track live visitors per landing page (deferred 1s)
   useEffect(() => {
     if (!slug) return;
 
@@ -157,42 +157,57 @@ function WidgetFormContent() {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey) return;
 
-    const client = createClient(supabaseUrl, supabaseAnonKey);
-    const channel = client.channel(`visitors:${slug}`);
+    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
 
-    channel.on('presence', { event: 'sync' }, () => {}).subscribe(async (status: string) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ slug, joined_at: new Date().toISOString(), in_form: false });
-      }
-    });
+    const connectTimer = setTimeout(() => {
+      const client = createClient(supabaseUrl, supabaseAnonKey);
+      channel = client.channel(`visitors:${slug}`);
 
-    presenceChannelRef.current = channel;
+      channel.on('presence', { event: 'sync' }, () => {}).subscribe(async (status: string) => {
+        if (status === 'SUBSCRIBED') {
+          await channel!.track({ slug, joined_at: new Date().toISOString(), in_form: false });
+        }
+      });
+
+      presenceChannelRef.current = channel;
+    }, 1000);
 
     return () => {
-      channel.unsubscribe();
+      clearTimeout(connectTimer);
+      if (channel) {
+        channel.unsubscribe();
+      }
       presenceChannelRef.current = null;
     };
   }, [slug]);
 
-  // Initialize Facebook Pixel when landing page is loaded (only once)
+  // Initialize Facebook Pixel when landing page is loaded (deferred — non-blocking)
   useEffect(() => {
     // Only initialize if tracking is enabled, pixel ID exists, and not already initialized
     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
-      // initFacebookPixel already has window.__fbPixelInitialized check inside it
-      // Pass test event code if test mode is enabled
-      const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
-      initFacebookPixel(landingPage.fb_pixel_id, testEventCode);
-      trackPageView();
+      const initPixel = () => {
+        // initFacebookPixel already has window.__fbPixelInitialized check inside it
+        // Pass test event code if test mode is enabled
+        const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
+        initFacebookPixel(landingPage.fb_pixel_id!, testEventCode);
+        trackPageView();
 
-      // Track ViewContent with product info (use default offer_1 price for initial tracking)
-      if (landingPage.products?.name) {
-        trackViewContent({
-          content_name: landingPage.products.name,
-          content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
-          content_type: 'product',
-          value: landingPage.price_1, // Always use first offer price for ViewContent
-          currency: 'RON',
-        });
+        // Track ViewContent with product info (use default offer_1 price for initial tracking)
+        if (landingPage.products?.name) {
+          trackViewContent({
+            content_name: landingPage.products.name,
+            content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
+            content_type: 'product',
+            value: landingPage.price_1, // Always use first offer price for ViewContent
+            currency: 'RON',
+          });
+        }
+      };
+
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(initPixel, { timeout: 2000 });
+      } else {
+        setTimeout(initPixel, 200);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -329,12 +344,18 @@ function WidgetFormContent() {
 
     // Send height after a delay to account for dynamic content
     const timeout = setTimeout(sendHeight, 100);
-    const interval = setInterval(sendHeight, 500);
+
+    // Use ResizeObserver instead of setInterval for efficient height reporting
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(sendHeight);
+      observer.observe(document.documentElement);
+    }
 
     return () => {
       window.removeEventListener('resize', sendHeight);
       clearTimeout(timeout);
-      clearInterval(interval);
+      if (observer) observer.disconnect();
     };
   }, [loading, success, landingPage, selectedOffer, selectedUpsells, phone, fullName, county, city, address]);
 

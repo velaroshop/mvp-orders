@@ -36,6 +36,11 @@ export default function SettingsPage() {
   const [duplicateCheckDays, setDuplicateCheckDays] = useState(14);
   const [isSavingDuplicateDays, setIsSavingDuplicateDays] = useState(false);
   const [duplicateDaysMessage, setDuplicateDaysMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // Gemini AI
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [hasExistingGeminiKey, setHasExistingGeminiKey] = useState(false);
+  const [isSavingGemini, setIsSavingGemini] = useState(false);
+  const [geminiMessage, setGeminiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     // Load settings from API
@@ -62,6 +67,9 @@ export default function SettingsPage() {
         setMetaAdsToken("");
         setMetaAdsAccountId(data.settings.meta_ads_account_id || "");
         setMetaAdsTokenExpiresAt(data.settings.meta_ads_token_expires_at || null);
+        // Gemini AI settings
+        setHasExistingGeminiKey(data.settings.gemini_api_key === "configured");
+        setGeminiApiKey("");
       } catch (error) {
         console.error("Error loading settings:", error);
         setCredentialsMessage({ type: "error", text: "Failed to load settings" });
@@ -824,6 +832,94 @@ export default function SettingsPage() {
           >
             {isSavingMetaAds ? "Se salvează..." : "Save Meta Ads Settings"}
           </button>
+        </div>
+      </div>
+
+      {/* Gemini AI Settings */}
+      <div className="mt-6 bg-zinc-900 rounded-lg border border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-white mb-1">Google Gemini AI</h2>
+        <p className="text-sm text-zinc-400 mb-4">
+          Activează sugestii AI pentru coduri poștale în modalul de confirmare comenzi.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Gemini API Key
+              {hasExistingGeminiKey && (
+                <span className="ml-2 text-xs text-emerald-400 font-normal">✓ configurat</span>
+              )}
+            </label>
+            <input
+              type="password"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+              placeholder={hasExistingGeminiKey ? "Lasă gol pentru a păstra cheia existentă" : "AIza..."}
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={isSavingGemini || (!geminiApiKey && !hasExistingGeminiKey)}
+              onClick={async () => {
+                setIsSavingGemini(true);
+                setGeminiMessage(null);
+                try {
+                  const res = await fetch("/api/settings", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ geminiApiKey: geminiApiKey || undefined }),
+                  });
+                  if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || "Failed to save");
+                  }
+                  if (geminiApiKey) {
+                    setHasExistingGeminiKey(true);
+                    setGeminiApiKey("");
+                  }
+                  setGeminiMessage({ type: "success", text: "Gemini API key salvat!" });
+                } catch (error) {
+                  setGeminiMessage({ type: "error", text: error instanceof Error ? error.message : "Eroare la salvare" });
+                } finally {
+                  setIsSavingGemini(false);
+                }
+              }}
+              className="px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            >
+              {isSavingGemini ? "Se salvează..." : "Salvează"}
+            </button>
+            {hasExistingGeminiKey && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm("Ștergi Gemini API key? Funcția AI pentru coduri poștale va fi dezactivată.")) return;
+                  setIsSavingGemini(true);
+                  try {
+                    await fetch("/api/settings", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ geminiApiKey: "" }),
+                    });
+                    setHasExistingGeminiKey(false);
+                    setGeminiMessage({ type: "success", text: "Gemini API key șters." });
+                  } catch {
+                    setGeminiMessage({ type: "error", text: "Eroare la ștergere." });
+                  } finally {
+                    setIsSavingGemini(false);
+                  }
+                }}
+                className="text-sm text-red-400 hover:text-red-300 transition-colors"
+              >
+                Șterge cheia
+              </button>
+            )}
+          </div>
+          {geminiMessage && (
+            <p className={`text-sm ${geminiMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+              {geminiMessage.text}
+            </p>
+          )}
         </div>
       </div>
 

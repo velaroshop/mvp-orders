@@ -37,14 +37,14 @@ export async function GET() {
     // Return settings or empty object if not found
     // Don't return the actual secret value for security
     const hasSecret = !!(data?.helpship_client_secret);
-
     const hasVapiKey = !!(data?.vapi_api_key);
     const hasMetaAdsToken = !!(data?.meta_ads_access_token);
+    const hasGeminiKey = !!(data?.gemini_api_key);
 
     return NextResponse.json({
       settings: {
         helpship_client_id: data?.helpship_client_id || "",
-        helpship_client_secret: hasSecret ? "configured" : "", // Indicator that secret exists
+        helpship_client_secret: hasSecret ? "configured" : "",
         helpship_token_url: data?.helpship_token_url || "https://helpship-auth-develop.azurewebsites.net/connect/token",
         helpship_api_base_url: data?.helpship_api_base_url || "https://helpship-api-develop.azurewebsites.net",
         meta_test_mode: data?.meta_test_mode || false,
@@ -56,6 +56,7 @@ export async function GET() {
         meta_ads_access_token: hasMetaAdsToken ? "configured" : "",
         meta_ads_account_id: data?.meta_ads_account_id || "",
         meta_ads_token_expires_at: data?.meta_ads_token_expires_at || null,
+        gemini_api_key: hasGeminiKey ? "configured" : "",
       },
     });
   } catch (error) {
@@ -86,14 +87,15 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { helpshipClientId, helpshipClientSecret, vapiApiKey, vapiPhoneNumberId, vapiAssistantId, metaAdsAccessToken, metaAdsAccountId } = body;
+    const { helpshipClientId, helpshipClientSecret, vapiApiKey, vapiPhoneNumberId, vapiAssistantId, metaAdsAccessToken, metaAdsAccountId, geminiApiKey } = body;
 
     // Require at least one set of fields
     const hasHelpshipFields = helpshipClientId && helpshipClientSecret;
     const hasVapiFields = vapiApiKey !== undefined || vapiPhoneNumberId !== undefined || vapiAssistantId !== undefined;
     const hasMetaAdsFields = metaAdsAccessToken !== undefined || metaAdsAccountId !== undefined;
+    const hasGeminiFields = geminiApiKey !== undefined;
 
-    if (!hasHelpshipFields && !hasVapiFields && !hasMetaAdsFields) {
+    if (!hasHelpshipFields && !hasVapiFields && !hasMetaAdsFields && !hasGeminiFields) {
       return NextResponse.json(
         { error: "At least one field is required" },
         { status: 400 },
@@ -129,6 +131,7 @@ export async function PUT(request: Request) {
       }
     }
     if (metaAdsAccountId !== undefined) updateFields.meta_ads_account_id = metaAdsAccountId;
+    if (geminiApiKey !== undefined) updateFields.gemini_api_key = geminiApiKey || null;
 
     // Check if settings exist
     const { data: existingSettings } = await supabaseAdmin

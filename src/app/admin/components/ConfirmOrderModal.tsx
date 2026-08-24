@@ -34,6 +34,7 @@ interface ConfirmOrderModalProps {
   onNoteSaved?: () => void;
   readOnly?: boolean;
   duplicateInfo?: DuplicateInfo | null;
+  geminiEnabled?: boolean;
 }
 
 export default function ConfirmOrderModal({
@@ -44,8 +45,12 @@ export default function ConfirmOrderModal({
   onNoteSaved,
   readOnly = false,
   duplicateInfo,
+  geminiEnabled = false,
 }: ConfirmOrderModalProps) {
   const [customerOrderCount, setCustomerOrderCount] = useState<number | null>(null);
+  const [aiPostalResult, setAiPostalResult] = useState<{ postalCode: string; explanation: string; confidence: "high" | "medium" | "low" } | null>(null);
+  const [isLoadingAiPostal, setIsLoadingAiPostal] = useState(false);
+  const [aiPostalError, setAiPostalError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -175,6 +180,8 @@ export default function ConfirmOrderModal({
       setPostalCodeError(null);
       setSubmitError(null);
       setCustomerOrderCount(null);
+      setAiPostalResult(null);
+      setAiPostalError(null);
 
       if (initialData.address && initialData.city && initialData.county) {
         searchPostalCodes(initialData.address, initialData.city, initialData.county);
@@ -712,15 +719,97 @@ export default function ConfirmOrderModal({
                     <label className="block text-xs font-medium text-zinc-300">
                       Recommended postal codes:
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => searchPostalCodes()}
-                      disabled={isLoadingPostalCodes}
-                      className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoadingPostalCodes ? "Loading..." : "Reload"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {geminiEnabled && !readOnly && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsLoadingAiPostal(true);
+                            setAiPostalError(null);
+                            setAiPostalResult(null);
+                            try {
+                              const res = await fetch("/api/postal-code-ai", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  address: formData.address,
+                                  city: formData.city,
+                                  county: formData.county,
+                                }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || "Eroare AI");
+                              setAiPostalResult(data);
+                            } catch (err) {
+                              setAiPostalError(err instanceof Error ? err.message : "Eroare necunoscută");
+                            } finally {
+                              setIsLoadingAiPostal(false);
+                            }
+                          }}
+                          disabled={isLoadingAiPostal || !formData.city || !formData.county}
+                          className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {isLoadingAiPostal ? (
+                            <span>Se gândește...</span>
+                          ) : (
+                            <><span>✨</span><span>AI</span></>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => searchPostalCodes()}
+                        disabled={isLoadingPostalCodes}
+                        className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLoadingPostalCodes ? "Loading..." : "Reload"}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* AI Postal Code Result Panel */}
+                  {(aiPostalResult || aiPostalError) && (
+                    <div className={`mb-2 p-2.5 rounded-md border ${aiPostalError ? "border-red-700 bg-red-900/20" : "border-violet-700/50 bg-violet-900/10"}`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-violet-400">✨ Sugestie AI</span>
+                        <button
+                          type="button"
+                          onClick={() => { setAiPostalResult(null); setAiPostalError(null); }}
+                          className="text-zinc-500 hover:text-zinc-300 text-xs leading-none"
+                        >✕</button>
+                      </div>
+                      {aiPostalError && (
+                        <p className="text-xs text-red-400">{aiPostalError}</p>
+                      )}
+                      {aiPostalResult && (
+                        <>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-base font-bold text-white">{aiPostalResult.postalCode}</span>
+                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                              aiPostalResult.confidence === "high"
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : aiPostalResult.confidence === "medium"
+                                ? "bg-amber-500/20 text-amber-400"
+                                : "bg-red-500/20 text-red-400"
+                            }`}>
+                              {aiPostalResult.confidence === "high" ? "● Sigur" : aiPostalResult.confidence === "medium" ? "● Posibil" : "● Nesigur"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 mb-2 leading-relaxed">{aiPostalResult.explanation}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, postalCode: aiPostalResult.postalCode });
+                              setAiPostalResult(null);
+                            }}
+                            className="w-full text-xs py-1 bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors font-medium"
+                          >
+                            Folosește acest cod
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   {isLoadingPostalCodes && (
                     <p className="text-xs text-zinc-500">Căutare coduri poștale...</p>

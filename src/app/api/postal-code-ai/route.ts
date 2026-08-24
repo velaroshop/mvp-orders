@@ -31,15 +31,15 @@ export async function POST(request: NextRequest) {
     const { address, city, county } = body;
 
     if (!city || !county) {
-      return NextResponse.json({ error: "City and county are required" }, { status: 400 });
+      return NextResponse.json({ error: "Orașul și județul sunt obligatorii" }, { status: 400 });
     }
 
-    const addressStr = address ? `strada ${address}, ` : "";
-    const prompt = `Ești un expert în coduri poștale din România.
-Adresă: ${addressStr}orașul/comuna ${city}, județul ${county}.
-Sugerează cel mai probabil cod poștal pentru această adresă.
-Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în afara JSON-ului):
-{"postalCode":"XXXXXX","explanation":"explicație scurtă în română (max 2 propoziții)","confidence":"high|medium|low"}`;
+    const addressParts = [address, city, `județul ${county}`].filter(Boolean).join(", ");
+    const prompt = `Ești un expert în sistemul de coduri poștale din România (Poșta Română).
+Găsește codul poștal corect pentru următoarea adresă din România: ${addressParts}.
+Codurile poștale românești au 6 cifre. Răspunde cu codul exact, nu aproximativ.
+Explică pe scurt de ce ai ales acel cod (localitatea, zona).
+Nivelul de certitudine: high dacă ești sigur, medium dacă există mai multe variante, low dacă adresa e ambiguă.`;
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
@@ -48,7 +48,20 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 512,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                postalCode: { type: "STRING" },
+                explanation: { type: "STRING" },
+                confidence: { type: "STRING", enum: ["high", "medium", "low"] },
+              },
+              required: ["postalCode", "explanation", "confidence"],
+            },
+          },
         }),
       }
     );
@@ -66,29 +79,24 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
 
     if (!rawText) {
       const finishReason = geminiData?.candidates?.[0]?.finishReason;
-      return NextResponse.json({ error: `Gemini returned empty response (reason: ${finishReason || "unknown"})` }, { status: 502 });
-    }
-
-    // Parse JSON from response (strip markdown fences if present)
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: `Gemini response unparseable: ${rawText.slice(0, 200)}` }, { status: 502 });
+      return NextResponse.json({ error: `Gemini răspuns gol (motiv: ${finishReason || "unknown"})` }, { status: 502 });
     }
 
     let parsed: any;
     try {
-      parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(rawText);
     } catch {
-      return NextResponse.json({ error: `JSON parse failed: ${jsonMatch[0].slice(0, 200)}` }, { status: 502 });
+      return NextResponse.json({ error: `Răspuns neparsabil: ${rawText.slice(0, 200)}` }, { status: 502 });
     }
+
     const postalCode = String(parsed.postalCode || "").replace(/\D/g, "").slice(0, 6);
     const explanation = String(parsed.explanation || "");
     const confidence = ["high", "medium", "low"].includes(parsed.confidence)
-      ? parsed.confidence
+      ? parsed.confidence as "high" | "medium" | "low"
       : "medium";
 
     if (!postalCode || postalCode.length !== 6) {
-      return NextResponse.json({ error: "Gemini could not determine a postal code" }, { status: 422 });
+      return NextResponse.json({ error: "Gemini nu a putut determina un cod poștal valid" }, { status: 422 });
     }
 
     return NextResponse.json({ postalCode, explanation, confidence });

@@ -735,6 +735,11 @@ export default function ConfirmOrderModal({
                                   address: formData.address,
                                   city: formData.city,
                                   county: formData.county,
+                                  suggestions: postalCodes.map(s => ({
+                                    postalCode: s.postal_code,
+                                    fullAddress: s.full_address,
+                                    confidence: s.confidence,
+                                  })),
                                 }),
                               });
                               const data = await res.json();

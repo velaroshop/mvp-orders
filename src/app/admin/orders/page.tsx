@@ -166,9 +166,6 @@ export default function AdminPage() {
   });
   const [statsLoading, setStatsLoading] = useState(false);
 
-  // Gemini AI postal code feature availability
-  const [geminiEnabled, setGeminiEnabled] = useState(false);
-
   // KPI Filters state
   type QuickFilter = "today" | "yesterday" | "last3days" | "wtd" | "mtd" | "all";
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("today");
@@ -471,17 +468,6 @@ export default function AdminPage() {
     fetchLandingPages();
   }, []);
 
-  // Check if Gemini API key is configured (for AI postal code feature)
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.settings?.gemini_api_key === "configured") {
-          setGeminiEnabled(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // Initialize filters and fetch KPI data on mount
   useEffect(() => {
@@ -2528,7 +2514,6 @@ export default function AdminPage() {
                 isOpen={isModalOpen}
                 readOnly={isViewMode}
                 duplicateInfo={isViewMode ? viewDuplicateInfo : undefined}
-                geminiEnabled={geminiEnabled}
                 onClose={() => {
                   setIsModalOpen(false);
                   setSelectedOrder(null);

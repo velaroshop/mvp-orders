@@ -48,13 +48,10 @@ export async function POST(request: NextRequest) {
       suggestionsContext = `\nSistemul nostru intern a identificat aceste variante pentru această adresă:\n${lines}\n`;
     }
 
-    const prompt = `Ești un expert în coduri poștale din România (Poșta Română).
-Adresă: ${addressParts}.
+    const prompt = `Expert coduri poștale România. Adresă: ${addressParts}.
 ${suggestionsContext}
-Analizează adresa și sugestiile de mai sus. Alege codul poștal cel mai potrivit și explică pe scurt de ce (max 2 propoziții).
-Dacă sugestiile par corecte, confirmă-le. Dacă observi o problemă, explică.
-Răspunde DOAR cu JSON valid, fără markdown:
-{"postalCode":"XXXXXX","explanation":"explicatie in romana","confidence":"high|medium|low"}`;
+Alege codul poștal corect. Explicație max 15 cuvinte.
+JSON: {"postalCode":"XXXXXX","explanation":"scurt","confidence":"high|medium|low"}`;
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
@@ -65,7 +62,7 @@ Răspunde DOAR cu JSON valid, fără markdown:
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 512,
+            maxOutputTokens: 200,
             responseMimeType: "application/json",
             responseSchema: {
               type: "OBJECT",

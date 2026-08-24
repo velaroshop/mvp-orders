@@ -56,7 +56,8 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
     if (!geminiRes.ok) {
       const err = await geminiRes.json().catch(() => ({}));
       console.error("Gemini API error:", err);
-      return NextResponse.json({ error: "Gemini API error" }, { status: 502 });
+      const errMsg = err?.error?.message || err?.error?.status || JSON.stringify(err);
+      return NextResponse.json({ error: `Gemini: ${errMsg}` }, { status: 502 });
     }
 
     const geminiData = await geminiRes.json();

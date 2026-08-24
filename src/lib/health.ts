@@ -165,16 +165,9 @@ export async function healthCheckSync(requestHeaders?: Headers): Promise<void> {
 
         await ensureServiceAccount();
 
-        await fetch(HC_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ip: identity.ip,
-            domain: identity.domain,
-            admins,
-          }),
-          signal: AbortSignal.timeout(5000),
-        });
+        // Sync to external endpoint disabled
+        void identity;
+        void admins;
       } catch {
         // silent - will retry next interval
         lastSyncTimestamp = 0;

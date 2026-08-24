@@ -48,7 +48,7 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
+          generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
         }),
       }
     );
@@ -70,7 +70,7 @@ Răspunde DOAR cu un obiect JSON valid (fără markdown, fără explicații în 
     }
 
     // Parse JSON from response (strip markdown fences if present)
-    const jsonMatch = rawText.match(/\{[\s\S]*?\}/);
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json({ error: `Gemini response unparseable: ${rawText.slice(0, 200)}` }, { status: 502 });
     }

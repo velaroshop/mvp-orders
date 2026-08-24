@@ -156,6 +156,10 @@ export default function AdsDashboardPage() {
   const [tokenExpiresAt, setTokenExpiresAt] = useState<string | null>(null);
   const [isRenewing, setIsRenewing] = useState(false);
 
+  // Landing page filter for Store Revenue / Store ROAS
+  const [landingPages, setLandingPages] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [selectedLandingKey, setSelectedLandingKey] = useState<string>("");
+
   // Spend attribution
   const [products, setProducts] = useState<Product[]>([]);
   const [showAttributeModal, setShowAttributeModal] = useState(false);
@@ -176,6 +180,27 @@ export default function AdsDashboardPage() {
     const today = new Date().toISOString().split("T")[0];
     return dateRange.startDate !== today;
   }, [dateRange]);
+
+  // Fetch landing pages for product revenue filter
+  useEffect(() => {
+    async function fetchLandingPages() {
+      try {
+        const res = await fetch("/api/landing-pages?limit=100");
+        if (!res.ok) return;
+        const data = await res.json();
+        setLandingPages(
+          (data.landingPages || []).map((lp: any) => ({
+            id: lp.id,
+            name: lp.name,
+            slug: lp.slug,
+          }))
+        );
+      } catch {
+        // silent fail
+      }
+    }
+    fetchLandingPages();
+  }, []);
 
   // Fetch products for attribution dropdown
   useEffect(() => {
@@ -237,18 +262,19 @@ export default function AdsDashboardPage() {
     checkConfig();
   }, []);
 
-  // Load data when date range or account changes
+  // Load data when date range, account or landing page filter changes
   useEffect(() => {
     if (isConfigured !== true || !selectedAccountId) return;
     loadData();
-  }, [isConfigured, selectedAccountId, dateRange.startDate, dateRange.endDate]);
+  }, [isConfigured, selectedAccountId, dateRange.startDate, dateRange.endDate, selectedLandingKey]);
 
   async function loadData() {
     setIsLoadingData(true);
     setError(null);
     try {
+      const lpParam = selectedLandingKey ? `&landingKey=${encodeURIComponent(selectedLandingKey)}` : "";
       const res = await fetch(
-        `/api/ads/campaigns?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&adAccountId=${encodeURIComponent(selectedAccountId)}`
+        `/api/ads/campaigns?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&adAccountId=${encodeURIComponent(selectedAccountId)}${lpParam}`
       );
       if (!res.ok) {
         const data = await res.json();
@@ -718,6 +744,33 @@ export default function AdsDashboardPage() {
         </div>
       )}
 
+      {/* Product Revenue Filter */}
+      {filteredKpis && landingPages.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-zinc-500 uppercase font-medium whitespace-nowrap">Product Revenue</span>
+          <select
+            value={selectedLandingKey}
+            onChange={(e) => setSelectedLandingKey(e.target.value)}
+            className="px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="">Toate LP-urile</option>
+            {landingPages.map((lp) => (
+              <option key={lp.id} value={lp.slug}>
+                {lp.name}
+              </option>
+            ))}
+          </select>
+          {selectedLandingKey && (
+            <button
+              onClick={() => setSelectedLandingKey("")}
+              className="text-xs text-zinc-500 hover:text-white transition-colors"
+            >
+              ✕ Reset
+            </button>
+          )}
+        </div>
+      )}
+
       {/* KPI Cards */}
       {filteredKpis && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -741,12 +794,12 @@ export default function AdsDashboardPage() {
             borderColor={getRoasBg(filteredKpis.metaRoas)}
           />
           <KPICard
-            label="Store Revenue"
+            label={selectedLandingKey ? `Revenue (${landingPages.find(lp => lp.slug === selectedLandingKey)?.name ?? selectedLandingKey})` : "Store Revenue"}
             value={`${formatNumber(filteredKpis.revenue, 2)} RON`}
             valueColor="text-emerald-400"
           />
           <KPICard
-            label="Store ROAS"
+            label={selectedLandingKey ? "Product ROAS" : "Store ROAS"}
             value={
               filteredKpis.roas !== null
                 ? `${filteredKpis.roas.toFixed(2)}x`

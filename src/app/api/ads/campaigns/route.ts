@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const adAccountId = searchParams.get("adAccountId");
+    const landingKey = searchParams.get("landingKey") || null;
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     const startDateTime = new Date(`${startDate}T00:00:00.000+03:00`).toISOString();
     const endDateTime = new Date(`${endDate}T23:59:59.999+03:00`).toISOString();
 
-    const { data: orders } = await supabaseAdmin
+    let ordersQuery = supabaseAdmin
       .from("orders")
       .select("total")
       .eq("organization_id", activeOrganizationId)
@@ -83,6 +84,12 @@ export async function GET(request: NextRequest) {
       .neq("status", "testing")
       .gte("created_at", startDateTime)
       .lte("created_at", endDateTime);
+
+    if (landingKey) {
+      ordersQuery = ordersQuery.eq("landing_key", landingKey);
+    }
+
+    const { data: orders } = await ordersQuery;
 
     const totalRevenue = (orders || []).reduce(
       (sum, order: any) => sum + (order.total || 0),

@@ -11,9 +11,6 @@ import {
   trackInitiateCheckout,
   trackPurchase,
 } from "@/lib/facebook-pixel";
-import { createClient } from "@supabase/supabase-js";
-
-export const dynamic = 'force-dynamic';
 
 interface Upsell {
   id: string;
@@ -109,7 +106,6 @@ function WidgetFormContent() {
   const partialOrderIdRef = useRef<string | null>(null);
   const savingPartialRef = useRef(false);
   const saveOnLeaveRef = useRef<() => void>(() => {});
-  const presenceChannelRef = useRef<any>(null);
 
   // Meta tracking data from URL params
   const [trackingData, setTrackingData] = useState<{
@@ -149,37 +145,6 @@ function WidgetFormContent() {
     }
   }, [slug]);
 
-  // Supabase Realtime Presence — track live visitors per landing page (deferred 1s)
-  useEffect(() => {
-    if (!slug) return;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) return;
-
-    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
-
-    const connectTimer = setTimeout(() => {
-      const client = createClient(supabaseUrl, supabaseAnonKey);
-      channel = client.channel(`visitors:${slug}`);
-
-      channel.on('presence', { event: 'sync' }, () => {}).subscribe(async (status: string) => {
-        if (status === 'SUBSCRIBED') {
-          await channel!.track({ slug, joined_at: new Date().toISOString(), in_form: false });
-        }
-      });
-
-      presenceChannelRef.current = channel;
-    }, 1000);
-
-    return () => {
-      clearTimeout(connectTimer);
-      if (channel) {
-        channel.unsubscribe();
-      }
-      presenceChannelRef.current = null;
-    };
-  }, [slug]);
 
   // Initialize Facebook Pixel when landing page is loaded (deferred — non-blocking)
   useEffect(() => {
@@ -660,10 +625,6 @@ function WidgetFormContent() {
           setPartialOrderId(data.partialOrder.id);
           partialOrderIdRef.current = data.partialOrder.id;
 
-          // Update Presence to mark visitor as actively filling form
-          if (presenceChannelRef.current) {
-            presenceChannelRef.current.track({ slug, joined_at: new Date().toISOString(), in_form: true });
-          }
         }
       }
     } catch (error) {

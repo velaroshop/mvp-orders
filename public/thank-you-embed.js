@@ -510,7 +510,7 @@
 
           <!-- Trust message -->
           <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0; line-height: 1.6;">
-            Te vom notifica prin SMS când vom avea noutăți legate de comandă!
+            Un reprezentant al firmei te va suna în următoarele 24 de ore pentru confirmarea comenzii
           </p>
 
         </div>

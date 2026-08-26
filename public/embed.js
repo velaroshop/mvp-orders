@@ -109,25 +109,66 @@
   }
 
   /**
+   * Create skeleton placeholder shown while iframe loads
+   */
+  function createSkeleton() {
+    const skeleton = document.createElement('div');
+    skeleton.style.cssText = 'width:100%;font-family:sans-serif;box-sizing:border-box;padding:12px;background:#f4f4f5;border-radius:8px;';
+
+    const style = document.createElement('style');
+    style.textContent = '@keyframes velaro-pulse{0%,100%{opacity:1}50%{opacity:.4}}.velaro-bone{background:#d4d4d8;border-radius:6px;animation:velaro-pulse 1.5s ease-in-out infinite;}';
+    skeleton.appendChild(style);
+
+    skeleton.innerHTML += `
+      <div style="background:#27272a;border-radius:8px;padding:16px 12px 12px;margin-bottom:10px;text-align:center;">
+        <div class="velaro-bone" style="height:22px;width:110px;margin:0 auto 10px;"></div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;">
+          <div class="velaro-bone" style="height:20px;width:70px;"></div>
+          <div class="velaro-bone" style="height:28px;width:90px;"></div>
+        </div>
+        <div class="velaro-bone" style="height:12px;width:180px;margin:0 auto;"></div>
+      </div>
+      <div style="background:#fff;border-radius:8px;padding:16px;">
+        <div class="velaro-bone" style="height:18px;width:200px;margin:0 auto 16px;"></div>
+        ${[1,2,3,4,5].map(() => `
+          <div style="margin-bottom:12px;">
+            <div class="velaro-bone" style="height:12px;width:100px;margin-bottom:6px;"></div>
+            <div class="velaro-bone" style="height:42px;width:100%;border-radius:8px;"></div>
+          </div>
+        `).join('')}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:16px 0;">
+          ${[1,2,3].map(() => `<div class="velaro-bone" style="height:72px;border-radius:8px;"></div>`).join('')}
+        </div>
+        <div class="velaro-bone" style="height:52px;width:60%;margin:0 auto;border-radius:8px;"></div>
+      </div>
+    `;
+
+    return skeleton;
+  }
+
+  /**
    * Initialize iframe with tracking
    */
   function initializeWidget(container, slug, orgSlug) {
     const tracking = getTrackingParams();
     const iframeSrc = buildIframeSrc(slug, orgSlug, tracking);
 
-    // Create iframe element
+    // Show skeleton immediately
+    const skeleton = createSkeleton();
+    container.innerHTML = '';
+    container.appendChild(skeleton);
+
+    // Create iframe element (hidden initially)
     const iframe = document.createElement('iframe');
     iframe.id = `${container.id}-iframe`;
     iframe.src = iframeSrc;
     iframe.width = '100%';
-    iframe.style.border = 'none';
-    iframe.style.display = 'block';
-    iframe.style.minHeight = '600px';
+    iframe.style.cssText = 'border:none;display:block;min-height:600px;opacity:0;position:absolute;top:0;left:0;width:100%;transition:opacity 0.3s ease;';
     iframe.scrolling = 'no';
     iframe.loading = 'eager';
 
-    // Clear container and append iframe
-    container.innerHTML = '';
+    // Wrap in relative container so absolute positioning works
+    container.style.position = 'relative';
     container.appendChild(iframe);
 
     return iframe;
@@ -150,6 +191,20 @@
       iframes.forEach(iframe => {
         if (event.source === iframe.contentWindow) {
           iframe.style.height = `${data.height}px`;
+
+          // First height message = widget is rendered — show iframe, remove skeleton
+          if (iframe.style.opacity === '0') {
+            iframe.style.opacity = '1';
+            iframe.style.position = 'static';
+            // Remove skeleton (first child before iframe)
+            const container = iframe.parentNode;
+            if (container) {
+              Array.from(container.children).forEach(child => {
+                if (child !== iframe) child.remove();
+              });
+              container.style.position = '';
+            }
+          }
         }
       });
     }

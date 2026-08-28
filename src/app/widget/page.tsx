@@ -146,33 +146,21 @@ function WidgetFormContent() {
   }, [slug]);
 
 
-  // Initialize Facebook Pixel when landing page is loaded (deferred — non-blocking)
+  // Initialize Facebook Pixel as soon as landing page data is available
   useEffect(() => {
-    // Only initialize if tracking is enabled, pixel ID exists, and not already initialized
     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
-      const initPixel = () => {
-        // initFacebookPixel already has window.__fbPixelInitialized check inside it
-        // Pass test event code if test mode is enabled
-        const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
-        initFacebookPixel(landingPage.fb_pixel_id!, testEventCode);
-        trackPageView();
+      const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
+      initFacebookPixel(landingPage.fb_pixel_id!, testEventCode);
+      trackPageView();
 
-        // Track ViewContent with product info (use default offer_1 price for initial tracking)
-        if (landingPage.products?.name) {
-          trackViewContent({
-            content_name: landingPage.products.name,
-            content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
-            content_type: 'product',
-            value: landingPage.price_1, // Always use first offer price for ViewContent
-            currency: 'RON',
-          });
-        }
-      };
-
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(initPixel, { timeout: 2000 });
-      } else {
-        setTimeout(initPixel, 200);
+      if (landingPage.products?.name) {
+        trackViewContent({
+          content_name: landingPage.products.name,
+          content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
+          content_type: 'product',
+          value: landingPage.price_1,
+          currency: 'RON',
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -138,7 +138,7 @@ export async function GET(request: Request) {
     // Fetch order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status, landing_key, full_name, queue_expires_at, upsells, product_name, product_quantity, subtotal, shipping_cost, total")
+      .select("id, status, landing_key, organization_id, full_name, queue_expires_at, upsells, product_name, product_quantity, subtotal, shipping_cost, total")
       .eq("id", orderId)
       .single();
 
@@ -156,7 +156,7 @@ export async function GET(request: Request) {
     console.log("[Thank You Verify] Fetching landing page with slug:", order.landing_key);
 
     // Fetch landing page and store details (inclusiv url pentru CORS)
-    const { data: landingPage, error: landingError } = await supabaseAdmin
+    let lpQuery = supabaseAdmin
       .from("landing_pages")
       .select(`
         id,
@@ -169,8 +169,13 @@ export async function GET(request: Request) {
           text_on_dark_color
         )
       `)
-      .eq("slug", order.landing_key)
-      .single();
+      .eq("slug", order.landing_key);
+
+    if (order.organization_id) {
+      lpQuery = lpQuery.eq("organization_id", order.organization_id);
+    }
+
+    const { data: landingPage, error: landingError } = await lpQuery.single();
 
     console.log("[Thank You Verify] Landing page fetch result:", { landingPage, landingError });
 

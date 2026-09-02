@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     const {
       landingKey,
+      organizationId,
       offerCode,
       phone,
       fullName,
@@ -136,11 +137,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Obține organization_id, store_id, SKU și cantități din landing page
-    const { data: landingPage } = await supabaseAdmin
+    let lpQuery = supabaseAdmin
       .from("landing_pages")
       .select("organization_id, store_id, product_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
-      .eq("slug", landingKey)
-      .single();
+      .eq("slug", landingKey);
+
+    // Filter by organizationId if provided (prevents ambiguity when same slug exists in multiple orgs)
+    if (organizationId) {
+      lpQuery = lpQuery.eq("organization_id", organizationId);
+    }
+
+    const { data: landingPage } = await lpQuery.single();
 
     if (!landingPage) {
       return NextResponse.json(

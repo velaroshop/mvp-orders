@@ -30,6 +30,7 @@ interface Upsell {
 
 interface LandingPage {
   id: string;
+  organization_id: string;
   name: string;
   slug: string;
   thank_you_path?: string;
@@ -839,6 +840,7 @@ function WidgetFormContent() {
 
     const payload = {
       landingKey: landingPage.slug,
+      organizationId: landingPage.organization_id,
       offerCode: selectedOffer,
       phone: phoneDigits,
       fullName: fullName.trim(),

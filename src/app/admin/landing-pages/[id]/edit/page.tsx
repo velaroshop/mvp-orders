@@ -68,6 +68,9 @@ export default function EditLandingPagePage() {
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
   const [postsaleUpsells, setPostsaleUpsells] = useState<any[]>([]);
   const [isLoadingUpsells, setIsLoadingUpsells] = useState(true);
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [slugUsedBy, setSlugUsedBy] = useState<string | null>(null);
+  const [slugEdited, setSlugEdited] = useState(false);
 
   useEffect(() => {
     if (landingPageId) {
@@ -77,6 +80,35 @@ export default function EditLandingPagePage() {
       fetchUpsells();
     }
   }, [landingPageId]);
+
+  useEffect(() => {
+    if (!slugEdited) return;
+    const slug = formData?.slug?.trim();
+    if (!slug) {
+      setSlugStatus("idle");
+      setSlugUsedBy(null);
+      return;
+    }
+    setSlugStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ slug });
+        if (landingPageId) params.set("excludeId", landingPageId);
+        const res = await fetch(`/api/landing-pages/check-slug?${params}`);
+        const data = await res.json();
+        if (data.available) {
+          setSlugStatus("available");
+          setSlugUsedBy(null);
+        } else {
+          setSlugStatus("taken");
+          setSlugUsedBy(data.usedBy || null);
+        }
+      } catch {
+        setSlugStatus("idle");
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [formData?.slug, landingPageId, slugEdited]);
 
   async function fetchProducts() {
     try {
@@ -476,15 +508,31 @@ export default function EditLandingPagePage() {
                 <input
                   type="text"
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  onChange={(e) => { setSlugEdited(true); setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }); }}
+                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm ${slugStatus === "taken" ? "border-red-500" : slugStatus === "available" ? "border-emerald-500" : "border-zinc-700"}`}
                   placeholder="Slug"
                   maxLength={30}
                   required
                 />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
-                </p>
+                {slugStatus === "checking" && (
+                  <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    Se verifică disponibilitatea...
+                  </p>
+                )}
+                {slugStatus === "available" && (
+                  <p className="text-xs text-emerald-400 mt-1">✓ Disponibil</p>
+                )}
+                {slugStatus === "taken" && (
+                  <p className="text-xs text-red-400 mt-1">
+                    ✗ Deja folosit{slugUsedBy ? ` de: ${slugUsedBy}` : ""}
+                  </p>
+                )}
+                {slugStatus === "idle" && (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
+                  </p>
+                )}
               </div>
 
               {/* Thank You Path */}

@@ -58,6 +58,8 @@ export default function NewLandingPagePage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [storeSearch, setStoreSearch] = useState("");
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [slugUsedBy, setSlugUsedBy] = useState<string | null>(null);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
 
@@ -65,6 +67,32 @@ export default function NewLandingPagePage() {
     fetchProducts();
     fetchStores();
   }, []);
+
+  useEffect(() => {
+    const slug = formData.slug.trim();
+    if (!slug) {
+      setSlugStatus("idle");
+      setSlugUsedBy(null);
+      return;
+    }
+    setSlugStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/landing-pages/check-slug?slug=${encodeURIComponent(slug)}`);
+        const data = await res.json();
+        if (data.available) {
+          setSlugStatus("available");
+          setSlugUsedBy(null);
+        } else {
+          setSlugStatus("taken");
+          setSlugUsedBy(data.usedBy || null);
+        }
+      } catch {
+        setSlugStatus("idle");
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [formData.slug]);
 
   async function fetchProducts() {
     try {
@@ -327,14 +355,30 @@ export default function NewLandingPagePage() {
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm ${slugStatus === "taken" ? "border-red-500" : slugStatus === "available" ? "border-emerald-500" : "border-zinc-700"}`}
                   placeholder="Slug"
                   maxLength={30}
                   required
                 />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
-                </p>
+                {slugStatus === "checking" && (
+                  <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    Se verifică disponibilitatea...
+                  </p>
+                )}
+                {slugStatus === "available" && (
+                  <p className="text-xs text-emerald-400 mt-1">✓ Disponibil</p>
+                )}
+                {slugStatus === "taken" && (
+                  <p className="text-xs text-red-400 mt-1">
+                    ✗ Deja folosit{slugUsedBy ? ` de: ${slugUsedBy}` : ""}
+                  </p>
+                )}
+                {slugStatus === "idle" && (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
+                  </p>
+                )}
               </div>
 
               {/* Thank You Path */}

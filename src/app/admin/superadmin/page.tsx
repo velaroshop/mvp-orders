@@ -65,6 +65,15 @@ export default function SuperadminPage() {
   const [eventsOrgs, setEventsOrgs] = useState<{ id: string; name: string }[]>([]);
   const [eventsFilterTypes, setEventsFilterTypes] = useState<string[]>([]);
   const [eventsTypeDropdownOpen, setEventsTypeDropdownOpen] = useState(false);
+
+  // Summary
+  interface EventSummary {
+    counts: Record<string, number>;
+    errorBreakdown: { message: string; code: number | null; count: number }[];
+    validationBreakdown: { field: string; count: number }[];
+  }
+  const [eventsSummary, setEventsSummary] = useState<EventSummary | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [eventsFilterOrg, setEventsFilterOrg] = useState("all");
   const [eventsFilterLanding, setEventsFilterLanding] = useState("");
   const [eventsFilterStart, setEventsFilterStart] = useState("");
@@ -107,6 +116,25 @@ export default function SuperadminPage() {
     await navigator.clipboard.writeText(pw);
     setCopiedPassword(true);
     setTimeout(() => setCopiedPassword(false), 2000);
+  }
+
+  async function fetchSummary() {
+    setIsLoadingSummary(true);
+    try {
+      const params = new URLSearchParams();
+      if (eventsFilterOrg !== "all") params.set("organizationId", eventsFilterOrg);
+      if (eventsFilterStart) params.set("startDate", eventsFilterStart);
+      if (eventsFilterEnd) params.set("endDate", eventsFilterEnd);
+      const res = await fetch(`/api/superadmin/widget-events/summary?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEventsSummary(data);
+      }
+    } catch (err) {
+      console.error("Error fetching summary:", err);
+    } finally {
+      setIsLoadingSummary(false);
+    }
   }
 
   async function fetchWidgetEvents(page = 0) {
@@ -829,11 +857,11 @@ export default function SuperadminPage() {
             <p className="text-sm text-zinc-400 mt-0.5">Activitate formular de comandă — debug erori și comportament clienți</p>
           </div>
           <button
-            onClick={() => fetchWidgetEvents(0)}
-            disabled={isLoadingEvents}
+            onClick={() => { fetchSummary(); fetchWidgetEvents(0); }}
+            disabled={isLoadingEvents || isLoadingSummary}
             className="px-3 py-1.5 bg-zinc-700 text-zinc-200 rounded text-sm hover:bg-zinc-600 disabled:opacity-50 transition-colors"
           >
-            {isLoadingEvents ? "Se încarcă..." : "Încarcă"}
+            {isLoadingEvents || isLoadingSummary ? "Se încarcă..." : "Încarcă"}
           </button>
         </div>
 
@@ -920,13 +948,137 @@ export default function SuperadminPage() {
             className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
           />
         </div>
-        <button
-          onClick={() => fetchWidgetEvents(0)}
-          disabled={isLoadingEvents}
-          className="mb-4 px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-        >
-          Aplică filtre
-        </button>
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => { fetchSummary(); fetchWidgetEvents(0); }}
+            disabled={isLoadingEvents || isLoadingSummary}
+            className="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          >
+            Aplică filtre
+          </button>
+          {(isLoadingSummary || isLoadingEvents) && (
+            <span className="text-xs text-zinc-500">Se încarcă...</span>
+          )}
+        </div>
+
+        {/* Summary */}
+        {eventsSummary && (() => {
+          const c = eventsSummary.counts;
+          const loaded = c.form_loaded || 0;
+          const attempted = c.submit_attempt || 0;
+          const sent = c.submit_sent || 0;
+          const success = c.submit_success || 0;
+          const blocked = c.submit_blocked_validation || 0;
+          const errors = c.submit_error || 0;
+
+          const pct = (a: number, b: number) =>
+            b === 0 ? "—" : `${Math.round((a / b) * 100)}%`;
+
+          return (
+            <div className="mb-6 space-y-4">
+              {/* Funnel */}
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Funnel conversie</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Formular încărcat", value: loaded, color: "text-zinc-200", sub: null },
+                    { label: "Buton apăsat", value: attempted, color: "text-blue-300", sub: `${pct(attempted, loaded)} din încărcări` },
+                    { label: "Cerere trimisă", value: sent, color: "text-amber-300", sub: `${pct(sent, attempted)} din apăsări` },
+                    { label: "Comandă plasată", value: success, color: "text-emerald-400", sub: `${pct(success, loaded)} conversie totală` },
+                  ].map(({ label, value, color, sub }) => (
+                    <div key={label} className="bg-zinc-900 rounded-lg p-3 border border-zinc-700">
+                      <p className="text-xs text-zinc-500 mb-1">{label}</p>
+                      <p className={`text-2xl font-bold ${color}`}>{value.toLocaleString()}</p>
+                      {sub && <p className="text-xs text-zinc-500 mt-1">{sub}</p>}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Drop-off visual */}
+                {loaded > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Nu au apăsat butonul", value: loaded - attempted, total: loaded, color: "bg-zinc-600" },
+                      { label: "Blocați la validare", value: blocked, total: attempted, color: "bg-amber-600" },
+                      { label: "Erori la trimitere", value: errors, total: sent, color: "bg-red-600" },
+                    ].map(({ label, value, total, color }) => (
+                      <div key={label} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                        <p className="text-xs text-zinc-500 mb-1">{label}</p>
+                        <p className="text-lg font-semibold text-white">{value.toLocaleString()}</p>
+                        <div className="mt-2 w-full bg-zinc-800 rounded-full h-1.5">
+                          <div
+                            className={`${color} h-1.5 rounded-full`}
+                            style={{ width: total > 0 ? `${Math.min(100, Math.round((value / total) * 100))}%` : "0%" }}
+                          />
+                        </div>
+                        <p className="text-xs text-zinc-600 mt-1">{pct(value, total)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Errors + Validation breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Error breakdown */}
+                <div className="bg-zinc-900 rounded-lg p-3 border border-zinc-700">
+                  <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                    Erori API <span className="text-red-400 ml-1">{errors}</span>
+                  </p>
+                  {eventsSummary.errorBreakdown.length === 0 ? (
+                    <p className="text-xs text-zinc-600">Nicio eroare în perioada selectată</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {eventsSummary.errorBreakdown.map((e, i) => (
+                        <div key={i} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {e.code && (
+                              <span className={`shrink-0 text-xs font-mono px-1.5 py-0.5 rounded ${
+                                e.code >= 500 ? "bg-red-900/50 text-red-300" :
+                                e.code === 429 ? "bg-orange-900/50 text-orange-300" :
+                                e.code === 409 ? "bg-amber-900/50 text-amber-300" :
+                                "bg-zinc-700 text-zinc-300"
+                              }`}>{e.code}</span>
+                            )}
+                            <span className="text-xs text-zinc-400 truncate">{e.message}</span>
+                          </div>
+                          <span className="shrink-0 text-sm font-semibold text-white">{e.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Validation breakdown */}
+                <div className="bg-zinc-900 rounded-lg p-3 border border-zinc-700">
+                  <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                    Câmpuri lipsă la submit <span className="text-amber-400 ml-1">{blocked}</span>
+                  </p>
+                  {eventsSummary.validationBreakdown.length === 0 ? (
+                    <p className="text-xs text-zinc-600">Nicio validare blocată în perioada selectată</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {eventsSummary.validationBreakdown.map(({ field, count }) => (
+                        <div key={field} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-xs text-zinc-400 font-mono">{field}</span>
+                            <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
+                              <div
+                                className="bg-amber-500 h-1.5 rounded-full"
+                                style={{ width: blocked > 0 ? `${Math.min(100, Math.round((count / blocked) * 100))}%` : "0%" }}
+                              />
+                            </div>
+                          </div>
+                          <span className="shrink-0 text-sm font-semibold text-white">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Results */}
         {widgetEvents.length === 0 && !isLoadingEvents ? (

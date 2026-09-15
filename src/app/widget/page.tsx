@@ -102,6 +102,13 @@ function WidgetFormContent() {
   const [address, setAddress] = useState("");
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
 
+  // Unique session ID for correlating widget events in logs
+  const sessionId = useRef<string>(
+    typeof crypto !== "undefined"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
+
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
   const partialOrderIdRef = useRef<string | null>(null);
@@ -130,6 +137,24 @@ function WidgetFormContent() {
     city?: string;
     address?: string;
   }>({});
+
+  // Fire-and-forget widget event logger — never blocks the form
+  function logEvent(eventType: string, extra?: Record<string, unknown>) {
+    try {
+      const payload = JSON.stringify({
+        sessionId: sessionId.current,
+        organizationId: landingPage?.organization_id ?? null,
+        landingKey: landingPage?.slug ?? slug,
+        eventType,
+        ...extra,
+      });
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/log", new Blob([payload], { type: "application/json" }));
+      }
+    } catch {
+      // Never fail — logging must not affect form functionality
+    }
+  }
 
   // Helper function to capitalize first letter of each word
   // Uses space/hyphen split instead of \b\w to handle Romanian diacritics (ă, ș, ț, î, â)
@@ -163,6 +188,10 @@ function WidgetFormContent() {
           currency: 'RON',
         });
       }
+    }
+    // Log form_loaded when landing page data is ready
+    if (landingPage) {
+      logEvent("form_loaded");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landingPage]);
@@ -718,6 +747,8 @@ function WidgetFormContent() {
     setError(null);
     setErrors({});
 
+    logEvent("submit_attempt");
+
     // Validate all fields
     const phoneDigits = phone.replace(/\D/g, "");
     const newErrors: typeof errors = {};
@@ -744,6 +775,7 @@ function WidgetFormContent() {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setSubmitting(false);
+      logEvent("submit_blocked_validation", { fieldErrors: newErrors });
       // Focus first empty field
       const fieldOrder = ["phone", "fullName", "county", "city", "address"];
       const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
@@ -852,6 +884,8 @@ function WidgetFormContent() {
     };
 
     try {
+      logEvent("submit_sent");
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -862,13 +896,17 @@ function WidgetFormContent() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Nu s-a putut trimite comanda.");
+        const errorMsg = data.error || "Nu s-a putut trimite comanda.";
+        logEvent("submit_error", { errorMessage: errorMsg, errorCode: response.status });
+        throw new Error(errorMsg);
       }
 
       // Get order ID from response
       const orderData = await response.json();
       const orderId = orderData.orderId;
       setCreatedOrderId(orderId);
+
+      logEvent("submit_success", { orderId });
 
       // Show processing popup
       setShowSuccessPopup(true);
@@ -891,6 +929,8 @@ function WidgetFormContent() {
         // Add order ID to URL for thank you page to process
         const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
 
+        logEvent("redirect_sent", { orderId });
+
         // Use postMessage so embed.js handles navigation from parent context
         // (safer than direct window.parent.location.href which can be silently blocked cross-origin)
         if (window.parent && window.parent !== window) {
@@ -912,11 +952,10 @@ function WidgetFormContent() {
         setSelectedOffer("offer_1");
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "A apărut o eroare neașteptată. Încearcă din nou.",
-      );
+      const errorMsg = err instanceof Error ? err.message : "A apărut o eroare neașteptată. Încearcă din nou.";
+      // Log network errors or unexpected exceptions not caught above
+      logEvent("submit_error", { errorMessage: errorMsg });
+      setError(errorMsg);
       // Only reset on error so user can retry
       submittingRef.current = false;
       setSubmitting(false);

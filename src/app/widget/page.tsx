@@ -456,7 +456,7 @@ function WidgetFormContent() {
           console.log('[Finalize] Order finalized successfully');
 
           // Send client-side Purchase event (deduplicated with server-side CAPI)
-          await sendClientSidePurchaseEvent(createdOrderId, getTotalPrice());
+          sendClientSidePurchaseEvent(createdOrderId, getTotalPrice());
         }
       } catch (error) {
         console.error('[Finalize] Error finalizing order:', error);
@@ -470,47 +470,39 @@ function WidgetFormContent() {
   /**
    * Send client-side Purchase event to Meta Pixel with deduplication
    * Uses same eventID as server-side CAPI for deduplication
+   * Uses state data directly — no extra fetch needed
    */
-  async function sendClientSidePurchaseEvent(orderId: string, totalAmount: number) {
+  function sendClientSidePurchaseEvent(orderId: string, totalAmount: number) {
     if (!landingPage?.client_side_tracking || !landingPage?.fb_pixel_id) {
       return; // Tracking not enabled
     }
 
     try {
-      // Fetch order details to get accurate product info
-      const response = await fetch(`/api/orders/${orderId}`);
-      if (!response.ok) {
-        console.warn('[Purchase Tracking] Could not fetch order details');
-        return;
-      }
-
-      const orderData = await response.json();
-      const order = orderData.order;
-
-      // Build content_ids array (main product + upsells)
+      // Build content_ids from state (data already available — no extra fetch)
       const contentIds: string[] = [];
-      if (order.product_sku) {
-        contentIds.push(order.product_sku);
+      if (landingPage.products?.sku) {
+        contentIds.push(landingPage.products.sku);
       }
-      if (order.upsells && Array.isArray(order.upsells)) {
-        order.upsells.forEach((upsell: any) => {
-          if (upsell.productSku) {
-            contentIds.push(upsell.productSku);
-          }
+      presaleUpsells
+        .filter(u => selectedUpsells.has(u.id))
+        .forEach(u => {
+          if (u.product?.sku) contentIds.push(u.product.sku);
         });
-      }
 
-      // Calculate total items
-      const numItems = (order.product_quantity || 1) +
-        (order.upsells?.reduce((sum: number, u: any) => sum + (u.quantity || 1), 0) || 0);
+      // Main quantity: default per offer (actual value set server-side)
+      const mainQtyMap: Record<string, number> = { offer_1: 1, offer_2: 2, offer_3: 3 };
+      const mainQty = mainQtyMap[selectedOffer] || 1;
+      const upsellQty = presaleUpsells
+        .filter(u => selectedUpsells.has(u.id))
+        .reduce((sum, u) => sum + (u.quantity || 1), 0);
 
       // Send Purchase event with same eventID as CAPI for deduplication
       trackPurchase({
         value: totalAmount,
         currency: 'RON',
         content_ids: contentIds.length > 0 ? contentIds : undefined,
-        content_name: order.product_name || landingPage.products?.name,
-        num_items: numItems,
+        content_name: landingPage.products?.name,
+        num_items: mainQty + upsellQty,
         eventID: `purchase_${orderId}`, // SAME as server-side CAPI - Meta will deduplicate
       });
 
@@ -522,7 +514,6 @@ function WidgetFormContent() {
       });
     } catch (error) {
       console.error('[Purchase Tracking] Error sending client-side Purchase event:', error);
-      // Don't block redirect on tracking error
     }
   }
 
@@ -538,7 +529,7 @@ function WidgetFormContent() {
       // Add order ID as query parameter
       const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${createdOrderId}`;
       if (window.parent && window.parent !== window) {
-        window.parent.location.href = thankYouUrl;
+        window.parent.postMessage({ type: 'purchase', thankYouUrl }, '*');
       } else {
         window.location.href = thankYouUrl;
       }
@@ -886,13 +877,8 @@ function WidgetFormContent() {
       scrollParentToWidget();
 
       // Send client-side Purchase event (deduplicated with server-side CAPI)
-      // Then redirect immediately after tracking completes
-      try {
-        await sendClientSidePurchaseEvent(orderId, getTotalPrice());
-      } catch (err) {
-        console.error("[Order] Failed to send purchase event:", err);
-        // Continue with redirect even if tracking fails
-      }
+      // Synchronous — uses state data, no extra fetch, no latency before redirect
+      sendClientSidePurchaseEvent(orderId, getTotalPrice());
 
       // Redirect to thank you page immediately after tracking
       if (landingPage.stores?.url) {
@@ -905,9 +891,10 @@ function WidgetFormContent() {
         // Add order ID to URL for thank you page to process
         const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
 
-        // Don't reset submitting - page is navigating away
+        // Use postMessage so embed.js handles navigation from parent context
+        // (safer than direct window.parent.location.href which can be silently blocked cross-origin)
         if (window.parent && window.parent !== window) {
-          window.parent.location.href = thankYouUrl;
+          window.parent.postMessage({ type: 'purchase', thankYouUrl }, '*');
         } else {
           window.location.href = thankYouUrl;
         }

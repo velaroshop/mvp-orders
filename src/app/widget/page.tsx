@@ -774,6 +774,7 @@ function WidgetFormContent() {
     // If there are errors, set them, focus first error field, and stop submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      submittingRef.current = false;
       setSubmitting(false);
       logEvent("submit_blocked_validation", { fieldErrors: newErrors });
       // Focus first empty field

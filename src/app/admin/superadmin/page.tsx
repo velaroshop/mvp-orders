@@ -63,7 +63,8 @@ export default function SuperadminPage() {
   const [widgetEventsPage, setWidgetEventsPage] = useState(0);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventsOrgs, setEventsOrgs] = useState<{ id: string; name: string }[]>([]);
-  const [eventsFilterType, setEventsFilterType] = useState("all");
+  const [eventsFilterTypes, setEventsFilterTypes] = useState<string[]>([]);
+  const [eventsTypeDropdownOpen, setEventsTypeDropdownOpen] = useState(false);
   const [eventsFilterOrg, setEventsFilterOrg] = useState("all");
   const [eventsFilterLanding, setEventsFilterLanding] = useState("");
   const [eventsFilterStart, setEventsFilterStart] = useState("");
@@ -112,7 +113,7 @@ export default function SuperadminPage() {
     setIsLoadingEvents(true);
     try {
       const params = new URLSearchParams({ page: String(page) });
-      if (eventsFilterType !== "all") params.set("eventType", eventsFilterType);
+      if (eventsFilterTypes.length > 0) params.set("eventTypes", eventsFilterTypes.join(","));
       if (eventsFilterOrg !== "all") params.set("organizationId", eventsFilterOrg);
       if (eventsFilterLanding) params.set("landingKey", eventsFilterLanding);
       if (eventsFilterStart) params.set("startDate", eventsFilterStart);
@@ -838,20 +839,57 @@ export default function SuperadminPage() {
 
         {/* Filters */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-          <select
-            value={eventsFilterType}
-            onChange={e => setEventsFilterType(e.target.value)}
-            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
-          >
-            <option value="all">Toate evenimentele</option>
-            <option value="form_loaded">form_loaded</option>
-            <option value="submit_attempt">submit_attempt</option>
-            <option value="submit_blocked_validation">submit_blocked_validation</option>
-            <option value="submit_sent">submit_sent</option>
-            <option value="submit_success">submit_success</option>
-            <option value="submit_error">submit_error</option>
-            <option value="redirect_sent">redirect_sent</option>
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setEventsTypeDropdownOpen(v => !v)}
+              className="w-full px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white text-left flex items-center justify-between gap-2"
+            >
+              <span className="truncate">
+                {eventsFilterTypes.length === 0
+                  ? "Toate evenimentele"
+                  : eventsFilterTypes.length === 1
+                  ? eventsFilterTypes[0]
+                  : `${eventsFilterTypes.length} selectate`}
+              </span>
+              <svg className={`w-3 h-3 text-zinc-400 shrink-0 transition-transform ${eventsTypeDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            {eventsTypeDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-zinc-900 border border-zinc-700 rounded shadow-lg z-20 py-1">
+                {[
+                  "form_loaded",
+                  "submit_attempt",
+                  "submit_blocked_validation",
+                  "submit_sent",
+                  "submit_success",
+                  "submit_error",
+                  "redirect_sent",
+                ].map(type => (
+                  <label key={type} className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800 cursor-pointer text-sm text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={eventsFilterTypes.includes(type)}
+                      onChange={e => {
+                        setEventsFilterTypes(prev =>
+                          e.target.checked ? [...prev, type] : prev.filter(t => t !== type)
+                        );
+                      }}
+                      className="accent-emerald-500"
+                    />
+                    {type}
+                  </label>
+                ))}
+                {eventsFilterTypes.length > 0 && (
+                  <button
+                    onClick={() => setEventsFilterTypes([])}
+                    className="w-full text-left px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300 border-t border-zinc-800 mt-1"
+                  >
+                    Resetează selecția
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <select
             value={eventsFilterOrg}
             onChange={e => setEventsFilterOrg(e.target.value)}

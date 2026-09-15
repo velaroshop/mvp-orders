@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl;
-    const eventType = searchParams.get("eventType");
+    const eventTypesParam = searchParams.get("eventTypes");
+    const eventTypes = eventTypesParam ? eventTypesParam.split(",").filter(Boolean) : [];
     const organizationId = searchParams.get("organizationId");
     const landingKey = searchParams.get("landingKey");
     const startDate = searchParams.get("startDate");
@@ -49,8 +50,8 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false })
       .range(from, to);
 
-    if (eventType && eventType !== "all") {
-      query = query.eq("event_type", eventType);
+    if (eventTypes.length > 0) {
+      query = query.in("event_type", eventTypes);
     }
     if (organizationId && organizationId !== "all") {
       query = query.eq("organization_id", organizationId);

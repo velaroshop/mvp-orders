@@ -43,6 +43,33 @@ export default function SuperadminPage() {
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
   const [extendedAccess, setExtendedAccess] = useState(false);
+
+  // Widget Events Log
+  interface WidgetEvent {
+    id: string;
+    created_at: string;
+    session_id: string;
+    event_type: string;
+    landing_key: string | null;
+    order_id: string | null;
+    error_message: string | null;
+    error_code: number | null;
+    field_errors: Record<string, string> | null;
+    metadata: Record<string, unknown> | null;
+    organizations: { name: string } | null;
+  }
+  const [widgetEvents, setWidgetEvents] = useState<WidgetEvent[]>([]);
+  const [widgetEventsTotal, setWidgetEventsTotal] = useState(0);
+  const [widgetEventsPage, setWidgetEventsPage] = useState(0);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [eventsOrgs, setEventsOrgs] = useState<{ id: string; name: string }[]>([]);
+  const [eventsFilterType, setEventsFilterType] = useState("all");
+  const [eventsFilterOrg, setEventsFilterOrg] = useState("all");
+  const [eventsFilterLanding, setEventsFilterLanding] = useState("");
+  const [eventsFilterStart, setEventsFilterStart] = useState("");
+  const [eventsFilterEnd, setEventsFilterEnd] = useState("");
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+
   // Score thresholds
   const [scoreThresholdGood, setScoreThresholdGood] = useState(25);
   const [scoreThresholdPoor, setScoreThresholdPoor] = useState(50);
@@ -79,6 +106,30 @@ export default function SuperadminPage() {
     await navigator.clipboard.writeText(pw);
     setCopiedPassword(true);
     setTimeout(() => setCopiedPassword(false), 2000);
+  }
+
+  async function fetchWidgetEvents(page = 0) {
+    setIsLoadingEvents(true);
+    try {
+      const params = new URLSearchParams({ page: String(page) });
+      if (eventsFilterType !== "all") params.set("eventType", eventsFilterType);
+      if (eventsFilterOrg !== "all") params.set("organizationId", eventsFilterOrg);
+      if (eventsFilterLanding) params.set("landingKey", eventsFilterLanding);
+      if (eventsFilterStart) params.set("startDate", eventsFilterStart);
+      if (eventsFilterEnd) params.set("endDate", eventsFilterEnd);
+      const res = await fetch(`/api/superadmin/widget-events?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setWidgetEvents(data.events);
+        setWidgetEventsTotal(data.total);
+        setWidgetEventsPage(page);
+        if (data.organizations?.length > 0) setEventsOrgs(data.organizations);
+      }
+    } catch (err) {
+      console.error("Error fetching widget events:", err);
+    } finally {
+      setIsLoadingEvents(false);
+    }
   }
 
   // Check access
@@ -766,6 +817,183 @@ export default function SuperadminPage() {
           <div className={`mt-3 p-2 rounded text-sm ${thresholdsMessage.type === "success" ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300" : "bg-red-900/20 border border-red-700 text-red-300"}`}>
             {thresholdsMessage.text}
           </div>
+        )}
+      </div>
+
+      {/* Widget Events Log */}
+      <div className="bg-zinc-800 rounded-lg border border-zinc-700 mt-6 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Widget Events Log</h2>
+            <p className="text-sm text-zinc-400 mt-0.5">Activitate formular de comandă — debug erori și comportament clienți</p>
+          </div>
+          <button
+            onClick={() => fetchWidgetEvents(0)}
+            disabled={isLoadingEvents}
+            className="px-3 py-1.5 bg-zinc-700 text-zinc-200 rounded text-sm hover:bg-zinc-600 disabled:opacity-50 transition-colors"
+          >
+            {isLoadingEvents ? "Se încarcă..." : "Încarcă"}
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <select
+            value={eventsFilterType}
+            onChange={e => setEventsFilterType(e.target.value)}
+            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          >
+            <option value="all">Toate evenimentele</option>
+            <option value="form_loaded">form_loaded</option>
+            <option value="submit_attempt">submit_attempt</option>
+            <option value="submit_blocked_validation">submit_blocked_validation</option>
+            <option value="submit_sent">submit_sent</option>
+            <option value="submit_success">submit_success</option>
+            <option value="submit_error">submit_error</option>
+            <option value="redirect_sent">redirect_sent</option>
+          </select>
+          <select
+            value={eventsFilterOrg}
+            onChange={e => setEventsFilterOrg(e.target.value)}
+            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          >
+            <option value="all">Toate organizațiile</option>
+            {eventsOrgs.map(o => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Landing key..."
+            value={eventsFilterLanding}
+            onChange={e => setEventsFilterLanding(e.target.value)}
+            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white placeholder:text-zinc-500"
+          />
+          <input
+            type="date"
+            value={eventsFilterStart}
+            onChange={e => setEventsFilterStart(e.target.value)}
+            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          />
+          <input
+            type="date"
+            value={eventsFilterEnd}
+            onChange={e => setEventsFilterEnd(e.target.value)}
+            className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          />
+        </div>
+        <button
+          onClick={() => fetchWidgetEvents(0)}
+          disabled={isLoadingEvents}
+          className="mb-4 px-4 py-1.5 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+        >
+          Aplică filtre
+        </button>
+
+        {/* Results */}
+        {widgetEvents.length === 0 && !isLoadingEvents ? (
+          <p className="text-zinc-500 text-sm text-center py-8">Niciun eveniment. Apasă „Încarcă" sau aplică filtre.</p>
+        ) : (
+          <>
+            <p className="text-xs text-zinc-500 mb-2">{widgetEventsTotal} evenimente totale</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-700 text-left">
+                    <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Data</th>
+                    <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Tip</th>
+                    <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Organizație</th>
+                    <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Landing</th>
+                    <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Session</th>
+                    <th className="pb-2 text-xs font-medium text-zinc-400">Detalii</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {widgetEvents.map(ev => {
+                    const isError = ev.event_type === "submit_error";
+                    const isBlocked = ev.event_type === "submit_blocked_validation";
+                    const isSuccess = ev.event_type === "submit_success" || ev.event_type === "redirect_sent";
+                    const isExpanded = expandedEvent === ev.id;
+                    return (
+                      <React.Fragment key={ev.id}>
+                        <tr
+                          className={`border-b border-zinc-800 cursor-pointer hover:bg-zinc-750 ${isError ? "bg-red-950/20" : isBlocked ? "bg-amber-950/20" : ""}`}
+                          onClick={() => setExpandedEvent(isExpanded ? null : ev.id)}
+                        >
+                          <td className="py-2 pr-4 text-zinc-400 whitespace-nowrap text-xs">
+                            {new Date(ev.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                          </td>
+                          <td className="py-2 pr-4 whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isError ? "bg-red-900/50 text-red-300" :
+                              isBlocked ? "bg-amber-900/50 text-amber-300" :
+                              isSuccess ? "bg-emerald-900/50 text-emerald-300" :
+                              "bg-zinc-700 text-zinc-300"
+                            }`}>
+                              {ev.event_type}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4 text-zinc-300 text-xs">{ev.organizations?.name || "—"}</td>
+                          <td className="py-2 pr-4 text-zinc-300 text-xs">{ev.landing_key || "—"}</td>
+                          <td className="py-2 pr-4 text-zinc-500 text-xs font-mono">{ev.session_id.slice(0, 8)}...</td>
+                          <td className="py-2 text-xs">
+                            {isError && ev.error_message && (
+                              <span className="text-red-400">{ev.error_message}{ev.error_code ? ` (${ev.error_code})` : ""}</span>
+                            )}
+                            {isBlocked && ev.field_errors && (
+                              <span className="text-amber-400">{Object.keys(ev.field_errors).join(", ")}</span>
+                            )}
+                            {ev.order_id && (
+                              <span className="text-zinc-500 font-mono">{ev.order_id.slice(0, 8)}...</span>
+                            )}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                            <td colSpan={6} className="py-3 px-4">
+                              <div className="space-y-1 text-xs font-mono text-zinc-300">
+                                <div><span className="text-zinc-500">session_id:</span> {ev.session_id}</div>
+                                {ev.order_id && <div><span className="text-zinc-500">order_id:</span> {ev.order_id}</div>}
+                                {ev.error_message && <div><span className="text-zinc-500">error:</span> <span className="text-red-400">{ev.error_message}</span></div>}
+                                {ev.error_code && <div><span className="text-zinc-500">error_code:</span> {ev.error_code}</div>}
+                                {ev.field_errors && (
+                                  <div><span className="text-zinc-500">field_errors:</span> <span className="text-amber-400">{JSON.stringify(ev.field_errors)}</span></div>
+                                )}
+                                {ev.metadata && (
+                                  <div><span className="text-zinc-500">metadata:</span> {JSON.stringify(ev.metadata)}</div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+              <button
+                onClick={() => fetchWidgetEvents(widgetEventsPage - 1)}
+                disabled={widgetEventsPage === 0 || isLoadingEvents}
+                className="px-3 py-1.5 bg-zinc-700 text-zinc-200 rounded text-sm disabled:opacity-40 hover:bg-zinc-600 transition-colors"
+              >
+                ← Anterior
+              </button>
+              <span className="text-xs text-zinc-500">
+                Pagina {widgetEventsPage + 1} din {Math.max(1, Math.ceil(widgetEventsTotal / 50))}
+              </span>
+              <button
+                onClick={() => fetchWidgetEvents(widgetEventsPage + 1)}
+                disabled={(widgetEventsPage + 1) * 50 >= widgetEventsTotal || isLoadingEvents}
+                className="px-3 py-1.5 bg-zinc-700 text-zinc-200 rounded text-sm disabled:opacity-40 hover:bg-zinc-600 transition-colors"
+              >
+                Următor →
+              </button>
+            </div>
+          </>
         )}
       </div>
 

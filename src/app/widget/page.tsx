@@ -715,7 +715,7 @@ function WidgetFormContent() {
         case "city":
           return "Introduceți localitatea";
         case "address":
-          return "Introduceți adresa";
+          return "Introduceți strada și numărul";
         default:
           return "Acest câmp este obligatoriu";
       }
@@ -768,7 +768,7 @@ function WidgetFormContent() {
       newErrors.city = "Introduceți localitatea";
     }
     if (!address.trim()) {
-      newErrors.address = "Introduceți adresa";
+      newErrors.address = "Introduceți strada și numărul";
     }
 
     // If there are errors, set them, focus first error field, and stop submission
@@ -1380,7 +1380,7 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, address: undefined }));
                     }
                   }}
-                  placeholder="Introduceți aici adresa completă"
+                  placeholder="Strada și numărul"
                   maxLength={200}
                   className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
                     errors.address

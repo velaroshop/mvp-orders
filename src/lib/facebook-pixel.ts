@@ -151,6 +151,25 @@ export function trackViewContent(params?: {
 }
 
 /**
+ * Track AddToCart event
+ */
+export function trackAddToCart(params?: {
+  content_ids?: string[];
+  content_name?: string;
+  value?: number;
+  currency?: string;
+}): void {
+  if (typeof window !== 'undefined' && window.fbq) {
+    const eventID = generateEventId('atc');
+    console.log('[FB Pixel] AddToCart', params, window.__fbTestEventCode ? '(Test Mode)' : '');
+    window.fbq('track', 'AddToCart', params || {}, {
+      eventID,
+      ...(window.__fbTestEventCode ? { test_event_code: window.__fbTestEventCode } : {}),
+    });
+  }
+}
+
+/**
  * Track InitiateCheckout event
  */
 export function trackInitiateCheckout(params?: {

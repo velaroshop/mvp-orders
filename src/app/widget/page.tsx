@@ -3,14 +3,6 @@
 import { FormEvent, useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
-import {
-  initFacebookPixel,
-  updatePixelUserData,
-  trackPageView,
-  trackViewContent,
-  trackInitiateCheckout,
-  trackPurchase,
-} from "@/lib/facebook-pixel";
 
 interface Upsell {
   id: string;
@@ -55,6 +47,7 @@ interface LandingPage {
   client_side_tracking?: boolean;
   meta_test_mode?: boolean;
   meta_test_event_code?: string;
+  default_offer?: string;
   products?: {
     id: string;
     name: string;
@@ -109,6 +102,9 @@ function WidgetFormContent() {
       : Math.random().toString(36).slice(2)
   );
 
+  // Ref for offer block IntersectionObserver (AddToCart trigger)
+  const offerBlockRef = useRef<HTMLDivElement>(null);
+
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
   const partialOrderIdRef = useRef<string | null>(null);
@@ -156,11 +152,43 @@ function WidgetFormContent() {
     }
   }
 
+  /**
+   * Send a Meta Pixel event to the parent page via postMessage relay.
+   * embed.js receives it and calls window.fbq(...) first-party on the parent domain.
+   * Standard events: PageView, ViewContent, AddToCart, InitiateCheckout, Purchase
+   * Custom events: FormSubmit, OfferSelected (anything else)
+   */
+  function sendPixelEvent(event: string, params?: Record<string, unknown>, eventID?: string) {
+    if (typeof window === 'undefined') return;
+    window.parent.postMessage({
+      type: 'pixel_event',
+      event,
+      params: params || {},
+      ...(eventID ? { eventID } : {}),
+    }, '*');
+  }
+
   // Helper function to capitalize first letter of each word
   // Uses space/hyphen split instead of \b\w to handle Romanian diacritics (ă, ș, ț, î, â)
   function toTitleCase(str: string): string {
     return str.replace(/(^|[\s-])(\S)/g, (match, separator, char) => separator + char.toUpperCase());
   }
+
+  // Receive _fbp and _fbc from embed.js after Meta Pixel initializes first-party on parent page.
+  // embed.js sends this after fbevents.js loads and _fbp is written to the parent domain.
+  useEffect(() => {
+    function handleTrackingUpdate(event: MessageEvent) {
+      if (!event.data || event.data.type !== 'tracking_update') return;
+      const { fbp, fbc } = event.data;
+      setTrackingData(prev => ({
+        ...prev,
+        ...(fbp ? { fbp } : {}),
+        ...(fbc ? { fbc } : {}),
+      }));
+    }
+    window.addEventListener('message', handleTrackingUpdate);
+    return () => window.removeEventListener('message', handleTrackingUpdate);
+  }, []);
 
   useEffect(() => {
     if (slug) {
@@ -172,19 +200,30 @@ function WidgetFormContent() {
   }, [slug]);
 
 
-  // Initialize Facebook Pixel as soon as landing page data is available
+  // Initialize Meta Pixel relay and fire PageView + ViewContent
+  // Sends pixel_init to embed.js which initializes fbq first-party on the parent page.
+  // Subsequent pixel events are relayed via sendPixelEvent (postMessage → fbq).
   useEffect(() => {
     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
-      const testEventCode = landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined;
-      initFacebookPixel(landingPage.fb_pixel_id!, testEventCode);
-      trackPageView();
+      // Signal embed.js to initialize fbq on the parent page (first-party cookies)
+      window.parent.postMessage({
+        type: 'pixel_init',
+        pixelId: landingPage.fb_pixel_id,
+        testEventCode: landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined,
+      }, '*');
+
+      // PageView is fired by embed.js immediately after fbq('init') — no need to send here
 
       if (landingPage.products?.name) {
-        trackViewContent({
+        const defaultOffer = (landingPage.default_offer as string | undefined) || 'offer_1';
+        const defaultPrice = defaultOffer === 'offer_2' ? landingPage.price_2
+          : defaultOffer === 'offer_3' ? landingPage.price_3
+          : landingPage.price_1;
+        sendPixelEvent('ViewContent', {
           content_name: landingPage.products.name,
-          content_ids: landingPage.products.sku ? [landingPage.products.sku] : undefined,
+          content_ids: [defaultOffer],
           content_type: 'product',
-          value: landingPage.price_1,
+          value: defaultPrice,
           currency: 'RON',
         });
       }
@@ -195,6 +234,50 @@ function WidgetFormContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landingPage]);
+
+  // AddToCart via IntersectionObserver — fires once when offer block is 50% visible for ≥1s
+  useEffect(() => {
+    if (!landingPage?.client_side_tracking || !landingPage?.fb_pixel_id) return;
+    const el = offerBlockRef.current;
+    if (!el) return;
+
+    const atcKey = `atc_fired_${slug}`;
+    if (sessionStorage.getItem(atcKey)) return; // already fired this session
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          timer = setTimeout(() => {
+            if (sessionStorage.getItem(atcKey)) return;
+            sessionStorage.setItem(atcKey, '1');
+            const currentOffer = selectedOffer;
+            const price = currentOffer === 'offer_2' ? landingPage.price_2
+              : currentOffer === 'offer_3' ? landingPage.price_3
+              : landingPage.price_1;
+            sendPixelEvent('AddToCart', {
+              content_ids: [currentOffer],
+              content_name: landingPage.products?.name,
+              value: price,
+              currency: 'RON',
+            });
+            observer.disconnect();
+          }, 1000);
+        } else {
+          if (timer) { clearTimeout(timer); timer = null; }
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landingPage, offerBlockRef.current]);
 
   // Extract tracking parameters from URL on mount
   // First check iframe URL params (from embed.js), then fallback to parent page URL (document.referrer)
@@ -507,11 +590,8 @@ function WidgetFormContent() {
     }
 
     try {
-      // Build content_ids from state (data already available — no extra fetch)
-      const contentIds: string[] = [];
-      if (landingPage.products?.sku) {
-        contentIds.push(landingPage.products.sku);
-      }
+      // Build content_ids: offer identifier + selected upsell SKUs
+      const contentIds: string[] = [selectedOffer];
       presaleUpsells
         .filter(u => selectedUpsells.has(u.id))
         .forEach(u => {
@@ -526,14 +606,13 @@ function WidgetFormContent() {
         .reduce((sum, u) => sum + (u.quantity || 1), 0);
 
       // Send Purchase event with same eventID as CAPI for deduplication
-      trackPurchase({
+      sendPixelEvent('Purchase', {
         value: totalAmount,
         currency: 'RON',
-        content_ids: contentIds.length > 0 ? contentIds : undefined,
+        content_ids: contentIds,
         content_name: landingPage.products?.name,
         num_items: mainQty + upsellQty,
-        eventID: `purchase_${orderId}`, // SAME as server-side CAPI - Meta will deduplicate
-      });
+      }, `purchase_${orderId}`);
 
       console.log('[Purchase Tracking] Client-side Purchase event sent with deduplication:', {
         orderId,
@@ -749,6 +828,15 @@ function WidgetFormContent() {
 
     logEvent("submit_attempt");
 
+    // Track FormSubmit custom event — captures intent even if validation fails
+    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+      sendPixelEvent('FormSubmit', {
+        content_ids: [selectedOffer],
+        value: getTotalPrice(),
+        currency: 'RON',
+      });
+    }
+
     // Validate all fields
     const phoneDigits = phone.replace(/\D/g, "");
     const newErrors: typeof errors = {};
@@ -790,33 +878,6 @@ function WidgetFormContent() {
       return;
     }
 
-    // Update Pixel with Advanced Matching data (user info now available from form)
-    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
-      const nameParts = fullName.trim().split(' ');
-      updatePixelUserData(landingPage.fb_pixel_id, {
-        ph: phone.replace(/\D/g, ''),
-        fn: nameParts[0]?.toLowerCase(),
-        ln: nameParts.length > 1 ? nameParts.slice(1).join(' ').toLowerCase() : undefined,
-        ct: city.toLowerCase(),
-        st: county.toLowerCase(),
-        country: 'ro',
-      });
-    }
-
-    // Track InitiateCheckout event
-    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
-      const selectedPrice = selectedOffer === 'offer_1' ? landingPage.price_1 :
-                           selectedOffer === 'offer_2' ? landingPage.price_2 :
-                           landingPage.price_3;
-
-      trackInitiateCheckout({
-        content_ids: landingPage.products?.sku ? [landingPage.products.sku] : undefined,
-        content_name: landingPage.products?.name,
-        num_items: 1 + selectedUpsells.size,
-        value: getTotalPrice(),
-        currency: 'RON',
-      });
-    }
 
     // Prepare selected upsells data
     const selectedUpsellsData = presaleUpsells
@@ -1238,6 +1299,22 @@ function WidgetFormContent() {
                     if (!errors.phone) {
                       e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                     }
+                    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+                      const icKey = `ic_fired_${slug}`;
+                      if (!sessionStorage.getItem(icKey)) {
+                        sessionStorage.setItem(icKey, '1');
+                        const selectedPrice = selectedOffer === 'offer_2' ? landingPage.price_2
+                          : selectedOffer === 'offer_3' ? landingPage.price_3
+                          : landingPage.price_1;
+                        sendPixelEvent('InitiateCheckout', {
+                          content_ids: [selectedOffer],
+                          content_name: landingPage.products?.name,
+                          num_items: 1 + selectedUpsells.size,
+                          value: selectedPrice,
+                          currency: 'RON',
+                        });
+                      }
+                    }
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.boxShadow = '';
@@ -1412,10 +1489,15 @@ function WidgetFormContent() {
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               SELECTAȚI OFERTA DORITĂ
             </h2>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div ref={offerBlockRef} className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_1")}
+                onClick={() => {
+                  setSelectedOffer("offer_1");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_1'], value: landingPage.price_1, currency: 'RON' });
+                  }
+                }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_1" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor}`,
@@ -1457,7 +1539,12 @@ function WidgetFormContent() {
 
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_2")}
+                onClick={() => {
+                  setSelectedOffer("offer_2");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_2'], value: landingPage.price_2, currency: 'RON' });
+                  }
+                }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_2" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor}`,
@@ -1499,7 +1586,12 @@ function WidgetFormContent() {
 
               <button
                 type="button"
-                onClick={() => setSelectedOffer("offer_3")}
+                onClick={() => {
+                  setSelectedOffer("offer_3");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_3'], value: landingPage.price_3, currency: 'RON' });
+                  }
+                }}
                 className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
                 style={selectedOffer === "offer_3" ? {
                   border: `3px solid ${landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor}`,

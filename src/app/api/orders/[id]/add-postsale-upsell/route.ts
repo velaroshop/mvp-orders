@@ -210,20 +210,10 @@ export async function POST(
     // This will also change status from 'queue' to 'pending'
     const syncResult = await syncOrderToHelpship(orderId);
 
-    if (!syncResult.success) {
-      console.error("[Postsale] Failed to sync to Helpship:", syncResult.error);
-      return NextResponse.json(
-        {
-          error: "Failed to sync order to Helpship",
-          details: syncResult.error,
-        },
-        { status: 500, headers }
-      );
-    }
+    console.log("[Postsale] Helpship sync result:", syncResult.success ? "ok" : syncResult.error);
 
-    console.log("[Postsale] Order synced successfully to Helpship:", syncResult.helpshipOrderId);
-
-    // Send Meta CAPI Purchase event (if landing page has Meta tracking configured)
+    // Send Meta CAPI Purchase event REGARDLESS of Helpship sync result
+    // CAPI must not be blocked by Helpship failures — missing Purchase signals hurt campaign optimization
     // Skip CAPI for suspected bot orders to avoid poisoning Meta's algorithm
     try {
       const { data: fullOrder } = await supabaseAdmin
@@ -268,6 +258,14 @@ export async function POST(
     } catch (metaError) {
       // Don't fail the request if Meta tracking fails
       console.error("[Postsale] Meta CAPI error (non-fatal):", metaError);
+    }
+
+    if (!syncResult.success) {
+      console.error("[Postsale] Failed to sync to Helpship:", syncResult.error);
+      return NextResponse.json(
+        { error: "Failed to sync order to Helpship", details: syncResult.error },
+        { status: 500, headers }
+      );
     }
 
     return NextResponse.json({

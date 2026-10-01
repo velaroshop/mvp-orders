@@ -102,8 +102,6 @@ function WidgetFormContent() {
       : Math.random().toString(36).slice(2)
   );
 
-  // Ref for offer block IntersectionObserver (AddToCart trigger)
-  const offerBlockRef = useRef<HTMLDivElement>(null);
 
   // Partial order tracking
   const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
@@ -235,49 +233,6 @@ function WidgetFormContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landingPage]);
 
-  // AddToCart via IntersectionObserver — fires once when offer block is 50% visible for ≥1s
-  useEffect(() => {
-    if (!landingPage?.client_side_tracking || !landingPage?.fb_pixel_id) return;
-    const el = offerBlockRef.current;
-    if (!el) return;
-
-    const atcKey = `atc_fired_${slug}`;
-    if (sessionStorage.getItem(atcKey)) return; // already fired this session
-
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          timer = setTimeout(() => {
-            if (sessionStorage.getItem(atcKey)) return;
-            sessionStorage.setItem(atcKey, '1');
-            const currentOffer = selectedOffer;
-            const price = currentOffer === 'offer_2' ? landingPage.price_2
-              : currentOffer === 'offer_3' ? landingPage.price_3
-              : landingPage.price_1;
-            sendPixelEvent('AddToCart', {
-              content_ids: [currentOffer],
-              content_name: landingPage.products?.name,
-              value: price,
-              currency: 'RON',
-            });
-            observer.disconnect();
-          }, 1000);
-        } else {
-          if (timer) { clearTimeout(timer); timer = null; }
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (timer) clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [landingPage, offerBlockRef.current]);
 
   // Extract tracking parameters from URL on mount
   // First check iframe URL params (from embed.js), then fallback to parent page URL (document.referrer)
@@ -1300,6 +1255,19 @@ function WidgetFormContent() {
                       e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
                     }
                     if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+                      const atcKey = `atc_fired_${slug}`;
+                      if (!sessionStorage.getItem(atcKey)) {
+                        sessionStorage.setItem(atcKey, '1');
+                        const atcPrice = selectedOffer === 'offer_2' ? landingPage.price_2
+                          : selectedOffer === 'offer_3' ? landingPage.price_3
+                          : landingPage.price_1;
+                        sendPixelEvent('AddToCart', {
+                          content_ids: [selectedOffer],
+                          content_name: landingPage.products?.name,
+                          value: atcPrice,
+                          currency: 'RON',
+                        });
+                      }
                       const icKey = `ic_fired_${slug}`;
                       if (!sessionStorage.getItem(icKey)) {
                         sessionStorage.setItem(icKey, '1');
@@ -1489,7 +1457,7 @@ function WidgetFormContent() {
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               SELECTAȚI OFERTA DORITĂ
             </h2>
-            <div ref={offerBlockRef} className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => {

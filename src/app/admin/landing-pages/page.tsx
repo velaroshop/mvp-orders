@@ -872,9 +872,8 @@ export default function LandingPagesPage() {
                             </div>
                             )}
 
-                            {/* Superadmin options */}
-                            {isSuperadmin && (
-                              <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
+                            {/* Form Variant */}
+                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-zinc-400">📋 Form Variant</span>
                                   <select
@@ -903,7 +902,6 @@ export default function LandingPagesPage() {
                                   </select>
                                 </div>
                               </div>
-                            )}
 
                             {/* Actions */}
                             <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">

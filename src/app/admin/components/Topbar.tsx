@@ -38,7 +38,7 @@ export default function Topbar() {
       <div className="h-full pl-14 lg:pl-0 flex items-center justify-between px-6">
 
         {/* Left — DEV mode indicator */}
-        <div className="w-40 flex items-center">
+        <div className="hidden lg:flex lg:w-40 items-center shrink-0">
           {helpshipEnvironment === "development" && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-900/40 border border-amber-600/60 rounded-lg animate-pulse">
               <span className="text-amber-400 text-xs">🔧</span>
@@ -47,18 +47,18 @@ export default function Topbar() {
           )}
         </div>
 
-        {/* Center — greeting + role + motivational message */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
-          <p className="text-[13px] font-semibold text-white leading-tight">
+        {/* Center — greeting + motivational message */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0">
+          <p className="text-[13px] font-semibold text-white leading-tight text-center">
             {getGreeting(userName)}
           </p>
-          <p className="text-[11px] text-green-400 leading-snug italic text-center max-w-sm line-clamp-2">
+          <p className="text-[11px] text-green-400 leading-snug italic text-center max-w-sm line-clamp-2 px-2">
             {motivationalMessage}
           </p>
         </div>
 
         {/* Right — placeholder for balance */}
-        <div className="w-40" />
+        <div className="hidden lg:block lg:w-40 shrink-0" />
       </div>
     </div>
   );

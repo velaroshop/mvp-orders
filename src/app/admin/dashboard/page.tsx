@@ -347,155 +347,118 @@ export default function DashboardPage() {
     { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
   ];
 
+  const cardCls = "bg-zinc-800/60 rounded-xl border border-zinc-700/60 shadow-sm";
+  const inputCls = "w-full px-3 py-1.5 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white";
+  const labelCls = "block text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-1.5";
+
   return (
-    <div className="max-w-7xl">
+    <div className="max-w-7xl mx-auto space-y-5">
+
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <p className="text-zinc-400 mt-2">
-          Overview of your store performance and key metrics
-        </p>
+      <div>
+        <h1 className="text-xl font-semibold text-white">Dashboard</h1>
+        <p className="text-sm text-zinc-500 mt-0.5">Performanța magazinului</p>
       </div>
 
-      {/* Main Grid: Filters & KPIs (2/3) + Orders by Status (1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Filters & KPIs Card - 2/3 width */}
-        <div className="lg:col-span-2 bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-4">
-        {/* Filters Section */}
-        <div className="mb-4">
-          <h3 className="text-xs font-medium text-zinc-400 mb-3">Filters</h3>
+      {/* Top row: Filters & KPIs (2/3) + Revenue Chart (1/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Filters & KPIs */}
+        <div className={`lg:col-span-2 ${cardCls} p-5 space-y-5`}>
 
           {/* Quick Filters */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {[
-              { key: "today", label: "Today" },
-              { key: "yesterday", label: "Yesterday" },
-              { key: "last3days", label: "Last Three Days" },
-              { key: "wtd", label: "Week To Date" },
-              { key: "mtd", label: "Month To Date" },
-              { key: "all", label: "All Time" },
-            ].map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  quickFilter === filter.key
-                    ? "bg-emerald-600 text-white"
-                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+          <div>
+            <p className={labelCls}>Perioadă</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { key: "today", label: "Azi" },
+                { key: "yesterday", label: "Ieri" },
+                { key: "last3days", label: "3 zile" },
+                { key: "wtd", label: "Săptămâna" },
+                { key: "mtd", label: "Luna" },
+                { key: "all", label: "Tot" },
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    quickFilter === filter.key
+                      ? "bg-indigo-600 text-white"
+                      : "bg-zinc-700/60 text-zinc-300 hover:bg-zinc-700"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Manual Date & Landing Page Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Date + Landing Page + Apply */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
-              />
+              <label className={labelCls}>De la</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
-              />
+              <label className={labelCls}>Până la</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                Landing Page
-              </label>
-              <select
-                value={selectedLandingPage}
-                onChange={(e) => setSelectedLandingPage(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
-              >
-                <option value="all">All Landing Pages</option>
+              <label className={labelCls}>Landing Page</label>
+              <select value={selectedLandingPage} onChange={(e) => setSelectedLandingPage(e.target.value)} className={inputCls}>
+                <option value="all">Toate</option>
                 {landingPages.map((lp) => (
-                  <option key={lp.id} value={lp.id}>
-                    {lp.name}
-                  </option>
+                  <option key={lp.id} value={lp.id}>{lp.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Apply Filters Button */}
-          <div className="mt-3">
+          <div>
             <button
               onClick={handleApplyFilters}
-              className="px-4 py-1.5 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              Apply Filters
+              Aplică filtrele
             </button>
+          </div>
+
+          {/* KPIs */}
+          <div className="border-t border-zinc-700/60 pt-5">
+            <p className={labelCls}>Indicatori</p>
+            {loading ? (
+              <p className="text-sm text-zinc-500 py-4">Se încarcă...</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div>
+                  <p className="text-[11px] text-zinc-500 mb-1">Total venituri</p>
+                  <p className="text-2xl font-bold text-emerald-400">{stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-[10px] text-zinc-600">RON</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 mb-1">Valoare medie</p>
+                  <p className="text-2xl font-bold text-white">{stats.avgOrderValue.toFixed(2)}</p>
+                  <p className="text-[10px] text-zinc-600">RON / comandă</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 mb-1">Comenzi</p>
+                  <p className="text-2xl font-bold text-white">{stats.orderCount}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 mb-1">Produse vândute</p>
+                  <p className="text-2xl font-bold text-white">{stats.productsSold}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-zinc-500 mb-1">Rata upsell</p>
+                  <p className="text-2xl font-bold text-white">{stats.upsellRate.toFixed(1)}%</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* KPIs Section */}
-        <div className="border-t border-zinc-700 pt-4">
-          <h3 className="text-xs font-medium text-zinc-400 mb-3">Key Performance Indicators</h3>
-
-          {loading ? (
-            <div className="text-center py-6">
-              <p className="text-zinc-400 text-sm">Loading stats...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {/* Total Revenue */}
-              <div>
-                <p className="text-[10px] text-zinc-400 mb-0.5">Total</p>
-                <p className="text-xl font-bold text-emerald-500">
-                  {stats.totalRevenue.toFixed(2)}
-                </p>
-                <p className="text-[10px] text-zinc-500">RON</p>
-              </div>
-
-              {/* Average Order Value */}
-              <div>
-                <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Value</p>
-                <p className="text-xl font-bold text-white">
-                  {stats.avgOrderValue.toFixed(2)} RON
-                </p>
-              </div>
-
-              {/* Orders */}
-              <div>
-                <p className="text-[10px] text-zinc-400 mb-0.5">Orders</p>
-                <p className="text-xl font-bold text-white">{stats.orderCount}</p>
-              </div>
-
-              {/* Products Sold */}
-              <div>
-                <p className="text-[10px] text-zinc-400 mb-0.5">Products Sold</p>
-                <p className="text-xl font-bold text-white">{stats.productsSold}</p>
-              </div>
-
-              {/* Upsell Rate */}
-              <div>
-                <p className="text-[10px] text-zinc-400 mb-0.5">Upsell Rate</p>
-                <p className="text-xl font-bold text-white">
-                  {stats.upsellRate.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-        </div>
-
-        {/* Revenue Growth Chart - 1/3 width */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
+        {/* Revenue Growth Chart */}
+        <div className={`${cardCls} overflow-hidden`}>
           <RevenueGrowthChart
             data={revenueGrowthData.data}
             comparisonData={comparisonRevenueData}
@@ -506,364 +469,228 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Revenue by Product Card */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Revenue by Product</h3>
+      {/* Bottom cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
+        {/* Revenue by Product */}
+        <div className={`${cardCls} p-5`}>
+          <p className="text-sm font-semibold text-white mb-4">Venituri pe produs</p>
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-zinc-400">Loading...</p>
-            </div>
+            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
           ) : (
-            <div className="space-y-4">
-              {/* Product bars */}
+            <div className="space-y-3">
               {(showAllProducts ? stats.revenueByProduct : stats.revenueByProduct.slice(0, 6)).map((product, index) => {
                 const maxRevenue = stats.revenueByProduct[0]?.revenue || 1;
                 const widthPercentage = (product.revenue / maxRevenue) * 100;
-
-                // Color palette for bars
-                const colors = [
-                  'bg-blue-500',
-                  'bg-purple-500',
-                  'bg-emerald-500',
-                  'bg-orange-500',
-                  'bg-cyan-500',
-                  'bg-pink-500',
-                  'bg-yellow-500',
-                  'bg-red-500',
-                  'bg-indigo-500',
-                  'bg-teal-500',
-                ];
-                const barColor = colors[index % colors.length];
-
+                const colors = ['bg-indigo-500','bg-purple-500','bg-emerald-500','bg-orange-500','bg-cyan-500','bg-pink-500','bg-yellow-500','bg-red-500','bg-blue-500','bg-teal-500'];
                 return (
                   <div key={product.name} className="space-y-1">
                     <div className="text-sm text-white truncate">{product.name}</div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-400">
-                        {product.orders} orders ({product.unitsSold} buc)
-                        {product.partialOrders > 0 && (
-                          <span className="text-emerald-400"> - {product.partialOrders} partiale</span>
-                        )}
+                      <span className="text-zinc-500">
+                        {product.orders} comenzi · {product.unitsSold} buc
+                        {product.partialOrders > 0 && <span className="text-indigo-400"> · {product.partialOrders} parțiale</span>}
                       </span>
-                      <span className="text-white font-semibold">{product.revenue.toFixed(2)} RON</span>
+                      <span className="text-zinc-300 font-medium">{product.revenue.toFixed(2)} RON</span>
                     </div>
-                    <div className="w-full bg-zinc-700 rounded-full h-2">
-                      <div
-                        className={`${barColor} h-2 rounded-full transition-all duration-500`}
-                        style={{ width: `${widthPercentage}%` }}
-                      ></div>
+                    <div className="w-full bg-zinc-700/50 rounded-full h-1.5">
+                      <div className={`${colors[index % colors.length]} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${widthPercentage}%` }} />
                     </div>
                   </div>
                 );
               })}
-
-              {/* Show All / Show Less link */}
               {stats.revenueByProduct.length > 6 && (
-                <button
-                  onClick={() => setShowAllProducts(!showAllProducts)}
-                  className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors mt-2"
-                >
-                  {showAllProducts ? 'Show less' : `Show all (${stats.revenueByProduct.length} products)`}
+                <button onClick={() => setShowAllProducts(!showAllProducts)} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors mt-1">
+                  {showAllProducts ? 'Arată mai puțin' : `Arată toate (${stats.revenueByProduct.length})`}
                 </button>
               )}
-
-              {/* Show message if no products */}
               {stats.revenueByProduct.length === 0 && (
-                <p className="text-sm text-zinc-400 text-center py-4">No products found</p>
+                <p className="text-sm text-zinc-500 text-center py-4">Niciun produs</p>
               )}
             </div>
           )}
         </div>
 
-        {/* Upsells Split Card */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-white">Upsells Split</h3>
-
-            {/* Filter buttons */}
+        {/* Upsells Split */}
+        <div className={`${cardCls} p-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-white">Upsells Split</p>
             <div className="flex gap-1">
-              <button
-                onClick={() => setUpsellFilter("pre")}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                  upsellFilter === "pre"
-                    ? "bg-blue-600 text-white"
-                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                }`}
-              >
-                Pre
-              </button>
-              <button
-                onClick={() => setUpsellFilter("post")}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                  upsellFilter === "post"
-                    ? "bg-blue-600 text-white"
-                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                }`}
-              >
-                Post
-              </button>
-              <button
-                onClick={() => setUpsellFilter("all")}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                  upsellFilter === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                }`}
-              >
-                All
-              </button>
+              {(["pre", "post", "all"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setUpsellFilter(f)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    upsellFilter === f ? "bg-indigo-600 text-white" : "bg-zinc-700/60 text-zinc-400 hover:bg-zinc-700"
+                  }`}
+                >
+                  {f === "all" ? "Toate" : f === "pre" ? "Pre" : "Post"}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Total Upsells Revenue */}
           {!loading && stats.upsellsSplit.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-zinc-400">
-                Total Revenue:{" "}
-                <span className="font-semibold text-emerald-500">
-                  {stats.upsellsSplit.reduce((sum, u) => {
-                    if (upsellFilter === "all") return sum + u.totalRevenue;
-                    if (upsellFilter === "pre") return sum + u.presaleRevenue;
-                    return sum + u.postsaleRevenue;
-                  }, 0).toFixed(2)} RON
-                </span>
-              </p>
-            </div>
+            <p className="text-xs text-zinc-500 mb-3">
+              Total:{" "}
+              <span className="font-semibold text-emerald-400">
+                {stats.upsellsSplit.reduce((sum, u) => {
+                  if (upsellFilter === "all") return sum + u.totalRevenue;
+                  if (upsellFilter === "pre") return sum + u.presaleRevenue;
+                  return sum + u.postsaleRevenue;
+                }, 0).toFixed(2)} RON
+              </span>
+            </p>
           )}
 
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-zinc-400">Loading...</p>
-            </div>
+            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
           ) : (
-            <div className="space-y-4">
-              {/* Upsell bars */}
+            <div className="space-y-3">
               {(showAllUpsells ? stats.upsellsSplit : stats.upsellsSplit.slice(0, 6)).map((upsell, index) => {
-                // Calculate count and revenue based on filter
-                let count = 0;
-                let revenue = 0;
-                if (upsellFilter === "all") {
-                  count = upsell.total;
-                  revenue = upsell.totalRevenue;
-                } else if (upsellFilter === "pre") {
-                  count = upsell.presale;
-                  revenue = upsell.presaleRevenue;
-                } else if (upsellFilter === "post") {
-                  count = upsell.postsale;
-                  revenue = upsell.postsaleRevenue;
-                }
-
-                // Skip if count is 0
+                let count = upsellFilter === "all" ? upsell.total : upsellFilter === "pre" ? upsell.presale : upsell.postsale;
+                let revenue = upsellFilter === "all" ? upsell.totalRevenue : upsellFilter === "pre" ? upsell.presaleRevenue : upsell.postsaleRevenue;
                 if (count === 0) return null;
-
-                // Calculate max for percentage
                 const maxCount = stats.upsellsSplit.reduce((max, u) => {
                   const c = upsellFilter === "all" ? u.total : upsellFilter === "pre" ? u.presale : u.postsale;
                   return Math.max(max, c);
                 }, 1);
-                const widthPercentage = (count / maxCount) * 100;
-
-                // Color palette for bars
-                const colors = [
-                  'bg-blue-500',
-                  'bg-purple-500',
-                  'bg-emerald-500',
-                  'bg-orange-500',
-                  'bg-cyan-500',
-                  'bg-pink-500',
-                  'bg-yellow-500',
-                  'bg-red-500',
-                  'bg-indigo-500',
-                  'bg-teal-500',
-                ];
-                const barColor = colors[index % colors.length];
-
+                const colors = ['bg-indigo-500','bg-purple-500','bg-emerald-500','bg-orange-500','bg-cyan-500','bg-pink-500','bg-yellow-500','bg-red-500','bg-blue-500','bg-teal-500'];
                 return (
                   <div key={upsell.name} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white truncate max-w-[45%]">{upsell.name}</span>
-                      <span className="text-white font-semibold">
-                        {count} units ({revenue.toFixed(2)} RON)
-                      </span>
+                      <span className="text-white truncate max-w-[50%]">{upsell.name}</span>
+                      <span className="text-zinc-300 text-xs font-medium">{count} · {revenue.toFixed(2)} RON</span>
                     </div>
-                    <div className="w-full bg-zinc-700 rounded-full h-2">
-                      <div
-                        className={`${barColor} h-2 rounded-full transition-all duration-500`}
-                        style={{ width: `${widthPercentage}%` }}
-                      ></div>
+                    <div className="w-full bg-zinc-700/50 rounded-full h-1.5">
+                      <div className={`${colors[index % colors.length]} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${(count / maxCount) * 100}%` }} />
                     </div>
                   </div>
                 );
               }).filter(Boolean)}
-
-              {/* Show All / Show Less link */}
               {stats.upsellsSplit.length > 6 && (
-                <button
-                  onClick={() => setShowAllUpsells(!showAllUpsells)}
-                  className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors mt-2"
-                >
-                  {showAllUpsells ? 'Show less' : `Show all (${stats.upsellsSplit.length} upsells)`}
+                <button onClick={() => setShowAllUpsells(!showAllUpsells)} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors mt-1">
+                  {showAllUpsells ? 'Arată mai puțin' : `Arată toate (${stats.upsellsSplit.length})`}
                 </button>
               )}
-
-              {/* Show message if no upsells */}
               {stats.upsellsSplit.length === 0 && (
-                <p className="text-sm text-zinc-400 text-center py-4">No upsells found</p>
+                <p className="text-sm text-zinc-500 text-center py-4">Niciun upsell</p>
               )}
             </div>
           )}
         </div>
 
-        {/* Products Stock Analysis Card */}
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Products Stock Analysis</h3>
+        {/* Stock Analysis */}
+        <div className={`${cardCls} p-5`}>
+          <p className="text-sm font-semibold text-white mb-4">Analiză stoc</p>
 
-          {/* Filters */}
-          <div className="space-y-4 mb-6">
-            {/* Product Dropdown */}
+          <div className="space-y-3 mb-5">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Select Product
-              </label>
+              <label className={labelCls}>Produs</label>
               <select
                 value={selectedProduct}
                 onChange={(e) => setSelectedProduct(e.target.value)}
                 disabled={products.length === 0}
-                className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className={inputCls}
               >
                 {products.length === 0 ? (
-                  <option value="">No products available</option>
+                  <option value="">Niciun produs disponibil</option>
                 ) : (
                   products.map((product) => (
-                    <option key={product.id} value={product.name}>
-                      {product.name}
-                    </option>
+                    <option key={product.id} value={product.name}>{product.name}</option>
                   ))
                 )}
               </select>
             </div>
-
-            {/* Period Buttons */}
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Analysis Period
-              </label>
-              <div className="flex gap-2">
+              <label className={labelCls}>Perioadă analiză</label>
+              <div className="flex gap-1.5">
                 {[1, 3, 7, 14].map((period) => (
                   <button
                     key={period}
                     onClick={() => setStockAnalysisPeriod(period as 1 | 3 | 7 | 14)}
                     disabled={!selectedProduct}
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       stockAnalysisPeriod === period
-                        ? "bg-emerald-600 text-white"
-                        : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-zinc-700/60 text-zinc-400 hover:bg-zinc-700"
                     }`}
                   >
-                    {period} {period === 1 ? 'day' : 'days'}
+                    {period}z
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Analysis Results */}
           {stockAnalysisLoading ? (
-            <div className="text-center py-8">
-              <p className="text-zinc-400">Loading analysis...</p>
-            </div>
+            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
           ) : stockAnalysisData ? (
-            <div className="space-y-4">
-              <div className="bg-zinc-900/50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-semibold text-white">{stockAnalysisData.name}</h4>
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-400">Total Sold</p>
-                    <p className="text-2xl font-bold text-emerald-500">{stockAnalysisData.totalSold}</p>
-                  </div>
+            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-zinc-400 truncate">{stockAnalysisData.name}</p>
+                <div className="text-right">
+                  <p className="text-[10px] text-zinc-500">Vândut total</p>
+                  <p className="text-xl font-bold text-emerald-400">{stockAnalysisData.totalSold}</p>
                 </div>
-
-                {/* Sales metrics */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-zinc-800 rounded p-3">
-                    <p className="text-xs text-zinc-400 mb-1">Daily Average</p>
-                    <p className="text-lg font-semibold text-white">
-                      {stockAnalysisData.dailyAverage.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-zinc-500">units/day</p>
-                  </div>
-                  <div className="bg-zinc-800 rounded p-3">
-                    <p className="text-xs text-zinc-400 mb-1">Weekly Estimate</p>
-                    <p className="text-lg font-semibold text-white">
-                      {(stockAnalysisData.dailyAverage * 7).toFixed(0)}
-                    </p>
-                    <p className="text-xs text-zinc-500">units/week</p>
-                  </div>
-                </div>
-
-                {/* Stock information from HelpShip */}
-                {stockAnalysisData.currentStock !== null && stockAnalysisData.currentStock !== undefined ? (
-                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-xs text-zinc-400 mb-1">Current Stock</p>
-                        <p className="text-2xl font-bold text-white">{stockAnalysisData.currentStock}</p>
-                        <p className="text-xs text-zinc-500">units available</p>
-                      </div>
-                      {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined ? (
-                        <div className="text-right">
-                          <p className="text-xs text-zinc-400 mb-1">Stock Duration</p>
-                          <p className={`text-2xl font-bold ${
-                            stockAnalysisData.daysUntilStockout <= 7
-                              ? 'text-red-500'
-                              : stockAnalysisData.daysUntilStockout <= 14
-                              ? 'text-yellow-500'
-                              : 'text-emerald-500'
-                          }`}>
-                            {stockAnalysisData.daysUntilStockout}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            {stockAnalysisData.daysUntilStockout === 1 ? 'day left' : 'days left'}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                    {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined ? (
-                      <div className="mt-3 pt-3 border-t border-zinc-700">
-                        {stockAnalysisData.daysUntilStockout <= 7 ? (
-                          <p className="text-xs text-red-400">
-                            ⚠️ Critical: Stock will run out in {stockAnalysisData.daysUntilStockout} {stockAnalysisData.daysUntilStockout === 1 ? 'day' : 'days'}. Order immediately!
-                          </p>
-                        ) : stockAnalysisData.daysUntilStockout <= 14 ? (
-                          <p className="text-xs text-yellow-400">
-                            ⚡ Warning: Stock will run out in {stockAnalysisData.daysUntilStockout} days. Consider ordering soon.
-                          </p>
-                        ) : (
-                          <p className="text-xs text-emerald-400">
-                            ✓ Stock is sufficient for the next {stockAnalysisData.daysUntilStockout} days
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-                    <p className="text-xs text-zinc-400 text-center">Stock data not available from HelpShip</p>
-                  </div>
-                )}
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <p className="text-[10px] text-zinc-500 mb-0.5">Medie zilnică</p>
+                  <p className="text-base font-semibold text-white">{stockAnalysisData.dailyAverage.toFixed(2)}</p>
+                  <p className="text-[10px] text-zinc-600">buc/zi</p>
+                </div>
+                <div className="bg-zinc-800 rounded-lg p-3">
+                  <p className="text-[10px] text-zinc-500 mb-0.5">Estimat / săpt</p>
+                  <p className="text-base font-semibold text-white">{(stockAnalysisData.dailyAverage * 7).toFixed(0)}</p>
+                  <p className="text-[10px] text-zinc-600">buc/săptămână</p>
+                </div>
+              </div>
+
+              {stockAnalysisData.currentStock !== null && stockAnalysisData.currentStock !== undefined ? (
+                <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-[10px] text-zinc-500">Stoc curent</p>
+                      <p className="text-xl font-bold text-white">{stockAnalysisData.currentStock}</p>
+                      <p className="text-[10px] text-zinc-600">buc disponibile</p>
+                    </div>
+                    {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined && (
+                      <div className="text-right">
+                        <p className="text-[10px] text-zinc-500">Zile rămase</p>
+                        <p className={`text-xl font-bold ${
+                          stockAnalysisData.daysUntilStockout <= 7 ? 'text-red-400'
+                          : stockAnalysisData.daysUntilStockout <= 14 ? 'text-yellow-400'
+                          : 'text-emerald-400'
+                        }`}>
+                          {stockAnalysisData.daysUntilStockout}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined && (
+                    <p className={`text-xs mt-1 ${
+                      stockAnalysisData.daysUntilStockout <= 7 ? 'text-red-400'
+                      : stockAnalysisData.daysUntilStockout <= 14 ? 'text-yellow-400'
+                      : 'text-emerald-400'
+                    }`}>
+                      {stockAnalysisData.daysUntilStockout <= 7
+                        ? `Critic: stoc în ${stockAnalysisData.daysUntilStockout} zile. Comandă urgent!`
+                        : stockAnalysisData.daysUntilStockout <= 14
+                        ? `Atenție: stoc în ${stockAnalysisData.daysUntilStockout} zile.`
+                        : `Stoc suficient pentru ${stockAnalysisData.daysUntilStockout} zile.`}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500 text-center py-2">Date stoc indisponibile</p>
+              )}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-zinc-400 text-sm">Select a product to view analysis</p>
-            </div>
+            <p className="text-sm text-zinc-500 text-center py-8">Selectează un produs</p>
           )}
         </div>
       </div>
-
 
     </div>
   );

@@ -21,7 +21,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string, na
           <tr>
             <td align="center" style="padding-bottom:32px;">
               <div style="display:inline-block;background:#4f46e5;border-radius:16px;width:48px;height:48px;line-height:48px;text-align:center;margin-bottom:12px;">
-                <span style="color:#fff;font-size:22px;font-weight:700;">⚡</span>
+                <span style="color:#fff;font-size:20px;font-weight:900;font-family:Arial,sans-serif;">E</span>
               </div>
               <div style="font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">EMS</div>
               <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Ecom Made Simple</div>
@@ -97,7 +97,7 @@ function emailLayout(content: string) {
           <tr>
             <td align="center" style="padding-bottom:32px;">
               <div style="display:inline-block;background:#4f46e5;border-radius:16px;width:48px;height:48px;line-height:48px;text-align:center;margin-bottom:12px;">
-                <span style="color:#fff;font-size:22px;font-weight:700;">⚡</span>
+                <span style="color:#fff;font-size:20px;font-weight:900;font-family:Arial,sans-serif;">E</span>
               </div>
               <div style="font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">EMS</div>
               <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Ecom Made Simple</div>
@@ -124,8 +124,8 @@ function emailLayout(content: string) {
 export async function sendWelcomeEmail(email: string, name: string, organizationName: string) {
   const html = emailLayout(`
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:#eef2ff;border-radius:16px;margin-bottom:16px;">
-        <span style="font-size:28px;">🎉</span>
+      <div style="display:inline-block;width:56px;height:56px;background:#eef2ff;border-radius:16px;line-height:56px;text-align:center;margin-bottom:16px;">
+        <span style="color:#4f46e5;font-size:26px;font-weight:700;font-family:Arial,sans-serif;">&#10003;</span>
       </div>
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Bine ai venit, ${name}!</h1>
       <p style="margin:0;font-size:14px;color:#64748b;">Contul tău a fost înregistrat cu succes.</p>
@@ -164,8 +164,8 @@ export async function sendAccountActivatedEmail(email: string, name: string, org
 
   const html = emailLayout(`
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:#ecfdf5;border-radius:16px;margin-bottom:16px;">
-        <span style="font-size:28px;">✅</span>
+      <div style="display:inline-block;width:56px;height:56px;background:#ecfdf5;border-radius:16px;line-height:56px;text-align:center;margin-bottom:16px;">
+        <span style="color:#16a34a;font-size:26px;font-weight:700;font-family:Arial,sans-serif;">&#10003;</span>
       </div>
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;">Contul tău a fost activat!</h1>
       <p style="margin:0;font-size:14px;color:#64748b;">Poți începe să folosești EMS acum.</p>
@@ -197,7 +197,7 @@ export async function sendAccountActivatedEmail(email: string, name: string, org
   return resend.emails.send({
     from: FROM,
     to: email,
-    subject: "Contul tău EMS a fost activat 🎉",
+    subject: "Contul tău EMS a fost activat",
     html,
   });
 }

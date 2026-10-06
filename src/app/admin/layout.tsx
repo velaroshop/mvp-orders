@@ -15,7 +15,7 @@ export default function AdminLayout({
       <Topbar />
 
       {/* Main content */}
-      <main className="flex-1 lg:ml-48 mt-16">
+      <main className="flex-1 lg:ml-56 mt-16">
         <div className="p-4 lg:p-8">
           {children}
         </div>

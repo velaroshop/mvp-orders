@@ -200,7 +200,7 @@ export default function Sidebar() {
     <aside className="flex flex-col h-full w-56 bg-zinc-950 text-white">
 
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-zinc-800/60">
+      <div className="px-5 py-3.5 border-b border-zinc-800/60">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-900/40">
             <span className="text-white text-sm font-bold">E</span>
@@ -213,10 +213,10 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         {filteredGroups.map((group) => (
           <div key={group.label}>
-            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-1.5">
+            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-1">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -226,7 +226,7 @@ export default function Sidebar() {
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`
-                      flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all duration-150
+                      flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
                       ${isActive(item.href)
                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-900/50"
                         : "text-zinc-300 hover:text-white hover:bg-zinc-800/70"

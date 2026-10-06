@@ -63,7 +63,6 @@ export default function AdminPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [totalOrders, setTotalOrders] = useState(0);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [searchDateRange, setSearchDateRange] = useState<30 | 60 | 90 | "all">(30);
 
   // Status filter state
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -250,10 +249,6 @@ export default function AdminPage() {
       params.append("products", selectedProductSkus.join(","));
     }
 
-    // Add date range filter only when searching
-    if (query.trim() && searchDateRange !== "all") {
-      params.append("dateRange", searchDateRange.toString());
-    }
 
     const response = await fetch(`/api/orders/list?${params}`);
     if (!response.ok) {
@@ -450,7 +445,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchOrders(searchQuery);
-  }, [currentPage, selectedStatuses, selectedProductSkus, searchDateRange]);
+  }, [currentPage, selectedStatuses, selectedProductSkus]);
 
   // Fetch landing pages on mount
   useEffect(() => {
@@ -1690,39 +1685,7 @@ export default function AdminPage() {
           {/* Search and Filter Bar */}
           <div className="flex flex-col gap-2">
 
-            {/* Row 1 — Search period */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-zinc-400 whitespace-nowrap">Caută în ultimele:</span>
-              <select
-                value={searchDateRange}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSearchDateRange(val === "all" ? "all" : parseInt(val) as 30 | 60 | 90);
-                }}
-                className="input w-auto"
-              >
-                <option value={30}>30 zile</option>
-                <option value={60}>60 zile</option>
-                <option value={90}>90 zile</option>
-                <option value="all">Toate</option>
-              </select>
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="w-4 h-4 rounded-full bg-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center justify-center hover:bg-zinc-600 hover:text-white transition-colors shrink-0"
-                  aria-label="Informații filtru perioadă"
-                >
-                  i
-                </button>
-                <div className="absolute left-0 bottom-full mb-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 shadow-xl z-50 hidden group-hover:block pointer-events-none">
-                  <p className="font-semibold text-white mb-1">Perioadă de căutare</p>
-                  <p>Limitează căutarea după text (ID, telefon, nume etc.) la comenzile plasate în ultimele <span className="text-indigo-300">X zile</span>.</p>
-                  <p className="mt-1.5 text-zinc-500">Filtrele după status și produs nu sunt afectate de această setare.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Row 2 — Search input */}
+            {/* Search input */}
             <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg

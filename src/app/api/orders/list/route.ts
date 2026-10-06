@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     const searchQuery = searchParams.get("q") || "";
     const statusesParam = searchParams.get("statuses") || "";
     const productsParam = searchParams.get("products") || "";
-    const dateRangeParam = searchParams.get("dateRange") || "";
     const limit = parseInt(searchParams.get("limit") || "100");
     const offset = parseInt(searchParams.get("offset") || "0");
 
@@ -44,23 +43,12 @@ export async function GET(request: Request) {
       ? productsParam.split(",").map(s => s.trim()).filter(Boolean)
       : null;
 
-    // Calculate date cutoff if searching with date range
-    let dateCutoff: string | null = null;
-    if (searchQuery.trim() && dateRangeParam) {
-      const days = parseInt(dateRangeParam);
-      if (!isNaN(days) && days > 0) {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - days);
-        dateCutoff = cutoffDate.toISOString();
-      }
-    }
-
     // Use RPC for diacritics-insensitive search
     const { data, error } = await supabaseAdmin.rpc("search_orders", {
       p_organization_id: activeOrganizationId,
       p_search_query: searchQuery.trim(),
       p_statuses: statuses,
-      p_date_cutoff: dateCutoff,
+      p_date_cutoff: null,
       p_limit: limit,
       p_offset: offset,
       p_product_skus: productSkus,

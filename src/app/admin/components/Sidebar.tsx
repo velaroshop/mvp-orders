@@ -239,7 +239,7 @@ export default function Sidebar() {
       )}
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex w-56 shrink-0 min-h-screen">
+      <div className="hidden lg:flex fixed inset-y-0 left-0 w-56 z-20">
         <SidebarContent />
       </div>
 

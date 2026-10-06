@@ -1725,7 +1725,7 @@ export default function AdminPage() {
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Caută după ID comandă, telefon, nume, județ, oraș, adresă..."
+                placeholder="Caută după ID, telefon, nume, județ, oraș..."
                 className="input pl-10 pr-10 py-3 w-full"
               />
               {searchQuery && (
@@ -1785,7 +1785,7 @@ export default function AdminPage() {
               </button>
 
               {isStatusDropdownOpen && (
-                <div className="card absolute right-0 mt-2 w-64 shadow-xl z-50">
+                <div className="card absolute right-0 mt-2 w-64 shadow-xl z-50 bg-zinc-900">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după status</span>
@@ -1859,7 +1859,7 @@ export default function AdminPage() {
               </button>
 
               {isProductDropdownOpen && (
-                <div className="card absolute right-0 mt-2 w-72 shadow-xl z-50">
+                <div className="card absolute right-0 mt-2 w-72 shadow-xl z-50 bg-zinc-900">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după produs</span>

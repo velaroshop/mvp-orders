@@ -123,7 +123,7 @@
     fbq.queue = [];
     window.fbq = fbq;
 
-    // Initialize pixel and fire PageView (queued internally until script loads)
+    // Initialize pixel and fire PageView
     window.fbq('init', pixelId);
     window.fbq('track', 'PageView');
 

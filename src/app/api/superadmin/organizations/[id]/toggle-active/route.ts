@@ -88,7 +88,7 @@ export async function POST(
         console.log("[ToggleActive] Fetching owner for org:", organizationId);
         const { data, error: memberError } = await supabaseAdmin
           .from("organization_members")
-          .select("users(email, name)")
+          .select("users!organization_members_user_id_fkey(email, name)")
           .eq("organization_id", organizationId)
           .eq("role", "owner")
           .limit(1)

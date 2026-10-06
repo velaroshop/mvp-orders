@@ -22,11 +22,17 @@ interface RefundRequest {
   updated_at: string;
 }
 
-const STATUS_CONFIG = {
-  new: { label: "Nou", bg: "bg-red-900/30", text: "text-red-300", border: "border-red-700" },
-  in_progress: { label: "In lucru", bg: "bg-amber-900/30", text: "text-amber-300", border: "border-amber-700" },
-  completed: { label: "Finalizat", bg: "bg-emerald-900/30", text: "text-emerald-300", border: "border-emerald-700" },
-};
+function statusBadgeClass(status: RefundRequest["status"]) {
+  return {
+    new:         "badge badge-red",
+    in_progress: "badge badge-orange",
+    completed:   "badge badge-green",
+  }[status];
+}
+
+function statusLabel(status: RefundRequest["status"]) {
+  return { new: "Nou", in_progress: "În lucru", completed: "Finalizat" }[status];
+}
 
 export default function RefundDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -36,9 +42,7 @@ export default function RefundDetailPage({ params }: { params: Promise<{ id: str
   const [savingNotes, setSavingNotes] = useState(false);
   const [notesMessage, setNotesMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    loadRefund();
-  }, [id]);
+  useEffect(() => { loadRefund(); }, [id]);
 
   async function loadRefund() {
     try {
@@ -92,39 +96,35 @@ export default function RefundDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      <div className="card p-8 text-center">
+        <p className="text-muted text-sm">Se încarcă...</p>
       </div>
     );
   }
 
   if (!refund) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-zinc-400">Cererea de returnare nu a fost gasita.</p>
-        <Link href="/admin/refunds" className="text-emerald-400 hover:text-emerald-300 mt-4 inline-block">
-          Inapoi la lista
+      <div className="card p-10 text-center">
+        <p className="text-muted mb-4">Cererea de returnare nu a fost găsită.</p>
+        <Link href="/admin/refunds" className="btn btn-secondary">
+          Înapoi la listă
         </Link>
       </div>
     );
   }
 
-  const sc = STATUS_CONFIG[refund.status];
-
   return (
-    <div className="max-w-4xl">
-      {/* Back + Header */}
-      <div className="mb-6">
-        <Link href="/admin/refunds" className="text-zinc-400 hover:text-white text-sm mb-2 inline-block">
-          &larr; Inapoi la lista
+    <div className="max-w-4xl mx-auto space-y-5">
+      {/* Header */}
+      <div>
+        <Link href="/admin/refunds" className="text-xs text-faint hover:text-white transition-colors mb-2 inline-block">
+          ← Înapoi la returnări
         </Link>
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-white font-mono">{refund.ticket_number}</h1>
-          <span className={`inline-flex px-2.5 py-1 rounded text-xs border ${sc.bg} ${sc.text} ${sc.border}`}>
-            {sc.label}
-          </span>
+        <div className="flex items-center gap-3">
+          <h1 className="page-title font-mono">{refund.ticket_number}</h1>
+          <span className={statusBadgeClass(refund.status)}>{statusLabel(refund.status)}</span>
         </div>
-        <p className="text-zinc-400 text-sm mt-1">
+        <p className="page-subtitle">
           Creat pe {new Date(refund.created_at).toLocaleDateString("ro-RO", {
             day: "2-digit",
             month: "long",
@@ -136,44 +136,32 @@ export default function RefundDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Status actions */}
-      <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-4 mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-400">Schimba status:</span>
+      <div className="card p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-muted">Schimbă status:</span>
           {refund.status === "new" && (
-            <button
-              onClick={() => updateStatus("in_progress")}
-              className="px-3 py-1.5 bg-amber-600 text-white rounded-md text-sm font-medium hover:bg-amber-700 transition-colors"
-            >
-              Marcheaza &quot;In lucru&quot;
+            <button onClick={() => updateStatus("in_progress")} className="btn btn-secondary">
+              Marchează &quot;În lucru&quot;
             </button>
           )}
           {refund.status === "in_progress" && (
             <>
-              <button
-                onClick={() => updateStatus("completed")}
-                className="px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 transition-colors"
-              >
-                Marcheaza &quot;Finalizat&quot;
+              <button onClick={() => updateStatus("completed")} className="btn btn-primary">
+                Marchează &quot;Finalizat&quot;
               </button>
-              <button
-                onClick={() => updateStatus("new")}
-                className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
-              >
-                Inapoi la Nou
+              <button onClick={() => updateStatus("new")} className="btn btn-secondary">
+                Înapoi la Nou
               </button>
             </>
           )}
           {refund.status === "completed" && (
-            <button
-              onClick={() => updateStatus("in_progress")}
-              className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
-            >
+            <button onClick={() => updateStatus("in_progress")} className="btn btn-secondary">
               Redeschide
             </button>
           )}
         </div>
         {refund.resolved_at && (
-          <p className="text-xs text-zinc-500 mt-2">
+          <p className="text-xs text-faint mt-2">
             Rezolvat la {new Date(refund.resolved_at).toLocaleDateString("ro-RO", {
               day: "2-digit",
               month: "long",
@@ -185,95 +173,85 @@ export default function RefundDetailPage({ params }: { params: Promise<{ id: str
         )}
       </div>
 
-      {/* Client info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Date client</h2>
-          <div className="space-y-3">
-            <div>
-              <span className="text-xs text-zinc-500 uppercase tracking-wide">Nume</span>
-              <p className="text-white">{refund.full_name}</p>
-            </div>
-            <div>
-              <span className="text-xs text-zinc-500 uppercase tracking-wide">Email</span>
-              <p>
-                <a href={`mailto:${refund.email}`} className="text-emerald-400 hover:text-emerald-300">
-                  {refund.email}
-                </a>
-              </p>
-            </div>
-            {refund.phone && (
-              <div>
-                <span className="text-xs text-zinc-500 uppercase tracking-wide">Telefon</span>
-                <p>
-                  <a href={`tel:${refund.phone}`} className="text-emerald-400 hover:text-emerald-300">
-                    {refund.phone}
-                  </a>
-                </p>
-              </div>
-            )}
-            {refund.order_number && (
-              <div>
-                <span className="text-xs text-zinc-500 uppercase tracking-wide">Nr. comanda</span>
-                <p className="text-white">{refund.order_number}</p>
-              </div>
-            )}
+      {/* Client info + Refund details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="card p-5 space-y-3">
+          <h2 className="section-title">Date client</h2>
+          <div>
+            <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Nume</p>
+            <p className="text-white text-sm">{refund.full_name}</p>
           </div>
+          <div>
+            <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Email</p>
+            <a href={`mailto:${refund.email}`} className="text-indigo-400 hover:text-indigo-300 text-sm">
+              {refund.email}
+            </a>
+          </div>
+          {refund.phone && (
+            <div>
+              <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Telefon</p>
+              <a href={`tel:${refund.phone}`} className="text-indigo-400 hover:text-indigo-300 text-sm">
+                {refund.phone}
+              </a>
+            </div>
+          )}
+          {refund.order_number && (
+            <div>
+              <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Nr. comandă</p>
+              <p className="text-white text-sm">{refund.order_number}</p>
+            </div>
+          )}
         </div>
 
-        <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Detalii returnare</h2>
-          <div className="space-y-3">
-            <div>
-              <span className="text-xs text-zinc-500 uppercase tracking-wide">Produs</span>
-              <p className="text-white">{refund.product_name}</p>
-            </div>
-            <div>
-              <span className="text-xs text-zinc-500 uppercase tracking-wide">Motiv</span>
-              <p className="text-white">{refund.motive}</p>
-            </div>
-            {refund.description && (
-              <div>
-                <span className="text-xs text-zinc-500 uppercase tracking-wide">Descriere</span>
-                <p className="text-zinc-300 whitespace-pre-wrap">{refund.description}</p>
-              </div>
-            )}
+        <div className="card p-5 space-y-3">
+          <h2 className="section-title">Detalii returnare</h2>
+          <div>
+            <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Produs</p>
+            <p className="text-white text-sm">{refund.product_name}</p>
           </div>
+          <div>
+            <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Motiv</p>
+            <p className="text-white text-sm">{refund.motive}</p>
+          </div>
+          {refund.description && (
+            <div>
+              <p className="text-xs text-faint uppercase tracking-wide mb-0.5">Descriere</p>
+              <p className="text-muted text-sm whitespace-pre-wrap">{refund.description}</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Admin notes */}
-      <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-5">
-        <h2 className="text-lg font-semibold text-white mb-4">Note interne</h2>
+      <div className="card p-5 space-y-3">
+        <h2 className="section-title">Note interne</h2>
         <textarea
           value={adminNotes}
           onChange={(e) => setAdminNotes(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
-          placeholder="Adauga note interne..."
+          className="input w-full resize-none"
+          placeholder="Adaugă note interne..."
         />
         {notesMessage && (
-          <div className={`mb-3 p-2 rounded text-sm ${
+          <div className={`card p-3 text-sm ${
             notesMessage.type === "success"
-              ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
-              : "bg-red-900/20 border border-red-700 text-red-300"
+              ? "border-green-700/60 text-green-400"
+              : "border-red-800/60 text-red-400"
           }`}>
             {notesMessage.text}
           </div>
         )}
-        <button
-          onClick={saveNotes}
-          disabled={savingNotes}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-        >
-          {savingNotes ? "Se salveaza..." : "Salveaza notele"}
-        </button>
+        <div className="flex justify-end">
+          <button onClick={saveNotes} disabled={savingNotes} className="btn btn-primary">
+            {savingNotes ? "Se salvează..." : "Salvează notele"}
+          </button>
+        </div>
       </div>
 
       {/* Meta info */}
-      <div className="mt-4 text-xs text-zinc-600">
-        IP: {refund.ip_address || "N/A"} | Ultima actualizare: {new Date(refund.updated_at).toLocaleString("ro-RO")}
-      </div>
+      <p className="text-xs text-faint">
+        IP: {refund.ip_address || "N/A"} · Ultima actualizare: {new Date(refund.updated_at).toLocaleString("ro-RO")}
+      </p>
     </div>
   );
 }

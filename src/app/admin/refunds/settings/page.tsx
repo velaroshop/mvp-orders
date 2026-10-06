@@ -19,6 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
 function SortableMotiveItem({
   id,
   motive,
@@ -43,22 +44,25 @@ function SortableMotiveItem({
         type="button"
         {...attributes}
         {...listeners}
-        className="px-1 py-1.5 text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing"
+        className="p-1.5 text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing"
         title="Trage pentru a reordona"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
         </svg>
       </button>
-      <span className="flex-1 px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded text-sm text-white">
+      <span className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white">
         {motive}
       </span>
       <button
         type="button"
         onClick={onRemove}
-        className="px-2 py-1.5 text-red-400 hover:text-red-300 text-sm"
+        className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors"
+        title="Șterge"
       >
-        X
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );
@@ -68,7 +72,12 @@ export default function RefundSettingsPage() {
   const [refundTicketPrefix, setRefundTicketPrefix] = useState("RET");
   const [refundFormTitle, setRefundFormTitle] = useState("Formular Returnare Produs");
   const [refundFormSubtitle, setRefundFormSubtitle] = useState("");
-  const [refundMotives, setRefundMotives] = useState<string[]>(["Produs defect", "Produs gresit livrat", "Nu corespunde descrierii", "M-am razgandit"]);
+  const [refundMotives, setRefundMotives] = useState<string[]>([
+    "Produs defect",
+    "Produs greșit livrat",
+    "Nu corespunde descrierii",
+    "M-am răzgândit",
+  ]);
   const [motiveIds, setMotiveIds] = useState<string[]>([]);
   const [newMotive, setNewMotive] = useState("");
   const [refundTermsUrl, setRefundTermsUrl] = useState("");
@@ -80,6 +89,7 @@ export default function RefundSettingsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [iframeCopied, setIframeCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     async function loadSettings() {
       try {
@@ -104,7 +114,6 @@ export default function RefundSettingsPage() {
         setLoading(false);
       }
     }
-
     loadSettings();
   }, []);
 
@@ -112,30 +121,24 @@ export default function RefundSettingsPage() {
     setIsSaving(true);
     setMessage(null);
     try {
-      const body: Record<string, any> = {
-        refund_ticket_prefix: refundTicketPrefix,
-        refund_form_title: refundFormTitle,
-        refund_form_subtitle: refundFormSubtitle,
-        refund_motives: refundMotives,
-        refund_terms_url: refundTermsUrl,
-        refund_primary_color: refundPrimaryColor,
-        refund_logo_url: refundLogoUrl,
-      };
-
       const res = await fetch("/api/settings/refund", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          refund_ticket_prefix: refundTicketPrefix,
+          refund_form_title: refundFormTitle,
+          refund_form_subtitle: refundFormSubtitle,
+          refund_motives: refundMotives,
+          refund_terms_url: refundTermsUrl,
+          refund_primary_color: refundPrimaryColor,
+          refund_logo_url: refundLogoUrl,
+        }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to save");
       }
-
-      setMessage({ type: "success", text: "Setarile de returnare au fost salvate!" });
-
-      // Reload to get updated ticket preview
+      setMessage({ type: "success", text: "Setările de returnare au fost salvate!" });
       const reloadRes = await fetch("/api/settings/refund");
       if (reloadRes.ok) {
         const reloadData = await reloadRes.json();
@@ -159,234 +162,229 @@ export default function RefundSettingsPage() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = motiveIds.indexOf(active.id as string);
     const newIndex = motiveIds.indexOf(over.id as string);
-
     setMotiveIds(arrayMove(motiveIds, oldIndex, newIndex));
     setRefundMotives(arrayMove(refundMotives, oldIndex, newIndex));
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      <div className="card p-8 text-center">
+        <p className="text-muted text-sm">Se încarcă setările...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-2xl mx-auto space-y-5">
       {/* Header */}
-      <div className="mb-6">
-        <Link href="/admin/refunds" className="text-zinc-400 hover:text-white text-sm mb-2 inline-block">
-          &larr; Inapoi la returnari
+      <div>
+        <Link href="/admin/refunds" className="text-xs text-faint hover:text-white transition-colors mb-2 inline-block">
+          ← Înapoi la returnări
         </Link>
-        <h1 className="text-3xl font-bold text-white">Setari Returnari</h1>
-        <p className="text-zinc-400 mt-1">Configureaza formularul de returnare, emailurile si codul embed</p>
+        <h1 className="page-title">Setări returnări</h1>
+        <p className="page-subtitle">Configurează formularul, motivele și codul embed</p>
       </div>
 
-      {/* Ticket Number Section */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Numar tichet</h2>
-          <div className="flex items-center gap-3">
-            <div>
-              <label htmlFor="refundTicketPrefix" className="block text-sm font-medium text-zinc-300 mb-1">Prefix (3 litere)</label>
-              <input
-                type="text"
-                id="refundTicketPrefix"
-                value={refundTicketPrefix}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
-                  setRefundTicketPrefix(val);
-                }}
-                maxLength={3}
-                className="w-24 px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white text-center font-mono"
-                placeholder="RET"
-              />
-            </div>
-            <div className="pt-6">
-              <span className="text-zinc-400 font-mono">-{new Date().getFullYear()}-0001</span>
-            </div>
-          </div>
-          {nextTicketPreview && (
-            <p className="text-xs text-zinc-500 mt-2">Urmatorul tichet: <span className="text-zinc-300 font-mono">{nextTicketPreview}</span></p>
-          )}
-        </div>
-      </div>
-
-      {/* Form Settings Section */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Formular</h2>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="refundFormTitle" className="block text-sm font-medium text-zinc-300 mb-1">Titlu formular</label>
-              <input
-                type="text"
-                id="refundFormTitle"
-                value={refundFormTitle}
-                onChange={(e) => setRefundFormTitle(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="refundFormSubtitle" className="block text-sm font-medium text-zinc-300 mb-1">Subtitlu formular</label>
-              <input
-                type="text"
-                id="refundFormSubtitle"
-                value={refundFormSubtitle}
-                onChange={(e) => setRefundFormSubtitle(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="Text descriptiv sub titlu (optional)"
-              />
-            </div>
-            <div>
-              <label htmlFor="refundTermsUrl" className="block text-sm font-medium text-zinc-300 mb-1">Link politica returnare</label>
-              <input
-                type="url"
-                id="refundTermsUrl"
-                value={refundTermsUrl}
-                onChange={(e) => setRefundTermsUrl(e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                placeholder="https://site.ro/politica-returnare (optional)"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <div>
-                <label htmlFor="refundPrimaryColor" className="block text-sm font-medium text-zinc-300 mb-1">Culoare accent</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="refundPrimaryColor"
-                    value={refundPrimaryColor}
-                    onChange={(e) => setRefundPrimaryColor(e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer bg-zinc-700 border border-zinc-600"
-                  />
-                  <span className="text-xs text-zinc-400 font-mono">{refundPrimaryColor}</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <label htmlFor="refundLogoUrl" className="block text-sm font-medium text-zinc-300 mb-1">Logo URL</label>
-                <input
-                  type="url"
-                  id="refundLogoUrl"
-                  value={refundLogoUrl}
-                  onChange={(e) => setRefundLogoUrl(e.target.value)}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-400"
-                  placeholder="https://site.ro/logo.png (optional)"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Motives Section - Drag & Drop */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Motive returnare</h2>
-          <p className="text-xs text-zinc-500 mb-4">Trage pentru a reordona motivele</p>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={motiveIds} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2 mb-3">
-                {refundMotives.map((m, i) => (
-                  <SortableMotiveItem
-                    key={motiveIds[i]}
-                    id={motiveIds[i]}
-                    motive={m}
-                    onRemove={() => {
-                      setRefundMotives(refundMotives.filter((_, j) => j !== i));
-                      setMotiveIds(motiveIds.filter((_, j) => j !== i));
-                    }}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          <div className="flex gap-2">
+      {/* Ticket Number */}
+      <div className="card p-6 space-y-4">
+        <h2 className="section-title">Număr tichet</h2>
+        <div className="flex items-end gap-3">
+          <div>
+            <label className="label">Prefix (3 litere)</label>
             <input
               type="text"
-              value={newMotive}
-              onChange={(e) => setNewMotive(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newMotive.trim()) {
-                  e.preventDefault();
-                  setRefundMotives([...refundMotives, newMotive.trim()]);
-                  setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
-                  setNewMotive("");
-                }
+              value={refundTicketPrefix}
+              onChange={(e) => {
+                const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
+                setRefundTicketPrefix(val);
               }}
-              className="flex-1 max-w-sm px-3 py-1.5 bg-zinc-700 border border-zinc-600 rounded-md text-sm text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Adauga motiv nou..."
+              maxLength={3}
+              className="input w-24 text-center font-mono"
+              placeholder="RET"
             />
-            <button
-              type="button"
-              onClick={() => {
-                if (newMotive.trim()) {
-                  setRefundMotives([...refundMotives, newMotive.trim()]);
-                  setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
-                  setNewMotive("");
-                }
-              }}
-              className="px-3 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
-            >
-              + Adauga
-            </button>
           </div>
+          <span className="text-muted font-mono pb-2">-{new Date().getFullYear()}-0001</span>
+        </div>
+        {nextTicketPreview && (
+          <p className="text-xs text-faint">
+            Următorul tichet: <span className="text-white font-mono">{nextTicketPreview}</span>
+          </p>
+        )}
+      </div>
+
+      {/* Form Settings */}
+      <div className="card p-6 space-y-4">
+        <h2 className="section-title">Formular</h2>
+
+        <div>
+          <label className="label">Titlu formular</label>
+          <input
+            type="text"
+            value={refundFormTitle}
+            onChange={(e) => setRefundFormTitle(e.target.value)}
+            className="input"
+          />
+        </div>
+
+        <div>
+          <label className="label">Subtitlu formular</label>
+          <input
+            type="text"
+            value={refundFormSubtitle}
+            onChange={(e) => setRefundFormSubtitle(e.target.value)}
+            className="input"
+            placeholder="Text descriptiv sub titlu (opțional)"
+          />
+        </div>
+
+        <div>
+          <label className="label">Link politică returnare</label>
+          <input
+            type="url"
+            value={refundTermsUrl}
+            onChange={(e) => setRefundTermsUrl(e.target.value)}
+            className="input"
+            placeholder="https://site.ro/politica-returnare (opțional)"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="label">Culoare accent</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={refundPrimaryColor}
+                onChange={(e) => setRefundPrimaryColor(e.target.value)}
+                className="h-9 w-14 rounded border border-zinc-600 cursor-pointer bg-zinc-900 p-0.5"
+              />
+              <input
+                type="text"
+                value={refundPrimaryColor}
+                onChange={(e) => setRefundPrimaryColor(e.target.value)}
+                className="input flex-1 font-mono text-sm"
+                placeholder="#000000"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Logo URL</label>
+            <input
+              type="url"
+              value={refundLogoUrl}
+              onChange={(e) => setRefundLogoUrl(e.target.value)}
+              className="input"
+              placeholder="https://site.ro/logo.png (opțional)"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Motives */}
+      <div className="card p-6 space-y-4">
+        <div>
+          <h2 className="section-title">Motive returnare</h2>
+          <p className="text-xs text-faint mt-1">Trage pentru a reordona motivele</p>
+        </div>
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={motiveIds} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {refundMotives.map((m, i) => (
+                <SortableMotiveItem
+                  key={motiveIds[i]}
+                  id={motiveIds[i]}
+                  motive={m}
+                  onRemove={() => {
+                    setRefundMotives(refundMotives.filter((_, j) => j !== i));
+                    setMotiveIds(motiveIds.filter((_, j) => j !== i));
+                  }}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newMotive}
+            onChange={(e) => setNewMotive(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newMotive.trim()) {
+                e.preventDefault();
+                setRefundMotives([...refundMotives, newMotive.trim()]);
+                setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
+                setNewMotive("");
+              }
+            }}
+            className="input flex-1"
+            placeholder="Adaugă motiv nou..."
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newMotive.trim()) {
+                setRefundMotives([...refundMotives, newMotive.trim()]);
+                setMotiveIds([...motiveIds, `motive-${Date.now()}`]);
+                setNewMotive("");
+              }
+            }}
+            className="btn btn-secondary"
+          >
+            + Adaugă
+          </button>
         </div>
       </div>
 
       {/* Embed Code */}
       {orgSlug && (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 mb-6">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Cod Embed (iframe)</h2>
-            <p className="text-xs text-zinc-500 mb-3">Copiaza codul de mai jos si lipeste-l in pagina Shopify. Iframe-ul se redimensioneaza automat, fara scroll.</p>
-            <div className="bg-zinc-900 border border-zinc-600 rounded-md p-3 overflow-x-auto">
-              <pre className="text-xs text-emerald-300 whitespace-pre-wrap break-all">{`<iframe id="refund-form" src="${typeof window !== "undefined" ? window.location.origin : ""}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>
-<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`}</pre>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const code = `<iframe id="refund-form" src="${window.location.origin}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>\n<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`;
-                navigator.clipboard.writeText(code);
-                setIframeCopied(true);
-                setTimeout(() => setIframeCopied(false), 2000);
-              }}
-              className="mt-2 px-4 py-1.5 bg-zinc-700 text-zinc-300 rounded-md text-sm hover:bg-zinc-600 transition-colors"
-            >
-              {iframeCopied ? "Copiat! ✓" : "Copiaza codul iframe"}
-            </button>
+        <div className="card p-6 space-y-3">
+          <h2 className="section-title">Cod Embed (iframe)</h2>
+          <p className="text-xs text-faint">
+            Copiază codul de mai jos și lipește-l în pagina Shopify. Iframe-ul se redimensionează automat, fără scroll.
+          </p>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 overflow-x-auto">
+            <pre className="text-xs text-indigo-300 whitespace-pre-wrap break-all">{`<iframe id="refund-form" src="${typeof window !== "undefined" ? window.location.origin : ""}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>\n<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`}</pre>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const code = `<iframe id="refund-form" src="${window.location.origin}/widget/refund?org=${orgSlug}" width="100%" frameborder="0" style="border:none;overflow:hidden;" scrolling="no"></iframe>\n<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="refund-form-resize"){document.getElementById("refund-form").style.height=e.data.height+"px"}});</script>`;
+              navigator.clipboard.writeText(code);
+              setIframeCopied(true);
+              setTimeout(() => setIframeCopied(false), 2000);
+            }}
+            className="btn btn-secondary"
+          >
+            {iframeCopied ? "Copiat! ✓" : "Copiază codul iframe"}
+          </button>
         </div>
       )}
 
-      {/* Save + Message */}
+      {/* Message */}
       {message && (
-        <div className={`mb-4 p-3 rounded-md text-sm ${
+        <div className={`card p-4 text-sm ${
           message.type === "success"
-            ? "bg-emerald-900/20 border border-emerald-700 text-emerald-300"
-            : "bg-red-900/20 border border-red-700 text-red-300"
+            ? "border-green-700/60 text-green-400"
+            : "border-red-800/60 text-red-400"
         }`}>
           {message.text}
         </div>
       )}
 
+      {/* Save */}
       <div className="flex justify-end">
         <button
           type="button"
           disabled={isSaving}
           onClick={handleSave}
-          className="px-6 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="btn btn-primary"
         >
-          {isSaving ? "Se salveaza..." : "Salveaza setarile de returnare"}
+          {isSaving ? "Se salvează..." : "Salvează setările"}
         </button>
       </div>
     </div>

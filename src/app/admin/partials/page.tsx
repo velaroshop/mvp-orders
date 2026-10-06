@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { PartialOrder, PartialOrderStatus } from "@/lib/types";
 import ConfirmPartialOrderModal, {
   type ConfirmPartialData,
 } from "../components/ConfirmPartialOrderModal";
+import PartialConversionCard from "../components/PartialConversionCard";
 
 function partialStatusBadgeColor(status: string) {
   switch (status) {
@@ -31,6 +33,10 @@ function partialStatusLabel(status: string) {
 }
 
 export default function PartialsPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.activeRole as string;
+  const isOwner = userRole === "owner";
+
   const [partialOrders, setPartialOrders] = useState<PartialOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +265,9 @@ export default function PartialsPage() {
           Reîncarcă
         </button>
       </div>
+
+      {/* Conversion Card */}
+      <PartialConversionCard isOwner={isOwner} />
 
       {/* Search & Filters */}
       <div className="card p-4">

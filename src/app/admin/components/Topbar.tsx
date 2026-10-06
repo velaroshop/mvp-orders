@@ -34,7 +34,7 @@ export default function Topbar() {
   const userRole = (session.user as any)?.activeRole as UserRole;
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-zinc-950 border-b border-zinc-800/60 z-30 lg:left-56">
+    <div className="fixed top-0 left-0 right-0 h-20 bg-zinc-950 border-b border-zinc-800/60 z-30 lg:left-56">
       <div className="h-full pl-14 lg:pl-0 flex items-center justify-between px-6">
 
         {/* Left — DEV mode indicator */}
@@ -52,7 +52,7 @@ export default function Topbar() {
           <p className="text-[13px] font-semibold text-white leading-tight">
             {getGreeting(userName)}
           </p>
-          <p className="text-[11px] text-green-400 leading-tight italic text-center max-w-xs truncate">
+          <p className="text-[11px] text-green-400 leading-snug italic text-center max-w-sm line-clamp-2">
             {motivationalMessage}
           </p>
         </div>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import type { AdsKPIs, AdsCampaignRow } from "@/lib/types";
 
 interface Product {
@@ -134,6 +136,19 @@ function guessProductForCampaigns(
 type SortKey = "campaignName" | "spend" | "impressions" | "linkClicks" | "cpm" | "ctr" | "cpc" | "metaPurchases" | "metaPurchaseValue" | "metaRoas";
 
 export default function AdsDashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Superadmin-only guard
+  useEffect(() => {
+    if (status === "loading") return;
+    const userRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    if (userRole !== "owner" || !isSuperadminOrg) {
+      router.push("/admin/dashboard");
+    }
+  }, [session, status, router]);
+
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [adAccounts, setAdAccounts] = useState<Array<{ id: string; name: string; currency: string }>>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");

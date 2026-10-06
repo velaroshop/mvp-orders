@@ -63,7 +63,7 @@ const menuGroups = [
     label: "Marketing",
     items: [
       { name: "ROAS", href: "/admin/roas" },
-      { name: "Ads", href: "/admin/ads-dashboard" },
+      { name: "Ads", href: "/admin/ads-dashboard", superadminOnly: true },
     ],
   },
   {
@@ -105,12 +105,18 @@ export default function Sidebar() {
 
   const filteredGroups = useMemo(() => {
     const userRole = (session?.user as any)?.activeRole as UserRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg as boolean;
     if (!userRole) return menuGroups;
 
     return menuGroups
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => hasRoutePermission(item.href, userRole)),
+        items: group.items.filter((item) => {
+          if ((item as any).superadminOnly) {
+            return userRole === "owner" && isSuperadminOrg;
+          }
+          return hasRoutePermission(item.href, userRole);
+        }),
       }))
       .filter((group) => group.items.length > 0);
   }, [session]);

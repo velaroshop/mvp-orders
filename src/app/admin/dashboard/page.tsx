@@ -395,15 +395,15 @@ export default function DashboardPage() {
 
           {/* Date + Landing Page + Apply — toate pe același rând */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
-            <div>
+            <div className="min-w-0">
               <label className={labelCls}>De la</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`${inputCls} text-xs sm:text-sm`} />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={labelCls}>Până la</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={`${inputCls} text-xs sm:text-sm`} />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={labelCls}>Landing Page</label>
               <select value={selectedLandingPage} onChange={(e) => setSelectedLandingPage(e.target.value)} className={inputCls}>
                 <option value="all">Toate</option>

@@ -394,7 +394,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Date + Landing Page + Apply — toate pe același rând */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-end">
             <div className="min-w-0">
               <label className={labelCls}>De la</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`${inputCls} text-xs sm:text-sm`} />

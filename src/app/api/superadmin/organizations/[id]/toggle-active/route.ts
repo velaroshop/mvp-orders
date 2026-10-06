@@ -93,8 +93,10 @@ export async function POST(
           .eq("role", "owner")
           .limit(1)
           .single();
-        console.log("[ToggleActive] Member query result:", JSON.stringify(data), "error:", memberError);
-        const owner = (data as any)?.users;
+        console.log("[ToggleActive] Member query result:", JSON.stringify(data), "error:", JSON.stringify(memberError));
+        const usersField = (data as any)?.users;
+        // Supabase poate returna obiect sau array în funcție de relație
+        const owner = Array.isArray(usersField) ? usersField[0] : usersField;
         console.log("[ToggleActive] Owner:", JSON.stringify(owner));
         if (owner?.email) {
           console.log("[ToggleActive] Sending email to:", owner.email);

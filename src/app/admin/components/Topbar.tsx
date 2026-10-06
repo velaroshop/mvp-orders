@@ -52,11 +52,6 @@ export default function Topbar() {
           <p className="text-[13px] font-semibold text-white leading-tight">
             {getGreeting(userName)}
           </p>
-          {userRole && (
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest leading-tight">
-              {getRoleDisplayName(userRole)}
-            </p>
-          )}
           <p className="text-[11px] text-green-400 leading-tight italic text-center max-w-xs truncate">
             {motivationalMessage}
           </p>

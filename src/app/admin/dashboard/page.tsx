@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RevenueGrowthChart from "../components/RevenueGrowthChart";
+import MonthlyRevenueChart from "../components/MonthlyRevenueChart";
 
 interface ProductRevenue {
   name: string;
@@ -85,23 +85,12 @@ export default function DashboardPage() {
   const [stockAnalysisLoading, setStockAnalysisLoading] = useState(false);
   const [stockAnalysisData, setStockAnalysisData] = useState<ProductStockAnalysis | null>(null);
 
-  // Revenue Growth data
-  const [revenueGrowthLoading, setRevenueGrowthLoading] = useState(false);
-  const [revenueGrowthData, setRevenueGrowthData] = useState<{
-    data: Array<{
-      period: string;
-      totalRevenue: number;
-      orderCount: number;
-    }>;
-    granularity: 'hourly' | 'daily' | 'monthly';
-  }>({
-    data: [],
-    granularity: 'hourly',
-  });
-  const [comparisonRevenueData, setComparisonRevenueData] = useState<
-    Array<{ period: string; totalRevenue: number; orderCount: number }>
-  >([]);
-  const [comparisonLabel, setComparisonLabel] = useState("Yesterday");
+  // Monthly revenue comparison
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [thisMonthData, setThisMonthData] = useState<Array<{ period: string; totalRevenue: number; orderCount: number }>>([]);
+  const [lastMonthData, setLastMonthData] = useState<Array<{ period: string; totalRevenue: number; orderCount: number }>>([]);
+  const [thisMonthLabel, setThisMonthLabel] = useState("");
+  const [lastMonthLabel, setLastMonthLabel] = useState("");
 
 
   // Helper to format date in local timezone as YYYY-MM-DD
@@ -261,49 +250,38 @@ export default function DashboardPage() {
     }
   };
 
-  // Fetch revenue growth data
-  const fetchRevenueGrowth = async (start: string, end: string) => {
-    setRevenueGrowthLoading(true);
+  // Fetch monthly revenue comparison (independent of quick filter)
+  const fetchMonthlyComparison = async () => {
+    setMonthlyLoading(true);
     try {
-      const params = new URLSearchParams();
-      params.set("startDate", start);
-      params.set("endDate", end);
+      const today = new Date();
+      const thisStart = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1));
+      const thisEnd = formatLocalDate(today);
+      const lastStart = formatLocalDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      const lastEnd = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 0));
 
-      // For single-day views, also fetch previous day for comparison
-      const isSingleDay = start === end;
-      const fetches: Promise<Response>[] = [
-        fetch(`/api/dashboard/revenue-growth?${params.toString()}`),
-      ];
-      if (isSingleDay) {
-        const prevDay = new Date(start + 'T00:00:00');
-        prevDay.setDate(prevDay.getDate() - 1);
-        const prevDayStr = formatLocalDate(prevDay);
-        const compParams = new URLSearchParams();
-        compParams.set("startDate", prevDayStr);
-        compParams.set("endDate", prevDayStr);
-        fetches.push(fetch(`/api/dashboard/revenue-growth?${compParams.toString()}`));
-        setComparisonLabel("Yesterday");
+      const monthNames = ["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+      setThisMonthLabel(`${monthNames[today.getMonth()]} ${today.getFullYear()}`);
+      const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      setLastMonthLabel(`${monthNames[lastMonthDate.getMonth()]} ${lastMonthDate.getFullYear()}`);
+
+      const [thisRes, lastRes] = await Promise.all([
+        fetch(`/api/dashboard/revenue-growth?startDate=${thisStart}&endDate=${thisEnd}`),
+        fetch(`/api/dashboard/revenue-growth?startDate=${lastStart}&endDate=${lastEnd}`),
+      ]);
+
+      if (thisRes.ok) {
+        const d = await thisRes.json();
+        setThisMonthData(d.data || []);
       }
-
-      const responses = await Promise.all(fetches);
-
-      if (responses[0].ok) {
-        const data = await responses[0].json();
-        setRevenueGrowthData(data);
-      } else {
-        console.error("Failed to fetch revenue growth:", responses[0].status);
-      }
-
-      if (isSingleDay && responses[1]?.ok) {
-        const compData = await responses[1].json();
-        setComparisonRevenueData(compData.data || []);
-      } else {
-        setComparisonRevenueData([]);
+      if (lastRes.ok) {
+        const d = await lastRes.json();
+        setLastMonthData(d.data || []);
       }
     } catch (error) {
-      console.error("Error fetching revenue growth:", error);
+      console.error("Error fetching monthly comparison:", error);
     } finally {
-      setRevenueGrowthLoading(false);
+      setMonthlyLoading(false);
     }
   };
 
@@ -314,13 +292,16 @@ export default function DashboardPage() {
     setStartDate(start);
     setEndDate(end);
     fetchStats(start, end, selectedLandingPage);
-    fetchRevenueGrowth(start, end);
   }, [quickFilter]);
+
+  // Fetch monthly comparison on mount (independent of quick filter)
+  useEffect(() => {
+    fetchMonthlyComparison();
+  }, []);
 
   // Handle manual Apply Filters
   const handleApplyFilters = () => {
     fetchStats(startDate, endDate, selectedLandingPage);
-    fetchRevenueGrowth(startDate, endDate);
   };
 
   // Handle quick filter button click
@@ -457,14 +438,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Revenue Growth Chart */}
+        {/* Monthly Revenue Chart */}
         <div className={`${cardCls} overflow-hidden`}>
-          <RevenueGrowthChart
-            data={revenueGrowthData.data}
-            comparisonData={comparisonRevenueData}
-            comparisonLabel={comparisonLabel}
-            granularity={revenueGrowthData.granularity}
-            loading={revenueGrowthLoading}
+          <MonthlyRevenueChart
+            thisMonthData={thisMonthData}
+            lastMonthData={lastMonthData}
+            thisMonthLabel={thisMonthLabel}
+            lastMonthLabel={lastMonthLabel}
+            loading={monthlyLoading}
           />
         </div>
       </div>

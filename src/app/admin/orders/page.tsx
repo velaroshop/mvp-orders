@@ -1683,10 +1683,10 @@ export default function AdminPage() {
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
 
             {/* Search input */}
-            <div className="relative w-full">
+            <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-zinc-400"
@@ -1736,14 +1736,11 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Row 3 — Filters */}
-            <div className="flex items-center gap-2 flex-wrap">
-
             {/* Status Filter Dropdown */}
-            <div className="relative status-filter-dropdown">
+            <div className="relative status-filter-dropdown shrink-0">
               <button
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                className={`btn btn-secondary flex items-center gap-2 ${
+                className={`btn btn-secondary flex items-center justify-center w-10 h-10 p-0 relative ${
                   selectedStatuses.length > 0 ? "ring-2 ring-indigo-500" : ""
                 }`}
               >
@@ -1760,16 +1757,15 @@ export default function AdminPage() {
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                Status
                 {selectedStatuses.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                     {selectedStatuses.length}
                   </span>
                 )}
               </button>
 
               {isStatusDropdownOpen && (
-                <div className="card absolute right-0 mt-2 w-64 shadow-xl z-50 bg-zinc-900">
+                <div className="absolute right-0 mt-2 w-64 shadow-xl z-50 bg-zinc-900 border border-zinc-700/60 rounded-xl overflow-hidden">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după status</span>
@@ -1814,10 +1810,10 @@ export default function AdminPage() {
             </div>
 
             {/* Product Filter Dropdown */}
-            <div className="relative product-filter-dropdown">
+            <div className="relative product-filter-dropdown shrink-0">
               <button
                 onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
-                className={`btn btn-secondary flex items-center gap-2 ${
+                className={`btn btn-secondary flex items-center justify-center w-10 h-10 p-0 relative ${
                   selectedProductSkus.length > 0 ? "ring-2 ring-indigo-500" : ""
                 }`}
               >
@@ -1834,16 +1830,15 @@ export default function AdminPage() {
                     d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                   />
                 </svg>
-                Produse
                 {selectedProductSkus.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                     {selectedProductSkus.length}
                   </span>
                 )}
               </button>
 
               {isProductDropdownOpen && (
-                <div className="card absolute right-0 mt-2 w-72 shadow-xl z-50 bg-zinc-900">
+                <div className="absolute right-0 mt-2 w-72 shadow-xl z-50 bg-zinc-900 border border-zinc-700/60 rounded-xl overflow-hidden">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după produs</span>
@@ -1882,8 +1877,6 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
-
-            </div>{/* end Row 3 */}
           </div>{/* end Search and Filter Bar */}
         </header>
 

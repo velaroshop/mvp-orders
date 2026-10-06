@@ -27,13 +27,13 @@ export default function SignInPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Email sau parolă incorecte");
       } else {
         router.push("/admin");
         router.refresh();
       }
     } catch {
-      setError("An error occurred. Please try again.");
+      setError("A apărut o eroare. Te rugăm să încerci din nou.");
     } finally {
       setIsLoading(false);
     }
@@ -54,8 +54,8 @@ export default function SignInPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-1">Welcome back</h2>
-          <p className="text-sm text-slate-500 mb-6">Sign in to your account</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-1">Bine ai revenit</h2>
+          <p className="text-sm text-slate-500 mb-6">Conectează-te la contul tău</p>
 
           {error && (
             <div className="mb-5 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm">
@@ -67,7 +67,7 @@ export default function SignInPage() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Email
+                Adresă de email
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -87,7 +87,7 @@ export default function SignInPage() {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Password
+                Parolă
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -116,7 +116,7 @@ export default function SignInPage() {
                   href="/auth/forgot-password"
                   className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  Forgot password?
+                  Ai uitat parola?
                 </Link>
               </div>
             </div>
@@ -127,14 +127,14 @@ export default function SignInPage() {
               disabled={isLoading}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-indigo-200 mt-2"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Se conectează..." : "Conectează-te"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{" "}
+            Nu ai cont?{" "}
             <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-700 font-medium">
-              Sign up
+              Înregistrează-te
             </Link>
           </p>
         </div>

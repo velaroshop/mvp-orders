@@ -24,13 +24,13 @@ export default function ForgotPasswordPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Something went wrong");
+        setError(data.error || "A apărut o eroare. Te rugăm să încerci din nou.");
         return;
       }
 
       setSubmitted(true);
     } catch {
-      setError("An error occurred. Please try again.");
+      setError("A apărut o eroare. Te rugăm să încerci din nou.");
     } finally {
       setIsLoading(false);
     }
@@ -57,24 +57,24 @@ export default function ForgotPasswordPage() {
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
                 <CheckCircle className="w-7 h-7 text-indigo-600" />
               </div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">Check your email</h2>
+              <h2 className="text-xl font-semibold text-slate-900 mb-2">Verifică emailul</h2>
               <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                If an account exists for <span className="font-medium text-slate-700">{email}</span>,
-                you&apos;ll receive a reset link shortly. Check your spam folder if you don&apos;t see it.
+                Dacă există un cont pentru <span className="font-medium text-slate-700">{email}</span>,
+                vei primi în scurt timp un link de resetare. Verifică și dosarul spam dacă nu îl găsești.
               </p>
               <Link
                 href="/auth/signin"
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to sign in
+                Înapoi la autentificare
               </Link>
             </div>
           ) : (
             <>
-              <h2 className="text-xl font-semibold text-slate-900 mb-1">Forgot your password?</h2>
+              <h2 className="text-xl font-semibold text-slate-900 mb-1">Ai uitat parola?</h2>
               <p className="text-sm text-slate-500 mb-6">
-                Enter your email and we&apos;ll send you a reset link.
+                Introdu emailul tău și îți vom trimite un link de resetare.
               </p>
 
               {error && (
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Email
+                    Adresă de email
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading}
                   className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-indigo-200"
                 >
-                  {isLoading ? "Sending..." : "Send reset link"}
+                  {isLoading ? "Se trimite..." : "Trimite link de resetare"}
                 </button>
               </form>
 
@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
                   className="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1.5"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to sign in
+                  Înapoi la autentificare
                 </Link>
               </div>
             </>

@@ -27,12 +27,12 @@ function ResetPasswordForm() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Parolele nu coincid");
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("Parola trebuie să aibă cel puțin 8 caractere");
       return;
     }
 
@@ -48,14 +48,14 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        setError(data.error || "A apărut o eroare. Te rugăm să încerci din nou.");
         return;
       }
 
       setSuccess(true);
       setTimeout(() => router.push("/auth/signin"), 3000);
     } catch {
-      setError("An error occurred. Please try again.");
+      setError("A apărut o eroare. Te rugăm să încerci din nou.");
     } finally {
       setIsLoading(false);
     }
@@ -68,9 +68,9 @@ function ResetPasswordForm() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
             <CheckCircle className="w-7 h-7 text-indigo-600" />
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Password updated!</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Parolă actualizată!</h2>
           <p className="text-sm text-slate-500">
-            Your password has been changed. Redirecting you to sign in...
+            Parola ta a fost schimbată. Ești redirecționat către autentificare...
           </p>
         </div>
       ) : !token ? (
@@ -78,16 +78,16 @@ function ResetPasswordForm() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 mb-4">
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Invalid link</h2>
-          <p className="text-sm text-slate-500 mb-6">This reset link is invalid or has expired.</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Link invalid</h2>
+          <p className="text-sm text-slate-500 mb-6">Acest link de resetare este invalid sau a expirat.</p>
           <Link href="/auth/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            Request a new link
+            Solicită un link nou
           </Link>
         </div>
       ) : (
         <>
-          <h2 className="text-xl font-semibold text-slate-900 mb-1">Set new password</h2>
-          <p className="text-sm text-slate-500 mb-6">Choose a strong password for your account.</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-1">Setează parola nouă</h2>
+          <p className="text-sm text-slate-500 mb-6">Alege o parolă puternică pentru contul tău.</p>
 
           {error && (
             <div className="mb-5 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm">
@@ -98,7 +98,7 @@ function ResetPasswordForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
-                New Password
+                Parolă nouă
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -122,12 +122,12 @@ function ResetPasswordForm() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400 mt-1.5">Minimum 8 characters</p>
+              <p className="text-xs text-slate-400 mt-1.5">Minimum 8 caractere</p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Confirm Password
+                Confirmă parola
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -158,7 +158,7 @@ function ResetPasswordForm() {
               disabled={isLoading}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-indigo-200 mt-2"
             >
-              {isLoading ? "Updating..." : "Update password"}
+              {isLoading ? "Se actualizează..." : "Actualizează parola"}
             </button>
           </form>
         </>
@@ -180,7 +180,7 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-slate-500 mt-1">Ecom Made Simple</p>
         </div>
 
-        <Suspense fallback={<div className="bg-white rounded-2xl p-8 text-center text-slate-400 text-sm">Loading...</div>}>
+        <Suspense fallback={<div className="bg-white rounded-2xl p-8 text-center text-slate-400 text-sm">Se încarcă...</div>}>
           <ResetPasswordForm />
         </Suspense>
       </div>

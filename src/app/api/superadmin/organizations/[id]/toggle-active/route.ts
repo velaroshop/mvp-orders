@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendAccountActivatedEmail } from "@/lib/email";
 
 /**
  * POST /api/superadmin/organizations/[id]/toggle-active - Toggle organization active status
@@ -79,6 +80,28 @@ export async function POST(
         { error: "Failed to update organization" },
         { status: 500 }
       );
+    }
+
+    // Send activation email to owner (non-blocking)
+    if (newActiveStatus) {
+      void (async () => {
+        try {
+          const { data } = await supabaseAdmin
+            .from("organization_members")
+            .select("users(email, name)")
+            .eq("organization_id", organizationId)
+            .eq("role", "owner")
+            .eq("is_active", true)
+            .limit(1)
+            .single();
+          const owner = (data as any)?.users;
+          if (owner?.email) {
+            await sendAccountActivatedEmail(owner.email, owner.name || "there", organization.name);
+          }
+        } catch (err) {
+          console.error("[ToggleActive] Failed to send activation email:", err);
+        }
+      })();
     }
 
     return NextResponse.json({

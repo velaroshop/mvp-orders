@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,6 +128,11 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.email, user.name || "there", organizationName || "").catch((err) =>
+      console.error("[Signup] Failed to send welcome email:", err)
+    );
 
     return NextResponse.json(
       {

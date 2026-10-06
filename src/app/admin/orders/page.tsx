@@ -1690,19 +1690,37 @@ export default function AdminPage() {
           {/* Search and Filter Bar */}
           <div className="flex flex-wrap gap-2">
             {/* Search Period Dropdown */}
-            <select
-              value={searchDateRange}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSearchDateRange(val === "all" ? "all" : parseInt(val) as 30 | 60 | 90);
-              }}
-              className="input w-auto"
-            >
-              <option value={30}>30 zile</option>
-              <option value={60}>60 zile</option>
-              <option value={90}>90 zile</option>
-              <option value="all">Toate</option>
-            </select>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-zinc-400 whitespace-nowrap">Caută în ultimele:</span>
+              <select
+                value={searchDateRange}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchDateRange(val === "all" ? "all" : parseInt(val) as 30 | 60 | 90);
+                }}
+                className="input w-auto"
+              >
+                <option value={30}>30 zile</option>
+                <option value={60}>60 zile</option>
+                <option value={90}>90 zile</option>
+                <option value="all">Toate</option>
+              </select>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="w-4 h-4 rounded-full bg-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center justify-center hover:bg-zinc-600 hover:text-white transition-colors shrink-0"
+                  aria-label="Informații filtru perioadă"
+                >
+                  i
+                </button>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 shadow-xl z-50 hidden group-hover:block pointer-events-none">
+                  <p className="font-semibold text-white mb-1">Perioadă de căutare</p>
+                  <p>Limitează căutarea după text (ID, telefon, nume etc.) la comenzile plasate în ultimele <span className="text-indigo-300">X zile</span>.</p>
+                  <p className="mt-1.5 text-zinc-500">Filtrele după status și produs nu sunt afectate de această setare.</p>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 bg-zinc-900 border-r border-b border-zinc-700 rotate-45 -mt-1" />
+                </div>
+              </div>
+            </div>
 
             {/* Search Bar */}
             <div className="relative flex-1 min-w-0 w-full sm:w-auto">

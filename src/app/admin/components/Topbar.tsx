@@ -55,7 +55,7 @@ export default function Topbar() {
               {getRoleDisplayName(userRole)}
             </p>
           )}
-          <p className="text-[10px] text-green-400 leading-tight italic text-center max-w-xs truncate hidden sm:block">
+          <p className="text-[11px] text-green-400 leading-tight italic text-center max-w-xs truncate">
             {motivationalMessage}
           </p>
         </div>

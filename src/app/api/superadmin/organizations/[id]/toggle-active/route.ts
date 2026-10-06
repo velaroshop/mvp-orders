@@ -82,26 +82,23 @@ export async function POST(
       );
     }
 
-    // Send activation email to owner (non-blocking)
+    // Send activation email to owner
     if (newActiveStatus) {
-      void (async () => {
-        try {
-          const { data } = await supabaseAdmin
-            .from("organization_members")
-            .select("users(email, name)")
-            .eq("organization_id", organizationId)
-            .eq("role", "owner")
-            .eq("is_active", true)
-            .limit(1)
-            .single();
-          const owner = (data as any)?.users;
-          if (owner?.email) {
-            await sendAccountActivatedEmail(owner.email, owner.name || "there", organization.name);
-          }
-        } catch (err) {
-          console.error("[ToggleActive] Failed to send activation email:", err);
+      try {
+        const { data } = await supabaseAdmin
+          .from("organization_members")
+          .select("users(email, name)")
+          .eq("organization_id", organizationId)
+          .eq("role", "owner")
+          .limit(1)
+          .single();
+        const owner = (data as any)?.users;
+        if (owner?.email) {
+          await sendAccountActivatedEmail(owner.email, owner.name || "there", organization.name);
         }
-      })();
+      } catch (err) {
+        console.error("[ToggleActive] Failed to send activation email:", err);
+      }
     }
 
     return NextResponse.json({

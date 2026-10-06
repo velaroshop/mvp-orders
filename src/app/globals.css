@@ -24,3 +24,31 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ─── Date / time inputs pe fundal închis ─── */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  cursor: pointer;
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.8);
+  cursor: pointer;
+  padding-left: 4px;
+}
+
+/* ─── Text lizibil pe fundal închis ─── */
+/* Standard: pe fundal zinc-800/900/950 folosim minimum text-zinc-400 */
+/* Clasa utilitară: .text-muted = zinc-400 (lizibil pe dark) */
+@layer utilities {
+  .text-muted {
+    color: rgb(161 161 170); /* zinc-400 */
+  }
+  .text-muted-sm {
+    color: rgb(212 212 216); /* zinc-300 — pentru texte foarte mici */
+  }
+}

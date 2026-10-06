@@ -446,6 +446,7 @@ export default function DashboardPage() {
             thisMonthLabel={thisMonthLabel}
             lastMonthLabel={lastMonthLabel}
             loading={monthlyLoading}
+            today={new Date()}
           />
         </div>
       </div>

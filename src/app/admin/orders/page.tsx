@@ -1478,52 +1478,49 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-900">
-      <main className="max-w-7xl px-4 py-8">
+    <div className="max-w-7xl mx-auto space-y-5">
         <header className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-white">
-                ORDERS
-              </h1>
-              <p className="mt-1 text-sm text-zinc-400">
-                {totalOrders} total comenzi{searchQuery && ` (${orders.length} rezultate)`}{totalPages > 1 && ` • Pagina ${currentPage} din ${totalPages}`}
+              <h1 className="page-title">Comenzi</h1>
+              <p className="page-subtitle">
+                {totalOrders} comenzi{searchQuery && ` (${orders.length} rezultate)`}{totalPages > 1 && ` • Pagina ${currentPage} din ${totalPages}`}
               </p>
             </div>
             <button
               onClick={() => { fetchOrders(searchQuery); fetchKpiData(); }}
               disabled={isSearching}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-secondary btn-sm"
             >
-              {isSearching ? "Se încarcă..." : "REFRESH"}
+              {isSearching ? "Se încarcă..." : "Reîmprospătează"}
             </button>
           </div>
 
           {/* KPI Card + Orders by Status + Revenue Chart */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             {/* Filters & KPIs Card - exact like dashboard */}
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
+            <div className="card p-4 space-y-3">
               {/* Filters Section */}
               <div className="mb-3">
-                <h3 className="text-xs font-medium text-zinc-400 mb-2">Filters</h3>
+                <h3 className="label mb-2">Filtre</h3>
 
                 {/* Quick Filters */}
                 <div className="flex flex-wrap gap-1 mb-2">
                   {[
-                    { key: "today", label: "Today" },
-                    { key: "yesterday", label: "Yesterday" },
-                    { key: "last3days", label: "Last Three Days" },
-                    { key: "wtd", label: "Week To Date" },
-                    { key: "mtd", label: "Month To Date" },
-                    { key: "all", label: "All Time" },
+                    { key: "today", label: "Azi" },
+                    { key: "yesterday", label: "Ieri" },
+                    { key: "last3days", label: "3 zile" },
+                    { key: "wtd", label: "Săptămâna" },
+                    { key: "mtd", label: "Luna" },
+                    { key: "all", label: "Tot" },
                   ].map((filter) => (
                     <button
                       key={filter.key}
                       onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
                       className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
                         quickFilter === filter.key
-                          ? "bg-emerald-600 text-white"
-                          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                          ? "bg-indigo-600 text-white"
+                          : "bg-zinc-700/60 text-zinc-300 hover:bg-zinc-700"
                       }`}
                     >
                       {filter.label}
@@ -1534,33 +1531,33 @@ export default function AdminPage() {
                 {/* Date Filters + Apply Button */}
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">
-                      Start Date
+                    <label className="label mb-1">
+                      De la
                     </label>
                     <input
                       type="date"
                       value={filterStartDate}
                       onChange={(e) => setFilterStartDate(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
+                      className="input min-w-0 w-full text-[10px] py-1"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">
-                      End Date
+                    <label className="label mb-1">
+                      Până la
                     </label>
                     <input
                       type="date"
                       value={filterEndDate}
                       onChange={(e) => setFilterEndDate(e.target.value)}
-                      className="w-full px-2 py-1 text-[10px] bg-zinc-900 border border-zinc-600 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-white"
+                      className="input min-w-0 w-full text-[10px] py-1"
                     />
                   </div>
                   <div className="flex items-end">
                     <button
                       onClick={handleApplyFilters}
-                      className="w-full px-3 py-1 text-[10px] bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors font-medium"
+                      className="btn btn-primary btn-sm w-full"
                     >
-                      Apply Filters
+                      Aplică
                     </button>
                   </div>
                 </div>
@@ -1568,27 +1565,27 @@ export default function AdminPage() {
 
               {/* KPIs Section */}
               <div className="border-t border-zinc-700 pt-3">
-                <h3 className="text-xs font-medium text-zinc-400 mb-3">Key Performance Indicators</h3>
+                <h3 className="label mb-3">Indicatori</h3>
 
                 {statsLoading ? (
                   <div className="text-center py-4">
-                    <p className="text-zinc-400 text-sm">Loading stats...</p>
+                    <p className="text-muted text-sm">Se încarcă...</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {/* Row 1: Revenue metrics */}
                     <div className="grid grid-cols-2 gap-4">
                       {/* Total Revenue */}
-                      <div className="bg-zinc-900/50 rounded p-2">
-                        <p className="text-[10px] text-zinc-400 mb-0.5">Total Revenue</p>
-                        <p className={`text-lg font-bold text-emerald-500 ${isStoreManager ? "blur-sm select-none" : ""}`}>
+                      <div>
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Total venituri</p>
+                        <p className={`text-lg font-bold text-emerald-400 ${isStoreManager ? "blur-sm select-none" : ""}`}>
                           {kpiStats.totalRevenue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
                         </p>
                       </div>
 
                       {/* Average Order Value */}
-                      <div className="bg-zinc-900/50 rounded p-2">
-                        <p className="text-[10px] text-zinc-400 mb-0.5">Avg. Order Value</p>
+                      <div>
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Valoare medie</p>
                         <p className={`text-lg font-bold text-white ${isStoreManager ? "blur-sm select-none" : ""}`}>
                           {kpiStats.avgOrderValue.toFixed(2)} <span className="text-xs text-zinc-500">RON</span>
                         </p>
@@ -1598,20 +1595,20 @@ export default function AdminPage() {
                     {/* Row 2: Count metrics */}
                     <div className="grid grid-cols-3 gap-3">
                       {/* Orders */}
-                      <div className="bg-zinc-900/50 rounded p-2 text-center">
-                        <p className="text-[10px] text-zinc-400 mb-0.5">Orders</p>
+                      <div className="text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Comenzi</p>
                         <p className="text-lg font-bold text-white">{kpiStats.orderCount}</p>
                       </div>
 
                       {/* Products Sold */}
-                      <div className="bg-zinc-900/50 rounded p-2 text-center">
-                        <p className="text-[10px] text-zinc-400 mb-0.5">Products</p>
+                      <div className="text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Produse vândute</p>
                         <p className="text-lg font-bold text-white">{kpiStats.productsSold}</p>
                       </div>
 
                       {/* Upsell Rate */}
-                      <div className="bg-zinc-900/50 rounded p-2 text-center">
-                        <p className="text-[10px] text-zinc-400 mb-0.5">Upsell Rate</p>
+                      <div className="text-center">
+                        <p className="text-[10px] text-zinc-400 mb-0.5">Upsell rate</p>
                         <p className="text-lg font-bold text-white">{kpiStats.upsellRate.toFixed(1)}%</p>
                       </div>
                     </div>
@@ -1621,8 +1618,8 @@ export default function AdminPage() {
             </div>
 
             {/* Orders by Status Card */}
-            <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-3">
-              <h3 className="text-xs font-semibold text-white mb-2">Orders by Status</h3>
+            <div className="card p-4">
+              <h3 className="section-title mb-2">Comenzi pe status</h3>
               {statsLoading ? (
                 <div className="text-center py-4">
                   <p className="text-zinc-400 text-xs">Loading...</p>
@@ -1639,7 +1636,7 @@ export default function AdminPage() {
                           <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
                           <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
                         </div>
-                        <p className={`text-xs font-semibold ${isZero ? 'text-zinc-600' : 'text-white'}`}>
+                        <p className={`text-xs font-semibold ${isZero ? 'text-zinc-500' : 'text-white'}`}>
                           {count}
                         </p>
                       </div>
@@ -1651,7 +1648,7 @@ export default function AdminPage() {
               {/* Partials Section */}
               {!statsLoading && (
                 <div className="mt-3 pt-2 border-t border-zinc-700">
-                  <h4 className="text-[10px] font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Partials</h4>
+                  <h4 className="label mb-1.5">Parțiale</h4>
                   <div className="space-y-0.5">
                     {[
                       { key: "pending", label: "Pending", color: "bg-yellow-500" },
@@ -1667,7 +1664,7 @@ export default function AdminPage() {
                             <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
                             <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
                           </div>
-                          <p className={`text-xs font-semibold ${isZero ? 'text-zinc-600' : 'text-white'}`}>
+                          <p className={`text-xs font-semibold ${isZero ? 'text-zinc-500' : 'text-white'}`}>
                             {count}
                           </p>
                         </div>
@@ -1679,7 +1676,7 @@ export default function AdminPage() {
             </div>
 
             {/* Revenue Chart */}
-            <div>
+            <div className="card overflow-hidden">
               <CompactRevenueChart
                 data={todayRevenueData.data}
                 yesterdayData={yesterdayRevenueData}
@@ -1699,7 +1696,7 @@ export default function AdminPage() {
                 const val = e.target.value;
                 setSearchDateRange(val === "all" ? "all" : parseInt(val) as 30 | 60 | 90);
               }}
-              className="px-3 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="input w-auto"
             >
               <option value={30}>30 zile</option>
               <option value={60}>60 zile</option>
@@ -1729,7 +1726,7 @@ export default function AdminPage() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Caută după ID comandă, telefon, nume, județ, oraș, adresă..."
-                className="w-full pl-10 pr-10 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="input pl-10 pr-10 py-3 w-full"
               />
               {searchQuery && (
                 <button
@@ -1753,7 +1750,7 @@ export default function AdminPage() {
               )}
               {isSearching && (
                 <div className="absolute inset-y-0 right-10 flex items-center pr-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500"></div>
                 </div>
               )}
             </div>
@@ -1762,8 +1759,8 @@ export default function AdminPage() {
             <div className="relative status-filter-dropdown">
               <button
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
-                  selectedStatuses.length > 0 ? "ring-2 ring-emerald-500" : ""
+                className={`btn btn-secondary flex items-center gap-2 ${
+                  selectedStatuses.length > 0 ? "ring-2 ring-indigo-500" : ""
                 }`}
               >
                 <svg
@@ -1781,21 +1778,21 @@ export default function AdminPage() {
                 </svg>
                 Status
                 {selectedStatuses.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                  <span className="ml-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
                     {selectedStatuses.length}
                   </span>
                 )}
               </button>
 
               {isStatusDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+                <div className="card absolute right-0 mt-2 w-64 shadow-xl z-50">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după status</span>
                       {selectedStatuses.length > 0 && (
                         <button
                           onClick={clearStatusFilters}
-                          className="text-xs text-emerald-500 hover:text-emerald-400"
+                          className="text-xs text-indigo-400 hover:text-indigo-300"
                         >
                           Șterge toate
                         </button>
@@ -1820,7 +1817,7 @@ export default function AdminPage() {
                             type="checkbox"
                             checked={selectedStatuses.includes(status.value)}
                             onChange={() => toggleStatus(status.value)}
-                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-indigo-600 focus:ring-indigo-500"
                           />
                           <span className={`inline-block w-2 h-2 rounded-full ${status.color}`}></span>
                           <span className="text-sm text-white">{status.label}</span>
@@ -1836,8 +1833,8 @@ export default function AdminPage() {
             <div className="relative product-filter-dropdown">
               <button
                 onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
-                className={`px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-medium hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors flex items-center gap-2 ${
-                  selectedProductSkus.length > 0 ? "ring-2 ring-emerald-500" : ""
+                className={`btn btn-secondary flex items-center gap-2 ${
+                  selectedProductSkus.length > 0 ? "ring-2 ring-indigo-500" : ""
                 }`}
               >
                 <svg
@@ -1855,21 +1852,21 @@ export default function AdminPage() {
                 </svg>
                 Produse
                 {selectedProductSkus.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                  <span className="ml-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
                     {selectedProductSkus.length}
                   </span>
                 )}
               </button>
 
               {isProductDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
+                <div className="card absolute right-0 mt-2 w-72 shadow-xl z-50">
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-white">Filtrează după produs</span>
                       {selectedProductSkus.length > 0 && (
                         <button
                           onClick={clearProductFilters}
-                          className="text-xs text-emerald-500 hover:text-emerald-400"
+                          className="text-xs text-indigo-400 hover:text-indigo-300"
                         >
                           Șterge toate
                         </button>
@@ -1885,7 +1882,7 @@ export default function AdminPage() {
                             type="checkbox"
                             checked={selectedProductSkus.includes(product.sku)}
                             onChange={() => toggleProduct(product.sku)}
-                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-emerald-600 focus:ring-emerald-500"
+                            className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-indigo-600 focus:ring-indigo-500"
                           />
                           <div className="flex flex-col min-w-0">
                             <span className="text-sm text-white truncate">{product.name}</span>
@@ -1905,18 +1902,18 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <div className="overflow-x-auto rounded-lg bg-zinc-800 shadow-xl border border-zinc-700">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-700 bg-zinc-900 text-xs font-semibold uppercase text-zinc-400">
+        <div className="card overflow-x-auto">
+          <table className="min-w-full text-left text-sm table-dark">
+            <thead>
               <tr>
-                <th className="pl-3 pr-1 py-2">Order ID</th>
+                <th className="pl-3 pr-1 py-2">Comandă</th>
                 <th className="px-1 py-2">Status</th>
-                <th className="px-1 py-2">Customer</th>
-                <th className="px-2 py-2 hidden md:table-cell">Order Note</th>
-                <th className="px-1 py-2 hidden lg:table-cell">Source</th>
-                <th className="px-1 py-2">Price</th>
-                <th className="px-1 py-2 hidden sm:table-cell">Date</th>
-                <th className="px-1 py-2">Actions</th>
+                <th className="px-1 py-2">Client</th>
+                <th className="px-2 py-2 hidden md:table-cell">Notă</th>
+                <th className="px-1 py-2 hidden lg:table-cell">Sursă</th>
+                <th className="px-1 py-2">Preț</th>
+                <th className="px-1 py-2 hidden sm:table-cell">Dată</th>
+                <th className="px-1 py-2">Acțiuni</th>
               </tr>
             </thead>
             <tbody>
@@ -2008,22 +2005,15 @@ export default function AdminPage() {
                           </button>
                         )}
                         <span
-                          className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${
-                            order.status === "queue"
-                              ? "bg-violet-600 text-white"
-                              : order.status === "testing"
-                              ? "bg-blue-600 text-white"
-                              : order.status === "confirmed"
-                              ? "bg-emerald-600 text-white"
-                              : order.status === "scheduled"
-                              ? "bg-cyan-600 text-white"
-                              : order.status === "cancelled"
-                              ? "bg-red-600 text-white"
-                              : order.status === "hold"
-                              ? "bg-orange-600 text-white"
-                              : order.status === "sync_error"
-                              ? "bg-rose-600 text-white"
-                              : "bg-amber-500 text-white"
+                          className={`badge ${
+                            order.status === "queue" ? "badge-purple" :
+                            order.status === "testing" ? "badge-blue" :
+                            order.status === "confirmed" ? "badge-green" :
+                            order.status === "scheduled" ? "badge-blue" :
+                            order.status === "cancelled" ? "badge-red" :
+                            order.status === "hold" ? "badge-orange" :
+                            order.status === "sync_error" ? "badge-red" :
+                            "badge-yellow"
                           }`}
                         >
                           {order.status === "queue"
@@ -2253,7 +2243,7 @@ export default function AdminPage() {
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                               : order.status === "scheduled"
                               ? "bg-cyan-600 text-white hover:bg-cyan-700"
-                              : "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-indigo-600 text-white hover:bg-indigo-700"
                           }`}
                         >
                           <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "cancelled" ? "✕" : order.status === "sync_error" ? "⚠" : order.status === "scheduled" ? "NOW" : "CONFIRM"}</span>
@@ -2279,7 +2269,7 @@ export default function AdminPage() {
                               }
                             }}
                             title="Actions"
-                            className="rounded bg-zinc-600 px-1.5 py-0.5 text-[10px] sm:text-[10px] font-medium text-white hover:bg-zinc-500"
+                            className="rounded bg-zinc-700/60 px-1.5 py-0.5 text-[10px] sm:text-[10px] font-medium text-white hover:bg-zinc-700"
                           >
                             <span className="hidden sm:inline">Actions ▼</span>
                             <span className="sm:hidden">⋮</span>
@@ -2302,7 +2292,7 @@ export default function AdminPage() {
                                     disabled={order.status === "queue" || confirming === order.id}
                                     className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {confirming === order.id ? "Order Confirm..." : "Order Confirm"}
+                                    {confirming === order.id ? "Confirmă..." : "Confirmă"}
                                   </button>
                                 )}
                                 {/* "Suna clientul" button — HIDDEN: AI phone calls feature disabled temporarily */}
@@ -2310,7 +2300,7 @@ export default function AdminPage() {
                                   onClick={() => handleActionClick(order.id, "cancel")}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
                                 >
-                                  Order Cancel
+                                  Anulează
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "uncancel")}
@@ -2321,13 +2311,13 @@ export default function AdminPage() {
                                       : "text-zinc-200 hover:bg-zinc-600"
                                   }`}
                                 >
-                                  Order Uncancel
+                                  Restabilește
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "hold")}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
                                 >
-                                  Order Hold
+                                  Pune Hold
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "unhold")}
@@ -2338,20 +2328,20 @@ export default function AdminPage() {
                                       : "text-zinc-200 hover:bg-zinc-600"
                                   }`}
                                 >
-                                  Order Unhold
+                                  Scoate Hold
                                 </button>
                                 <button
                                   onClick={() => handleActionClick(order.id, "note")}
                                   className="w-full text-left px-3 py-2 text-xs text-zinc-200 hover:bg-zinc-600"
                                 >
-                                  Order Note
+                                  Notă
                                 </button>
                                 {order.customerId && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "blacklist")}
                                     className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"
                                   >
-                                    🚫 Blacklist Customer
+                                    🚫 Blacklist Client
                                   </button>
                                 )}
                                 {(order.status === "pending" || order.status === "confirmed" || order.status === "hold") && (
@@ -2391,7 +2381,7 @@ export default function AdminPage() {
                                 {order.status === "testing" && (
                                   <button
                                     onClick={() => handleActionClick(order.id, "promote")}
-                                    className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
+                                    className="w-full text-left px-3 py-2 text-xs text-indigo-400 hover:bg-indigo-900/30 font-medium border-t border-zinc-600"
                                   >
                                     🚀 Make Real Order
                                   </button>
@@ -2405,7 +2395,7 @@ export default function AdminPage() {
                                     )}
                                     <button
                                       onClick={() => handleActionClick(order.id, "resync")}
-                                      className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-emerald-900/30 font-medium border-t border-zinc-600"
+                                      className="w-full text-left px-3 py-2 text-xs text-indigo-400 hover:bg-indigo-900/30 font-medium border-t border-zinc-600"
                                     >
                                       🔄 Resync to Helpship
                                     </button>
@@ -2459,7 +2449,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-secondary btn-sm"
               >
                 «
               </button>
@@ -2468,7 +2458,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-secondary btn-sm"
               >
                 ← Anterior
               </button>
@@ -2477,7 +2467,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-secondary btn-sm"
               >
                 Următor →
               </button>
@@ -2486,7 +2476,7 @@ export default function AdminPage() {
               <button
                 onClick={() => goToPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-secondary btn-sm"
               >
                 »
               </button>
@@ -2812,8 +2802,7 @@ export default function AdminPage() {
                 message={toast.message}
                 duration={3000}
               />
-            </main>
-          </div>
+        </div>
         );
       }
 

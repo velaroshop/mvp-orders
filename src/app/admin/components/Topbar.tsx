@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getRoleDisplayName } from "@/lib/permissions";
-import { getMotivationalMessage } from "@/app/admin/lib/motivationalMessages";
+import { getMotivationalMessage, getGreeting } from "@/app/admin/lib/motivationalMessages";
 import type { UserRole } from "@/lib/types";
 
 type HelpshipEnvironment = "development" | "production";
@@ -47,9 +47,11 @@ export default function Topbar() {
           )}
         </div>
 
-        {/* Center — user name + role + motivational message */}
+        {/* Center — greeting + role + motivational message */}
         <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
-          <p className="text-[13px] font-semibold text-white leading-tight">{userName}</p>
+          <p className="text-[13px] font-semibold text-white leading-tight">
+            {getGreeting(userName)}
+          </p>
           {userRole && (
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest leading-tight">
               {getRoleDisplayName(userRole)}

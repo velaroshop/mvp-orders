@@ -226,7 +226,7 @@ export default function Sidebar() {
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`
-                      flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all duration-150
+                      flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-sm transition-all duration-150
                       ${isActive(item.href)
                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-900/50"
                         : "text-zinc-300 hover:text-white hover:bg-zinc-800/70"
@@ -236,7 +236,7 @@ export default function Sidebar() {
                     <span className={isActive(item.href) ? "text-white" : "text-zinc-400"}>
                       {iconMap[item.href]}
                     </span>
-                    <span className="font-medium text-[13px]">{item.name}</span>
+                    <span className="font-medium text-[12px]">{item.name}</span>
                     {"badge" in item && item.badge && newRefundsCount > 0 && (
                       <span className="ml-auto px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-4.5 text-center leading-none">
                         {newRefundsCount}

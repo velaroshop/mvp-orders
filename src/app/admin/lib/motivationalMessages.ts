@@ -1,0 +1,297 @@
+export type DayKey = "luni" | "marti" | "miercuri" | "joi" | "vineri" | "sambata" | "duminica";
+export type PeriodKey = "dimineata" | "pranz" | "dupa-amiaza" | "seara" | "noapte";
+
+export const messages: Record<DayKey, Record<PeriodKey, string[]>> = {
+  luni: {
+    dimineata: [
+      "Cafeaua e caldă, agenda e liberă. Azi scriem ceva frumos pe ea.",
+      "Luni dimineață — momentul în care campionii se diferențiază de restul.",
+      "Stoc mental: plin. Energie: maximă. Comenzi: se rezolvă.",
+      "E luni. Exact ziua în care totul poate începe extraordinar.",
+      "Dimineața asta miroase a vânzări bune. Sau e cafeaua? Oricum, hai la treabă.",
+    ],
+    pranz: [
+      "Prima jumătate a lunii: bifată. A doua te așteaptă cu brațele deschise.",
+      "Pauza de prânz e binevenită. Tu o meriți cu vârf și îndesat.",
+      "Mănâncă bine — după-amiaza are nevoie de toată energia ta.",
+      "La prânz, luni capătă alt sens. Energia se resetează automat.",
+      "O pauză bună acum înseamnă o după-amiază și mai bună. Matematică simplă.",
+    ],
+    "dupa-amiaza": [
+      "Ora 14. Unii visează la weekend. Tu faci să se întâmple.",
+      "Cea mai productivă parte a lunii? Exact acum. Hai.",
+      "Ultimele ore ale zilei lovesc cel mai tare. Ești gata?",
+      "De-acum merge numai în sus. Și tu știi asta mai bine ca oricine.",
+      "Luni după-amiaza e secretul celor care reușesc. Ești unul dintre ei.",
+    ],
+    seara: [
+      "Luni aproape bifată. Ai supraviețuit cu brio.",
+      "Seara de luni e a celor serioși. Și tu ești de-al lor.",
+      "Un pic de efort în plus azi = un zâmbet mai mare mâine dimineață.",
+      "Ziua se apropie de final și tu tot ești aici. Ăsta se cheamă angajament.",
+      "Seara e când cifrele se adună. Ale tale arată promițător.",
+    ],
+    noapte: [
+      "Noaptea de luni e liniștită. Tu ești concentrat. Combinație câștigătoare.",
+      "Nimeni nu vede cât muncești noaptea. Dar rezultatele se vor vedea.",
+      "Târziu, dar prezent. Ăsta este spiritul.",
+      "Luni se termină în câteva ore. Marți vine proaspătă și plină de posibilități.",
+      "La această oră, determinarea ta spune mai mult decât orice cifră.",
+    ],
+  },
+
+  marti: {
+    dimineata: [
+      "Marți dimineața e cea mai subestimată dimineață din săptămână. Tu știi mai bine.",
+      "Luni a trecut. Marți e proaspătă și te așteaptă. Să înceapă.",
+      "O nouă zi, o nouă șansă să faci lucrurile și mai bine.",
+      "Cafeaua e gata. Comenzile te așteaptă. Azi e ziua ta.",
+      "Dimineața asta e darul tău. Ce faci cu ea?",
+    ],
+    pranz: [
+      "Marți la prânz — ziua abia prinde viteză. Cel mai bun e înainte.",
+      "O pauză binevenită pentru un om care o merită.",
+      "Mănâncă bine. Marți după-amiaza are nevoie de toată energia ta.",
+      "Ziua e la jumătate și tu ești în formă maximă. Continuă.",
+      "La prânz verifici progresul, nu îl judeci. Și progresul tău arată bine.",
+    ],
+    "dupa-amiaza": [
+      "Marți după-amiaza e teritoriul celor care nu se opresc la jumătate.",
+      "Câteva ore bune rămase. Fiecare contează.",
+      "Productivitatea reală înseamnă exact ce faci tu acum.",
+      "Nu e vineri, dar poți face ziua asta să arate ca una.",
+      "Forța de după-amiază e a ta. Folosește-o bine.",
+    ],
+    seara: [
+      "Marți seara — ziua a mers bine. Tu ai mers cu ea.",
+      "O zi întreagă de muncă serioasă. Asta se simte bine.",
+      "Seara vine cu liniștea ei. Și tu ai câștigat-o.",
+      "Ziua s-a terminat frumos. Mâine o luăm de la capăt, și mai bine.",
+      "Seara de marți e pentru cei care știu de ce muncesc. Tu știi.",
+    ],
+    noapte: [
+      "Noaptea de marți are o energie aparte. Tăcută, dar puternică.",
+      "Lucrezi noaptea? Asta înseamnă că ești serios. Respect.",
+      "Liniștea nopții e combustibil pentru cei focusați. Ești pe drumul bun.",
+      "Încă o zi bună în spate. Marți știe să se poarte.",
+      "Noaptea e lungă și tu ești mai rezistent. Continuă.",
+    ],
+  },
+
+  miercuri: {
+    dimineata: [
+      "Mijlocul săptămânii. De-acum merge numai spre vineri.",
+      "Miercuri dimineața e semnul că ai trecut de jumătate. Bravo.",
+      "Miercurea — cum zic experții — e cea mai bună zi pentru vânzări.",
+      "Miercuri e dovada că săptămâna ta merge în direcția bună.",
+      "Ai trecut de jumătatea săptămânii. De-acum e coborâș lin.",
+    ],
+    pranz: [
+      "Miercuri la prânz — ești exact la mijlocul unui drum excelent.",
+      "Pauza de miercuri e binevenită. O săptămână bună se construiește pas cu pas.",
+      "Mănâncă bine. A doua jumătate a săptămânii e a ta.",
+      "Miercuri la prânz e momentul perfect să numeri câte lucruri bune ai făcut deja.",
+      "Pauzele sunt parte din strategie. Tu le faci bine.",
+    ],
+    "dupa-amiaza": [
+      "Miercuri după-amiaza — săptămâna alunecă frumos spre final.",
+      "De-acum fiecare zi te apropie de weekend. Fă-le să conteze.",
+      "Productivitatea de miercuri după-amiaza e subestimată. Tu o valorifici.",
+      "Focusat, prezent, eficient. Exact ce ești tu acum.",
+      "Două zile și jumătate rămase din săptămână. Și tu ești în formă.",
+    ],
+    seara: [
+      "Miercuri seara — jumătatea săptămânii e în spate. Restul e coborâș.",
+      "O săptămână bună se construiește exact din astfel de zile.",
+      "Seara de miercuri e liniștită și merituoasă.",
+      "Ai trecut de mijlocul săptămânii cu brio. Weekendul se vede deja.",
+      "Ziua de miercuri s-a comportat frumos cu tine. Și invers.",
+    ],
+    noapte: [
+      "Miercuri noaptea e sinonimă cu determinare curată.",
+      "Jumătatea săptămânii, la miezul nopții. Angajament total.",
+      "Noaptea de miercuri e pentru cei care construiesc ceva solid.",
+      "Tăcut, dar prezent. Ăsta ești tu noaptea.",
+      "Noaptea de miercuri trece și lasă în urmă progres real.",
+    ],
+  },
+
+  joi: {
+    dimineata: [
+      "Joi dimineața — mai puțin de două zile până la weekend. Hai tare.",
+      "Joia e ziua în care lucrurile se finalizează. A ta nu face excepție.",
+      "O dimineață de joi înseamnă că săptămâna ta a fost una bună.",
+      "Joi e ziua productivă a săptămânii. Și tu ești în formă maximă.",
+      "Dimineața de joi are un gust special. Gustul unui final de săptămână reușit.",
+    ],
+    pranz: [
+      "Joi la prânz — finisajele se fac acum. Tu ești expert în finisaje.",
+      "O pauză bună, o după-amiază și mai bună. Logică simplă.",
+      "Joi la prânz e ultimul sprint înainte de vineri. Ești gata.",
+      "Mănâncă bine. Joi după-amiaza cere toată concentrarea ta.",
+      "Prânzul de joi e recompensa pentru o dimineață bine petrecută.",
+    ],
+    "dupa-amiaza": [
+      "Joi după-amiaza e cea mai subestimată parte a săptămânii. Tu o valorifici.",
+      "Câteva ore bune și joi e bifată. Ești aproape.",
+      "Pre-vineri. Energia e diferită. O simți?",
+      "Joia după-amiaza e când cei serioși pun lucrurile la punct.",
+      "Un push puternic acum și intri în weekend cu zâmbetul pe buze.",
+    ],
+    seara: [
+      "Joi seara — vineri e la un pas. Și tu ești pregătit.",
+      "O zi de joi bine petrecută se vede în cifrele de vineri.",
+      "Seara de joi e dulce. Mirosul de weekend e în aer.",
+      "Ziua de joi s-a terminat. Tu ai terminat-o în forță.",
+      "Joi seara e pentru cei care nu lasă lucrurile pe mâine. Bravo.",
+    ],
+    noapte: [
+      "Joi noaptea are un farmec aparte. Vineri e la câteva ore distanță.",
+      "Muncești noaptea de joi? Vineri va fi cu atât mai frumoasă.",
+      "Liniștea nopții de joi e rezervată pentru cei serioși. Ești unul.",
+      "Noaptea dinaintea lui vineri e mereu specială.",
+      "Ultima noapte de mijloc de săptămână. De mâine e weekendul în vizor.",
+    ],
+  },
+
+  vineri: {
+    dimineata: [
+      "E vineri! Cea mai bună dimineață din săptămână. Hai să o facem să conteze.",
+      "Ultima zi de muncă a săptămânii. Fă-o spectaculoasă.",
+      "Vineri dimineața are o energie pe care nicio altă dimineață nu o are.",
+      "Vineri a sosit. Tu ai câștigat dreptul la ea.",
+      "Cafeaua de vineri dimineață are alt gust. E gustul unui weekend câștigat.",
+    ],
+    pranz: [
+      "Vineri la prânz — câteva ore și o săptămână întreagă e bifată.",
+      "Pauza de vineri e sfântă. Tu ai câștigat-o.",
+      "Ultimele ore din săptămână. Fă-le să conteze.",
+      "Vineri la prânz miroase a libertate. Și a un pic de muncă bine făcută.",
+      "Mănâncă bine. Vineri după-amiaza e ultimul sprint al săptămânii.",
+    ],
+    "dupa-amiaza": [
+      "Ultimul push al săptămânii. Tu îl dai ca nimeni altul.",
+      "Vineri după-amiaza e pentru cei care termină ce au început. Ești tu.",
+      "Weekendul e la câteva ore distanță. Mergi spre el cu capul sus.",
+      "Câteva ore bune și săptămâna aceasta e a ta. Complet.",
+      "Vineri după-amiaza e momentul în care eroii finalizează. Tu ești unul.",
+    ],
+    seara: [
+      "Săptămâna aceasta a fost a ta. Acum odihnește-te bine.",
+      "Vineri seara — muncit, livrat, bifat. Weekend meritat.",
+      "O săptămână întreagă în spate. Ce săptămână frumoasă a mai fost.",
+      "Seara de vineri e recompensa finală. O meriți cu tot ce ai.",
+      "Vineri seara e pentru cei care știu ce valorează munca lor. Ești unul dintre ei.",
+    ],
+    noapte: [
+      "Vineri noaptea și tu tot ești activ. Ești irecuperabil de serios.",
+      "Noaptea de vineri e vie și energică. Exact ca tine.",
+      "Săptămâna s-a terminat. Tu ai câștigat-o.",
+      "Vineri noaptea — poți să te odihnești cu conștiința împăcată.",
+      "Ultima noapte a săptămânii de muncă. Și tu ești încă în formă.",
+    ],
+  },
+
+  sambata: {
+    dimineata: [
+      "Sâmbătă dimineața — liniștea asta e bine câștigată.",
+      "Weekendul a sosit. Tu l-ai meritat.",
+      "Sâmbătă dimineața are un alt ritm. Bucură-te de el.",
+      "Odihnă, reîncărcare, pregătire pentru o săptămână și mai bună.",
+      "Dacă lucrezi sâmbătă dimineața, ești cu adevărat dedicat. Respect maxim.",
+    ],
+    pranz: [
+      "Sâmbătă la prânz — weekendul e în toi. Tu ești în formă.",
+      "O zi liberă bine petrecută e la fel de valoroasă ca una de muncă.",
+      "Prânzul de sâmbătă e mai bun când știi că ai muncit bine săptămâna asta.",
+      "Reîncărcarea de weekend e parte din strategie. Tu o faci bine.",
+      "Sâmbătă la prânz — totul e posibil și nimic nu presează. Ce sentiment bun.",
+    ],
+    "dupa-amiaza": [
+      "Sâmbătă după-amiaza e rezervată pentru ce îți place cel mai mult.",
+      "Weekendul e al tău. Folosește-l cu înțelepciune și bucurie.",
+      "Reîncărcat pe deplin pentru o săptămână și mai bună? Ăsta e planul.",
+      "Sâmbătă după-amiaza — nicio presiune, doar alegeri bune.",
+      "O după-amiază de sâmbătă bine petrecută e combustibil pentru lunea viitoare.",
+    ],
+    seara: [
+      "Sâmbătă seara — una dintre cele mai frumoase seri din săptămână.",
+      "Weekendul în desfășurare. Tu în formă maximă.",
+      "Seara de sâmbătă e a ta, complet și fără rezerve.",
+      "O seară frumoasă de sâmbătă e recompensa perfectă.",
+      "Sâmbătă seara e pentru oamenii care știu să trăiască bine. Ești unul.",
+    ],
+    noapte: [
+      "Sâmbătă noaptea — energia weekendului e la maxim.",
+      "Noaptea de sâmbătă e pentru cei cu spirit liber. Bucură-te de ea.",
+      "Un weekend trăit cu intensitate se transformă în energie pentru săptămâna viitoare.",
+      "Noaptea de sâmbătă e vie. La fel ca tine.",
+      "Sâmbătă noaptea are o singură regulă: să te simți bine.",
+    ],
+  },
+
+  duminica: {
+    dimineata: [
+      "Duminică dimineața — cea mai liniștită și mai valoroasă dimineață din săptămână.",
+      "O dimineață de duminică bine petrecută pregătește o săptămână de succes.",
+      "Duminică dimineața e pentru reflecție, cafea bună și energie nouă.",
+      "Ultima dimineață de weekend. Fă-o memorabilă.",
+      "Duminică dimineața e cadoul de la sfârșitul săptămânii. Savurează-l.",
+    ],
+    pranz: [
+      "Duminică la prânz — weekendul trece frumos, cu tine la cârmă.",
+      "Prânzul de duminică e special. Savurează fiecare moment.",
+      "O masă bună de duminică e fundația unei săptămâni puternice.",
+      "Duminică la prânz — gânduri bune, oameni dragi, energie reîncărcată.",
+      "Prânzul de duminică merită apreciat. La fel ca tot ce ai construit săptămâna asta.",
+    ],
+    "dupa-amiaza": [
+      "Duminică după-amiaza — ultima șansă să te încarci înainte de o săptămână nouă.",
+      "Pregătit pentru lunea care vine? Ești mai pregătit decât crezi.",
+      "Duminică după-amiaza e liniștită. Profită de ea.",
+      "Gândurile de duminică după-amiaza sunt cele mai clare. Ascultă-le.",
+      "O duminică după-amiaza relaxantă = o luni dimineată cu energie maximă.",
+    ],
+    seara: [
+      "Duminică seara — în câteva ore, o nouă săptămână de oportunități.",
+      "Săptămâna viitoare te așteaptă cu posibilități noi. Tu ești pregătit.",
+      "Duminică seara e momentul perfect să visezi la ce poți realiza săptămâna viitoare.",
+      "Fiecare duminică seara e un nou început în devenire.",
+      "Mâine e luni. Și tu ești exact omul potrivit pentru o luni bună.",
+    ],
+    noapte: [
+      "Duminică noaptea — luni se apropie, dar tu ești pregătit ca nimeni altul.",
+      "Odihna de duminică noaptea e sfântă. Tu o meriți.",
+      "Mâine dimineată pornești proaspăt și cu energia la maxim. Promis.",
+      "Noaptea de duminică e liniștită și plină de posibilități pentru mâine.",
+      "Dormi bine. Mâine este prima zi din cea mai bună săptămână a ta.",
+    ],
+  },
+};
+
+export function getMotivationalMessage(): string {
+  const now = new Date();
+  const hour = now.getHours();
+  const dayIndex = now.getDay(); // 0 = Sunday
+
+  const dayMap: DayKey[] = [
+    "duminica",
+    "luni",
+    "marti",
+    "miercuri",
+    "joi",
+    "vineri",
+    "sambata",
+  ];
+
+  let period: PeriodKey;
+  if (hour >= 5 && hour < 12) period = "dimineata";
+  else if (hour >= 12 && hour < 14) period = "pranz";
+  else if (hour >= 14 && hour < 18) period = "dupa-amiaza";
+  else if (hour >= 18 && hour < 22) period = "seara";
+  else period = "noapte";
+
+  const day = dayMap[dayIndex];
+  const pool = messages[day][period];
+  return pool[Math.floor(Math.random() * pool.length)];
+}

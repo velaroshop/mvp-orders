@@ -31,6 +31,9 @@ input[type="time"],
 input[type="datetime-local"] {
   cursor: pointer;
   color-scheme: dark;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator,

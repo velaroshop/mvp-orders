@@ -348,7 +348,7 @@ export default function DashboardPage() {
   ];
 
   const cardCls = "bg-zinc-800/60 rounded-xl border border-zinc-700/60 shadow-sm";
-  const inputCls = "w-full px-3 py-1.5 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white";
+  const inputCls = "w-full max-w-full min-w-0 px-3 py-1.5 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white";
   const labelCls = "block text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-1.5";
 
   return (
@@ -364,7 +364,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Filters & KPIs */}
-        <div className={`lg:col-span-2 ${cardCls} p-4 space-y-3`}>
+        <div className={`lg:col-span-2 ${cardCls} p-4 space-y-3 overflow-hidden`}>
 
           {/* Quick Filters */}
           <div>

@@ -1,23 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+  const isSuperadmin = (session?.user as any)?.activeRole === "owner" && (session?.user as any)?.isSuperadminOrg;
+
   const [helpshipClientId, setHelpshipClientId] = useState("");
   const [helpshipClientSecret, setHelpshipClientSecret] = useState("");
   const [hasExistingSecret, setHasExistingSecret] = useState(false);
-  const [metaTestMode, setMetaTestMode] = useState(false);
-  const [metaTestEventCode, setMetaTestEventCode] = useState("");
   const [vatEnabled, setVatEnabled] = useState(true);
   const [isSavingCredentials, setIsSavingCredentials] = useState(false);
-  const [isSavingMetaTest, setIsSavingMetaTest] = useState(false);
   const [isSavingVat, setIsSavingVat] = useState(false);
   const [vatMessage, setVatMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [isSavingVapi, setIsSavingVapi] = useState(false);
-  const [vapiMessage, setVapiMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isValidatingCredentials, setIsValidatingCredentials] = useState(false);
   const [credentialsMessage, setCredentialsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [metaTestMessage, setMetaTestMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationStatus, setValidationStatus] = useState<"valid" | "invalid" | null>(null);
   // Meta Ads Dashboard
   const [metaAdsToken, setMetaAdsToken] = useState("");
@@ -40,8 +38,6 @@ export default function SettingsPage() {
         if (!response.ok) throw new Error("Failed to load settings");
         const data = await response.json();
         setHelpshipClientId(data.settings.helpship_client_id || "");
-        setMetaTestMode(data.settings.meta_test_mode || false);
-        setMetaTestEventCode(data.settings.meta_test_event_code || "");
         setVatEnabled(data.settings.vat_enabled ?? true);
         setHasExistingSecret(!!data.settings.helpship_client_secret);
         setHelpshipClientSecret("");
@@ -139,28 +135,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleSaveMetaTest(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSavingMetaTest(true);
-    setMetaTestMessage(null);
-    try {
-      const response = await fetch("/api/settings/meta-test", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metaTestMode, metaTestEventCode }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save Meta test settings");
-      }
-      setMetaTestMessage({ type: "success", text: "Setările Meta Test Mode au fost salvate!" });
-    } catch (error) {
-      setMetaTestMessage({ type: "error", text: error instanceof Error ? error.message : "Failed to save Meta test settings" });
-    } finally {
-      setIsSavingMetaTest(false);
-    }
-  }
-
   function MessageBox({ msg }: { msg: { type: "success" | "error"; text: string } | null }) {
     if (!msg) return null;
     return (
@@ -244,56 +218,6 @@ export default function SettingsPage() {
               className="btn btn-primary"
             >
               {isSavingCredentials ? (isValidatingCredentials ? "Se validează..." : "Se salvează...") : "Salvează credențialele"}
-            </button>
-          </div>
-        </div>
-      </form>
-
-      {/* Meta Conversion Test Mode */}
-      <form onSubmit={handleSaveMetaTest}>
-        <div className="card p-6 space-y-4">
-          <h2 className="section-title">Meta Conversion Tracking — Test Mode</h2>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={metaTestMode}
-              onChange={(e) => setMetaTestMode(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-indigo-600 focus:ring-indigo-500"
-            />
-            <span>
-              <span className="block text-sm font-medium text-white">Activează Test Mode</span>
-              <span className="block text-xs text-faint mt-0.5">
-                Când este activ, toate evenimentele Meta CAPI vor fi trimise în modul test. Util pentru validare în Meta Events Manager înainte de lansare.
-              </span>
-            </span>
-          </label>
-
-          {metaTestMode && (
-            <div>
-              <label className="label">Test Event Code</label>
-              <input
-                type="text"
-                value={metaTestEventCode}
-                onChange={(e) => setMetaTestEventCode(e.target.value)}
-                placeholder="TEST12345"
-                className="input max-w-xs"
-              />
-              <p className="text-xs text-faint mt-1">
-                Codul din Meta Events Manager → Test Events.
-              </p>
-            </div>
-          )}
-
-          <div className="card p-3 border-blue-700/40 text-blue-300 text-xs">
-            Test mode se aplică global pe toate landing page-urile. Dezactivează-l după ce ai validat tracking-ul.
-          </div>
-
-          <MessageBox msg={metaTestMessage} />
-
-          <div className="flex justify-end">
-            <button type="submit" disabled={isSavingMetaTest} className="btn btn-primary">
-              {isSavingMetaTest ? "Se salvează..." : "Salvează"}
             </button>
           </div>
         </div>
@@ -419,8 +343,8 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* Meta Ads Dashboard */}
-      <div className="card p-6 space-y-4">
+      {/* Meta Ads Dashboard — superadmin only */}
+      {isSuperadmin && <div className="card p-6 space-y-4">
         <div>
           <h2 className="section-title">Meta Ads Dashboard</h2>
           <p className="text-xs text-faint mt-1">Conectează contul Meta Ads pentru a vizualiza performanța campaniilor</p>
@@ -556,7 +480,7 @@ export default function SettingsPage() {
             {isSavingMetaAds ? "Se salvează..." : "Salvează"}
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Security Note */}
       <div className="card p-4 border-blue-700/40 text-blue-300 text-xs">

@@ -85,16 +85,23 @@ export async function POST(
     // Send activation email to owner
     if (newActiveStatus) {
       try {
-        const { data } = await supabaseAdmin
+        console.log("[ToggleActive] Fetching owner for org:", organizationId);
+        const { data, error: memberError } = await supabaseAdmin
           .from("organization_members")
           .select("users(email, name)")
           .eq("organization_id", organizationId)
           .eq("role", "owner")
           .limit(1)
           .single();
+        console.log("[ToggleActive] Member query result:", JSON.stringify(data), "error:", memberError);
         const owner = (data as any)?.users;
+        console.log("[ToggleActive] Owner:", JSON.stringify(owner));
         if (owner?.email) {
-          await sendAccountActivatedEmail(owner.email, owner.name || "there", organization.name);
+          console.log("[ToggleActive] Sending email to:", owner.email);
+          const emailResult = await sendAccountActivatedEmail(owner.email, owner.name || "there", organization.name);
+          console.log("[ToggleActive] Email result:", JSON.stringify(emailResult));
+        } else {
+          console.warn("[ToggleActive] No owner email found, skipping email");
         }
       } catch (err) {
         console.error("[ToggleActive] Failed to send activation email:", err);

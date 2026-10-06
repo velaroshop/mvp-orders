@@ -51,49 +51,46 @@ export default function RevenueGrowthChart({ data, comparisonData, comparisonLab
 
   if (loading) {
     return (
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
-        <div className="text-center py-12">
-          <p className="text-zinc-400">Loading revenue data...</p>
-        </div>
+      <div className="p-4 flex items-center justify-center h-full min-h-45">
+        <p className="text-zinc-400 text-sm">Se încarcă...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-6">
+    <div className="p-4 flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white">Revenue Growth</h3>
-        <div className="flex gap-2">
-          <button className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-md font-medium">
-            Total
-          </button>
-        </div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-white">Revenue Growth</h3>
+        <button className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md font-medium">
+          Total
+        </button>
       </div>
 
       {/* Line Chart */}
-      <div>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={formattedData}>
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height={180}>
+          <LineChart data={formattedData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
             <XAxis
               dataKey="displayLabel"
-              stroke="#a1a1aa"
-              tick={{ fill: '#a1a1aa', fontSize: 12 }}
+              stroke="#71717a"
+              tick={{ fill: '#71717a', fontSize: 10 }}
               angle={granularity === 'daily' ? -45 : 0}
               textAnchor={granularity === 'daily' ? 'end' : 'middle'}
-              height={granularity === 'daily' ? 80 : 30}
+              height={granularity === 'daily' ? 60 : 24}
             />
             <YAxis
-              stroke="#a1a1aa"
-              tick={{ fill: '#a1a1aa', fontSize: 12 }}
+              stroke="#71717a"
+              tick={{ fill: '#71717a', fontSize: 10 }}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#27272a',
                 border: '1px solid #3f3f46',
                 borderRadius: '0.5rem',
-                color: '#fff'
+                color: '#fff',
+                fontSize: '12px',
               }}
               formatter={(value: any, name: any) => {
                 if (name === comparisonLabel) {
@@ -102,9 +99,7 @@ export default function RevenueGrowthChart({ data, comparisonData, comparisonLab
                 return [`${Number(value).toFixed(2)} RON`, 'Revenue'];
               }}
             />
-            <Legend
-              wrapperStyle={{ color: '#a1a1aa' }}
-            />
+            <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: '11px' }} />
             {hasComparison && (
               <Line
                 type="monotone"
@@ -124,7 +119,7 @@ export default function RevenueGrowthChart({ data, comparisonData, comparisonLab
               stroke="#3b82f6"
               strokeWidth={2}
               name="Revenue"
-              dot={{ fill: '#3b82f6', r: 4 }}
+              dot={{ fill: '#3b82f6', r: 3 }}
             />
           </LineChart>
         </ResponsiveContainer>

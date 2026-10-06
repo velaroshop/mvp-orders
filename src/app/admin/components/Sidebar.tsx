@@ -158,11 +158,11 @@ export default function Sidebar() {
                       flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all duration-150
                       ${isActive(item.href)
                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-900/50"
-                        : "text-zinc-400 hover:text-white hover:bg-zinc-800/70"
+                        : "text-zinc-300 hover:text-white hover:bg-zinc-800/70"
                       }
                     `}
                   >
-                    <span className={isActive(item.href) ? "text-white" : "text-zinc-500"}>
+                    <span className={isActive(item.href) ? "text-white" : "text-zinc-400"}>
                       {iconMap[item.href]}
                     </span>
                     <span className="font-medium text-[13px]">{item.name}</span>

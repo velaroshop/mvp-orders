@@ -357,14 +357,14 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-white">Dashboard</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">Performanța magazinului</p>
+        <p className="text-sm text-zinc-400 mt-0.5">Performanța magazinului</p>
       </div>
 
       {/* Top row: Filters & KPIs (2/3) + Revenue Chart (1/3) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Filters & KPIs */}
-        <div className={`lg:col-span-2 ${cardCls} p-5 space-y-5`}>
+        <div className={`lg:col-span-2 ${cardCls} p-4 space-y-3`}>
 
           {/* Quick Filters */}
           <div>
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                 <button
                   key={filter.key}
                   onClick={() => handleQuickFilterClick(filter.key as QuickFilter)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                     quickFilter === filter.key
                       ? "bg-indigo-600 text-white"
                       : "bg-zinc-700/60 text-zinc-300 hover:bg-zinc-700"
@@ -393,8 +393,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Date + Landing Page + Apply */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          {/* Date + Landing Page + Apply — toate pe același rând */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
             <div>
               <label className={labelCls}>De la</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
@@ -412,45 +412,45 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <button
-              onClick={handleApplyFilters}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              Aplică filtrele
-            </button>
+            <div>
+              <label className="block text-[11px] invisible mb-1.5">_</label>
+              <button
+                onClick={handleApplyFilters}
+                className="w-full px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Aplică
+              </button>
+            </div>
           </div>
 
           {/* KPIs */}
-          <div className="border-t border-zinc-700/60 pt-5">
+          <div className="border-t border-zinc-700/60 pt-3">
             <p className={labelCls}>Indicatori</p>
             {loading ? (
-              <p className="text-sm text-zinc-500 py-4">Se încarcă...</p>
+              <p className="text-sm text-zinc-400 py-2">Se încarcă...</p>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 <div>
-                  <p className="text-[11px] text-zinc-500 mb-1">Total venituri</p>
-                  <p className="text-2xl font-bold text-emerald-400">{stats.totalRevenue.toFixed(2)}</p>
-                  <p className="text-[10px] text-zinc-600">RON</p>
+                  <p className="text-[11px] text-zinc-400 mb-0.5">Total venituri</p>
+                  <p className="text-xl font-bold text-emerald-400">{stats.totalRevenue.toFixed(2)}</p>
+                  <p className="text-[10px] text-zinc-400">RON</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-zinc-500 mb-1">Valoare medie</p>
-                  <p className="text-2xl font-bold text-white">{stats.avgOrderValue.toFixed(2)}</p>
-                  <p className="text-[10px] text-zinc-600">RON / comandă</p>
+                  <p className="text-[11px] text-zinc-400 mb-0.5">Valoare medie</p>
+                  <p className="text-xl font-bold text-white">{stats.avgOrderValue.toFixed(2)}</p>
+                  <p className="text-[10px] text-zinc-400">RON / cmd</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-zinc-500 mb-1">Comenzi</p>
-                  <p className="text-2xl font-bold text-white">{stats.orderCount}</p>
+                  <p className="text-[11px] text-zinc-400 mb-0.5">Comenzi</p>
+                  <p className="text-xl font-bold text-white">{stats.orderCount}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-zinc-500 mb-1">Produse vândute</p>
-                  <p className="text-2xl font-bold text-white">{stats.productsSold}</p>
+                  <p className="text-[11px] text-zinc-400 mb-0.5">Produse vândute</p>
+                  <p className="text-xl font-bold text-white">{stats.productsSold}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-zinc-500 mb-1">Rata upsell</p>
-                  <p className="text-2xl font-bold text-white">{stats.upsellRate.toFixed(1)}%</p>
+                  <p className="text-[11px] text-zinc-400 mb-0.5">Upsell rate</p>
+                  <p className="text-xl font-bold text-white">{stats.upsellRate.toFixed(1)}%</p>
                 </div>
               </div>
             )}
@@ -476,7 +476,7 @@ export default function DashboardPage() {
         <div className={`${cardCls} p-5`}>
           <p className="text-sm font-semibold text-white mb-4">Venituri pe produs</p>
           {loading ? (
-            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
+            <p className="text-sm text-zinc-400 py-8 text-center">Se încarcă...</p>
           ) : (
             <div className="space-y-3">
               {(showAllProducts ? stats.revenueByProduct : stats.revenueByProduct.slice(0, 6)).map((product, index) => {
@@ -487,7 +487,7 @@ export default function DashboardPage() {
                   <div key={product.name} className="space-y-1">
                     <div className="text-sm text-white truncate">{product.name}</div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-500">
+                      <span className="text-zinc-400">
                         {product.orders} comenzi · {product.unitsSold} buc
                         {product.partialOrders > 0 && <span className="text-indigo-400"> · {product.partialOrders} parțiale</span>}
                       </span>
@@ -505,7 +505,7 @@ export default function DashboardPage() {
                 </button>
               )}
               {stats.revenueByProduct.length === 0 && (
-                <p className="text-sm text-zinc-500 text-center py-4">Niciun produs</p>
+                <p className="text-sm text-zinc-400 text-center py-4">Niciun produs</p>
               )}
             </div>
           )}
@@ -531,7 +531,7 @@ export default function DashboardPage() {
           </div>
 
           {!loading && stats.upsellsSplit.length > 0 && (
-            <p className="text-xs text-zinc-500 mb-3">
+            <p className="text-xs text-zinc-400 mb-3">
               Total:{" "}
               <span className="font-semibold text-emerald-400">
                 {stats.upsellsSplit.reduce((sum, u) => {
@@ -544,7 +544,7 @@ export default function DashboardPage() {
           )}
 
           {loading ? (
-            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
+            <p className="text-sm text-zinc-400 py-8 text-center">Se încarcă...</p>
           ) : (
             <div className="space-y-3">
               {(showAllUpsells ? stats.upsellsSplit : stats.upsellsSplit.slice(0, 6)).map((upsell, index) => {
@@ -574,7 +574,7 @@ export default function DashboardPage() {
                 </button>
               )}
               {stats.upsellsSplit.length === 0 && (
-                <p className="text-sm text-zinc-500 text-center py-4">Niciun upsell</p>
+                <p className="text-sm text-zinc-400 text-center py-4">Niciun upsell</p>
               )}
             </div>
           )}
@@ -624,24 +624,24 @@ export default function DashboardPage() {
           </div>
 
           {stockAnalysisLoading ? (
-            <p className="text-sm text-zinc-500 py-8 text-center">Se încarcă...</p>
+            <p className="text-sm text-zinc-400 py-8 text-center">Se încarcă...</p>
           ) : stockAnalysisData ? (
             <div className="bg-zinc-900/50 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-zinc-400 truncate">{stockAnalysisData.name}</p>
                 <div className="text-right">
-                  <p className="text-[10px] text-zinc-500">Vândut total</p>
+                  <p className="text-[10px] text-zinc-400">Vândut total</p>
                   <p className="text-xl font-bold text-emerald-400">{stockAnalysisData.totalSold}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-zinc-800 rounded-lg p-3">
-                  <p className="text-[10px] text-zinc-500 mb-0.5">Medie zilnică</p>
+                  <p className="text-[10px] text-zinc-400 mb-0.5">Medie zilnică</p>
                   <p className="text-base font-semibold text-white">{stockAnalysisData.dailyAverage.toFixed(2)}</p>
                   <p className="text-[10px] text-zinc-600">buc/zi</p>
                 </div>
                 <div className="bg-zinc-800 rounded-lg p-3">
-                  <p className="text-[10px] text-zinc-500 mb-0.5">Estimat / săpt</p>
+                  <p className="text-[10px] text-zinc-400 mb-0.5">Estimat / săpt</p>
                   <p className="text-base font-semibold text-white">{(stockAnalysisData.dailyAverage * 7).toFixed(0)}</p>
                   <p className="text-[10px] text-zinc-600">buc/săptămână</p>
                 </div>
@@ -651,13 +651,13 @@ export default function DashboardPage() {
                 <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-[10px] text-zinc-500">Stoc curent</p>
+                      <p className="text-[10px] text-zinc-400">Stoc curent</p>
                       <p className="text-xl font-bold text-white">{stockAnalysisData.currentStock}</p>
                       <p className="text-[10px] text-zinc-600">buc disponibile</p>
                     </div>
                     {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined && (
                       <div className="text-right">
-                        <p className="text-[10px] text-zinc-500">Zile rămase</p>
+                        <p className="text-[10px] text-zinc-400">Zile rămase</p>
                         <p className={`text-xl font-bold ${
                           stockAnalysisData.daysUntilStockout <= 7 ? 'text-red-400'
                           : stockAnalysisData.daysUntilStockout <= 14 ? 'text-yellow-400'
@@ -683,11 +683,11 @@ export default function DashboardPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-zinc-500 text-center py-2">Date stoc indisponibile</p>
+                <p className="text-xs text-zinc-400 text-center py-2">Date stoc indisponibile</p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-zinc-500 text-center py-8">Selectează un produs</p>
+            <p className="text-sm text-zinc-400 text-center py-8">Selectează un produs</p>
           )}
         </div>
       </div>

@@ -45,14 +45,128 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   padding-left: 4px;
 }
 
-/* ─── Text lizibil pe fundal închis ─── */
-/* Standard: pe fundal zinc-800/900/950 folosim minimum text-zinc-400 */
-/* Clasa utilitară: .text-muted = zinc-400 (lizibil pe dark) */
+/* ════════════════════════════════════════════
+   DESIGN SYSTEM — Dark Theme
+   Folosite în toate paginile admin.
+   ════════════════════════════════════════════ */
 @layer utilities {
-  .text-muted {
-    color: rgb(161 161 170); /* zinc-400 */
+
+  /* ── Carduri ── */
+  .card {
+    background-color: rgb(39 39 42 / 0.6);   /* zinc-800/60 */
+    border-radius: 0.75rem;                   /* rounded-xl */
+    border: 1px solid rgb(63 63 70 / 0.6);   /* zinc-700/60 */
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
   }
-  .text-muted-sm {
-    color: rgb(212 212 216); /* zinc-300 — pentru texte foarte mici */
+
+  /* ── Inputs & Selects ── */
+  .input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.375rem 0.75rem;               /* py-1.5 px-3 */
+    font-size: 0.875rem;                     /* text-sm */
+    background-color: rgb(9 9 11);           /* zinc-950 */
+    border: 1px solid rgb(63 63 70);         /* zinc-700 */
+    border-radius: 0.5rem;                   /* rounded-lg */
+    color: #fff;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
+  .input:focus {
+    border-color: rgb(99 102 241);           /* indigo-500 */
+    box-shadow: 0 0 0 2px rgb(99 102 241 / 0.25);
+  }
+
+  /* ── Butoane ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s, opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background-color: rgb(79 70 229);        /* indigo-600 */
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: rgb(67 56 202);        /* indigo-700 */
+  }
+
+  .btn-secondary {
+    background-color: rgb(63 63 70 / 0.6);  /* zinc-700/60 */
+    color: rgb(212 212 216);                 /* zinc-300 */
+    border-color: rgb(63 63 70);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgb(63 63 70);
+  }
+
+  .btn-danger {
+    background-color: rgb(220 38 38);        /* red-600 */
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: rgb(185 28 28);        /* red-700 */
+  }
+
+  .btn-sm  { padding: 0.25rem 0.625rem; font-size: 0.75rem; border-radius: 0.375rem; }
+  .btn-lg  { padding: 0.5rem 1.25rem;   font-size: 0.875rem; border-radius: 0.625rem; }
+
+  /* ── Tipografie ── */
+  .page-title    { font-size: 1.25rem; font-weight: 600; color: #fff; }
+  .page-subtitle { font-size: 0.875rem; color: rgb(161 161 170); margin-top: 0.125rem; }
+  .section-title { font-size: 0.875rem; font-weight: 600; color: #fff; }
+  .label         { display: block; font-size: 0.6875rem; font-weight: 500;
+                   color: rgb(161 161 170); text-transform: uppercase;
+                   letter-spacing: 0.08em; margin-bottom: 0.375rem; }
+  .text-muted    { color: rgb(161 161 170); }   /* zinc-400 */
+  .text-faint    { color: rgb(113 113 122); }   /* zinc-500 */
+
+  /* ── Status badges ── */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem; font-weight: 500;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+  }
+  .badge-yellow  { background: rgb(120 53 15 / 0.4);  color: rgb(251 191 36);  border-color: rgb(120 53 15 / 0.6); }
+  .badge-green   { background: rgb(6 78 59 / 0.4);    color: rgb(52 211 153);  border-color: rgb(6 78 59 / 0.6); }
+  .badge-red     { background: rgb(127 29 29 / 0.4);  color: rgb(252 165 165); border-color: rgb(127 29 29 / 0.6); }
+  .badge-orange  { background: rgb(124 45 18 / 0.4);  color: rgb(251 146 60);  border-color: rgb(124 45 18 / 0.6); }
+  .badge-blue    { background: rgb(30 58 138 / 0.4);  color: rgb(147 197 253); border-color: rgb(30 58 138 / 0.6); }
+  .badge-purple  { background: rgb(88 28 135 / 0.4);  color: rgb(216 180 254); border-color: rgb(88 28 135 / 0.6); }
+  .badge-zinc    { background: rgb(63 63 70 / 0.4);   color: rgb(161 161 170); border-color: rgb(63 63 70 / 0.6); }
+
+  /* ── Tabele ── */
+  .table-dark { width: 100%; border-collapse: collapse; }
+  .table-dark th {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.6875rem; font-weight: 500;
+    color: rgb(161 161 170);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    text-align: left;
+    border-bottom: 1px solid rgb(63 63 70 / 0.6);
+  }
+  .table-dark td {
+    padding: 0.75rem;
+    font-size: 0.875rem; color: rgb(212 212 216);
+    border-bottom: 1px solid rgb(39 39 42 / 0.8);
+  }
+  .table-dark tr:hover td { background-color: rgb(39 39 42 / 0.4); }
+  .table-dark tr:last-child td { border-bottom: none; }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid rgb(63 63 70 / 0.6); }
 }

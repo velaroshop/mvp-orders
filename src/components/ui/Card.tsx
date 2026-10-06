@@ -2,6 +2,7 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   padding?: "sm" | "md" | "lg" | "none";
+  variant?: "light" | "dark";
 }
 
 const paddingMap = {
@@ -12,12 +13,16 @@ const paddingMap = {
 };
 
 /**
- * Container card alb cu border și shadow.
- * Folosit pentru secțiuni, tabele, formulare.
+ * Container card cu border și shadow.
+ * variant="light" (default) — fundal alb, pentru pagini light
+ * variant="dark"            — fundal zinc-800, pentru pagini dark
  */
-export default function Card({ children, className = "", padding = "md" }: CardProps) {
+export default function Card({ children, className = "", padding = "md", variant = "light" }: CardProps) {
+  const base = variant === "dark"
+    ? "card"
+    : "bg-white rounded-xl border border-slate-200 shadow-sm";
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${paddingMap[padding]} ${className}`}>
+    <div className={`${base} ${paddingMap[padding]} ${className}`}>
       {children}
     </div>
   );

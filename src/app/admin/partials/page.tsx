@@ -270,7 +270,7 @@ export default function PartialsPage() {
               placeholder="Caută telefon, nume, județ, localitate, adresă..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-8"
+              className="input !pl-8"
             />
             <svg
               className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none"

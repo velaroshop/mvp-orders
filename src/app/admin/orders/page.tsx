@@ -1726,7 +1726,7 @@ export default function AdminPage() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Caută după ID, telefon, nume, județ, oraș..."
-                className="input pl-10 pr-10 py-3 w-full"
+                className="input !pl-10 !pr-10 py-3 w-full"
               />
               {searchQuery && (
                 <button

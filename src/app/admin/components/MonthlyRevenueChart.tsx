@@ -273,14 +273,14 @@ export default function MonthlyRevenueChart({
                 {projectedTotal.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
               </p>
-              <p className="text-[10px] text-zinc-600 mt-1">
+              <p className="text-[10px] text-zinc-400 mt-1">
                 ~{dailyAvg.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON/zi · {daysRemaining} zile rămase · {confidenceLabel}
               </p>
             </div>
             {projectedVsLast !== null && (
               <div className={`shrink-0 px-2 py-1 rounded-md text-xs font-bold border ${
                 projectedIsUp
-                  ? "bg-indigo-900/20 border-indigo-700/40 text-indigo-400"
+                  ? "bg-green-900/20 border-green-700/40 text-green-400"
                   : "bg-red-900/20 border-red-800/40 text-red-400"
               }`}>
                 {projectedIsUp ? "+" : ""}{projectedVsLast.toFixed(1)}%

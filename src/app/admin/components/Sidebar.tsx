@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { hasRoutePermission } from "@/lib/permissions";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { hasRoutePermission, getRoleDisplayName } from "@/lib/permissions";
 import type { UserRole } from "@/lib/types";
 import {
   LayoutDashboard,
@@ -22,8 +23,8 @@ import {
   Settings,
   Menu,
   X,
-  LogOut,
   ChevronRight,
+  ChevronUp,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -82,7 +83,71 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session } = useSession();
+  const { organizations, activeOrganization, setActiveOrganization } = useOrganization();
   const [newRefundsCount, setNewRefundsCount] = useState(0);
+
+  // User menu state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+        setShowOrgSwitcher(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleChangePassword() {
+    setPasswordMessage(null);
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage({ type: "error", text: "Completează toate câmpurile." });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordMessage({ type: "error", text: "Parola nouă trebuie să aibă minim 8 caractere." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: "error", text: "Parolele noi nu coincid." });
+      return;
+    }
+    try {
+      setIsChangingPassword(true);
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Eroare la schimbarea parolei.");
+      setPasswordMessage({ type: "success", text: data.message });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setPasswordMessage(null);
+      }, 2000);
+    } catch (error) {
+      setPasswordMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Eroare la schimbarea parolei.",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   useEffect(() => {
     const userRole = (session?.user as any)?.activeRole as UserRole;
@@ -127,7 +192,7 @@ export default function Sidebar() {
   };
 
   const userName = (session?.user as any)?.name || (session?.user as any)?.email || "User";
-  const orgName = (session?.user as any)?.organizationName || "";
+  const orgName = (session?.user as any)?.organizationName || activeOrganization?.name || "";
   const userRole = (session?.user as any)?.activeRole || "";
   const initials = userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
 
@@ -203,24 +268,148 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User info */}
-      <div className="px-3 py-4 border-t border-zinc-800/60">
-        <div className="flex items-center gap-2.5 px-2">
+      {/* User menu — bottom */}
+      <div className="px-3 py-3 border-t border-zinc-800/60" ref={menuRef}>
+        {/* Dropdown (opens upward) */}
+        {isMenuOpen && (
+          <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden">
+            {/* User info header */}
+            <div className="px-4 py-3 border-b border-zinc-800">
+              <p className="text-[13px] font-semibold text-white truncate">{userName}</p>
+              <p className="text-[11px] text-zinc-500 truncate">{(session?.user as any)?.email}</p>
+              {userRole && (
+                <span className="inline-block mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-600/20 border border-indigo-600/40 text-indigo-300">
+                  {getRoleDisplayName(userRole as UserRole)}
+                </span>
+              )}
+            </div>
+
+            {/* Organization */}
+            {orgName && (
+              <div className="px-4 py-2.5 border-b border-zinc-800">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Organizație</p>
+                <p className="text-[13px] text-white font-medium truncate">{orgName}</p>
+              </div>
+            )}
+
+            {/* Org switcher */}
+            {organizations.length > 1 && (
+              <div className="border-b border-zinc-800">
+                <button
+                  onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
+                  className="w-full px-4 py-2.5 text-left text-[13px] text-zinc-300 hover:bg-zinc-800/70 flex items-center justify-between transition-colors"
+                >
+                  <span>Schimbă organizația</span>
+                  <ChevronUp className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${showOrgSwitcher ? "" : "rotate-180"}`} />
+                </button>
+                {showOrgSwitcher && (
+                  <div className="bg-zinc-950 border-t border-zinc-800">
+                    {organizations.map((org) => (
+                      <button
+                        key={org.id}
+                        onClick={() => {
+                          setActiveOrganization(org);
+                          setShowOrgSwitcher(false);
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full px-5 py-2 text-left text-[12px] hover:bg-zinc-800/70 transition-colors ${
+                          org.id === activeOrganization?.id ? "text-indigo-300 font-semibold" : "text-zinc-400"
+                        }`}
+                      >
+                        {org.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Change password */}
+            <div className="border-b border-zinc-800">
+              <button
+                onClick={() => {
+                  setShowChangePassword(!showChangePassword);
+                  setPasswordMessage(null);
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+                className="w-full px-4 py-2.5 text-left text-[13px] text-zinc-300 hover:bg-zinc-800/70 flex items-center gap-2 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Schimbă parola
+              </button>
+              {showChangePassword && (
+                <div className="px-4 pb-3 space-y-2 bg-zinc-950 border-t border-zinc-800">
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Parola curentă"
+                    maxLength={64}
+                    className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-indigo-500 mt-2"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Parola nouă (8-64 caractere)"
+                    maxLength={64}
+                    className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-indigo-500"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmă parola nouă"
+                    maxLength={64}
+                    className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-indigo-500"
+                  />
+                  {passwordMessage && (
+                    <p className={`text-[11px] px-1 ${passwordMessage.type === "success" ? "text-green-400" : "text-red-400"}`}>
+                      {passwordMessage.text}
+                    </p>
+                  )}
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                    className="w-full px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isChangingPassword ? "Se schimbă..." : "Salvează parola"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Sign out */}
+            <button
+              onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+              className="w-full px-4 py-2.5 text-left text-[13px] text-red-400 hover:bg-zinc-800/70 flex items-center gap-2 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Deconectare
+            </button>
+          </div>
+        )}
+
+        {/* Trigger button */}
+        <button
+          onClick={() => { setIsMenuOpen(!isMenuOpen); setShowOrgSwitcher(false); }}
+          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-zinc-800/70 transition-colors group"
+        >
           <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold text-white">
             {initials}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <p className="text-[13px] font-semibold text-white truncate leading-tight">{orgName || userName}</p>
             <p className="text-[10px] text-zinc-500 uppercase tracking-wide leading-tight">{userRole}</p>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-            className="text-zinc-500 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800"
-            title="Sign out"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          <ChevronUp className={`w-3.5 h-3.5 text-zinc-500 shrink-0 transition-transform ${isMenuOpen ? "" : "rotate-180"}`} />
+        </button>
       </div>
     </aside>
   );

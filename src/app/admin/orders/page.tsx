@@ -1688,8 +1688,9 @@ export default function AdminPage() {
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="flex flex-wrap gap-2">
-            {/* Search Period Dropdown */}
+          <div className="flex flex-col gap-2">
+
+            {/* Row 1 — Search period */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-zinc-400 whitespace-nowrap">Caută în ultimele:</span>
               <select
@@ -1713,17 +1714,16 @@ export default function AdminPage() {
                 >
                   i
                 </button>
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 shadow-xl z-50 hidden group-hover:block pointer-events-none">
+                <div className="absolute left-0 bottom-full mb-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs text-zinc-300 shadow-xl z-50 hidden group-hover:block pointer-events-none">
                   <p className="font-semibold text-white mb-1">Perioadă de căutare</p>
                   <p>Limitează căutarea după text (ID, telefon, nume etc.) la comenzile plasate în ultimele <span className="text-indigo-300">X zile</span>.</p>
                   <p className="mt-1.5 text-zinc-500">Filtrele după status și produs nu sunt afectate de această setare.</p>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 bg-zinc-900 border-r border-b border-zinc-700 rotate-45 -mt-1" />
                 </div>
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="relative flex-1 min-w-0 w-full sm:w-auto">
+            {/* Row 2 — Search input */}
+            <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-zinc-400"
@@ -1772,6 +1772,9 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+
+            {/* Row 3 — Filters */}
+            <div className="flex items-center gap-2 flex-wrap">
 
             {/* Status Filter Dropdown */}
             <div className="relative status-filter-dropdown">
@@ -1917,7 +1920,8 @@ export default function AdminPage() {
               )}
             </div>
 
-          </div>
+            </div>{/* end Row 3 */}
+          </div>{/* end Search and Filter Bar */}
         </header>
 
         <div className="card overflow-x-auto">

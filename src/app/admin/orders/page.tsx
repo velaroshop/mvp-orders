@@ -1478,7 +1478,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-5 overflow-x-hidden">
         <header className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1529,7 +1529,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Date Filters + Apply Button */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="label mb-1">
                       De la
@@ -1688,7 +1688,7 @@ export default function AdminPage() {
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             {/* Search Period Dropdown */}
             <select
               value={searchDateRange}
@@ -1705,7 +1705,7 @@ export default function AdminPage() {
             </select>
 
             {/* Search Bar */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0 w-full sm:w-auto">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-zinc-400"

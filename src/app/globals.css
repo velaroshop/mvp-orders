@@ -136,10 +136,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   /* ── Status badges ── */
   .badge {
     display: inline-flex; align-items: center;
+    width: fit-content;
     padding: 0.125rem 0.5rem;
     font-size: 0.6875rem; font-weight: 500;
     border-radius: 9999px;
     border: 1px solid transparent;
+    white-space: nowrap;
   }
   .badge-yellow  { background: rgb(120 53 15 / 0.4);  color: rgb(251 191 36);  border-color: rgb(120 53 15 / 0.6); }
   .badge-green   { background: rgb(6 78 59 / 0.4);    color: rgb(52 211 153);  border-color: rgb(6 78 59 / 0.6); }

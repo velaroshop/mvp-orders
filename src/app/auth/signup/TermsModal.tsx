@@ -60,13 +60,6 @@ export default function TermsModal({ onClose }: TermsModalProps) {
 
         {/* Conținut derulabil */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5">
-            <strong>Notă:</strong> Acest document este un draft și conține câmpuri
-            necompletate marcate cu [PLACEHOLDER] sau ⚠️ DE STABILIT. Necesită
-            revizuire juridică înainte de utilizarea comercială și nu înlocuiește
-            obligațiile fiscale sau un acord de prelucrare a datelor.
-          </p>
-
           <div className="space-y-6 text-sm text-slate-700">
             {TERMS_SECTIONS.map((section) => (
               <div key={section.id}>

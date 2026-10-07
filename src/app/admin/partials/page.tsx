@@ -7,6 +7,7 @@ import ConfirmPartialOrderModal, {
   type ConfirmPartialData,
 } from "../components/ConfirmPartialOrderModal";
 import PartialConversionCard from "../components/PartialConversionCard";
+import PartialStatsCard from "../components/PartialStatsCard";
 
 function partialStatusBadgeColor(status: string) {
   switch (status) {
@@ -266,8 +267,11 @@ export default function PartialsPage() {
         </button>
       </div>
 
-      {/* Conversion Card */}
-      <PartialConversionCard isOwner={isOwner} />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <PartialStatsCard />
+        <PartialConversionCard isOwner={isOwner} />
+      </div>
 
       {/* Search & Filters */}
       <div className="card p-4">

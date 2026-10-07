@@ -14,7 +14,7 @@ import { createHash } from "crypto";
 
 // ─── Versiune și identificator ──────────────────────────────────────────────
 
-export const TERMS_VERSION = "v1.0-draft";
+export const TERMS_VERSION = "v1.0";
 export const TERMS_EFFECTIVE_DATE = "7 octombrie 2026";
 export const TERMS_IDENTIFIER = "TC-EMS-v1.0-draft-20261007";
 export const PLATFORM_NAME = "EMS (Ecom Made Simple)";
@@ -32,10 +32,10 @@ export const TERMS_SECTIONS: TermsSection[] = [
     id: "1",
     title: "1. Identificarea furnizorului",
     content: `
-      <p><strong>[DENUMIRE FIRMĂ]</strong>, societate comercială înregistrată în România,
-      CUI <strong>[CUI]</strong>, nr. Registrul Comerțului <strong>[NR. REGISTRUL COMERȚULUI]</strong>,
-      cu sediul la <strong>[SEDIU]</strong>, denumită în continuare <strong>„Furnizorul"</strong>.</p>
-      <p>Date de contact: <strong>[EMAIL CONTACT]</strong>.</p>
+      <p><strong>JUPIMEDIA SRL</strong>, societate comercială înregistrată în România,
+      CUI <strong>25011510</strong>, nr. Registrul Comerțului <strong>J38/70/2009</strong>,
+      cu sediul la <strong>Str. Principală nr. 26, Păușești-Măglași, Vâlcea</strong>, denumită în continuare <strong>„Furnizorul"</strong>.</p>
+      <p>Date de contact: <strong>contact@jupimedia.ro</strong>.</p>
       <p>Furnizorul aplică regimul de scutire de TVA prevăzut la art. 292 din Codul fiscal.
       Facturile emise nu conțin TVA.</p>
     `,

@@ -37,14 +37,6 @@ export default function TermeniPage() {
           </p>
         </div>
 
-        {/* Avertisment draft */}
-        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <strong>Notă:</strong> Acest document este un draft și conține câmpuri necompletate
-          marcate cu [PLACEHOLDER] sau ⚠️ DE STABILIT. Necesită revizuire juridică înainte
-          de utilizarea comercială. Nu înlocuiește un acord de prelucrare a datelor
-          (DPA) conform GDPR, nici obligațiile fiscale ale părților.
-        </div>
-
         {/* Cuprins */}
         <nav className="mb-8 p-4 bg-white border border-slate-200 rounded-xl">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Cuprins</p>

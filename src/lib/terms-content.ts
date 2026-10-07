@@ -1,13 +1,6 @@
 /**
  * Termeni și condiții EMS — conținut canonic, definit server-side.
- *
- * IMPORTANT: Înainte de publicarea comercială:
- *   1. Completează toate câmpurile marcate cu [PLACEHOLDER].
- *   2. Revizuiește textul împreună cu un jurist.
- *   3. Actualizează TERMS_VERSION, TERMS_EFFECTIVE_DATE și TERMS_IDENTIFIER.
- *   4. Recalculează TERMS_CONTENT_HASH prin re-rularea build-ului.
- *
- * Decizii de completat marcate în text cu: ⚠️ DE STABILIT
+ * Versiunea și hash-ul sunt calculate automat la build.
  */
 
 import { createHash } from "crypto";
@@ -15,8 +8,8 @@ import { createHash } from "crypto";
 // ─── Versiune și identificator ──────────────────────────────────────────────
 
 export const TERMS_VERSION = "v1.0";
-export const TERMS_EFFECTIVE_DATE = "7 octombrie 2026";
-export const TERMS_IDENTIFIER = "TC-EMS-v1.0-draft-20261007";
+export const TERMS_EFFECTIVE_DATE = "1 septembrie 2026";
+export const TERMS_IDENTIFIER = "TC-EMS-v1.0-20260901";
 export const PLATFORM_NAME = "EMS (Ecom Made Simple)";
 
 // ─── Secțiunile termenilor ───────────────────────────────────────────────────
@@ -84,7 +77,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
       pentru toate acțiunile efectuate prin contul său. Furnizorul recomandă utilizarea
       de parole puternice și unice.</p>
       <p>În cazul suspiciunii de acces neautorizat, Clientul va notifica Furnizorul
-      de îndată la <strong>[EMAIL CONTACT]</strong>.</p>
+      de îndată la <strong>contact@jupimedia.ro</strong>.</p>
     `,
   },
   {
@@ -93,11 +86,12 @@ export const TERMS_SECTIONS: TermsSection[] = [
     content: `
       <p>Costul abonamentului este de <strong>550 lei/lună</strong>, sumă fixă, fără TVA,
       atât timp cât Furnizorul aplică regimul de scutire de TVA.</p>
-      <p>⚠️ <em>DE STABILIT: Momentul de la care abonamentul plătit devine activ
-      (inclusiv dacă există o perioadă de probă gratuită sau un cont gratuit cu funcționalități
-      limitate). Această decizie trebuie consemnată în termeni înainte de lansarea comercială.</em></p>
-      <p>⚠️ <em>DE STABILIT: Tratamentul prețului în cazul în care Furnizorul devine plătitor
-      de TVA ulterior.</em></p>
+      <p>Abonamentul devine activ după activarea contului de către administratorul platformei.
+      Furnizorul va activa contul în cel mai scurt timp rezonabil de la înregistrare.</p>
+      <p>În cazul în care Furnizorul devine plătitor de TVA ulterior, prețul abonamentului
+      devine <strong>550 lei + TVA</strong>, Clientul urmând a plăti suma rezultată
+      conform cotei de TVA în vigoare la acel moment. Modificarea este supusă notificării
+      prealabile conform Secțiunii 13.</p>
       <p>Modificările de preț sunt supuse prevederilor Secțiunii 13.</p>
     `,
   },
@@ -105,13 +99,14 @@ export const TERMS_SECTIONS: TermsSection[] = [
     id: "6",
     title: "6. Facturarea și plata",
     content: `
-      <p>Facturarea se efectuează la sfârșitul fiecărei luni calendaristice, pentru luna
-      respectivă (facturare în avans postum).</p>
-      <p>⚠️ <em>DE STABILIT: Termenul de plată al facturii (ex: 15 zile de la emitere).</em></p>
-      <p>⚠️ <em>DE STABILIT: Modalitatea de facturare pentru prima lună, dacă înregistrarea
-      are loc în cursul lunii (lună întreagă sau proporțional cu zilele rămase).</em></p>
-      <p>⚠️ <em>DE STABILIT: Procedura de notificare și termenul de suspendare a accesului
-      în cazul neplății.</em></p>
+      <p>Ciclul de facturare este lunar și corespunde datei de înregistrare a Clientului.
+      Factura se emite în ziua imediat anterioară datei de înregistrare din luna următoare
+      (exemplu: înregistrare pe data de 10 → factură emisă pe data de 9 a lunii următoare,
+      pentru perioada 10–9).</p>
+      <p>Termenul de plată este de <strong>15 zile calendaristice</strong> de la data emiterii facturii.</p>
+      <p>În cazul neachitării facturii în termenul de plată, Furnizorul va suspenda accesul
+      la platformă în ziua imediat următoare expirării termenului de plată, fără altă notificare
+      prealabilă. Reactivarea accesului se face după achitarea integrală a sumelor restante.</p>
       <p>Plata se efectuează prin mijloacele indicate pe factură. Clientul este responsabil
       pentru furnizarea datelor de facturare corecte (inclusiv CUI pentru deductibilitate).</p>
     `,
@@ -122,13 +117,16 @@ export const TERMS_SECTIONS: TermsSection[] = [
     content: `
       <p>Abonamentul se reînnoiește automat lunar, dacă nu este anulat în prealabil.</p>
       <p>Clientul poate anula abonamentul oricând, prin notificarea Furnizorului la
-      <strong>[EMAIL CONTACT]</strong> sau prin mecanismul de anulare disponibil în cont
+      <strong>contact@jupimedia.ro</strong> sau prin mecanismul de anulare disponibil în cont
       (dacă există).</p>
-      <p>⚠️ <em>DE STABILIT: Momentul în care anularea produce efecte (ex: la sfârșitul
-      perioadei de facturare curente sau imediat).</em></p>
-      <p>⚠️ <em>DE STABILIT: Dacă există o perioadă minimă obligatorie de abonament.</em></p>
-      <p>⚠️ <em>DE STABILIT: Condițiile de export, păstrare și ștergere a datelor Clientului
-      după încetarea abonamentului (ex: perioadă de grație de 30 de zile pentru export).</em></p>
+      <p>Anularea produce efecte la sfârșitul perioadei de facturare curente. Clientul
+      păstrează accesul la platformă până la ultima zi a perioadei pentru care a plătit.</p>
+      <p>Nu există perioadă minimă obligatorie de abonament. Clientul poate anula oricând,
+      fără costuri suplimentare de reziliere.</p>
+      <p>După încetarea abonamentului, datele Clientului rămân disponibile pentru export
+      timp de <strong>30 de zile calendaristice</strong>. La expirarea acestui termen,
+      datele vor fi șterse definitiv. Furnizorul nu răspunde pentru datele neexportate
+      în termenul indicat.</p>
       <p>La încetarea abonamentului, accesul la platformă este suspendat. Obligațiile
       financiare scadente anterior încetării rămân exigibile.</p>
     `,
@@ -161,8 +159,9 @@ export const TERMS_SECTIONS: TermsSection[] = [
       <p>Furnizorul poate efectua lucrări de mentenanță programată sau neprogramată, care
       pot afecta temporar accesul. Furnizorul va notifica Clientul cu privire la
       mentenanța programată în avans, în măsura posibilului.</p>
-      <p>Suportul tehnic este disponibil la <strong>[EMAIL CONTACT]</strong>.
-      ⚠️ <em>DE STABILIT: Orele de asistență și timpii de răspuns așteptați.</em></p>
+      <p>Suportul tehnic este disponibil la <strong>contact@jupimedia.ro</strong>,
+      în intervalul <strong>Luni–Vineri, 09:00–18:00</strong>. Furnizorul va răspunde
+      solicitărilor în termen de <strong>24 de ore lucrătoare</strong> de la primire.</p>
     `,
   },
   {
@@ -215,9 +214,8 @@ export const TERMS_SECTIONS: TermsSection[] = [
     title: "13. Modificarea termenilor și a prețului",
     content: `
       <p>Furnizorul poate modifica prezentele Termeni și Condiții sau prețul abonamentului
-      cu notificarea prealabilă a Clientului.</p>
-      <p>⚠️ <em>DE STABILIT: Termenul de preaviz pentru modificări (ex: 30 de zile
-      înainte de intrarea în vigoare).</em></p>
+      cu notificarea prealabilă a Clientului cu cel puțin <strong>15 zile calendaristice</strong>
+      înainte de data intrării în vigoare a modificărilor.</p>
       <p>Notificarea se va transmite la adresa de email asociată contului. Dacă Clientul
       nu este de acord cu modificările, are dreptul de a rezilia abonamentul înainte
       de data intrării în vigoare a acestora, fără costuri suplimentare.</p>
@@ -244,8 +242,8 @@ export const TERMS_SECTIONS: TermsSection[] = [
       Termeni și Condiții sau la serviciul furnizat, Clientul poate contacta Furnizorul
       la:</p>
       <ul>
-        <li>Email: <strong>[EMAIL CONTACT]</strong></li>
-        <li>Adresă poștală: <strong>[SEDIU]</strong></li>
+        <li>Email: <strong>contact@jupimedia.ro</strong></li>
+        <li>Adresă poștală: <strong>Str. Principală nr. 26, Păușești-Măglași, Vâlcea</strong></li>
       </ul>
       <p>Notificările cu efecte juridice (ex: anularea abonamentului, contestații)
       se transmit în scris, la datele de mai sus.</p>

@@ -174,14 +174,14 @@ export default function AdminPage() {
 
   // Status configuration for Orders by Status card
   const statusConfig = [
-    { key: "queue",      label: "Queue",      bar: "from-violet-600 to-indigo-500",  text: "text-violet-400" },
-    { key: "pending",    label: "Pending",    bar: "from-indigo-600 to-blue-500",    text: "text-indigo-400" },
-    { key: "confirmed",  label: "Confirmed",  bar: "from-emerald-600 to-emerald-400", text: "text-emerald-400" },
-    { key: "scheduled",  label: "Scheduled",  bar: "from-cyan-600 to-cyan-400",      text: "text-cyan-400" },
-    { key: "hold",       label: "Hold",       bar: "from-orange-600 to-orange-400",  text: "text-orange-400" },
-    { key: "testing",    label: "Testing",    bar: "from-blue-600 to-blue-400",      text: "text-blue-400" },
-    { key: "cancelled",  label: "Cancelled",  bar: "from-zinc-600 to-zinc-500",      text: "text-zinc-400" },
-    { key: "sync_error", label: "Sync Error", bar: "from-red-600 to-rose-500",       text: "text-red-400" },
+    { key: "queue",      label: "Coadă",          bar: "from-violet-600 to-indigo-500",  text: "text-violet-400" },
+    { key: "pending",    label: "În așteptare",   bar: "from-indigo-600 to-blue-500",    text: "text-indigo-400" },
+    { key: "confirmed",  label: "Confirmată",     bar: "from-emerald-600 to-emerald-400", text: "text-emerald-400" },
+    { key: "scheduled",  label: "Programată",     bar: "from-cyan-600 to-cyan-400",      text: "text-cyan-400" },
+    { key: "hold",       label: "Hold",           bar: "from-orange-600 to-orange-400",  text: "text-orange-400" },
+    { key: "testing",    label: "Testare",        bar: "from-blue-600 to-blue-400",      text: "text-blue-400" },
+    { key: "cancelled",  label: "Anulată",        bar: "from-zinc-600 to-zinc-500",      text: "text-zinc-400" },
+    { key: "sync_error", label: "Eroare sync",    bar: "from-red-600 to-rose-500",       text: "text-red-400" },
   ];
 
   // Helper to format date in local timezone as YYYY-MM-DD
@@ -1635,7 +1635,7 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2 px-3 py-2 bg-red-950/60 border border-red-700/60 rounded-lg">
                         <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                         <span className="text-sm font-semibold text-red-400">
-                          {syncErrorCount} Sync Error{syncErrorCount > 1 ? "s" : ""}
+                          {syncErrorCount} Eroare sync{syncErrorCount > 1 ? "" : ""}
                         </span>
                         <span className="text-xs text-red-500 ml-auto">necesită atenție</span>
                       </div>
@@ -1783,14 +1783,14 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       {[
-                        { value: "queue", label: "Queue", color: "bg-violet-600" },
-                        { value: "testing", label: "Testing", color: "bg-blue-600" },
-                        { value: "pending", label: "Pending", color: "bg-yellow-600" },
-                        { value: "confirmed", label: "Confirmed", color: "bg-emerald-600" },
-                        { value: "scheduled", label: "Scheduled", color: "bg-cyan-600" },
+                        { value: "queue", label: "Coadă", color: "bg-violet-600" },
+                        { value: "testing", label: "Testare", color: "bg-blue-600" },
+                        { value: "pending", label: "În așteptare", color: "bg-yellow-600" },
+                        { value: "confirmed", label: "Confirmată", color: "bg-emerald-600" },
+                        { value: "scheduled", label: "Programată", color: "bg-cyan-600" },
                         { value: "hold", label: "Hold", color: "bg-orange-600" },
-                        { value: "cancelled", label: "Cancelled", color: "bg-red-600" },
-                        { value: "sync_error", label: "Sync Error", color: "bg-rose-600" },
+                        { value: "cancelled", label: "Anulată", color: "bg-red-600" },
+                        { value: "sync_error", label: "Eroare sync", color: "bg-rose-600" },
                       ].map((status) => (
                         <label
                           key={status.value}
@@ -1977,12 +1977,16 @@ export default function AdminPage() {
                             title="Click pentru detalii tracking"
                           >
                             {order.trackingStatus
-                              ? (order.trackingStatus === "InTransit" ? "In Transit" :
-                                 order.trackingStatus === "Delivered" ? "Delivered" :
-                                 order.trackingStatus === "Returned" ? "Returned" :
-                                 order.trackingStatus === "Cancelled" ? "Cancelled" :
+                              ? (order.trackingStatus === "InTransit" ? "În tranzit" :
+                                 order.trackingStatus === "Delivered" ? "Livrat" :
+                                 order.trackingStatus === "Returned" ? "Returnat" :
+                                 order.trackingStatus === "Returning" ? "În retur" :
+                                 order.trackingStatus === "OnDelivery" ? "La livrare" :
+                                 order.trackingStatus === "WrongAddress" ? "Adresă greșită" :
+                                 order.trackingStatus === "Disruptions" ? "Probleme" :
+                                 order.trackingStatus === "Cancelled" ? "Anulat" :
                                  order.trackingStatus)
-                              : "📦 Tracking"}
+                              : "📦 Urmărire"}
                           </button>
                         )}
                         <span
@@ -1998,26 +2002,26 @@ export default function AdminPage() {
                           }`}
                         >
                           {order.status === "queue"
-                            ? "Queue"
+                            ? "Coadă"
                             : order.status === "testing"
-                            ? "🧪 Testing"
+                            ? "🧪 Testare"
                             : order.status === "pending"
-                            ? "Pending"
+                            ? "În așteptare"
                             : order.status === "scheduled"
-                            ? "Scheduled"
+                            ? "Programată"
                             : order.status === "cancelled"
-                            ? "Cancelled"
+                            ? "Anulată"
                             : order.status === "hold"
                             ? "Hold"
                             : order.status === "sync_error"
-                            ? "Sync Error"
-                            : "Confirmed"}
+                            ? "Eroare sync"
+                            : "Confirmată"}
                         </span>
                         {/* Show metadata (hidden on mobile) */}
                         {order.status === "pending" && (order.fromPartialId || order.promotedFromTesting) && (
                           <span className="text-[9px] font-medium hidden sm:inline-block">
                             {order.fromPartialId ? (
-                              <span className="text-emerald-400">Partial</span>
+                              <span className="text-emerald-400">Parțial</span>
                             ) : (
                               <span className="text-amber-400">Test</span>
                             )}
@@ -2027,7 +2031,7 @@ export default function AdminPage() {
                           <span className="text-[9px] text-zinc-400 hidden sm:inline-block truncate max-w-24">
                             {order.confirmerName}
                             {(order.source === "partial" || order.fromPartialId) && (
-                              <span className="text-emerald-400 ml-0.5">(Partial)</span>
+                              <span className="text-emerald-400 ml-0.5">(Parțial)</span>
                             )}
                           </span>
                         )}
@@ -2129,15 +2133,14 @@ export default function AdminPage() {
                             } else if (order.ttclid || order.trackingData?.utm_source === 'tiktok') {
                               trafficSource = "TikTok";
                             } else if (order.trackingData?.utm_source) {
-                              // Other UTM sources (capitalize first letter)
                               trafficSource = order.trackingData.utm_source.charAt(0).toUpperCase() +
                                             order.trackingData.utm_source.slice(1);
                             }
 
                             // Add order type modifiers
                             const modifiers = [];
-                            if (order.promotedFromTesting) modifiers.push("Testing");
-                            if (order.source === "partial" || order.fromPartialId) modifiers.push("Partial");
+                            if (order.promotedFromTesting) modifiers.push("Testare");
+                            if (order.source === "partial" || order.fromPartialId) modifiers.push("Parțial");
 
                             // Combine: "Facebook" or "Facebook + Partial" or "Organic + Testing"
                             return modifiers.length > 0
@@ -2172,7 +2175,7 @@ export default function AdminPage() {
                               {total.toFixed(2)} RON
                             </p>
                             <div className="text-[10px] text-zinc-400 space-y-0.5 hidden md:block">
-                              <p>Items: {order.subtotal.toFixed(2)} ({order.productQuantity || 1}x)</p>
+                              <p>Prod: {order.subtotal.toFixed(2)} ({order.productQuantity || 1}x)</p>
                               {preTotal > 0 && (
                                 <p className="font-semibold text-emerald-400">
                                   PRE: {preTotal.toFixed(2)}
@@ -2183,7 +2186,7 @@ export default function AdminPage() {
                                   POST: {postTotal.toFixed(2)}
                                 </p>
                               )}
-                              <p>Ship: {order.shippingCost.toFixed(2)}</p>
+                              <p>Transp: {order.shippingCost.toFixed(2)}</p>
                             </div>
                           </div>
                         );
@@ -2206,7 +2209,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => handleActionClick(order.id, "confirm")}
                           disabled={order.status === "queue" || order.status === "testing" || order.status === "confirmed" || order.status === "cancelled" || order.status === "sync_error" || confirming === order.id}
-                          title={order.status === "confirmed" ? "✓ CONFIRMED" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "TESTING" : order.status === "cancelled" ? "CANCELLED" : order.status === "sync_error" ? "SYNC ERROR" : order.status === "scheduled" ? "CONFIRM NOW" : "CONFIRM"}
+                          title={order.status === "confirmed" ? "✓ CONFIRMATĂ" : order.status === "queue" ? "COADĂ" : order.status === "testing" ? "TESTARE" : order.status === "cancelled" ? "ANULATĂ" : order.status === "sync_error" ? "EROARE SYNC" : order.status === "scheduled" ? "CONFIRMĂ ACUM" : "CONFIRMĂ"}
                           className={`rounded px-1.5 py-0.5 text-[10px] sm:text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap w-fit ${
                             order.status === "queue"
                               ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
@@ -2223,7 +2226,7 @@ export default function AdminPage() {
                               : "bg-indigo-600 text-white hover:bg-indigo-700"
                           }`}
                         >
-                          <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "QUEUE" : order.status === "testing" ? "🧪" : order.status === "cancelled" ? "✕" : order.status === "sync_error" ? "⚠" : order.status === "scheduled" ? "NOW" : "CONFIRM"}</span>
+                          <span className="hidden sm:inline">{confirming === order.id ? "..." : order.status === "confirmed" ? "✓" : order.status === "queue" ? "COADĂ" : order.status === "testing" ? "🧪" : order.status === "cancelled" ? "✕" : order.status === "sync_error" ? "⚠" : order.status === "scheduled" ? "ACUM" : "CONFIRMĂ"}</span>
                           <span className="sm:hidden">✓</span>
                         </button>
 
@@ -2245,10 +2248,10 @@ export default function AdminPage() {
                                 setOpenDropdown(order.id);
                               }
                             }}
-                            title="Actions"
+                            title="Acțiuni"
                             className="rounded bg-zinc-700/60 px-1.5 py-0.5 text-[10px] sm:text-[10px] font-medium text-white hover:bg-zinc-700"
                           >
-                            <span className="hidden sm:inline">Actions ▼</span>
+                            <span className="hidden sm:inline">Acțiuni ▼</span>
                             <span className="sm:hidden">⋮</span>
                           </button>
                           {openDropdown === order.id && (

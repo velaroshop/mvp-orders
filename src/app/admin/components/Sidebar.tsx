@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { hasRoutePermission, getRoleDisplayName } from "@/lib/permissions";
@@ -95,18 +95,6 @@ export default function Sidebar() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-        setShowOrgSwitcher(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   async function handleChangePassword() {
     setPasswordMessage(null);
@@ -269,10 +257,17 @@ export default function Sidebar() {
       </nav>
 
       {/* User menu — bottom */}
-      <div className="px-3 py-3 border-t border-zinc-800/60" ref={menuRef}>
+      <div className="px-3 py-3 border-t border-zinc-800/60">
+        {/* Backdrop — closes menu when clicking outside */}
+        {isMenuOpen && (
+          <div
+            className="fixed inset-0 z-99"
+            onClick={() => { setIsMenuOpen(false); setShowOrgSwitcher(false); }}
+          />
+        )}
         {/* Dropdown (opens upward) */}
         {isMenuOpen && (
-          <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden relative z-100">
             {/* User info header */}
             <div className="px-4 py-3 border-b border-zinc-800">
               <p className="text-[13px] font-semibold text-white truncate">{userName}</p>

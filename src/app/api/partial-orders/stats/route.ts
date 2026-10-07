@@ -8,6 +8,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const STATUSES = ["pending", "accepted", "refused", "unanswered", "call_later", "duplicate"] as const;
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -21,70 +23,28 @@ export async function GET() {
     }
 
     const now = new Date();
-
-    // Start of today (midnight local → UTC)
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
-    // Start of yesterday
-    const yesterdayStart = new Date(todayStart);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    // Fetch all today's partials with their status in one query
+    const { data: todayRows } = await supabaseAdmin
+      .from("partial_orders")
+      .select("status")
+      .eq("organization_id", activeOrganizationId)
+      .gte("created_at", todayStart.toISOString());
 
-    // 7 days ago
-    const days7 = new Date(now);
-    days7.setDate(days7.getDate() - 7);
+    const todayTotal = todayRows?.length ?? 0;
 
-    // 30 days ago
-    const days30 = new Date(now);
-    days30.setDate(days30.getDate() - 30);
-
-    // Run all counts in parallel
-    const [todayRes, yesterdayRes, days7Res, days30Res, totalRes] = await Promise.all([
-      supabaseAdmin
-        .from("partial_orders")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId)
-        .gte("created_at", todayStart.toISOString()),
-
-      supabaseAdmin
-        .from("partial_orders")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId)
-        .gte("created_at", yesterdayStart.toISOString())
-        .lt("created_at", todayStart.toISOString()),
-
-      supabaseAdmin
-        .from("partial_orders")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId)
-        .gte("created_at", days7.toISOString()),
-
-      supabaseAdmin
-        .from("partial_orders")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId)
-        .gte("created_at", days30.toISOString()),
-
-      supabaseAdmin
-        .from("partial_orders")
-        .select("id", { count: "exact", head: true })
-        .eq("organization_id", activeOrganizationId),
-    ]);
-
-    const today = todayRes.count ?? 0;
-    const yesterday = yesterdayRes.count ?? 0;
-
-    // Trend: today vs yesterday (percentage change, null if yesterday = 0)
-    const trend =
-      yesterday > 0 ? Math.round(((today - yesterday) / yesterday) * 100) : null;
+    // Count per status
+    const statusCounts: Record<string, number> = {};
+    for (const s of STATUSES) statusCounts[s] = 0;
+    for (const row of todayRows ?? []) {
+      if (row.status in statusCounts) statusCounts[row.status]++;
+    }
 
     return NextResponse.json({
-      today,
-      yesterday,
-      last7days: days7Res.count ?? 0,
-      last30days: days30Res.count ?? 0,
-      total: totalRes.count ?? 0,
-      trend, // null | number (positive = up, negative = down)
+      todayTotal,
+      statusBreakdown: STATUSES.map((s) => ({ status: s, count: statusCounts[s] })),
     });
   } catch (error) {
     console.error("Error fetching partial stats:", error);

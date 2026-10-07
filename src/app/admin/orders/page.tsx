@@ -175,14 +175,14 @@ export default function AdminPage() {
 
   // Status configuration for Orders by Status card
   const statusConfig = [
-    { key: "pending", label: "Pending", color: "bg-yellow-500" },
-    { key: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
-    { key: "hold", label: "Hold", color: "bg-orange-500" },
-    { key: "cancelled", label: "Cancelled", color: "bg-red-500" },
-    { key: "queue", label: "Queue", color: "bg-purple-500" },
-    { key: "scheduled", label: "Scheduled", color: "bg-cyan-500" },
-    { key: "testing", label: "Testing", color: "bg-blue-500" },
-    { key: "sync_error", label: "Sync Error", color: "bg-pink-500" },
+    { key: "queue",      label: "Queue",      bar: "from-violet-600 to-indigo-500",  text: "text-violet-400" },
+    { key: "pending",    label: "Pending",    bar: "from-indigo-600 to-blue-500",    text: "text-indigo-400" },
+    { key: "confirmed",  label: "Confirmed",  bar: "from-emerald-600 to-emerald-400", text: "text-emerald-400" },
+    { key: "scheduled",  label: "Scheduled",  bar: "from-cyan-600 to-cyan-400",      text: "text-cyan-400" },
+    { key: "hold",       label: "Hold",       bar: "from-orange-600 to-orange-400",  text: "text-orange-400" },
+    { key: "testing",    label: "Testing",    bar: "from-blue-600 to-blue-400",      text: "text-blue-400" },
+    { key: "cancelled",  label: "Cancelled",  bar: "from-zinc-600 to-zinc-500",      text: "text-zinc-400" },
+    { key: "sync_error", label: "Sync Error", bar: "from-red-600 to-rose-500",       text: "text-red-400" },
   ];
 
   // Helper to format date in local timezone as YYYY-MM-DD
@@ -1613,61 +1613,58 @@ export default function AdminPage() {
             </div>
 
             {/* Orders by Status Card */}
-            <div className="card p-4">
-              <h3 className="section-title mb-2">Comenzi pe status</h3>
+            <div className="card p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-white">Comenzi pe status</h3>
               {statsLoading ? (
-                <div className="text-center py-4">
-                  <p className="text-zinc-400 text-xs">Loading...</p>
+                <div className="text-center py-6">
+                  <p className="text-zinc-500 text-sm">Se încarcă...</p>
                 </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {/* Status Rows - compact, gray for zero */}
-                  {statusConfig.map((status) => {
-                    const count = kpiStats.ordersByStatus[status.key] || 0;
-                    const isZero = count === 0;
-                    return (
-                      <div key={status.key} className="flex items-center justify-between py-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
-                          <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
-                        </div>
-                        <p className={`text-xs font-semibold ${isZero ? 'text-zinc-500' : 'text-white'}`}>
-                          {count}
-                        </p>
+              ) : (() => {
+                const maxCount = Math.max(1, ...statusConfig.map(s => kpiStats.ordersByStatus[s.key] || 0));
+                const syncErrorCount = kpiStats.ordersByStatus["sync_error"] || 0;
+                return (
+                  <>
+                    {/* Sync Error alert banner */}
+                    {syncErrorCount > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-red-950/60 border border-red-700/60 rounded-lg">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                        <span className="text-sm font-semibold text-red-400">
+                          {syncErrorCount} Sync Error{syncErrorCount > 1 ? "s" : ""}
+                        </span>
+                        <span className="text-xs text-red-500 ml-auto">necesită atenție</span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Partials Section */}
-              {!statsLoading && (
-                <div className="mt-3 pt-2 border-t border-zinc-700">
-                  <h4 className="label mb-1.5">Parțiale</h4>
-                  <div className="space-y-0.5">
-                    {[
-                      { key: "pending", label: "Pending", color: "bg-yellow-500" },
-                      { key: "confirmed", label: "Confirmed", color: "bg-emerald-500" },
-                      { key: "refused", label: "Refused", color: "bg-red-500" },
-                      { key: "unanswered", label: "Unanswered", color: "bg-zinc-400" },
-                    ].map((status) => {
-                      const count = kpiStats.partialsByStatus?.[status.key] || 0;
-                      const isZero = count === 0;
-                      return (
-                        <div key={status.key} className="flex items-center justify-between py-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${isZero ? 'bg-zinc-600' : status.color}`}></div>
-                            <span className={`text-xs ${isZero ? 'text-zinc-500' : 'text-white'}`}>{status.label}</span>
+                    )}
+                    <div className="space-y-2.5">
+                      {statusConfig.map((status) => {
+                        const count = kpiStats.ordersByStatus[status.key] || 0;
+                        const isZero = count === 0;
+                        const pct = (count / maxCount) * 100;
+                        const isSyncError = status.key === "sync_error";
+                        return (
+                          <div key={status.key}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-sm ${isZero ? "text-zinc-600" : "text-zinc-300"}`}>
+                                {status.label}
+                              </span>
+                              <span className={`text-sm font-bold ${isZero ? "text-zinc-600" : isSyncError && count > 0 ? "text-red-400" : status.text}`}>
+                                {count}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                              {!isZero && (
+                                <div
+                                  className={`h-full rounded-full bg-linear-to-r ${status.bar} transition-all duration-700`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              )}
+                            </div>
                           </div>
-                          <p className={`text-xs font-semibold ${isZero ? 'text-zinc-500' : 'text-white'}`}>
-                            {count}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Revenue Chart */}

@@ -1475,20 +1475,13 @@ export default function AdminPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-5 overflow-x-hidden">
         <header className="mb-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
             <div>
               <h1 className="page-title">Comenzi</h1>
               <p className="page-subtitle">
                 {totalOrders} comenzi{searchQuery && ` (${orders.length} rezultate)`}{totalPages > 1 && ` • Pagina ${currentPage} din ${totalPages}`}
               </p>
             </div>
-            <button
-              onClick={() => { fetchOrders(searchQuery); fetchKpiData(); }}
-              disabled={isSearching}
-              className="btn btn-secondary btn-sm"
-            >
-              {isSearching ? "Se încarcă..." : "Reîmprospătează"}
-            </button>
           </div>
 
           {/* KPI Card + Orders by Status + Revenue Chart */}
@@ -1609,6 +1602,20 @@ export default function AdminPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Refresh button */}
+              <div className="border-t border-zinc-700 pt-3">
+                <button
+                  onClick={() => { fetchOrders(searchQuery); fetchKpiData(); }}
+                  disabled={isSearching}
+                  className="w-full py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className={`w-4 h-4 ${isSearching ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {isSearching ? "Se încarcă..." : "Actualizare comenzi"}
+                </button>
               </div>
             </div>
 

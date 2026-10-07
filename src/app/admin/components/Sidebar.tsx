@@ -272,7 +272,7 @@ export default function Sidebar() {
       <div className="px-3 py-3 border-t border-zinc-800/60" ref={menuRef}>
         {/* Dropdown (opens upward) */}
         {isMenuOpen && (
-          <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden">
+          <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
             {/* User info header */}
             <div className="px-4 py-3 border-b border-zinc-800">
               <p className="text-[13px] font-semibold text-white truncate">{userName}</p>

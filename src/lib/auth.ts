@@ -113,7 +113,9 @@ export const authOptions: NextAuthOptions = {
               slug,
               is_active,
               is_superadmin,
-              plan
+              plan,
+              cui,
+              created_at
             )
           `)
           .eq("user_id", user.id)
@@ -134,6 +136,8 @@ export const authOptions: NextAuthOptions = {
             role: m.role,
             isSuperadmin: m.organizations.is_superadmin || false,
             plan: m.organizations.plan || "pro",
+            cui: m.organizations.cui || null,
+            createdAt: m.organizations.created_at || null,
           }));
 
           // Set the first organization as the active one by default

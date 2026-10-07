@@ -8,6 +8,9 @@ interface Organization {
   name: string;
   slug: string;
   role: string;
+  plan?: string;
+  cui?: string | null;
+  createdAt?: string | null;
 }
 
 interface OrganizationContextType {

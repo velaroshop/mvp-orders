@@ -183,6 +183,28 @@ export default function Sidebar() {
   const orgName = (session?.user as any)?.organizationName || activeOrganization?.name || "";
   const userRole = (session?.user as any)?.activeRole || "";
   const initials = userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+  const orgPlan: string = (activeOrganization as any)?.plan || (session?.user as any)?.activePlan || "pro";
+  const orgCui: string | null = (activeOrganization as any)?.cui || null;
+  const orgCreatedAt: string | null = (activeOrganization as any)?.createdAt || null;
+  const userEmail: string = (session?.user as any)?.email || "";
+
+  function getDaysUntilBilling(createdAt: string): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const createdDay = new Date(createdAt).getDate();
+    const billingDay = createdDay === 1 ? 0 : createdDay - 1; // 0 = last day of month in JS
+    let next: Date;
+    if (billingDay === 0) {
+      next = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      if (next <= today) next = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+    } else {
+      next = new Date(today.getFullYear(), today.getMonth(), billingDay);
+      if (next <= today) next = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
+    }
+    return Math.ceil((next.getTime() - today.getTime()) / 86400000);
+  }
+
+  const daysUntilBilling = orgCreatedAt ? getDaysUntilBilling(orgCreatedAt) : null;
 
   const SidebarContent = () => (
     <aside className="flex flex-col h-full w-56 bg-zinc-950 text-white">
@@ -268,24 +290,21 @@ export default function Sidebar() {
         {/* Dropdown (opens upward) */}
         {isMenuOpen && (
           <div className="mb-2 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-2xl overflow-hidden relative z-100">
-            {/* User info header */}
+            {/* Header */}
             <div className="px-4 py-3 border-b border-zinc-800">
-              <p className="text-[13px] font-semibold text-white truncate">{userName}</p>
-              <p className="text-[11px] text-zinc-500 truncate">{(session?.user as any)?.email}</p>
-              {userRole && (
-                <span className="inline-block mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-600/20 border border-indigo-600/40 text-indigo-300">
-                  {getRoleDisplayName(userRole as UserRole)}
+              <p className="text-[13px] font-semibold text-white truncate leading-tight">
+                {orgName}{orgCui ? ` (${orgCui})` : ""}
+              </p>
+              <p className="text-[11px] text-zinc-500 truncate mt-0.5">{userEmail}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-600/20 border border-emerald-500/40 text-emerald-400">
+                  {orgPlan.toUpperCase()}
                 </span>
-              )}
-            </div>
-
-            {/* Organization */}
-            {orgName && (
-              <div className="px-4 py-2.5 border-b border-zinc-800">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Organizație</p>
-                <p className="text-[13px] text-white font-medium truncate">{orgName}</p>
+                {daysUntilBilling !== null && (
+                  <span className="text-[10px] text-zinc-500">{daysUntilBilling} zile până la facturare</span>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Org switcher */}
             {organizations.length > 1 && (

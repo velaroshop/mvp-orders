@@ -71,7 +71,7 @@ export async function GET(
       landingPage.product_id
         ? supabase
             .from("products")
-            .select("id, name, sku, status")
+            .select("id, name, sku, status, variations_label")
             .eq("id", landingPage.product_id)
             .single()
         : Promise.resolve({ data: null }),
@@ -140,7 +140,8 @@ export async function GET(
         stores: storeData,
         meta_test_mode: metaTestMode,
         meta_test_event_code: metaTestEventCode,
-        variations_label: landingPage.variations_label || null,
+        // Landing page label overrides product label; product label is the default
+        variations_label: landingPage.variations_label || productData?.variations_label || null,
       },
       presaleUpsells,
       productVariations,

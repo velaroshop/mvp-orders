@@ -1287,7 +1287,7 @@ function WidgetFormContent() {
           <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isV2 ? "flex flex-col" : ""}`}>
 
           {/* Delivery Information */}
-          <div className={isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"} style={isV2 ? { order: 2 } : undefined}>
+          <div className={isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"} style={isV2 ? { order: 3 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
@@ -1676,7 +1676,7 @@ function WidgetFormContent() {
             const totalVarQty = getTotalVariationQuantity();
             const remaining = offerQty - totalVarQty;
             return (
-              <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 3 } : undefined}>
+              <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 2 } : undefined}>
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-1 text-center">
                   {landingPage.variations_label || "Selectați variantele dorite"}
                 </h2>
@@ -1778,7 +1778,7 @@ function WidgetFormContent() {
 
           {/* Presale Upsells */}
           {presaleUpsells.length > 0 && (
-            <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 3 } : undefined}>
+            <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 4 } : undefined}>
               {/* Header */}
               <div className="mb-2 text-center">
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
@@ -1902,7 +1902,7 @@ function WidgetFormContent() {
           )}
 
           {/* Order Summary */}
-          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor, order: 4 } : { backgroundColor }}>
+          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor, order: 5 } : { backgroundColor }}>
             <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
               Rezumatul comenzii
             </h2>

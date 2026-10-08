@@ -22,6 +22,7 @@ interface Product {
   sku?: string;
   status: "active" | "testing" | "inactive";
   variations?: Variation[];
+  variations_label?: string | null;
 }
 
 interface NewVariationForm {
@@ -68,6 +69,10 @@ export default function EditProductPage() {
   // Delete variation
   const [deletingVariationId, setDeletingVariationId] = useState<string | null>(null);
 
+  // Variations label (product-level default)
+  const [variationsLabel, setVariationsLabel] = useState<string>("");
+  const [isSavingLabel, setIsSavingLabel] = useState(false);
+
   useEffect(() => {
     if (productId) fetchProduct();
   }, [productId]);
@@ -81,6 +86,7 @@ export default function EditProductPage() {
       if (!data.product) throw new Error("Produsul nu a fost găsit");
       setFormData(data.product);
       setVariations(data.product.variations || []);
+      setVariationsLabel(data.product.variations_label || "");
       // Pre-fill new variation SKU prefix
       setNewVariation(v => ({ ...v, sku: (data.product.sku || "") + "-" }));
     } catch (err) {
@@ -194,6 +200,30 @@ export default function EditProductPage() {
     } catch {
       alert("Eroare la actualizarea stocului");
     }
+  }
+
+  async function handleSaveVariationsLabel(value: string) {
+    setIsSavingLabel(true);
+    try {
+      await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variationsLabel: value }),
+      });
+    } catch {
+      // Non-critical: silent fail
+    } finally {
+      setIsSavingLabel(false);
+    }
+  }
+
+  function isValidColorHex(value: string): boolean {
+    return /^#[0-9A-Fa-f]{6}$/.test(value);
+  }
+
+  function skuNeedsWarning(sku: string): boolean {
+    if (!sku || sku.endsWith("-")) return false;
+    return !/^[A-Za-z]+-\d+-[A-Za-z]+$/.test(sku);
   }
 
   async function handleToggleVariationStatus(variation: Variation) {
@@ -394,17 +424,35 @@ export default function EditProductPage() {
                       </div>
                       <div>
                         <label className="label">
-                          {(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "color" ? "Hex culoare" : "URL imagine"}
+                          {(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "color" ? "Culoare" : "URL imagine"}
                         </label>
-                        <input
-                          type="text"
-                          value={editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? ""}
-                          onChange={(e) => setEditingVariationData(d => ({ ...d, variation_visual_value: e.target.value }))}
-                          className="input"
-                          placeholder={(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "color" ? "#4CAF50" : "https://..."}
-                        />
+                        {(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "color" ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={isValidColorHex(editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? "") ? (editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? "#000000") : "#000000"}
+                              onChange={(e) => setEditingVariationData(d => ({ ...d, variation_visual_value: e.target.value }))}
+                              className="w-9 h-9 rounded cursor-pointer border border-zinc-700 bg-transparent p-0.5"
+                            />
+                            <span className="text-xs font-mono text-zinc-400">{editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? "#000000"}</span>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? ""}
+                            onChange={(e) => setEditingVariationData(d => ({ ...d, variation_visual_value: e.target.value }))}
+                            className="input"
+                            placeholder="https://..."
+                          />
+                        )}
                       </div>
                     </div>
+                    {/* SKU format warning in edit mode */}
+                    {skuNeedsWarning(editingVariationData.sku ?? variation.sku) && (
+                      <p className="text-xs text-amber-400">
+                        Formatul recomandat: LITERE-CIFRE-LITERE (ex: {formData.sku}-001-VERDE). Poți folosi orice format.
+                      </p>
+                    )}
                     {editVariationError && (
                       <p className="text-xs text-red-400">{editVariationError}</p>
                     )}
@@ -556,17 +604,36 @@ export default function EditProductPage() {
               </div>
               <div>
                 <label className="label">
-                  {newVariation.variation_visual_type === "color" ? "Hex culoare" : "URL imagine"}
+                  {newVariation.variation_visual_type === "color" ? "Culoare" : "URL imagine"}
                 </label>
-                <input
-                  type="text"
-                  value={newVariation.variation_visual_value}
-                  onChange={(e) => setNewVariation(v => ({ ...v, variation_visual_value: e.target.value }))}
-                  className="input"
-                  placeholder={newVariation.variation_visual_type === "color" ? "#4CAF50" : "https://imagedelivery.net/..."}
-                />
+                {newVariation.variation_visual_type === "color" ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={isValidColorHex(newVariation.variation_visual_value) ? newVariation.variation_visual_value : "#000000"}
+                      onChange={(e) => setNewVariation(v => ({ ...v, variation_visual_value: e.target.value }))}
+                      className="w-9 h-9 rounded cursor-pointer border border-zinc-700 bg-transparent p-0.5"
+                    />
+                    <span className="text-xs font-mono text-zinc-400">{newVariation.variation_visual_value || "#000000"}</span>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={newVariation.variation_visual_value}
+                    onChange={(e) => setNewVariation(v => ({ ...v, variation_visual_value: e.target.value }))}
+                    className="input"
+                    placeholder="https://imagedelivery.net/..."
+                  />
+                )}
               </div>
             </div>
+
+            {/* SKU format warning */}
+            {skuNeedsWarning(newVariation.sku) && (
+              <p className="text-xs text-amber-400">
+                Formatul recomandat: LITERE-CIFRE-LITERE (ex: {formData.sku}-001-VERDE). Poți folosi orice format.
+              </p>
+            )}
 
             {variationError && (
               <p className="text-xs text-red-400">{variationError}</p>
@@ -597,7 +664,24 @@ export default function EditProductPage() {
         )}
 
         {variations.length > 0 && (
-          <div className="px-5 py-3 border-t border-zinc-800/60 bg-zinc-950/30">
+          <div className="px-5 py-4 border-t border-zinc-800/60 bg-zinc-950/30 space-y-3">
+            <div>
+              <label className="label">Titlu selector variații</label>
+              <input
+                type="text"
+                value={variationsLabel}
+                onChange={(e) => setVariationsLabel(e.target.value)}
+                onBlur={(e) => handleSaveVariationsLabel(e.target.value)}
+                className="input"
+                placeholder='ex. "Alege culoarea dorită"'
+                maxLength={50}
+                disabled={isSavingLabel}
+              />
+              <p className="text-faint text-xs mt-1">
+                Afișat în widget deasupra selectorului de variații. Maxim 50 caractere.
+                {isSavingLabel && <span className="ml-2 text-zinc-500">Se salvează...</span>}
+              </p>
+            </div>
             <p className="text-xs text-zinc-600">Clientul distribuie cantitatea ofertei între variațiile active și în stoc. Toate au același preț.</p>
           </div>
         )}

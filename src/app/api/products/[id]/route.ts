@@ -170,6 +170,7 @@ export async function PUT(
     if (body.variation_visual_type !== undefined) updateData.variation_visual_type = body.variation_visual_type;
     if (body.variation_visual_value !== undefined) updateData.variation_visual_value = body.variation_visual_value;
     if (body.variation_display_order !== undefined) updateData.variation_display_order = body.variation_display_order;
+    if (body.variationsLabel !== undefined) updateData.variations_label = body.variationsLabel || null;
 
     const { data: product, error } = await supabase
       .from("products")

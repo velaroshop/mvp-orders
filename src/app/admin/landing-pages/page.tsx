@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
 
 interface Upsell {
   id: string;
@@ -1219,11 +1220,13 @@ export default function LandingPagesPage() {
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
                       URL Media
                     </label>
-                    <input
-                      type="url"
+                    <ImageUploadInput
                       value={editUpsellModal.media_url || ""}
-                      onChange={(e) => setEditUpsellModal({ ...editUpsellModal, media_url: e.target.value })}
-                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      onChange={(url) => setEditUpsellModal({ ...editUpsellModal, media_url: url })}
+                      uploadContext={`upsells/${editUpsellModal.landing_page_id}`}
+                      maxWidth={editUpsellModal.type === "postsale" ? 800 : 400}
+                      maxHeight={editUpsellModal.type === "postsale" ? 800 : 400}
+                      quality={0.7}
                     />
                   </div>
 

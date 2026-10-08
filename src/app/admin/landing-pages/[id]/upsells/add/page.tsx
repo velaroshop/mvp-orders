@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
+import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
 import Link from "next/link";
 
 interface Product {
@@ -483,16 +484,14 @@ export default function AddUpsellPage() {
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Media URL
                 </label>
-                <input
-                  type="text"
+                <ImageUploadInput
                   value={formData.media_url}
-                  onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  onChange={(url) => setFormData({ ...formData, media_url: url })}
+                  uploadContext={`upsells/${landingPageId}`}
+                  maxWidth={formData.type === "postsale" ? 800 : 400}
+                  maxHeight={formData.type === "postsale" ? 800 : 400}
+                  quality={0.7}
                 />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Supported formats: JPG, PNG, WEBP. Use small file sizes for faster loading.
-                </p>
               </div>
 
               {/* Display Order */}

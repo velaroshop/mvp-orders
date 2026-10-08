@@ -145,7 +145,7 @@ async function fallbackSearch(
 ) {
   let query = supabaseAdmin
     .from("orders")
-    .select("*, confirmer:users!confirmed_by(name)", { count: "exact" })
+    .select("*, selected_variations, confirmer:users!confirmed_by(name)", { count: "exact" })
     .eq("organization_id", organizationId);
 
   if (statuses && statuses.length > 0) {
@@ -181,6 +181,10 @@ async function fallbackSearch(
   if (error) {
     throw new Error(`Failed to list orders: ${error.message}`);
   }
+
+  // TEMP DEBUG
+  const firstWithVariations = (data || []).find((r: any) => r.selected_variations);
+  console.log("[list-debug] first order with variations:", firstWithVariations?.id ?? "none", JSON.stringify(firstWithVariations?.selected_variations ?? null));
 
   const orders = (data || []).map((row: any) => ({
     id: row.id,

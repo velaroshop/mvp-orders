@@ -508,11 +508,6 @@
             </p>
           </div>
 
-          <!-- Trust message -->
-          <p style="font-size: 14px; color: #64748b; text-align: center; margin: 0; line-height: 1.6;">
-            Un reprezentant al firmei te va suna în următoarele 24 de ore pentru confirmarea comenzii
-          </p>
-
         </div>
       </div>
 

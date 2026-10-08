@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Plus, ChevronDown, Pencil, Package } from "lucide-react";
 import ConfirmModal from "../components/ConfirmModal";
 import Toast from "../components/Toast";
 
@@ -17,8 +17,19 @@ interface Product {
   is_in_use?: boolean;
 }
 
+const statusBadge: Record<string, string> = {
+  active:   "badge badge-green",
+  testing:  "badge badge-orange",
+  inactive: "badge badge-zinc",
+};
+
+const statusLabel: Record<string, string> = {
+  active:   "Activ",
+  testing:  "Test",
+  inactive: "Inactiv",
+};
+
 export default function ProductsPage() {
-  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,63 +41,42 @@ export default function ProductsPage() {
     message: string;
     action: (() => Promise<void>) | null;
     isProcessing: boolean;
-  }>({
-    isOpen: false,
-    title: "",
-    message: "",
-    action: null,
-    isProcessing: false,
-  });
+  }>({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
 
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: "success" | "error" | "info";
     message: string;
-  }>({
-    isOpen: false,
-    type: "success",
-    message: "",
-  });
+  }>({ isOpen: false, type: "success", message: "" });
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { fetchProducts(); }, []);
 
   async function fetchProducts() {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/products");
-
-      if (!response.ok) {
-        throw new Error("Eroare la încărcarea produselor");
-      }
-
-      const data = await response.json();
+      const res = await fetch("/api/products");
+      if (!res.ok) throw new Error("Eroare la încărcarea produselor");
+      const data = await res.json();
       setProducts(data.products || []);
     } catch (err) {
-      console.error("Error fetching products:", err);
       setError(err instanceof Error ? err.message : "Nu s-au putut încărca produsele");
     } finally {
       setIsLoading(false);
     }
   }
 
-  function toggleRowExpansion(productId: string) {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(productId)) {
-      newExpanded.delete(productId);
-    } else {
-      newExpanded.add(productId);
-    }
-    setExpandedRows(newExpanded);
+  function toggleRow(id: string) {
+    const next = new Set(expandedRows);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setExpandedRows(next);
   }
 
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString("ro-RO", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  function formatDate(d: string) {
+    return new Date(d).toLocaleDateString("ro-RO", { year: "numeric", month: "short", day: "numeric" });
+  }
+
+  function closeModal() {
+    setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
   }
 
   async function handlePromoteBulk(productId: string, count: number) {
@@ -95,33 +85,17 @@ export default function ProductsPage() {
       title: "Promovează comenzile de test",
       message: `Ești sigur că vrei să promovezi ${count} ${count === 1 ? "comandă de test" : "comenzi de test"} în comenzi reale? Vor fi sincronizate cu Helpship.`,
       action: async () => {
-        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        setConfirmModal(p => ({ ...p, isProcessing: true }));
         try {
-          const response = await fetch(`/api/products/${productId}/promote-testing-orders`, {
-            method: "POST",
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Eroare la promovarea comenzilor");
-          }
-
-          const result = await response.json();
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({
-            isOpen: true,
-            type: "success",
-            message: `${result.count} ${result.count === 1 ? "comandă promovată" : "comenzi promovate"} cu succes! ✓`,
-          });
-
+          const res = await fetch(`/api/products/${productId}/promote-testing-orders`, { method: "POST" });
+          if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Eroare"); }
+          const result = await res.json();
+          closeModal();
+          setToast({ isOpen: true, type: "success", message: `${result.count} ${result.count === 1 ? "comandă promovată" : "comenzi promovate"} cu succes! ✓` });
           await fetchProducts();
-        } catch (error) {
-          console.error("Error promoting orders:", error);
-          const errorMessage = error instanceof Error ? error.message : "Eroare la promovarea comenzilor";
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({ isOpen: true, type: "error", message: errorMessage });
+        } catch (e) {
+          closeModal();
+          setToast({ isOpen: true, type: "error", message: e instanceof Error ? e.message : "Eroare la promovare" });
         }
       },
       isProcessing: false,
@@ -134,33 +108,17 @@ export default function ProductsPage() {
       title: "Anulează comenzile de test",
       message: `Ești sigur că vrei să anulezi ${count} ${count === 1 ? "comandă de test" : "comenzi de test"}? Această acțiune nu poate fi anulată.`,
       action: async () => {
-        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        setConfirmModal(p => ({ ...p, isProcessing: true }));
         try {
-          const response = await fetch(`/api/products/${productId}/cancel-testing-orders`, {
-            method: "POST",
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Eroare la anularea comenzilor");
-          }
-
-          const result = await response.json();
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({
-            isOpen: true,
-            type: "success",
-            message: `${result.count} ${result.count === 1 ? "comandă anulată" : "comenzi anulate"} cu succes! ✓`,
-          });
-
+          const res = await fetch(`/api/products/${productId}/cancel-testing-orders`, { method: "POST" });
+          if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Eroare"); }
+          const result = await res.json();
+          closeModal();
+          setToast({ isOpen: true, type: "success", message: `${result.count} ${result.count === 1 ? "comandă anulată" : "comenzi anulate"} cu succes! ✓` });
           await fetchProducts();
-        } catch (error) {
-          console.error("Error cancelling orders:", error);
-          const errorMessage = error instanceof Error ? error.message : "Eroare la anularea comenzilor";
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({ isOpen: true, type: "error", message: errorMessage });
+        } catch (e) {
+          closeModal();
+          setToast({ isOpen: true, type: "error", message: e instanceof Error ? e.message : "Eroare la anulare" });
         }
       },
       isProcessing: false,
@@ -173,31 +131,16 @@ export default function ProductsPage() {
       title: "Șterge produsul",
       message: `Ești sigur că vrei să ștergi „${productName}"? Această acțiune nu poate fi anulată.`,
       action: async () => {
-        setConfirmModal((prev) => ({ ...prev, isProcessing: true }));
+        setConfirmModal(p => ({ ...p, isProcessing: true }));
         try {
-          const response = await fetch(`/api/products/${productId}`, {
-            method: "DELETE",
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Eroare la ștergerea produsului");
-          }
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({
-            isOpen: true,
-            type: "success",
-            message: `Produsul „${productName}" a fost șters cu succes! ✓`,
-          });
-
+          const res = await fetch(`/api/products/${productId}`, { method: "DELETE" });
+          if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Eroare"); }
+          closeModal();
+          setToast({ isOpen: true, type: "success", message: `Produsul „${productName}" a fost șters. ✓` });
           await fetchProducts();
-        } catch (error) {
-          console.error("Error deleting product:", error);
-          const errorMessage = error instanceof Error ? error.message : "Eroare la ștergerea produsului";
-
-          setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false });
-          setToast({ isOpen: true, type: "error", message: errorMessage });
+        } catch (e) {
+          closeModal();
+          setToast({ isOpen: true, type: "error", message: e instanceof Error ? e.message : "Eroare la ștergere" });
         }
       },
       isProcessing: false,
@@ -205,262 +148,159 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="max-w-7xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Produse</h1>
-        <p className="text-zinc-400 mt-2">
-          Gestionează catalogul de produse
-        </p>
-      </div>
+    <div className="max-w-4xl space-y-6">
 
-      {/* Add Product Button */}
-      <div className="mb-6 flex justify-center">
-        <Link
-          href="/admin/products/new"
-          className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium shadow-sm"
-        >
-          + Adaugă produs nou
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="page-title">Produse</h1>
+          <p className="page-subtitle">Gestionează catalogul de produse</p>
+        </div>
+        <Link href="/admin/products/new" className="btn btn-primary shrink-0">
+          <Plus className="w-4 h-4" />
+          Produs nou
         </Link>
       </div>
 
-      {/* Products List */}
+      {/* List */}
       {isLoading ? (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">Se încarcă produsele...</p>
+        <div className="card p-8 text-center">
+          <p className="text-faint text-sm">Se încarcă produsele...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-          <p className="text-red-300">{error}</p>
+        <div className="rounded-xl border border-red-800/60 bg-red-900/20 p-4">
+          <p className="text-red-400 text-sm">{error}</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400 mb-4">Niciun produs găsit.</p>
-          <Link
-            href="/admin/products/new"
-            className="inline-block px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
-          >
+        <div className="card p-12 text-center">
+          <Package className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+          <p className="text-muted text-sm mb-4">Niciun produs adăugat încă.</p>
+          <Link href="/admin/products/new" className="btn btn-primary btn-sm">
+            <Plus className="w-3.5 h-3.5" />
             Creează primul produs
           </Link>
         </div>
       ) : (
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-zinc-800 border-b border-zinc-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Nume
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    SKU
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Creat
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                    Acțiuni
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-700">
-                {products.map((product) => (
-                  <>
-                    <tr
-                      key={product.id}
-                      onClick={() => toggleRowExpansion(product.id)}
-                      className="hover:bg-zinc-700/50 cursor-pointer"
+        <div className="card overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-zinc-800/60">
+            <span className="label mb-0">Nume</span>
+            <span className="label mb-0">SKU</span>
+            <span className="label mb-0">Status</span>
+            <span className="label mb-0">Creat</span>
+            <span className="label mb-0 w-16 text-right">Acțiuni</span>
+          </div>
+
+          {/* Rows */}
+          <div className="divide-y divide-zinc-800/60">
+            {products.map((product) => (
+              <div key={product.id}>
+                {/* Main row */}
+                <div
+                  className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-zinc-800/30 cursor-pointer transition-colors"
+                  onClick={() => toggleRow(product.id)}
+                >
+                  <span className="text-sm font-medium text-white truncate">{product.name}</span>
+                  <span className="text-sm text-zinc-400 font-mono">{product.sku || "—"}</span>
+                  <span className={statusBadge[product.status]}>{statusLabel[product.status]}</span>
+                  <span className="text-xs text-zinc-500">{formatDate(product.created_at)}</span>
+                  <div className="flex items-center justify-end gap-1 w-16">
+                    <Link
+                      href={`/admin/products/${product.id}/edit`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700/60 rounded-lg transition-colors"
+                      title="Editează"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white">
-                          {product.name}
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Link>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleRow(product.id); }}
+                      className="p-1.5 text-zinc-500 hover:text-white hover:bg-zinc-700/60 rounded-lg transition-colors"
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedRows.has(product.id) ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded panel */}
+                {expandedRows.has(product.id) && (
+                  <div className="px-5 pb-5 pt-1 bg-zinc-950/60 border-t border-zinc-800/60">
+                    <div className="space-y-4 pt-3">
+
+                      {/* Details */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <p className="label">SKU</p>
+                          <p className="text-sm text-zinc-300 font-mono">{product.sku || "—"}</p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-zinc-300">
-                          {product.sku || "-"}
+                        <div>
+                          <p className="label">Status</p>
+                          <span className={statusBadge[product.status]}>{statusLabel[product.status]}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                            product.status === "active"
-                              ? "bg-emerald-600 text-white"
-                              : product.status === "testing"
-                              ? "bg-amber-600 text-white"
-                              : "bg-zinc-600 text-white"
-                          }`}
-                        >
-                          {product.status === "active"
-                            ? "Activ"
-                            : product.status === "testing"
-                            ? "Test"
-                            : "Inactiv"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-zinc-300">
-                          {formatDate(product.created_at)}
+                        <div>
+                          <p className="label">Creat la</p>
+                          <p className="text-sm text-zinc-300">{formatDate(product.created_at)}</p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/products/${product.id}/edit`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
-                            title="Editează produsul"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </Link>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleRowExpansion(product.id);
-                            }}
-                            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-700/50 rounded transition-colors"
-                            title={expandedRows.has(product.id) ? "Restrânge" : "Extinde"}
-                          >
-                            <svg
-                              className={`w-4 h-4 transition-transform ${expandedRows.has(product.id) ? "rotate-180" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                      </div>
+
+                      {/* Testing orders */}
+                      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+                        <p className="label mb-2">Comenzi de test</p>
+                        {(product.testing_orders_count || 0) > 0 ? (
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-blue-400 font-medium">
+                              {product.testing_orders_count} {product.testing_orders_count === 1 ? "comandă" : "comenzi"}
+                            </span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handlePromoteBulk(product.id, product.testing_orders_count || 0); }}
+                              className="btn btn-sm"
+                              style={{ backgroundColor: "rgb(5 150 105 / 0.2)", color: "rgb(52 211 153)", borderColor: "rgb(6 78 59 / 0.6)" }}
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                    {/* Expanded Details Row */}
-                    {expandedRows.has(product.id) && (
-                      <tr key={`${product.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
-                        <td colSpan={5} className="px-6 py-4">
-                          <div className="space-y-4">
-                            {/* Product Details */}
-                            <div>
-                              <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
-                                Detalii produs
-                              </h4>
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">SKU</div>
-                                  <div className="text-sm text-zinc-300">{product.sku || "-"}</div>
-                                </div>
-                                <div>
-                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">Status</div>
-                                  <span
-                                    className={`inline-flex rounded-md px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                                      product.status === "active"
-                                        ? "bg-emerald-600 text-white"
-                                        : product.status === "testing"
-                                        ? "bg-amber-600 text-white"
-                                        : "bg-zinc-600 text-white"
-                                    }`}
-                                  >
-                                    {product.status === "active"
-                                      ? "Activ"
-                                      : product.status === "testing"
-                                      ? "Test"
-                                      : "Inactiv"}
-                                  </span>
-                                </div>
-                                <div>
-                                  <div className="text-[11px] font-medium text-zinc-400 uppercase mb-1">Creat</div>
-                                  <div className="text-sm text-zinc-300">{formatDate(product.created_at)}</div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Testing Orders Section */}
-                            <div className="pt-3 border-t border-zinc-700/50">
-                              <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
-                                Comenzi de test
-                              </h4>
-                              <div className="bg-zinc-800/30 rounded border border-zinc-700/30 p-3">
-                                {(product.testing_orders_count || 0) > 0 ? (
-                                  <div className="space-y-3">
-                                    <div className="text-sm font-medium text-blue-400">
-                                      {product.testing_orders_count} {product.testing_orders_count === 1 ? "comandă de test" : "comenzi de test"}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handlePromoteBulk(product.id, product.testing_orders_count || 0);
-                                        }}
-                                        className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors font-medium"
-                                      >
-                                        🚀 Promovează toate
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCancelBulk(product.id, product.testing_orders_count || 0);
-                                        }}
-                                        className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
-                                      >
-                                        ✕ Anulează toate
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-zinc-400 italic">
-                                    Nicio comandă de test pentru acest produs
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Delete Product Section */}
-                            {!product.is_in_use && (
-                              <div className="pt-3 border-t border-zinc-700/50">
-                                <h4 className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
-                                  Zonă periculoasă
-                                </h4>
-                                <div className="bg-red-900/10 rounded border border-red-700/30 p-3">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-xs text-zinc-300 font-medium">Șterge acest produs</p>
-                                      <p className="text-xs text-zinc-400 mt-0.5">
-                                        Produsul nu este folosit în nicio pagină de landing sau upsell
-                                      </p>
-                                    </div>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteProduct(product.id, product.name);
-                                      }}
-                                      className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
-                                    >
-                                      Șterge produsul
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                              🚀 Promovează toate
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCancelBulk(product.id, product.testing_orders_count || 0); }}
+                              className="btn btn-sm btn-danger"
+                            >
+                              ✕ Anulează toate
+                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
+                        ) : (
+                          <p className="text-xs text-zinc-500 italic">Nicio comandă de test pentru acest produs.</p>
+                        )}
+                      </div>
+
+                      {/* Danger zone */}
+                      {!product.is_in_use && (
+                        <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-4">
+                          <p className="label text-red-500 mb-2">Zonă periculoasă</p>
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm text-zinc-300 font-medium">Șterge produsul</p>
+                              <p className="text-xs text-zinc-500 mt-0.5">Nu este folosit în nicio pagină de landing sau upsell.</p>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product.id, product.name); }}
+                              className="btn btn-sm btn-danger shrink-0"
+                            >
+                              Șterge
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, title: "", message: "", action: null, isProcessing: false })}
+        onClose={closeModal}
         onConfirm={() => confirmModal.action && confirmModal.action()}
         title={confirmModal.title}
         message={confirmModal.message}

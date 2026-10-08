@@ -7,7 +7,7 @@ export default function NewStorePage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     url: "",
-    orderSeries: "VLR",
+    orderSeries: "",
     orderEmail: "",
     primaryColor: "#FF6B00",
     accentColor: "#00A854",
@@ -90,7 +90,7 @@ export default function NewStorePage() {
               value={formData.orderSeries}
               onChange={(e) => setFormData({ ...formData, orderSeries: e.target.value })}
               className="input max-w-xs"
-              placeholder="ex: VLR"
+              placeholder="ex: ABC"
               required
             />
             <p className="text-xs text-faint mt-1">Prefixul folosit la numerotarea comenzilor (ex: ECM).</p>

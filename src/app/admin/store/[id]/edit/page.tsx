@@ -205,7 +205,7 @@ export default function EditStorePage() {
                   value={formData.order_series}
                   onChange={(e) => setFormData({ ...formData, order_series: e.target.value })}
                   className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="e.g., VLR"
+                  placeholder="ex: ABC"
                   required
                 />
                 <p className="text-xs text-zinc-400 mt-1">

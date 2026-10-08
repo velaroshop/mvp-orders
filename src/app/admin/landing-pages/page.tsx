@@ -428,55 +428,55 @@ export default function LandingPagesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Landing Pages</h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            Manage your landing pages and campaigns
+          <h1 className="page-title">Pagini de vânzare</h1>
+          <p className="page-subtitle text-sm mt-1">
+            Gestionează paginile și campaniile tale
           </p>
         </div>
         <Link
           href="/admin/landing-pages/new"
-          className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium text-sm"
+          className="btn btn-primary"
         >
-          + Add Landing Page
+          + Pagină nouă
         </Link>
       </div>
 
       {/* Landing Pages List */}
       {isLoading ? (
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 p-6 text-center">
-          <p className="text-zinc-400 text-sm">Loading landing pages...</p>
+        <div className="card p-6 text-center">
+          <p className="text-zinc-400 text-sm">Se încarcă paginile...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
+        <div className="rounded-xl border border-red-800/60 bg-red-900/20 px-4 py-3">
           <p className="text-red-400 text-sm">{error}</p>
-      </div>
+        </div>
       ) : landingPages.length === 0 ? (
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 p-6 text-center">
-          <p className="text-zinc-400 text-sm mb-3">No landing pages found.</p>
+        <div className="card p-6 text-center">
+          <p className="text-zinc-400 text-sm mb-3">Nicio pagină de vânzare adăugată.</p>
           <Link
             href="/admin/landing-pages/new"
-            className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm"
+            className="btn btn-primary"
           >
-            Create your first landing page
+            Creează prima pagină
           </Link>
         </div>
       ) : (
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-zinc-900/50 border-b border-zinc-700/50">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
-                    Name
+                    Nume
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
-                    Product
+                    Produs
                   </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400 uppercase">
                     Status
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400 uppercase">
-                    Actions
+                    Acțiuni
                   </th>
                 </tr>
               </thead>
@@ -509,18 +509,18 @@ export default function LandingPagesPage() {
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            className={`badge ${
                               page.status === "published"
-                                ? "bg-emerald-500/20 text-emerald-400"
+                                ? "badge-green"
                                 : page.status === "archived"
-                                ? "bg-zinc-500/20 text-zinc-400"
-                                : "bg-amber-500/20 text-amber-400"
+                                ? "badge-zinc"
+                                : "badge-orange"
                             }`}
                           >
                             {page.status === "published"
-                              ? "Published"
+                              ? "Publicat"
                               : page.status === "archived"
-                              ? "Archived"
+                              ? "Arhivat"
                               : "Draft"}
                           </span>
                           {page.products?.status === "inactive" && (
@@ -629,11 +629,11 @@ export default function LandingPagesPage() {
                             <div className="pt-3 border-t border-zinc-700/50">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
-                                  Presale Upsells
+                                  Upsell-uri presale
                                 </h4>
                                 <button
                                   onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=presale`)}
-                                  className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                  className="btn btn-primary btn-sm"
                                 >
                                   + Adaugă Presale
                                 </button>
@@ -656,12 +656,12 @@ export default function LandingPagesPage() {
                                             <div className="flex items-center gap-2">
                                               <p className="text-sm font-medium text-white">{upsell.title}</p>
                                               {upsell.active ? (
-                                                <span className="px-2 py-0.5 bg-emerald-600/20 text-emerald-400 text-[10px] rounded uppercase font-medium">
-                                                  Active
+                                                <span className="badge badge-green">
+                                                  Activ
                                                 </span>
                                               ) : (
-                                                <span className="px-2 py-0.5 bg-red-600/20 text-red-400 text-[10px] rounded uppercase font-medium">
-                                                  Inactive
+                                                <span className="badge badge-red">
+                                                  Inactiv
                                                 </span>
                                               )}
                                               {upsell.product?.status === "inactive" && (
@@ -747,11 +747,11 @@ export default function LandingPagesPage() {
                             <div className="pt-3 border-t border-zinc-700/50">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-xs font-semibold text-white uppercase tracking-wide">
-                                  Postsale Upsells
+                                  Upsell-uri postsale
                                 </h4>
                                 <button
                                   onClick={() => router.push(`/admin/landing-pages/${page.id}/upsells/add?type=postsale`)}
-                                  className="px-3 py-1 rounded text-xs font-medium transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+                                  className="btn btn-primary btn-sm"
                                   title="Adaugă postsale upsell"
                                 >
                                   + Adaugă Postsale
@@ -775,12 +775,12 @@ export default function LandingPagesPage() {
                                             <div className="flex items-center gap-2">
                                               <p className="text-sm font-medium text-white">{upsell.title}</p>
                                               {upsell.active ? (
-                                                <span className="px-2 py-0.5 bg-emerald-600/20 text-emerald-400 text-[10px] rounded uppercase font-medium">
-                                                  Active
+                                                <span className="badge badge-green">
+                                                  Activ
                                                 </span>
                                               ) : (
-                                                <span className="px-2 py-0.5 bg-red-600/20 text-red-400 text-[10px] rounded uppercase font-medium">
-                                                  Inactive
+                                                <span className="badge badge-red">
+                                                  Inactiv
                                                 </span>
                                               )}
                                               {upsell.product?.status === "inactive" && (
@@ -875,7 +875,7 @@ export default function LandingPagesPage() {
                             {/* Form Variant */}
                             <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-zinc-400">📋 Form Variant</span>
+                                  <span className="text-xs text-zinc-400">📋 Varianta formular</span>
                                   <select
                                     value={(page as any).form_variant || 1}
                                     onClick={(e) => e.stopPropagation()}
@@ -897,7 +897,7 @@ export default function LandingPagesPage() {
                                     }}
                                     className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 rounded text-xs text-white"
                                   >
-                                    <option value={1}>V1 — Classic</option>
+                                    <option value={1}>V1 — Clasic</option>
                                     <option value={2}>V2 — Oferte sus</option>
                                   </select>
                                 </div>
@@ -910,7 +910,7 @@ export default function LandingPagesPage() {
                                   href={getWidgetUrl(page.slug)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                  className="btn btn-primary btn-sm"
                                 >
                                   Vezi formular
                                 </Link>
@@ -919,7 +919,7 @@ export default function LandingPagesPage() {
                                     setEmbedModalOpen(page.id);
                                     setEmbedModalType("form");
                                   }}
-                                  className="px-3 py-1.5 bg-zinc-600 text-white rounded text-xs font-medium hover:bg-zinc-700 transition-colors"
+                                  className="btn btn-secondary btn-sm"
                                 >
                                   Cod embed formular
                                 </button>
@@ -950,15 +950,15 @@ export default function LandingPagesPage() {
                               <div className="flex items-center gap-2">
                                 <Link
                                   href={`/admin/landing-pages/${page.id}/edit`}
-                                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition-colors"
+                                  className="btn btn-secondary btn-sm"
                                 >
-                                  Edit
+                                  Editează
                                 </Link>
                                 <button
                                   onClick={() => setDeleteModalOpen(page.id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors"
+                                  className="btn btn-danger btn-sm"
                                 >
-                                  Delete
+                                  Șterge
                                 </button>
                               </div>
                             </div>

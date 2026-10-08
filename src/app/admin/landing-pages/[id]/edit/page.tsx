@@ -304,8 +304,8 @@ export default function EditLandingPagePage() {
   if (isLoadingPage) {
     return (
       <div className="max-w-4xl">
-        <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 p-4 text-center">
-          <p className="text-zinc-400 text-sm">Loading landing page...</p>
+        <div className="card p-4 text-center">
+          <p className="text-zinc-400 text-sm">Se încarcă pagina...</p>
         </div>
       </div>
     );
@@ -314,10 +314,10 @@ export default function EditLandingPagePage() {
   if (!formData) {
     return (
       <div className="max-w-4xl">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
-          <p className="text-red-400 text-sm">Landing page not found</p>
+        <div className="rounded-xl border border-red-800/60 bg-red-900/20 px-4 py-3">
+          <p className="text-red-400 text-sm">Pagina nu a fost găsită</p>
           <Link href="/admin/landing-pages" className="text-emerald-400 hover:text-emerald-300 mt-2 inline-block text-sm">
-            ← Back to Landing Pages
+            ← Înapoi la pagini
           </Link>
         </div>
       </div>
@@ -341,26 +341,26 @@ export default function EditLandingPagePage() {
     <div className="max-w-4xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Edit Landing Page</h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          Update your landing page details
+        <h1 className="page-title">Editează pagina de vânzare</h1>
+        <p className="page-subtitle text-sm mt-1">
+          Modifică detaliile paginii
         </p>
       </div>
 
       {/* Form */}
-      <div className="bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+      <div className="card">
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
-              Basic Information
+              Informații de bază
             </h2>
 
             <div className="space-y-3">
               {/* Product */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Product *
+                <label className="label">
+                  Produs *
                 </label>
                 <div className="relative">
                   <input
@@ -376,8 +376,8 @@ export default function EditLandingPagePage() {
                     onBlur={() => {
                       setTimeout(() => setShowProductDropdown(false), 200);
                     }}
-                    placeholder="Search for product..."
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    placeholder="Caută produs..."
+                    className="input"
                   />
                   {showProductDropdown && filteredProducts.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
@@ -402,7 +402,7 @@ export default function EditLandingPagePage() {
                   )}
                   {showProductDropdown && filteredProducts.length === 0 && productSearch && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
-                      <p className="text-xs text-zinc-400 italic">No products found</p>
+                      <p className="text-xs text-zinc-400 italic">Niciun produs găsit</p>
                     </div>
                   )}
                 </div>
@@ -419,14 +419,14 @@ export default function EditLandingPagePage() {
                   </div>
                 )}
                 <p className="text-xs text-zinc-500 mt-1">
-                  Select the product associated with this landing page.
+                  Produsul asociat acestei pagini.
                 </p>
               </div>
 
               {/* Store */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Store *
+                <label className="label">
+                  Magazin *
                 </label>
                 <div className="relative">
                   <input
@@ -442,8 +442,8 @@ export default function EditLandingPagePage() {
                     onBlur={() => {
                       setTimeout(() => setShowStoreDropdown(false), 200);
                     }}
-                    placeholder="Search for store..."
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    placeholder="Caută magazin..."
+                    className="input"
                   />
                   {showStoreDropdown && filteredStores.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg overflow-auto" style={{ maxHeight: '12.5rem' }}>
@@ -465,7 +465,7 @@ export default function EditLandingPagePage() {
                   )}
                   {showStoreDropdown && filteredStores.length === 0 && storeSearch && (
                     <div className="absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg p-3">
-                      <p className="text-xs text-zinc-400 italic">No stores found</p>
+                      <p className="text-xs text-zinc-400 italic">Niciun magazin găsit</p>
                     </div>
                   )}
                 </div>
@@ -477,39 +477,39 @@ export default function EditLandingPagePage() {
                   </div>
                 )}
                 <p className="text-xs text-zinc-500 mt-1">
-                  Choose the store this landing page belongs to.
+                  Magazinul căruia îi aparține această pagină.
                 </p>
               </div>
 
               {/* Name */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Name *
+                <label className="label">
+                  Nume *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
-                  placeholder="Name"
+                  className="input"
+                  placeholder="Nume"
                   maxLength={30}
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Enter a descriptive name for this landing page (max 30 characters).
+                  Numele paginii (max. 30 caractere).
                 </p>
               </div>
 
               {/* Slug */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                <label className="label">
                   Slug *
                 </label>
                 <input
                   type="text"
                   value={formData.slug}
                   onChange={(e) => { setSlugEdited(true); setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }); }}
-                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm ${slugStatus === "taken" ? "border-red-500" : slugStatus === "available" ? "border-emerald-500" : "border-zinc-700"}`}
+                  className={`input ${slugStatus === "taken" ? "border-red-500" : slugStatus === "available" ? "border-emerald-500" : ""}`}
                   placeholder="Slug"
                   maxLength={30}
                   required
@@ -530,7 +530,7 @@ export default function EditLandingPagePage() {
                 )}
                 {slugStatus === "idle" && (
                   <p className="text-xs text-zinc-500 mt-1">
-                    Enter a name for the final part of the landing page link (max 30 characters). e.g: "product" will become www.yourstore.com/product
+                    Ultima parte din URL-ul paginii. ex: "produs" → www.magazin.ro/produs
                   </p>
                 )}
               </div>
@@ -559,49 +559,49 @@ export default function EditLandingPagePage() {
           {/* Offer Settings */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
-              Offer Settings
+              SETĂRI OFERTE
             </h2>
 
             <div className="space-y-3">
               {/* Offer Headings */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Offer Heading 1 *
+                  <label className="label">
+                    Titlu ofertă 1 *
                   </label>
                   <input
                     type="text"
                     value={formData.offer_heading_1 || "Ieftin"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_1: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="Ieftin"
                     maxLength={15}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Offer Heading 2 *
+                  <label className="label">
+                    Titlu ofertă 2 *
                   </label>
                   <input
                     type="text"
                     value={formData.offer_heading_2 || "Avantajos"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_2: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="Avantajos"
                     maxLength={15}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Offer Heading 3 *
+                  <label className="label">
+                    Titlu ofertă 3 *
                   </label>
                   <input
                     type="text"
                     value={formData.offer_heading_3 || "Super ofertă"}
                     onChange={(e) => setFormData({ ...formData, offer_heading_3: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="Super ofertă"
                     maxLength={15}
                     required
@@ -609,48 +609,48 @@ export default function EditLandingPagePage() {
                 </div>
               </div>
               <p className="text-xs text-zinc-500 mt-1">
-                Max 15 characters each
+                Max. 15 caractere fiecare
               </p>
 
               {/* Numerals */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  <label className="label">
                     Numeral 1 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral_1 || "1 bucată"}
                     onChange={(e) => setFormData({ ...formData, numeral_1: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="1 bucată"
                     maxLength={20}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  <label className="label">
                     Numeral 2 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral_2 || "Două bucăți"}
                     onChange={(e) => setFormData({ ...formData, numeral_2: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="Două bucăți"
                     maxLength={20}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  <label className="label">
                     Numeral 3 *
                   </label>
                   <input
                     type="text"
                     value={formData.numeral_3 || "Trei bucăți"}
                     onChange={(e) => setFormData({ ...formData, numeral_3: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="Trei bucăți"
                     maxLength={20}
                     required
@@ -658,25 +658,25 @@ export default function EditLandingPagePage() {
                 </div>
               </div>
               <p className="text-xs text-zinc-500 mt-1">
-                Max 20 characters each
+                Max. 20 caractere fiecare
               </p>
 
               {/* Order Button Text */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Order Button Text *
+                <label className="label">
+                  Text buton comandă *
                 </label>
                 <input
                   type="text"
                   value={formData.order_button_text || "Plasează comanda!"}
                   onChange={(e) => setFormData({ ...formData, order_button_text: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  className="input max-w-md"
                   placeholder="Plasează comanda!"
                   maxLength={30}
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Max 30 characters
+                  Max. 30 caractere
                 </p>
               </div>
 
@@ -701,61 +701,61 @@ export default function EditLandingPagePage() {
           {/* Offer Quantities */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
-              Offer Quantities
+              Cantități oferte
             </h2>
             <p className="text-sm text-zinc-400 mb-3">
-              Configure how many pieces each offer contains. The product SKU is taken automatically from the selected product.
+              Configurează câte bucăți conține fiecare ofertă. SKU-ul produsului este preluat automat.
             </p>
 
             <div className="space-y-3">
               {/* Quantities */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Quantity Offer 1
+                  <label className="label">
+                    Cantitate ofertă 1
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={formData.quantity_offer_1 || 1}
                     onChange={(e) => setFormData({ ...formData, quantity_offer_1: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="input"
                     placeholder="1"
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    Number of pieces in offer 1 (default: 1)
+                    Numărul de bucăți din oferta 1 (implicit: 1)
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Quantity Offer 2
+                  <label className="label">
+                    Cantitate ofertă 2
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={formData.quantity_offer_2 || 2}
                     onChange={(e) => setFormData({ ...formData, quantity_offer_2: parseInt(e.target.value) || 2 })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="input"
                     placeholder="2"
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    Number of pieces in offer 2 (default: 2)
+                    Numărul de bucăți din oferta 2 (implicit: 2)
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Quantity Offer 3
+                  <label className="label">
+                    Cantitate ofertă 3
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={formData.quantity_offer_3 || 3}
                     onChange={(e) => setFormData({ ...formData, quantity_offer_3: parseInt(e.target.value) || 3 })}
-                    className="w-full px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                    className="input"
                     placeholder="3"
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    Number of pieces in offer 3 (default: 3)
+                    Numărul de bucăți din oferta 3 (implicit: 3)
                   </p>
                 </div>
               </div>
@@ -765,14 +765,14 @@ export default function EditLandingPagePage() {
           {/* Pricing & Shipping */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
-              Pricing & Shipping
+              Prețuri și livrare
             </h2>
 
             <div className="space-y-3">
               {/* SRP */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  SRP (Suggested Retail Price) *
+                <label className="label">
+                  SRP (Preț recomandat) *
                 </label>
                 <input
                   type="number"
@@ -786,20 +786,20 @@ export default function EditLandingPagePage() {
                       e.preventDefault();
                     }
                   }}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  className="input max-w-md"
                   placeholder="0.00"
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  This will be the price the customers will see as the normal, undiscounted one (max 999).
+                  Prețul afișat ca preț normal, nepromoțional (max. 999).
                 </p>
               </div>
 
               {/* Prices */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Price1 *
+                  <label className="label">
+                    Preț 1 *
                   </label>
                   <input
                     type="number"
@@ -813,17 +813,17 @@ export default function EditLandingPagePage() {
                         e.preventDefault();
                       }
                     }}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    One piece (max 999)
+                    O bucată (max. 999)
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Price2 *
+                  <label className="label">
+                    Preț 2 *
                   </label>
                   <input
                     type="number"
@@ -837,17 +837,17 @@ export default function EditLandingPagePage() {
                         e.preventDefault();
                       }
                     }}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    Two pieces (max 999)
+                    Două bucăți (max. 999)
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Price3 *
+                  <label className="label">
+                    Preț 3 *
                   </label>
                   <input
                     type="number"
@@ -861,20 +861,20 @@ export default function EditLandingPagePage() {
                         e.preventDefault();
                       }
                     }}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                    className="input"
                     placeholder="0.00"
                     required
                   />
                   <p className="text-xs text-zinc-500 mt-1">
-                    Three pieces (max 999)
+                    Trei bucăți (max. 999)
                   </p>
                 </div>
               </div>
 
               {/* Shipping Price */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Shipping Price *
+                <label className="label">
+                  Preț livrare *
                 </label>
                 <input
                   type="number"
@@ -888,12 +888,12 @@ export default function EditLandingPagePage() {
                       e.preventDefault();
                     }
                   }}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
+                  className="input max-w-md"
                   placeholder="0.00"
                   required
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  The price the customer will pay for shipping (max 99).
+                  Prețul plătit de client pentru livrare (max. 99).
                 </p>
               </div>
 
@@ -948,7 +948,7 @@ export default function EditLandingPagePage() {
                 />
                 <label htmlFor="postPurchaseStatus" className="ml-2">
                   <span className="block text-xs font-medium text-zinc-300">
-                    Post Purchase Status
+                    Status post-cumpărare
                   </span>
                   <span className="block text-xs text-zinc-500">
                     {postsaleUpsells.length === 0 ? (
@@ -967,41 +967,41 @@ export default function EditLandingPagePage() {
           {/* Conversion Tracking */}
           <div className="p-4 border-b border-zinc-700/50">
             <h2 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">
-              Conversion Tracking
+              Urmărire conversii
             </h2>
 
             <div className="space-y-3">
               {/* Facebook Pixel ID */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                <label className="label">
                   Facebook Pixel ID
                 </label>
                 <input
                   type="text"
                   value={formData.fb_pixel_id || ""}
                   onChange={(e) => setFormData({ ...formData, fb_pixel_id: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Leave empty to use store-level settings"
+                  className="input max-w-md"
+                  placeholder="Lasă gol pentru a folosi setările magazinului."
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Enter your Facebook Pixel ID for tracking.
+                  ID-ul Pixel-ului Facebook pentru urmărire.
                 </p>
               </div>
 
               {/* Conversion API Token */}
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                <label className="label">
                   Conversion API Token
                 </label>
                 <input
                   type="text"
                   value={formData.fb_conversion_token || ""}
                   onChange={(e) => setFormData({ ...formData, fb_conversion_token: e.target.value })}
-                  className="w-full max-w-md px-3 py-2 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Leave empty to use store-level settings"
+                  className="input max-w-md"
+                  placeholder="Lasă gol pentru a folosi setările magazinului."
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  Enter your Facebook Conversion API Token.
+                  Token-ul API de conversii Facebook.
                 </p>
               </div>
 
@@ -1016,10 +1016,10 @@ export default function EditLandingPagePage() {
                 />
                 <label htmlFor="clientSideTracking" className="ml-2">
                   <span className="block text-xs font-medium text-zinc-300">
-                    Client-side Tracking Enabled (Facebook Pixel)
+                    Tracking client (Facebook Pixel)
                   </span>
                   <span className="block text-xs text-zinc-500">
-                    This automatically installs the Facebook Pixel code to your website.
+                    Instalează automat codul Pixel Facebook pe site.
                   </span>
                 </label>
               </div>
@@ -1035,10 +1035,10 @@ export default function EditLandingPagePage() {
                 />
                 <label htmlFor="serverSideTracking" className="ml-2">
                   <span className="block text-xs font-medium text-zinc-300">
-                    Server-side Tracking Enabled (Conversion API)
+                    Tracking server (Conversion API)
                   </span>
                   <span className="block text-xs text-zinc-500">
-                    Enable server-side conversion tracking.
+                    Activează urmărirea conversiilor server-side.
                   </span>
                 </label>
               </div>
@@ -1050,11 +1050,10 @@ export default function EditLandingPagePage() {
           {message && (
             <div className="p-4 border-b border-zinc-700/50">
               <div
-                className={`p-3 rounded-md ${
-                  message.type === "success"
-                    ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-                    : "bg-red-50 border border-red-200 text-red-800"
-                }`}
+                className={message.type === "success"
+                  ? "rounded-xl border border-emerald-800/60 bg-emerald-900/20 px-4 py-3 text-sm text-emerald-400"
+                  : "rounded-xl border border-red-800/60 bg-red-900/20 px-4 py-3 text-sm text-red-400"
+                }
               >
                 {message.text}
               </div>
@@ -1066,28 +1065,28 @@ export default function EditLandingPagePage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/admin/landing-pages"
-                className="px-4 py-2 border border-zinc-700 text-zinc-400 rounded-md hover:bg-zinc-700 transition-colors text-sm"
+                className="btn btn-secondary"
               >
-                Cancel
+                Anulează
               </Link>
               <button
                 type="button"
                 onClick={handleToggleStatus}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`btn ${
                   formData?.status === "published"
                     ? "bg-amber-600 text-white hover:bg-amber-700"
-                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "btn-primary"
                 }`}
               >
-                {formData?.status === "published" ? "Set as Draft" : "Publish"}
+                {formData?.status === "published" ? "Marchează ca Draft" : "Publică"}
               </button>
             </div>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? "Se salvează..." : "Salvează modificările"}
             </button>
           </div>
         </form>

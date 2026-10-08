@@ -68,6 +68,7 @@ export default function EditProductPage() {
 
   // Delete variation
   const [deletingVariationId, setDeletingVariationId] = useState<string | null>(null);
+  const [confirmDeleteVariationId, setConfirmDeleteVariationId] = useState<string | null>(null);
 
   // Variations label (product-level default)
   const [variationsLabel, setVariationsLabel] = useState<string>("");
@@ -408,14 +409,14 @@ export default function EditProductPage() {
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => setEditingVariationData(d => ({ ...d, variation_visual_type: "image" }))}
+                            onClick={() => setEditingVariationData(d => ({ ...d, variation_visual_type: "image", variation_visual_value: "" }))}
                             className={`btn btn-sm gap-1.5 ${(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "image" ? "btn-primary" : "btn-secondary"}`}
                           >
                             <ImageIcon className="w-3 h-3" /> Imagine
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingVariationData(d => ({ ...d, variation_visual_type: "color" }))}
+                            onClick={() => setEditingVariationData(d => ({ ...d, variation_visual_type: "color", variation_visual_value: "" }))}
                             className={`btn btn-sm gap-1.5 ${(editingVariationData.variation_visual_type ?? variation.variation_visual_type) === "color" ? "btn-primary" : "btn-secondary"}`}
                           >
                             <Palette className="w-3 h-3" /> Culoare
@@ -450,7 +451,7 @@ export default function EditProductPage() {
                     {/* SKU format warning in edit mode */}
                     {skuNeedsWarning(editingVariationData.sku ?? variation.sku) && (
                       <p className="text-xs text-amber-400">
-                        Formatul recomandat: LITERE-CIFRE-LITERE (ex: {formData.sku}-001-VERDE). Poți folosi orice format.
+                        Formatul recomandat: LITERE-CIFRE-LITERE (ex: ABC-123-VERDE). Poți folosi orice format.
                       </p>
                     )}
                     {editVariationError && (
@@ -536,15 +537,35 @@ export default function EditProductPage() {
                     </button>
 
                     {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteVariation(variation.id)}
-                      disabled={deletingVariationId === variation.id}
-                      className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Șterge variația"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {confirmDeleteVariationId === variation.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => { setConfirmDeleteVariationId(null); handleDeleteVariation(variation.id); }}
+                          disabled={deletingVariationId === variation.id}
+                          className="px-2 py-1 text-xs text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
+                        >
+                          Confirmă
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteVariationId(null)}
+                          className="px-2 py-1 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/60 rounded-lg transition-colors"
+                        >
+                          Anulează
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteVariationId(variation.id)}
+                        disabled={deletingVariationId === variation.id}
+                        className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Șterge variația"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -588,14 +609,14 @@ export default function EditProductPage() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setNewVariation(v => ({ ...v, variation_visual_type: "image" }))}
+                    onClick={() => setNewVariation(v => ({ ...v, variation_visual_type: "image", variation_visual_value: "" }))}
                     className={`btn btn-sm gap-1.5 ${newVariation.variation_visual_type === "image" ? "btn-primary" : "btn-secondary"}`}
                   >
                     <ImageIcon className="w-3 h-3" /> Imagine
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewVariation(v => ({ ...v, variation_visual_type: "color" }))}
+                    onClick={() => setNewVariation(v => ({ ...v, variation_visual_type: "color", variation_visual_value: "" }))}
                     className={`btn btn-sm gap-1.5 ${newVariation.variation_visual_type === "color" ? "btn-primary" : "btn-secondary"}`}
                   >
                     <Palette className="w-3 h-3" /> Culoare
@@ -631,7 +652,7 @@ export default function EditProductPage() {
             {/* SKU format warning */}
             {skuNeedsWarning(newVariation.sku) && (
               <p className="text-xs text-amber-400">
-                Formatul recomandat: LITERE-CIFRE-LITERE (ex: {formData.sku}-001-VERDE). Poți folosi orice format.
+                Formatul recomandat: LITERE-CIFRE-LITERE (ex: ABC-123-VERDE). Poți folosi orice format.
               </p>
             )}
 

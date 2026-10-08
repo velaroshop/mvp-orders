@@ -486,7 +486,13 @@ export default function LandingPagesPage() {
                     <tr
                       key={page.id}
                       onClick={() => toggleRowExpansion(page.id)}
-                      className="hover:bg-zinc-700/50 cursor-pointer transition-colors"
+                      className={`hover:bg-zinc-700/50 cursor-pointer transition-all duration-150 ${
+                        expandedRows.has(page.id)
+                          ? "border-l-2 border-indigo-400 bg-zinc-800/80"
+                          : expandedRows.size > 0
+                          ? "opacity-50 pointer-events-none"
+                          : ""
+                      }`}
                     >
                       <td className="px-4 py-2 whitespace-nowrap">
                         <div className="text-sm font-medium text-white">
@@ -538,7 +544,7 @@ export default function LandingPagesPage() {
                     </tr>
                     {/* Expanded Details Row */}
                     {expandedRows.has(page.id) && (
-                      <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
+                      <tr key={`${page.id}-details`} className="bg-zinc-800/80 border-t border-zinc-700/50 border-l-2 border-l-indigo-400">
                         <td colSpan={4} className="px-4 py-3">
                           <div className="space-y-3">
                             {/* Actions */}

@@ -296,8 +296,8 @@ class HelpshipClient {
       orderLines: [
         // If product has variations: send each variation as a separate line item
         // If no variations: send the main product as a single line item
-        ...(orderData.selectedVariations && orderData.selectedVariations.length > 0
-          ? orderData.selectedVariations.map(variation => ({
+        ...(orderData.selectedVariations && orderData.selectedVariations.filter(v => v.quantity > 0).length > 0
+          ? orderData.selectedVariations.filter(v => v.quantity > 0).map(variation => ({
               name: variation.name,
               quantity: variation.quantity,
               price: variation.quantity > 0 && orderData.productQuantity && orderData.productQuantity > 0

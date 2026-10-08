@@ -94,12 +94,12 @@ export async function POST(
       updated_at: new Date().toISOString(),
     };
 
-    // Persist variation selections if provided
+    // Persist variation selections if provided (filter out zero-qty entries)
     if (selectedVariations !== undefined) {
-      updatePayload.selected_variations =
-        Array.isArray(selectedVariations) && selectedVariations.length > 0
-          ? selectedVariations
-          : null;
+      const nonZeroVariations = Array.isArray(selectedVariations)
+        ? selectedVariations.filter((v: any) => v.quantity > 0)
+        : [];
+      updatePayload.selected_variations = nonZeroVariations.length > 0 ? nonZeroVariations : null;
     }
 
     // Update order in DB

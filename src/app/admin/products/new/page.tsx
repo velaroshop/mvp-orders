@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -10,160 +12,113 @@ export default function NewProductPage() {
     sku: "",
     status: "active" as "active" | "testing",
   });
-
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSaving(true);
-    setMessage(null);
+    setError(null);
 
     try {
-      const response = await fetch("/api/products", {
+      const res = await fetch("/api/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Eroare la crearea produsului");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create product");
-      }
-
-      setMessage({ type: "success", text: "Product created successfully!" });
-      
-      // Redirect to products list after 1 second
-      setTimeout(() => {
-        router.push("/admin/products");
-      }, 1000);
-    } catch (error) {
-      console.error("Error creating product:", error);
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to create product",
-      });
+      router.push("/admin/products");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare la crearea produsului");
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-xl space-y-6">
+
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Create Product</h1>
-        <p className="text-zinc-400 mt-2">
-          Add a new product to your catalog
-        </p>
+      <div>
+        <Link href="/admin/products" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-4">
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Înapoi la produse
+        </Link>
+        <h1 className="page-title">Produs nou</h1>
+        <p className="page-subtitle">Adaugă un produs în catalogul tău</p>
       </div>
 
-      {/* Form */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
-        <form onSubmit={handleSubmit}>
-          {/* Product Details */}
-          <div className="p-6 border-b border-zinc-700">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Product Details
-            </h2>
+      {/* Form card */}
+      <div className="card p-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-            <div className="space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Enter product name"
-                  maxLength={50}
-                  required
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Maximum 50 characters
-                </p>
-              </div>
-
-              {/* SKU */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  SKU *
-                </label>
-                <input
-                  type="text"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 uppercase"
-                  placeholder="XXX-123"
-                  maxLength={10}
-                  required
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Stock Keeping Unit - unique identifier (automatically converted to uppercase, max 10 characters)
-                </p>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Status *
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
-                  required
-                >
-                  <option value="active">Active</option>
-                  <option value="testing">Testing</option>
-                </select>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Active: Product is live and available. Testing: Product is in testing phase.
-                </p>
-              </div>
-            </div>
+          {/* Nume */}
+          <div>
+            <label className="label">Nume *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="input"
+              placeholder="ex. Ruj mat rezistent"
+              maxLength={50}
+              required
+            />
+            <p className="text-faint text-xs mt-1">Maxim 50 de caractere.</p>
           </div>
 
-          {/* Message */}
-          {message && (
-            <div className="p-6 border-b border-zinc-700">
-              <div
-                className={`p-3 rounded-md ${
-                  message.type === "success"
-                    ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
-                    : "bg-red-900/30 border border-red-700 text-red-300"
-                }`}
-              >
-                {message.text}
-              </div>
+          {/* SKU */}
+          <div>
+            <label className="label">SKU *</label>
+            <input
+              type="text"
+              value={formData.sku}
+              onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+              className="input max-w-xs font-mono"
+              placeholder="ex. RUJ-001"
+              maxLength={10}
+              required
+            />
+            <p className="text-faint text-xs mt-1">Identificator unic, convertit automat la majuscule. Maxim 10 caractere.</p>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="label">Status *</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" })}
+              className="input max-w-xs"
+              required
+            >
+              <option value="active">Activ — produs live, sincronizat cu Helpship</option>
+              <option value="testing">Test — comenzile nu se sincronizează</option>
+            </select>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-red-800/60 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+              {error}
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="p-6 bg-zinc-900/50 flex justify-between">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-2 border border-zinc-600 text-zinc-300 rounded-md hover:bg-zinc-700 transition-colors"
-            >
-              Cancel
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
+            <button type="button" onClick={() => router.back()} className="btn btn-secondary">
+              Anulează
             </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSaving ? "Creating..." : "Create Product"}
+            <button type="submit" disabled={isSaving} className="btn btn-primary">
+              {isSaving ? "Se creează..." : "Creează produsul"}
             </button>
           </div>
+
         </form>
       </div>
+
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface Product {
   id: string;
@@ -19,37 +20,23 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
-      fetchProduct();
-    }
+    if (productId) fetchProduct();
   }, [productId]);
 
   async function fetchProduct() {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/products");
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-
-      const data = await response.json();
+      const res = await fetch("/api/products");
+      if (!res.ok) throw new Error("Eroare la încărcarea produsului");
+      const data = await res.json();
       const product = data.products?.find((p: Product) => p.id === productId);
-      
-      if (!product) {
-        throw new Error("Product not found");
-      }
-
+      if (!product) throw new Error("Produsul nu a fost găsit");
       setFormData(product);
     } catch (err) {
-      console.error("Error fetching product:", err);
-      setMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Failed to load product",
-      });
+      setError(err instanceof Error ? err.message : "Eroare la încărcarea produsului");
     } finally {
       setIsLoading(false);
     }
@@ -58,41 +45,22 @@ export default function EditProductPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData) return;
-
     setIsSaving(true);
-    setMessage(null);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const res = await fetch(`/api/products/${productId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          sku: formData.sku,
-          status: formData.status,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formData.name, sku: formData.sku, status: formData.status }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Eroare la salvarea produsului");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update product");
-      }
-
-      setMessage({ type: "success", text: "Product updated successfully!" });
-      
-      // Redirect to products list after 1 second
-      setTimeout(() => {
-        router.push("/admin/products");
-      }, 1000);
-    } catch (error) {
-      console.error("Error updating product:", error);
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to update product",
-      });
+      router.push("/admin/products");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare la salvarea produsului");
     } finally {
       setIsSaving(false);
     }
@@ -100,9 +68,9 @@ export default function EditProductPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl">
-        <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">Loading product...</p>
+      <div className="max-w-xl">
+        <div className="card p-8 text-center">
+          <p className="text-faint text-sm">Se încarcă produsul...</p>
         </div>
       </div>
     );
@@ -110,11 +78,11 @@ export default function EditProductPage() {
 
   if (!formData) {
     return (
-      <div className="max-w-4xl">
-        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-          <p className="text-red-300">Product not found</p>
-          <Link href="/admin/products" className="text-emerald-400 hover:text-emerald-300 mt-2 inline-block">
-            ← Back to Products
+      <div className="max-w-xl">
+        <div className="rounded-xl border border-red-800/60 bg-red-900/20 p-4">
+          <p className="text-red-400 text-sm">{error || "Produsul nu a fost găsit."}</p>
+          <Link href="/admin/products" className="text-indigo-400 hover:text-indigo-300 text-sm mt-2 inline-block">
+            ← Înapoi la produse
           </Link>
         </div>
       </div>
@@ -122,118 +90,87 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-xl space-y-6">
+
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Edit Product</h1>
-        <p className="text-zinc-400 mt-2">
-          Update your product details
-        </p>
+      <div>
+        <Link href="/admin/products" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-4">
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Înapoi la produse
+        </Link>
+        <h1 className="page-title">Editează produsul</h1>
+        <p className="page-subtitle text-zinc-500 font-mono text-xs mt-1">{formData.sku}</p>
       </div>
 
-      {/* Form */}
-      <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
-        <form onSubmit={handleSubmit}>
-          {/* Product Details */}
-          <div className="p-6 border-b border-zinc-700">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Product Details
-            </h2>
+      {/* Form card */}
+      <div className="card p-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-            <div className="space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Enter product name"
-                  maxLength={50}
-                  required
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Maximum 50 characters
-                </p>
-              </div>
-
-              {/* SKU */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  SKU *
-                </label>
-                <input
-                  type="text"
-                  value={formData.sku || ""}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 uppercase"
-                  placeholder="XXX-123"
-                  maxLength={10}
-                  required
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Stock Keeping Unit - unique identifier (automatically converted to uppercase, max 10 characters)
-                </p>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Status *
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" | "inactive" })}
-                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
-                  required
-                >
-                  <option value="active">Active</option>
-                  <option value="testing">Testing</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Active: Product is live and available. Testing: Product is in testing phase. Inactive: Product is disabled.
-                </p>
-              </div>
-            </div>
+          {/* Nume */}
+          <div>
+            <label className="label">Nume *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="input"
+              placeholder="ex. Ruj mat rezistent"
+              maxLength={50}
+              required
+            />
+            <p className="text-faint text-xs mt-1">Maxim 50 de caractere.</p>
           </div>
 
-          {/* Message */}
-          {message && (
-            <div className="p-6 border-b border-zinc-700">
-              <div
-                className={`p-3 rounded-md ${
-                  message.type === "success"
-                    ? "bg-emerald-900/30 border border-emerald-700 text-emerald-300"
-                    : "bg-red-900/30 border border-red-700 text-red-300"
-                }`}
-              >
-                {message.text}
-              </div>
+          {/* SKU */}
+          <div>
+            <label className="label">SKU *</label>
+            <input
+              type="text"
+              value={formData.sku || ""}
+              onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
+              className="input max-w-xs font-mono"
+              placeholder="ex. RUJ-001"
+              maxLength={10}
+              required
+            />
+            <p className="text-faint text-xs mt-1">Identificator unic, convertit automat la majuscule. Maxim 10 caractere.</p>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="label">Status *</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "testing" | "inactive" })}
+              className="input max-w-xs"
+              required
+            >
+              <option value="active">Activ — produs live, sincronizat cu Helpship</option>
+              <option value="testing">Test — comenzile nu se sincronizează</option>
+              <option value="inactive">Inactiv — dezactivat</option>
+            </select>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-red-800/60 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+              {error}
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="p-6 bg-zinc-900/50 flex justify-between">
-            <Link
-              href="/admin/products"
-              className="px-6 py-2 border border-zinc-600 text-zinc-300 rounded-md hover:bg-zinc-700 transition-colors"
-            >
-              Cancel
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
+            <Link href="/admin/products" className="btn btn-secondary">
+              Anulează
             </Link>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
+            <button type="submit" disabled={isSaving} className="btn btn-primary">
+              {isSaving ? "Se salvează..." : "Salvează modificările"}
             </button>
           </div>
+
         </form>
       </div>
+
     </div>
   );
 }

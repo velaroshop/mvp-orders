@@ -1698,17 +1698,19 @@ function WidgetFormContent() {
                           isOutOfStock
                             ? "border-zinc-200 bg-zinc-50 opacity-60"
                             : qty > 0
-                            ? "border-zinc-300 bg-white"
+                            ? "border-2"
                             : "border-zinc-200 bg-white"
                         }`}
-                        style={qty > 0 && !isOutOfStock ? { borderColor: primaryColor, borderWidth: 2 } : undefined}
+                        style={qty > 0 && !isOutOfStock
+                          ? { borderColor: "#16a34a", backgroundColor: "#f0fdf4" }
+                          : undefined}
                       >
                         {/* Visual preview */}
                         {variation.variation_visual_type === "image" && variation.variation_visual_value && (
                           <img
                             src={variation.variation_visual_value}
                             alt={variation.name}
-                            className="w-10 h-10 object-cover rounded-md shrink-0"
+                            className="w-16 h-16 object-cover rounded-md shrink-0"
                           />
                         )}
                         {variation.variation_visual_type === "color" && variation.variation_visual_value && (
@@ -1744,7 +1746,11 @@ function WidgetFormContent() {
                                   [variation.id]: Math.max(0, (prev[variation.id] || 0) - 1),
                                 }))
                               }
-                              className="w-7 h-7 rounded-full border-2 border-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-zinc-400 transition-colors"
+                              className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              style={qty > 0
+                                ? { borderColor: "#dc2626", color: "#dc2626" }
+                                : { borderColor: "#d1d5db", color: "#9ca3af" }
+                              }
                             >
                               −
                             </button>
@@ -1760,8 +1766,8 @@ function WidgetFormContent() {
                               }
                               className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                               style={remaining > 0
-                                ? { borderColor: primaryColor, color: primaryColor }
-                                : { borderColor: '#d1d5db', color: '#9ca3af' }
+                                ? { borderColor: "#16a34a", color: "#16a34a" }
+                                : { borderColor: "#d1d5db", color: "#9ca3af" }
                               }
                             >
                               +

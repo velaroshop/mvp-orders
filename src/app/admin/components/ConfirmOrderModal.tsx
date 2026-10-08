@@ -432,7 +432,7 @@ export default function ConfirmOrderModal({
                   </div>
 
                   {/* DEBUG - remove after fix */}
-                  <p className="text-[10px] text-yellow-400 break-all">DBG: {JSON.stringify(order.selectedVariations)}</p>
+                  <p className="text-[10px] text-yellow-400 break-all">DBG v2 | id:{order.id?.slice(-6)} | vars:{JSON.stringify(order.selectedVariations) ?? "undef"}</p>
 
                   {/* Variations */}
                   {order.selectedVariations && order.selectedVariations.length > 0 && (

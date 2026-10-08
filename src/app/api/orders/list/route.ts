@@ -88,6 +88,7 @@ export async function GET(request: Request) {
       productSku: row.product_sku ?? undefined,
       productQuantity: row.product_quantity ?? undefined,
       upsells: row.upsells,
+      selectedVariations: row.selected_variations ?? undefined,
       subtotal: parseFloat(row.subtotal?.toString() || "0"),
       shippingCost: parseFloat(row.shipping_cost?.toString() || "0"),
       total: parseFloat(row.total?.toString() || "0"),
@@ -181,10 +182,6 @@ async function fallbackSearch(
   if (error) {
     throw new Error(`Failed to list orders: ${error.message}`);
   }
-
-  // TEMP DEBUG
-  const firstWithVariations = (data || []).find((r: any) => r.selected_variations);
-  console.log("[list-debug] first order with variations:", firstWithVariations?.id ?? "none", JSON.stringify(firstWithVariations?.selected_variations ?? null));
 
   const orders = (data || []).map((row: any) => ({
     id: row.id,

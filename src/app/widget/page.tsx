@@ -42,6 +42,9 @@ interface LandingPage {
   price_2: number;
   price_3: number;
   shipping_price: number;
+  quantity_offer_1?: number;
+  quantity_offer_2?: number;
+  quantity_offer_3?: number;
   free_shipping_offer_1?: boolean;
   free_shipping_offer_2?: boolean;
   free_shipping_offer_3?: boolean;
@@ -650,9 +653,10 @@ function WidgetFormContent() {
   }
 
   function getOfferQuantity(): number {
-    if (selectedOffer === "offer_1") return 1;
-    if (selectedOffer === "offer_2") return 2;
-    return 3;
+    if (!landingPage) return 1;
+    if (selectedOffer === "offer_1") return landingPage.quantity_offer_1 || 1;
+    if (selectedOffer === "offer_2") return landingPage.quantity_offer_2 || 2;
+    return landingPage.quantity_offer_3 || 3;
   }
 
   function getTotalVariationQuantity(): number {

@@ -179,6 +179,7 @@ export default function ChangeOrderModal({
     setSubmitError(null);
 
     try {
+      const filteredVariations = selectedVariations.filter(v => v.quantity > 0);
       await onConfirm({
         productQuantity,
         unitPrice,
@@ -186,7 +187,7 @@ export default function ChangeOrderModal({
         shippingCost,
         subtotal,
         total,
-        selectedVariations: selectedVariations.length > 0 ? selectedVariations : undefined,
+        selectedVariations: filteredVariations.length > 0 ? filteredVariations : undefined,
       });
     } catch (error) {
       setSubmitError(

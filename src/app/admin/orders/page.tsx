@@ -708,6 +708,7 @@ export default function AdminPage() {
       shippingCost: changes.shippingCost,
       total: changes.total,
       upsells: changes.upsells as any,
+      selectedVariations: changes.selectedVariations,
     });
 
     // Close modal
@@ -745,6 +746,7 @@ export default function AdminPage() {
         shippingCost: originalOrder.shippingCost,
         total: originalOrder.total,
         upsells: originalOrder.upsells,
+        selectedVariations: originalOrder.selectedVariations,
       });
       setToast({
         isOpen: true,

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Image as ImageIcon, Palette } from "lucide-react";
+import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
 
 interface Variation {
   id: string;
@@ -438,11 +439,13 @@ export default function EditProductPage() {
                             <span className="text-xs font-mono text-zinc-400">{editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? "#000000"}</span>
                           </div>
                         ) : (
-                          <input
-                            type="text"
+                          <ImageUploadInput
                             value={editingVariationData.variation_visual_value ?? variation.variation_visual_value ?? ""}
-                            onChange={(e) => setEditingVariationData(d => ({ ...d, variation_visual_value: e.target.value }))}
-                            className="input"
+                            onChange={(url) => setEditingVariationData(d => ({ ...d, variation_visual_value: url }))}
+                            uploadContext={`variations/${productId}`}
+                            maxWidth={400}
+                            maxHeight={400}
+                            quality={0.7}
                             placeholder="https://..."
                           />
                         )}
@@ -638,11 +641,13 @@ export default function EditProductPage() {
                     <span className="text-xs font-mono text-zinc-400">{newVariation.variation_visual_value || "#000000"}</span>
                   </div>
                 ) : (
-                  <input
-                    type="text"
+                  <ImageUploadInput
                     value={newVariation.variation_visual_value}
-                    onChange={(e) => setNewVariation(v => ({ ...v, variation_visual_value: e.target.value }))}
-                    className="input"
+                    onChange={(url) => setNewVariation(v => ({ ...v, variation_visual_value: url }))}
+                    uploadContext={`variations/${productId}`}
+                    maxWidth={400}
+                    maxHeight={400}
+                    quality={0.7}
                     placeholder="https://imagedelivery.net/..."
                   />
                 )}

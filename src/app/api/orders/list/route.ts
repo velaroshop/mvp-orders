@@ -198,6 +198,7 @@ async function fallbackSearch(
     productSku: row.product_sku ?? undefined,
     productQuantity: row.product_quantity ?? undefined,
     upsells: row.upsells,
+    selectedVariations: row.selected_variations ?? undefined,
     subtotal: parseFloat(row.subtotal.toString()),
     shippingCost: parseFloat(row.shipping_cost.toString()),
     total: parseFloat(row.total.toString()),

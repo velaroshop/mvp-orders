@@ -541,8 +541,99 @@ export default function LandingPagesPage() {
                       <tr key={`${page.id}-details`} className="bg-zinc-900/50 border-t border-zinc-700/50">
                         <td colSpan={4} className="px-4 py-3">
                           <div className="space-y-3">
+                            {/* Actions */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={getWidgetUrl(page.slug)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-primary btn-sm"
+                                >
+                                  Vezi formular
+                                </Link>
+                                <button
+                                  onClick={() => {
+                                    setEmbedModalOpen(page.id);
+                                    setEmbedModalType("form");
+                                  }}
+                                  className="btn btn-secondary btn-sm"
+                                >
+                                  Cod embed formular
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEmbedModalOpen(page.id);
+                                    setEmbedModalType("thankyou");
+                                  }}
+                                  className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors"
+                                >
+                                  Cod embed post-purchase
+                                </button>
+                                <a
+                                  href={`/thank-you-preview?preview=${page.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-xs font-medium hover:bg-purple-500/30 transition-colors"
+                                >
+                                  Preview post-purchase
+                                </a>
+                                <button
+                                  onClick={() => toggleRowExpansion(page.id)}
+                                  className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
+                                >
+                                  Ascunde detalii
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={`/admin/landing-pages/${page.id}/edit`}
+                                  className="btn btn-secondary btn-sm"
+                                >
+                                  Editează
+                                </Link>
+                                <button
+                                  onClick={() => setDeleteModalOpen(page.id)}
+                                  className="btn btn-danger btn-sm"
+                                >
+                                  Șterge
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Form Variant */}
+                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-zinc-400">📋 Varianta formular</span>
+                                  <select
+                                    value={(page as any).form_variant || 1}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={async (e) => {
+                                      e.stopPropagation();
+                                      const newVariant = parseInt(e.target.value);
+                                      try {
+                                        await fetch(`/api/landing-pages/${page.id}`, {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ form_variant: newVariant }),
+                                        });
+                                        setLandingPages(prev => prev.map(lp =>
+                                          lp.id === page.id ? { ...lp, form_variant: newVariant } as any : lp
+                                        ));
+                                      } catch (err) {
+                                        console.error("Failed to update form variant:", err);
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 rounded text-xs text-white"
+                                  >
+                                    <option value={1}>V1 — Clasic</option>
+                                    <option value={2}>V2 — Oferte sus</option>
+                                  </select>
+                                </div>
+                              </div>
+
                             {/* Pricing Details */}
-                            <div>
+                            <div className="pt-3 border-t border-zinc-700/50">
                               <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">
                                 Detalii prețuri
                               </h4>
@@ -872,96 +963,6 @@ export default function LandingPagesPage() {
                             </div>
                             )}
 
-                            {/* Form Variant */}
-                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-zinc-400">📋 Varianta formular</span>
-                                  <select
-                                    value={(page as any).form_variant || 1}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={async (e) => {
-                                      e.stopPropagation();
-                                      const newVariant = parseInt(e.target.value);
-                                      try {
-                                        await fetch(`/api/landing-pages/${page.id}`, {
-                                          method: "PUT",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ form_variant: newVariant }),
-                                        });
-                                        setLandingPages(prev => prev.map(lp =>
-                                          lp.id === page.id ? { ...lp, form_variant: newVariant } as any : lp
-                                        ));
-                                      } catch (err) {
-                                        console.error("Failed to update form variant:", err);
-                                      }
-                                    }}
-                                    className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 rounded text-xs text-white"
-                                  >
-                                    <option value={1}>V1 — Clasic</option>
-                                    <option value={2}>V2 — Oferte sus</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
-                              <div className="flex items-center gap-2">
-                                <Link
-                                  href={getWidgetUrl(page.slug)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-primary btn-sm"
-                                >
-                                  Vezi formular
-                                </Link>
-                                <button
-                                  onClick={() => {
-                                    setEmbedModalOpen(page.id);
-                                    setEmbedModalType("form");
-                                  }}
-                                  className="btn btn-secondary btn-sm"
-                                >
-                                  Cod embed formular
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setEmbedModalOpen(page.id);
-                                    setEmbedModalType("thankyou");
-                                  }}
-                                  className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors"
-                                >
-                                  Cod embed post-purchase
-                                </button>
-                                <a
-                                  href={`/thank-you-preview?preview=${page.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-xs font-medium hover:bg-purple-500/30 transition-colors"
-                                >
-                                  Preview post-purchase
-                                </a>
-                                <button
-                                  onClick={() => toggleRowExpansion(page.id)}
-                                  className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
-                                >
-                                  Ascunde detalii
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Link
-                                  href={`/admin/landing-pages/${page.id}/edit`}
-                                  className="btn btn-secondary btn-sm"
-                                >
-                                  Editează
-                                </Link>
-                                <button
-                                  onClick={() => setDeleteModalOpen(page.id)}
-                                  className="btn btn-danger btn-sm"
-                                >
-                                  Șterge
-                                </button>
-                              </div>
-                            </div>
                           </div>
                         </td>
                       </tr>

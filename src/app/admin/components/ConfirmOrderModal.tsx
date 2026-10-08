@@ -431,6 +431,19 @@ export default function ConfirmOrderModal({
                     </div>
                   </div>
 
+                  {/* Variations */}
+                  {order.selectedVariations && order.selectedVariations.length > 0 && (
+                    <div className="py-2 border-b border-zinc-700 space-y-0.5">
+                      <p className="text-xs text-blue-400 font-semibold mb-1">VARIAȚII</p>
+                      {order.selectedVariations.map((v, idx) => (
+                        <div key={idx} className="flex justify-between text-xs">
+                          <span className="text-zinc-300 flex-1 pr-2 truncate">{v.name}</span>
+                          <span className="text-zinc-400 font-mono">{v.sku} × {v.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Upsells - compact single column */}
                   {order.upsells && order.upsells.length > 0 && (
                     <div className="py-2 border-b border-zinc-700 space-y-1.5">

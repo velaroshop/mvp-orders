@@ -431,6 +431,9 @@ export default function ConfirmOrderModal({
                     </div>
                   </div>
 
+                  {/* DEBUG - remove after fix */}
+                  <p className="text-[10px] text-yellow-400 break-all">DBG: {JSON.stringify(order.selectedVariations)}</p>
+
                   {/* Variations */}
                   {order.selectedVariations && order.selectedVariations.length > 0 && (
                     <div className="py-2 border-b border-zinc-700 space-y-0.5">

@@ -125,6 +125,9 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
       productSku: order.product_sku || null,
       productName: order.product_name || null,
       productQuantity: order.product_quantity || 1,
+      selectedVariations: Array.isArray(order.selected_variations) && order.selected_variations.length > 0
+        ? order.selected_variations
+        : undefined,
       subtotal: Number(order.subtotal) || 0,
       shippingCost: Number(order.shipping_cost) || 0,
       total: actualTotal, // Use calculated total including all upsells

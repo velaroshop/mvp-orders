@@ -65,8 +65,8 @@ export async function GET(
       );
     }
 
-    // PARALLEL: Fetch product, store, presale upsells, org plan, and settings simultaneously
-    const [productResult, storeResult, upsellsResult, orgResult, settingsResult] = await Promise.all([
+    // PARALLEL: Fetch product, store, presale upsells, org plan, settings, and variations simultaneously
+    const [productResult, storeResult, upsellsResult, orgResult, settingsResult, variationsResult] = await Promise.all([
       // Product query
       landingPage.product_id
         ? supabase
@@ -107,6 +107,16 @@ export async function GET(
         .select("meta_test_mode, meta_test_event_code")
         .eq("organization_id", landingPage.organization_id)
         .single(),
+
+      // Variations query — fetch active + out-of-stock variations (not inactive ones)
+      landingPage.product_id
+        ? supabase
+            .from("products")
+            .select("id, name, sku, status, in_stock, variation_visual_type, variation_visual_value, variation_display_order")
+            .eq("parent_product_id", landingPage.product_id)
+            .neq("status", "inactive")
+            .order("variation_display_order", { ascending: true })
+        : Promise.resolve({ data: [] }),
     ]);
 
     const productData = productResult.data;
@@ -114,6 +124,7 @@ export async function GET(
     const orgPlan = orgResult.data?.plan || "pro";
     const metaTestMode = settingsResult.data?.meta_test_mode || false;
     const metaTestEventCode = settingsResult.data?.meta_test_event_code || null;
+    const productVariations = variationsResult.data || [];
 
     // Filter upsells based on product status (only "active" products)
     // If organization is on basic plan, return empty presale upsells
@@ -129,8 +140,10 @@ export async function GET(
         stores: storeData,
         meta_test_mode: metaTestMode,
         meta_test_event_code: metaTestEventCode,
+        variations_label: landingPage.variations_label || null,
       },
       presaleUpsells,
+      productVariations,
     }, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { Order } from "@/lib/types";
+import type { Order, SelectedVariation } from "@/lib/types";
 
 interface ProductOption {
   id: string;
@@ -26,6 +26,7 @@ export interface ChangeOrderData {
   shippingCost: number;
   subtotal: number;
   total: number;
+  selectedVariations?: SelectedVariation[];
 }
 
 interface ChangeOrderModalProps {
@@ -54,6 +55,7 @@ export default function ChangeOrderModal({
   const [unitPrice, setUnitPrice] = useState(0);
   const [upsells, setUpsells] = useState<UpsellRow[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
+  const [selectedVariations, setSelectedVariations] = useState<SelectedVariation[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -112,6 +114,10 @@ export default function ChangeOrderModal({
       } else {
         setUpsells([]);
       }
+
+      // Clone selected variations
+      const rawVariations = order.selectedVariations || [];
+      setSelectedVariations(Array.isArray(rawVariations) ? [...rawVariations] : []);
     }
   }, [isOpen, order]);
 
@@ -159,6 +165,16 @@ export default function ChangeOrderModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isSubmitting) return;
+
+    // Validate variation quantities sum
+    if (selectedVariations.length > 0) {
+      const totalVarQty = selectedVariations.reduce((sum, v) => sum + v.quantity, 0);
+      if (totalVarQty !== productQuantity) {
+        setSubmitError(`Suma variantelor (${totalVarQty}) trebuie să fie egală cu cantitatea produsului (${productQuantity}).`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -170,6 +186,7 @@ export default function ChangeOrderModal({
         shippingCost,
         subtotal,
         total,
+        selectedVariations: selectedVariations.length > 0 ? selectedVariations : undefined,
       });
     } catch (error) {
       setSubmitError(
@@ -239,6 +256,67 @@ export default function ChangeOrderModal({
               Subtotal: <span className="text-zinc-300">{subtotal.toFixed(2)} RON</span>
             </p>
           </div>
+
+          {/* Variations */}
+          {selectedVariations.length > 0 && (() => {
+            const totalVarQty = selectedVariations.reduce((sum, v) => sum + v.quantity, 0);
+            const isValid = totalVarQty === productQuantity;
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                    Variante selectate
+                  </p>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                    isValid ? "bg-emerald-900/50 text-emerald-300" : "bg-red-900/50 text-red-300"
+                  }`}>
+                    {totalVarQty}/{productQuantity} buc.
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {selectedVariations.map((variation, index) => (
+                    <div key={variation.productId} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium truncate">{variation.name}</p>
+                        <p className="text-xs text-zinc-500">SKU: {variation.sku}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          disabled={variation.quantity <= 0}
+                          onClick={() =>
+                            setSelectedVariations(prev =>
+                              prev.map((v, i) => i === index ? { ...v, quantity: Math.max(0, v.quantity - 1) } : v)
+                            )
+                          }
+                          className="w-6 h-6 rounded border border-zinc-600 flex items-center justify-center text-zinc-300 text-sm font-bold hover:border-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          −
+                        </button>
+                        <span className="w-5 text-center text-sm text-white font-bold">{variation.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedVariations(prev =>
+                              prev.map((v, i) => i === index ? { ...v, quantity: v.quantity + 1 } : v)
+                            )
+                          }
+                          className="w-6 h-6 rounded border border-amber-600 flex items-center justify-center text-amber-400 text-sm font-bold hover:border-amber-500 hover:text-amber-300"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {!isValid && (
+                  <p className="text-xs text-red-400 mt-1.5">
+                    Suma variantelor ({totalVarQty}) trebuie să fie egală cu cantitatea produsului ({productQuantity}).
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Upsells */}
           <div>

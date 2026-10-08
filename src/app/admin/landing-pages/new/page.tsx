@@ -52,6 +52,8 @@ export default function NewLandingPagePage() {
     fbConversionToken: "",
     clientSideTracking: false,
     serverSideTracking: false,
+    // Variations
+    variationsLabel: "",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -62,6 +64,7 @@ export default function NewLandingPagePage() {
   const [slugUsedBy, setSlugUsedBy] = useState<string | null>(null);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+  const [selectedProductVariationsCount, setSelectedProductVariationsCount] = useState(0);
 
   useEffect(() => {
     fetchProducts();
@@ -231,10 +234,16 @@ export default function NewLandingPagePage() {
                         <button
                           key={product.id}
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             setFormData({ ...formData, productId: product.id });
                             setProductSearch(product.name);
                             setShowProductDropdown(false);
+                            // Check if product has variations
+                            try {
+                              const r = await fetch(`/api/products/${product.id}`);
+                              const d = await r.json();
+                              setSelectedProductVariationsCount((d.product?.variations || []).length);
+                            } catch { setSelectedProductVariationsCount(0); }
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
@@ -268,6 +277,24 @@ export default function NewLandingPagePage() {
                   Produsul asociat acestei pagini.
                 </p>
               </div>
+
+              {/* Variations label — only shown if selected product has variations */}
+              {selectedProductVariationsCount > 0 && (
+                <div>
+                  <label className="label">Etichetă variații</label>
+                  <input
+                    type="text"
+                    value={formData.variationsLabel}
+                    onChange={(e) => setFormData({ ...formData, variationsLabel: e.target.value })}
+                    className="input"
+                    placeholder="ex. Alege culorile dorite"
+                    maxLength={60}
+                  />
+                  <p className="text-faint text-xs mt-1">
+                    Text afișat clientului deasupra selectorului de variații. Lasă gol pentru „Alege varianta".
+                  </p>
+                </div>
+              )}
 
               {/* Store */}
               <div>

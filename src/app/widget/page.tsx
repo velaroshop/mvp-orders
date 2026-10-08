@@ -20,6 +20,17 @@ interface Upsell {
   };
 }
 
+interface ProductVariation {
+  id: string;
+  name: string;
+  sku: string;
+  status: string;
+  in_stock: boolean;
+  variation_visual_type: "image" | "color" | null;
+  variation_visual_value: string | null;
+  variation_display_order: number;
+}
+
 interface LandingPage {
   id: string;
   organization_id: string;
@@ -48,6 +59,7 @@ interface LandingPage {
   meta_test_mode?: boolean;
   meta_test_event_code?: string;
   default_offer?: string;
+  variations_label?: string | null;
   products?: {
     id: string;
     name: string;
@@ -72,6 +84,8 @@ function WidgetFormContent() {
   const org = searchParams.get("org");
 
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
+  const [productVariations, setProductVariations] = useState<ProductVariation[]>([]);
+  const [variationQuantities, setVariationQuantities] = useState<Record<string, number>>({});
   const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
   const [postsaleUpsells, setPostsaleUpsells] = useState<Upsell[]>([]);
   const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
@@ -402,6 +416,12 @@ function WidgetFormContent() {
           type: "presale",
         }));
 
+      const selectedVariationsBeacon = productVariations.length > 0
+        ? productVariations
+            .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+            .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+        : undefined;
+
       const payload = {
         partialOrderId: partialOrderIdRef.current,
         organizationId: landingPage.stores?.organization_id,
@@ -416,6 +436,7 @@ function WidgetFormContent() {
         productSku: landingPage.products?.sku,
         productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
+        selectedVariations: selectedVariationsBeacon,
         subtotal: getCurrentPrice(),
         shippingCost: getShippingPrice(),
         total: getTotalPrice(),
@@ -475,6 +496,12 @@ function WidgetFormContent() {
       // Use presale upsells from the same response (optimized - no extra request)
       if (data.presaleUpsells) {
         setPresaleUpsells(data.presaleUpsells);
+      }
+
+      // Load product variations (active ones, including out-of-stock)
+      if (data.productVariations) {
+        setProductVariations(data.productVariations);
+        setVariationQuantities({});
       }
     } catch (err) {
       console.error("Error fetching landing page:", err);
@@ -611,10 +638,25 @@ function WidgetFormContent() {
     });
   }
 
+  // Reset variation quantities whenever the offer changes
+  useEffect(() => {
+    setVariationQuantities({});
+  }, [selectedOffer]);
+
   function getUpsellsTotal() {
     return presaleUpsells
       .filter(upsell => selectedUpsells.has(upsell.id))
       .reduce((total, upsell) => total + upsell.price, 0);
+  }
+
+  function getOfferQuantity(): number {
+    if (selectedOffer === "offer_1") return 1;
+    if (selectedOffer === "offer_2") return 2;
+    return 3;
+  }
+
+  function getTotalVariationQuantity(): number {
+    return Object.values(variationQuantities).reduce((sum, q) => sum + q, 0);
   }
 
 
@@ -636,6 +678,12 @@ function WidgetFormContent() {
           type: "presale",
         }));
 
+      const selectedVariationsData = productVariations.length > 0
+        ? productVariations
+            .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+            .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+        : undefined;
+
       const payload = {
         partialOrderId,
         organizationId: landingPage.stores.organization_id,
@@ -650,6 +698,7 @@ function WidgetFormContent() {
         productSku: landingPage.products?.sku,
         productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
         upsells: selectedUpsellsData,
+        selectedVariations: selectedVariationsData,
         subtotal: getCurrentPrice(),
         shippingCost: getShippingPrice(),
         total: getTotalPrice(),
@@ -833,6 +882,18 @@ function WidgetFormContent() {
       return;
     }
 
+    // Validate variations: if product has variations, quantities must sum to offer quantity
+    if (productVariations.length > 0) {
+      const offerQty = getOfferQuantity();
+      const totalVarQty = getTotalVariationQuantity();
+      if (totalVarQty !== offerQty) {
+        setError(`Selectați variante pentru toate cele ${offerQty} unit${offerQty === 1 ? "ate" : "ăți"} ale ofertei.`);
+        submittingRef.current = false;
+        setSubmitting(false);
+        return;
+      }
+    }
+
 
     // Prepare selected upsells data
     const selectedUpsellsData = presaleUpsells
@@ -878,6 +939,12 @@ function WidgetFormContent() {
       return window.location.href;
     };
 
+    const selectedVariationsData = productVariations.length > 0
+      ? productVariations
+          .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+          .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+      : undefined;
+
     const payload = {
       landingKey: landingPage.slug,
       organizationId: landingPage.organization_id,
@@ -888,6 +955,7 @@ function WidgetFormContent() {
       city: city.trim(),
       address: address.trim(),
       upsells: selectedUpsellsData,
+      selectedVariations: selectedVariationsData,
       subtotal: getCurrentPrice(),
       shippingCost: getShippingPrice(),
       total: getTotalPrice(),
@@ -1601,6 +1669,112 @@ function WidgetFormContent() {
             </div>
 
           </div>
+
+          {/* Variation Selector */}
+          {productVariations.length > 0 && (() => {
+            const offerQty = getOfferQuantity();
+            const totalVarQty = getTotalVariationQuantity();
+            const remaining = offerQty - totalVarQty;
+            return (
+              <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 3 } : undefined}>
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-1 text-center">
+                  {landingPage.variations_label || "Selectați variantele dorite"}
+                </h2>
+                <div className="text-xs sm:text-sm text-center mb-3">
+                  {remaining > 0
+                    ? <span className="text-zinc-500">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
+                    : totalVarQty === offerQty
+                    ? <span className="text-emerald-600 font-semibold">✓ Selecție completă</span>
+                    : null}
+                </div>
+                <div className="space-y-2">
+                  {productVariations.map((variation) => {
+                    const qty = variationQuantities[variation.id] || 0;
+                    const isOutOfStock = !variation.in_stock;
+                    return (
+                      <div
+                        key={variation.id}
+                        className={`flex items-center gap-3 p-2.5 sm:p-3 rounded-lg border transition-all ${
+                          isOutOfStock
+                            ? "border-zinc-200 bg-zinc-50 opacity-60"
+                            : qty > 0
+                            ? "border-zinc-300 bg-white"
+                            : "border-zinc-200 bg-white"
+                        }`}
+                        style={qty > 0 && !isOutOfStock ? { borderColor: primaryColor, borderWidth: 2 } : undefined}
+                      >
+                        {/* Visual preview */}
+                        {variation.variation_visual_type === "image" && variation.variation_visual_value && (
+                          <img
+                            src={variation.variation_visual_value}
+                            alt={variation.name}
+                            className="w-10 h-10 object-cover rounded-md shrink-0"
+                          />
+                        )}
+                        {variation.variation_visual_type === "color" && variation.variation_visual_value && (
+                          <div
+                            className="w-8 h-8 rounded-full border-2 border-zinc-300 shrink-0"
+                            style={{ backgroundColor: variation.variation_visual_value }}
+                          />
+                        )}
+
+                        {/* Name + out-of-stock label */}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm sm:text-base font-medium text-zinc-900 truncate block">
+                            {variation.name}
+                          </span>
+                          {isOutOfStock && (
+                            <span className="text-xs text-red-500 font-medium">Lipsă stoc</span>
+                          )}
+                        </div>
+
+                        {/* Quantity stepper */}
+                        {isOutOfStock ? (
+                          <div className="shrink-0 w-20 text-center text-xs text-zinc-400 italic">
+                            Indisponibil
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              disabled={qty === 0}
+                              onClick={() =>
+                                setVariationQuantities(prev => ({
+                                  ...prev,
+                                  [variation.id]: Math.max(0, (prev[variation.id] || 0) - 1),
+                                }))
+                              }
+                              className="w-7 h-7 rounded-full border-2 border-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed hover:border-zinc-400 transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="w-5 text-center text-sm font-bold text-zinc-900">{qty}</span>
+                            <button
+                              type="button"
+                              disabled={remaining === 0}
+                              onClick={() =>
+                                setVariationQuantities(prev => ({
+                                  ...prev,
+                                  [variation.id]: (prev[variation.id] || 0) + 1,
+                                }))
+                              }
+                              className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              style={remaining > 0
+                                ? { borderColor: primaryColor, color: primaryColor }
+                                : { borderColor: '#d1d5db', color: '#9ca3af' }
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Presale Upsells */}
           {presaleUpsells.length > 0 && (

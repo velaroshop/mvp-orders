@@ -205,12 +205,18 @@ class HelpshipClient {
       address: string;
       addressDetails?: string | null; // Detalii adresă (bloc, scara, apt)
       offerCode: string;
-      productSku?: string | null; // SKU-ul produsului pentru Helpship (același pentru toate ofertele)
+      productSku?: string | null; // SKU-ul produsului pentru Helpship (folosit dacă nu există variații)
       productName?: string | null; // Numele produsului din baza noastră
       productQuantity?: number; // Cantitatea produsului din oferta selectată
       subtotal: number;
       shippingCost: number;
       total: number;
+      selectedVariations?: Array<{ // Variații selectate de client (înlocuiesc produsul principal în Helpship)
+        productId: string;
+        name: string;
+        sku: string;
+        quantity: number;
+      }>;
       upsells?: Array<{
         upsellId: string;
         title: string;
@@ -288,20 +294,31 @@ class HelpshipClient {
       customerNote: null,
       shopOwnerNote: null,
       orderLines: [
-        // Main product
-        {
-          name: orderData.productName || orderData.productSku || "Product", // Numele produsului din baza noastră sau SKU ca fallback
-          quantity: orderData.productQuantity || 1, // Cantitatea din oferta selectată
-          price: (orderData.productQuantity || 1) > 0
-            ? orderData.subtotal / (orderData.productQuantity || 1)
-            : orderData.subtotal, // Preț per bucată (subtotal împărțit la cantitate)
-          vatPercentage: orderData.vatPercentage ?? 21,
-          externalSku: orderData.productSku || undefined, // SKU-ul produsului (același pentru toate ofertele)
-          // accountId, variantName, vatName, externalId - opționale
-        },
+        // If product has variations: send each variation as a separate line item
+        // If no variations: send the main product as a single line item
+        ...(orderData.selectedVariations && orderData.selectedVariations.length > 0
+          ? orderData.selectedVariations.map(variation => ({
+              name: variation.name,
+              quantity: variation.quantity,
+              price: variation.quantity > 0 && orderData.productQuantity && orderData.productQuantity > 0
+                ? orderData.subtotal / orderData.productQuantity // preț per bucată (același pentru toate variațiile)
+                : orderData.subtotal,
+              vatPercentage: orderData.vatPercentage ?? 21,
+              externalSku: variation.sku,
+            }))
+          : [{
+              name: orderData.productName || orderData.productSku || "Product",
+              quantity: orderData.productQuantity || 1,
+              price: (orderData.productQuantity || 1) > 0
+                ? orderData.subtotal / (orderData.productQuantity || 1)
+                : orderData.subtotal,
+              vatPercentage: orderData.vatPercentage ?? 21,
+              externalSku: orderData.productSku || undefined,
+            }]
+        ),
         // Add upsells as separate products
         ...(orderData.upsells || []).map(upsell => ({
-          name: upsell.productName || upsell.title, // Use product name from products table, fallback to upsell title
+          name: upsell.productName || upsell.title,
           quantity: upsell.quantity,
           price: upsell.price,
           vatPercentage: orderData.vatPercentage ?? 21,

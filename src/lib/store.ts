@@ -1,4 +1,4 @@
-import type { Order, OfferCode, OrderStatus } from "./types";
+import type { Order, OfferCode, OrderStatus, SelectedVariation } from "./types";
 import { supabase, supabaseAdmin } from "./supabase";
 
 // Store folosind Supabase PostgreSQL
@@ -20,6 +20,7 @@ export async function createOrder(input: {
   productName?: string | null;
   productSku?: string | null;
   productQuantity?: number;
+  selectedVariations?: SelectedVariation[];
   // Meta tracking fields
   trackingData?: Record<string, any>;
   eventSourceUrl?: string;
@@ -105,6 +106,9 @@ export async function createOrder(input: {
       product_name: input.productName,
       product_sku: input.productSku,
       product_quantity: input.productQuantity,
+      selected_variations: input.selectedVariations && input.selectedVariations.length > 0
+        ? input.selectedVariations
+        : null,
       order_series: orderSeries,
       // Meta tracking fields
       fbclid: fbclid,
@@ -140,6 +144,7 @@ export async function createOrder(input: {
     productName: data.product_name ?? undefined,
     productSku: data.product_sku ?? undefined,
     productQuantity: data.product_quantity ?? undefined,
+    selectedVariations: data.selected_variations ?? undefined,
     upsells: data.upsells as string[],
     subtotal: parseFloat(data.subtotal.toString()),
     shippingCost: parseFloat(data.shipping_cost.toString()),

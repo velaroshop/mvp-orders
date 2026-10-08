@@ -17,6 +17,46 @@ const supabase = createClient(
 );
 
 /**
+ * GET /api/products/[id] - Get a single product with its variations
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.activeOrganizationId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { id: productId } = await params;
+    const organizationId = session.user.activeOrganizationId;
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .eq("organization_id", organizationId)
+      .single();
+
+    if (error || !product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Fetch variations (children) sorted by display order
+    const { data: variations } = await supabase
+      .from("products")
+      .select("*")
+      .eq("parent_product_id", productId)
+      .order("variation_display_order", { ascending: true });
+
+    return NextResponse.json({ product: { ...product, variations: variations || [] } });
+  } catch (error) {
+    console.error("Error in GET /api/products/[id]:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+/**
  * PUT /api/products/[id] - Update a product
  */
 export async function PUT(
@@ -40,7 +80,7 @@ export async function PUT(
     // Verify the product belongs to the user's organization
     const { data: existingProduct, error: fetchError } = await supabase
       .from("products")
-      .select("id, organization_id, name, sku, status")
+      .select("id, organization_id, name, sku, status, parent_product_id")
       .eq("id", productId)
       .single();
 
@@ -73,9 +113,12 @@ export async function PUT(
       );
     }
 
-    if (body.sku !== undefined && body.sku.trim().length > 10) {
+    // Variation products allow longer SKUs (up to 30 chars)
+    const isVariation = !!existingProduct.parent_product_id;
+    const skuMaxLength = isVariation ? 30 : 10;
+    if (body.sku !== undefined && body.sku.trim().length > skuMaxLength) {
       return NextResponse.json(
-        { error: "SKU must not exceed 10 characters" },
+        { error: `SKU must not exceed ${skuMaxLength} characters` },
         { status: 400 }
       );
     }
@@ -109,11 +152,24 @@ export async function PUT(
       }
     }
 
+    // Validate visual type if provided
+    if (body.variation_visual_type !== undefined && body.variation_visual_type !== null &&
+        !["image", "color"].includes(body.variation_visual_type)) {
+      return NextResponse.json(
+        { error: "variation_visual_type must be 'image' or 'color'" },
+        { status: 400 }
+      );
+    }
+
     // Update the product
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (normalizedSku !== undefined) updateData.sku = normalizedSku;
     if (body.status !== undefined) updateData.status = body.status;
+    if (body.in_stock !== undefined) updateData.in_stock = body.in_stock;
+    if (body.variation_visual_type !== undefined) updateData.variation_visual_type = body.variation_visual_type;
+    if (body.variation_visual_value !== undefined) updateData.variation_visual_value = body.variation_visual_value;
+    if (body.variation_display_order !== undefined) updateData.variation_display_order = body.variation_display_order;
 
     const { data: product, error } = await supabase
       .from("products")
@@ -201,6 +257,19 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Unauthorized - Product does not belong to your organization" },
         { status: 403 }
+      );
+    }
+
+    // Check if product is a parent with variation children
+    const { count: variationsCount } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_product_id", productId);
+
+    if (variationsCount && variationsCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete product: it has variations. Delete all variations first." },
+        { status: 400 }
       );
     }
 

@@ -46,6 +46,7 @@ interface LandingPage {
   client_side_tracking: boolean;
   server_side_tracking: boolean;
   default_offer?: string;
+  variations_label?: string;
 }
 
 export default function EditLandingPagePage() {
@@ -66,6 +67,7 @@ export default function EditLandingPagePage() {
   const [storeSearch, setStoreSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+  const [selectedProductVariationsCount, setSelectedProductVariationsCount] = useState(0);
   const [postsaleUpsells, setPostsaleUpsells] = useState<any[]>([]);
   const [isLoadingUpsells, setIsLoadingUpsells] = useState(true);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
@@ -162,6 +164,14 @@ export default function EditLandingPagePage() {
       const store = data.landingPages?.find((p: any) => p.id === landingPageId)?.stores;
       if (product) setProductSearch(product.name);
       if (store) setStoreSearch(store.url);
+      // Load variations count for the product
+      if (page.product_id) {
+        try {
+          const r = await fetch(`/api/products/${page.product_id}`);
+          const d = await r.json();
+          setSelectedProductVariationsCount((d.product?.variations || []).length);
+        } catch { /* non-blocking */ }
+      }
     } catch (err) {
       console.error("Error fetching landing page:", err);
       setMessage({
@@ -243,6 +253,7 @@ export default function EditLandingPagePage() {
           fbConversionToken: formData.fb_conversion_token || "",
           clientSideTracking: formData.client_side_tracking,
           serverSideTracking: formData.server_side_tracking,
+          variationsLabel: formData.variations_label || "",
         }),
       });
 
@@ -385,10 +396,15 @@ export default function EditLandingPagePage() {
                         <button
                           key={product.id}
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             setFormData({ ...formData, product_id: product.id });
                             setProductSearch(product.name);
                             setShowProductDropdown(false);
+                            try {
+                              const r = await fetch(`/api/products/${product.id}`);
+                              const d = await r.json();
+                              setSelectedProductVariationsCount((d.product?.variations || []).length);
+                            } catch { setSelectedProductVariationsCount(0); }
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-zinc-700 text-sm text-white border-b border-zinc-700/50 last:border-b-0"
                         >
@@ -422,6 +438,24 @@ export default function EditLandingPagePage() {
                   Produsul asociat acestei pagini.
                 </p>
               </div>
+
+              {/* Variations label — only shown if selected product has variations */}
+              {selectedProductVariationsCount > 0 && (
+                <div>
+                  <label className="label">Etichetă variații</label>
+                  <input
+                    type="text"
+                    value={formData?.variations_label || ""}
+                    onChange={(e) => setFormData(f => f ? { ...f, variations_label: e.target.value } : f)}
+                    className="input"
+                    placeholder="ex. Alege culorile dorite"
+                    maxLength={60}
+                  />
+                  <p className="text-faint text-xs mt-1">
+                    Text afișat clientului deasupra selectorului de variații. Lasă gol pentru „Alege varianta".
+                  </p>
+                </div>
+              )}
 
               {/* Store */}
               <div>

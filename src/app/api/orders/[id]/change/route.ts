@@ -64,7 +64,7 @@ export async function POST(
       );
     }
 
-    const { productQuantity, unitPrice, upsells, shippingCost } = body;
+    const { productQuantity, unitPrice, upsells, shippingCost, selectedVariations } = body;
 
     // Server-side recalculation
     const serverSubtotal = unitPrice * productQuantity;
@@ -84,17 +84,28 @@ export async function POST(
       total: serverTotal,
     });
 
+    // Build update payload
+    const updatePayload: Record<string, any> = {
+      product_quantity: productQuantity,
+      subtotal: serverSubtotal,
+      shipping_cost: shippingCost,
+      total: serverTotal,
+      upsells: upsells || [],
+      updated_at: new Date().toISOString(),
+    };
+
+    // Persist variation selections if provided
+    if (selectedVariations !== undefined) {
+      updatePayload.selected_variations =
+        Array.isArray(selectedVariations) && selectedVariations.length > 0
+          ? selectedVariations
+          : null;
+    }
+
     // Update order in DB
     const { error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({
-        product_quantity: productQuantity,
-        subtotal: serverSubtotal,
-        shipping_cost: shippingCost,
-        total: serverTotal,
-        upsells: upsells || [],
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", orderId);
 
     if (updateError) {

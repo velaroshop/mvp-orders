@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       subtotal,
       shippingCost,
       total,
+      selectedVariations,
       tracking: rawTracking,
       eventSourceUrl,
     } = body;
@@ -252,6 +253,7 @@ export async function POST(request: NextRequest) {
         productName,
         productSku,
         productQuantity,
+        selectedVariations: Array.isArray(selectedVariations) ? selectedVariations : undefined,
         trackingData: tracking,
         eventSourceUrl,
       });
@@ -295,6 +297,7 @@ export async function POST(request: NextRequest) {
       productName,
       productSku,
       productQuantity,
+      selectedVariations: Array.isArray(selectedVariations) ? selectedVariations : undefined,
       trackingData: tracking,
       eventSourceUrl,
     });

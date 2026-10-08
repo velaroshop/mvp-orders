@@ -33,11 +33,12 @@ export async function GET(request: NextRequest) {
 
     const organizationId = session.user.activeOrganizationId;
 
-    // Fetch products for the organization
+    // Fetch only main products (not variation children) for the organization
     const { data: products, error } = await supabase
       .from("products")
       .select("*")
       .eq("organization_id", organizationId)
+      .is("parent_product_id", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -80,7 +81,20 @@ export async function GET(request: NextRequest) {
       upsellCountByProduct.set(u.product_id, (upsellCountByProduct.get(u.product_id) || 0) + 1);
     });
 
-    // BATCH QUERY 3: Get all testing orders for all landing slugs at once
+    // BATCH QUERY 3: Get variation counts for all products at once
+    const { data: allVariations } = await supabase
+      .from("products")
+      .select("parent_product_id, status")
+      .in("parent_product_id", productIds);
+
+    const variationCountByProduct = new Map<string, number>();
+    allVariations?.forEach(v => {
+      if (v.parent_product_id) {
+        variationCountByProduct.set(v.parent_product_id, (variationCountByProduct.get(v.parent_product_id) || 0) + 1);
+      }
+    });
+
+    // BATCH QUERY 4: Get all testing orders for all landing slugs at once
     const allLandingSlugs = [...new Set(allLandingPages?.map(lp => lp.slug) || [])];
     let testingOrdersBySlug = new Map<string, number>();
 
@@ -113,10 +127,11 @@ export async function GET(request: NextRequest) {
         ...product,
         testing_orders_count: testingOrdersCount,
         is_in_use: productLandingSlugs.length > 0 || upsellCount > 0,
+        variations_count: variationCountByProduct.get(product.id) || 0,
       };
     });
 
-    console.log(`[Products API] Returned ${productsWithCounts.length} products with 3 batch queries instead of ${products.length * 3} individual queries`);
+    console.log(`[Products API] Returned ${productsWithCounts.length} products with 4 batch queries`);
 
     return NextResponse.json({ products: productsWithCounts });
   } catch (error) {
@@ -149,6 +164,10 @@ export async function POST(request: NextRequest) {
       name,
       sku,
       status = "active",
+      parent_product_id,
+      variation_visual_type,
+      variation_visual_value,
+      variation_display_order = 0,
     } = body;
 
     // Validate required fields
@@ -173,9 +192,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (sku.trim().length > 10) {
+    // Variation products allow longer SKUs (e.g. "RDX-008-VERDE" = 13 chars)
+    const isVariation = !!parent_product_id;
+    const skuMaxLength = isVariation ? 30 : 10;
+    if (sku.trim().length > skuMaxLength) {
       return NextResponse.json(
-        { error: "SKU must not exceed 10 characters" },
+        { error: `SKU must not exceed ${skuMaxLength} characters` },
         { status: 400 }
       );
     }
@@ -186,6 +208,48 @@ export async function POST(request: NextRequest) {
         { error: "Status must be 'active', 'testing', or 'inactive'" },
         { status: 400 }
       );
+    }
+
+    // Validate visual type if provided
+    if (variation_visual_type && !["image", "color"].includes(variation_visual_type)) {
+      return NextResponse.json(
+        { error: "variation_visual_type must be 'image' or 'color'" },
+        { status: 400 }
+      );
+    }
+
+    // Validate parent product exists and belongs to same org (if creating a variation)
+    if (parent_product_id) {
+      const { data: parentProduct } = await supabase
+        .from("products")
+        .select("id, organization_id, parent_product_id")
+        .eq("id", parent_product_id)
+        .single();
+
+      if (!parentProduct || parentProduct.organization_id !== organizationId) {
+        return NextResponse.json(
+          { error: "Parent product not found" },
+          { status: 404 }
+        );
+      }
+      // Prevent nesting: a variation cannot itself be a parent of another variation
+      if (parentProduct.parent_product_id) {
+        return NextResponse.json(
+          { error: "Cannot create a variation of a variation" },
+          { status: 400 }
+        );
+      }
+      // Max 6 variations per product
+      const { count: existingCount } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("parent_product_id", parent_product_id);
+      if ((existingCount || 0) >= 6) {
+        return NextResponse.json(
+          { error: "Maximum 6 variations per product" },
+          { status: 400 }
+        );
+      }
     }
 
     // Normalize SKU to uppercase
@@ -207,14 +271,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the product
+    const insertData: Record<string, any> = {
+      organization_id: organizationId,
+      name,
+      sku: normalizedSku,
+      status,
+    };
+    if (parent_product_id) {
+      insertData.parent_product_id = parent_product_id;
+      insertData.variation_visual_type = variation_visual_type || null;
+      insertData.variation_visual_value = variation_visual_value || null;
+      insertData.variation_display_order = variation_display_order;
+    }
+
     const { data: product, error } = await supabase
       .from("products")
-      .insert({
-        organization_id: organizationId,
-        name,
-        sku: normalizedSku,
-        status,
-      })
+      .insert(insertData)
       .select()
       .single();
 

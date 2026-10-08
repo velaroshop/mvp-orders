@@ -208,6 +208,7 @@ export async function PUT(
     if (body.clientSideTracking !== undefined) updateData.client_side_tracking = body.clientSideTracking;
     if (body.serverSideTracking !== undefined) updateData.server_side_tracking = body.serverSideTracking;
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
+    if (body.variationsLabel !== undefined) updateData.variations_label = body.variationsLabel || null;
 
     const { data: landingPage, error } = await supabase
       .from("landing_pages")

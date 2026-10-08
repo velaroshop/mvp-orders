@@ -1,5 +1,12 @@
 export type OrderStatus = "queue" | "pending" | "confirmed" | "cancelled" | "hold" | "sync_error" | "testing" | "scheduled";
 
+export interface SelectedVariation {
+  productId: string;
+  name: string;
+  sku: string;
+  quantity: number;
+}
+
 export type PartialOrderStatus = "pending" | "accepted" | "refused" | "unanswered" | "call_later" | "duplicate";
 
 export type OfferCode = "offer_1" | "offer_2" | "offer_3";
@@ -101,6 +108,8 @@ export interface Order {
   callStatus?: string;
   callAttempts?: number;
   lastCallAt?: string;
+  // Product variations selected by customer
+  selectedVariations?: SelectedVariation[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -133,6 +142,7 @@ export interface PartialOrder {
   updatedAt: string;
   abandonedAt?: string;
   storeUrl?: string | null; // URL of the store from which the partial order originated
+  selectedVariations?: SelectedVariation[];
 }
 
 export interface OrganizationMember {

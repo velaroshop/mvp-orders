@@ -15,6 +15,7 @@ interface Product {
   updated_at: string;
   testing_orders_count?: number;
   is_in_use?: boolean;
+  variations_count?: number;
 }
 
 const statusBadge: Record<string, string> = {
@@ -200,7 +201,12 @@ export default function ProductsPage() {
                   className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-zinc-800/30 cursor-pointer transition-colors"
                   onClick={() => toggleRow(product.id)}
                 >
-                  <span className="text-sm font-medium text-white truncate">{product.name}</span>
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-medium text-white truncate">{product.name}</span>
+                    {(product.variations_count || 0) > 0 && (
+                      <span className="badge badge-zinc shrink-0">{product.variations_count} var.</span>
+                    )}
+                  </span>
                   <span className="text-sm text-zinc-400 font-mono">{product.sku || "—"}</span>
                   <span className={statusBadge[product.status]}>{statusLabel[product.status]}</span>
                   <span className="text-xs text-zinc-500">{formatDate(product.created_at)}</span>

@@ -624,7 +624,7 @@ export default function EditLandingPagePage() {
                     onChange={(e) => setFormData({ ...formData, numeral_1: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="1 bucată"
-                    maxLength={15}
+                    maxLength={20}
                     required
                   />
                 </div>
@@ -638,7 +638,7 @@ export default function EditLandingPagePage() {
                     onChange={(e) => setFormData({ ...formData, numeral_2: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Două bucăți"
-                    maxLength={15}
+                    maxLength={20}
                     required
                   />
                 </div>
@@ -652,13 +652,13 @@ export default function EditLandingPagePage() {
                     onChange={(e) => setFormData({ ...formData, numeral_3: e.target.value })}
                     className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm"
                     placeholder="Trei bucăți"
-                    maxLength={15}
+                    maxLength={20}
                     required
                   />
                 </div>
               </div>
               <p className="text-xs text-zinc-500 mt-1">
-                Max 15 characters each
+                Max 20 characters each
               </p>
 
               {/* Order Button Text */}

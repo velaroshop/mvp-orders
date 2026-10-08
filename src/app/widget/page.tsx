@@ -1491,7 +1491,7 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_1}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-xs sm:text-sm font-bold mb-1 whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_1}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
@@ -1538,7 +1538,7 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_2}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-xs sm:text-sm font-bold mb-1 whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_2}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
@@ -1585,7 +1585,7 @@ function WidgetFormContent() {
                   {landingPage.offer_heading_3}
                 </div>
 
-                <div className="text-sm sm:text-base font-bold mb-1" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
+                <div className="text-xs sm:text-sm font-bold mb-1 whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
                   {landingPage.numeral_3}
                 </div>
                 <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>

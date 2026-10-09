@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -21,9 +21,8 @@ function formatBytes(bytes: number): string {
 }
 
 export default function ImageCompressPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const role = (session?.user as any)?.role;
 
   const [files, setFiles] = useState<File[]>([]);
   const [urlItems, setUrlItems] = useState<{ url: string; name: string }[]>([]);
@@ -42,8 +41,14 @@ export default function ImageCompressPage() {
   const activeRole = (session?.user as any)?.activeRole;
   const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
 
-  if (activeRole !== "owner" || !isSuperadminOrg) {
-    router.replace("/admin/orders");
+  useEffect(() => {
+    if (status === "loading") return;
+    if (activeRole !== "owner" || !isSuperadminOrg) {
+      router.replace("/admin/orders");
+    }
+  }, [status, activeRole, isSuperadminOrg, router]);
+
+  if (status === "loading" || activeRole !== "owner" || !isSuperadminOrg) {
     return null;
   }
 

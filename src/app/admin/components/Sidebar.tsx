@@ -25,6 +25,8 @@ import {
   X,
   ChevronRight,
   ChevronUp,
+  Building2,
+  ImageDown,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -39,8 +41,10 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/landing-pages":  <FileText className="w-4 h-4" />,
   "/admin/settings/team":  <UserCog className="w-4 h-4" />,
   "/admin/refunds":        <RotateCcw className="w-4 h-4" />,
-  "/admin/activity-log":   <Activity className="w-4 h-4" />,
-  "/admin/settings":       <Settings className="w-4 h-4" />,
+  "/admin/activity-log":                    <Activity className="w-4 h-4" />,
+  "/admin/settings":                        <Settings className="w-4 h-4" />,
+  "/admin/superadmin":                      <Building2 className="w-4 h-4" />,
+  "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
 };
 
 const menuGroups = [

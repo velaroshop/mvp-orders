@@ -5,13 +5,6 @@ import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
-// Allow up to 20MB input
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 const MAX_INPUT_BYTES = 20 * 1024 * 1024; // 20MB
 
 export async function POST(request: NextRequest) {

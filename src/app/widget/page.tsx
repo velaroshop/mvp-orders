@@ -395,7 +395,7 @@ function WidgetFormContent() {
       clearTimeout(timeout);
       if (observer) observer.disconnect();
     };
-  }, [loading, success, landingPage, selectedOffer, selectedUpsells, phone, fullName, county, city, address]);
+  }, [loading, success, landingPage, selectedOffer, selectedUpsells]);
 
   // Keep saveOnLeaveRef up to date with latest form values
   useEffect(() => {

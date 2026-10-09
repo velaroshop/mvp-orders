@@ -77,6 +77,13 @@ const menuGroups = [
       { name: "Setări", href: "/admin/settings" },
     ],
   },
+  {
+    label: "Superadmin",
+    items: [
+      { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
+      { name: "Compresie WebP", href: "/admin/superadmin/image-compress", superadminOnly: true },
+    ],
+  },
 ];
 
 export default function Sidebar() {

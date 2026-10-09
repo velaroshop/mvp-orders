@@ -1962,6 +1962,7 @@ function WidgetFormContent() {
               }`}
               style={{
                 backgroundColor: primaryColor,
+                touchAction: 'manipulation',
                 ...(!submitting ? {
                   boxShadow: `0 0 0 0 ${primaryColor}B3`,
                   animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',

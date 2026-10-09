@@ -10,8 +10,9 @@ const MAX_INPUT_BYTES = 20 * 1024 * 1024; // 20MB
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const role = (session?.user as any)?.role;
-    if (!session?.user || role !== "superadmin") {
+    const activeRole = (session?.user as any)?.activeRole;
+    const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
+    if (!session?.user || activeRole !== "owner" || !isSuperadminOrg) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

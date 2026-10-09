@@ -52,15 +52,17 @@ export default function ImageCompressPage() {
     return null;
   }
 
+  const ALLOWED_EXTS = [".webp", ".jpg", ".jpeg", ".png"];
+
   function handleFileSelect(selected: FileList | null) {
     if (!selected) return;
-    const webpFiles = Array.from(selected).filter(f =>
-      f.name.toLowerCase().endsWith(".webp")
+    const imageFiles = Array.from(selected).filter(f =>
+      ALLOWED_EXTS.some(ext => f.name.toLowerCase().endsWith(ext))
     );
-    if (webpFiles.length === 0) return;
+    if (imageFiles.length === 0) return;
     setFiles(prev => {
       const existing = new Set(prev.map(f => f.name));
-      return [...prev, ...webpFiles.filter(f => !existing.has(f.name))];
+      return [...prev, ...imageFiles.filter(f => !existing.has(f.name))];
     });
     setResults([]);
     setErrors([]);
@@ -192,7 +194,7 @@ export default function ImageCompressPage() {
     results.forEach(r => {
       const a = document.createElement("a");
       a.href = r.url;
-      a.download = r.name.replace(/\.webp$/i, `_q${quality}.webp`);
+      a.download = r.name.replace(/\.(webp|jpg|jpeg|png)$/i, `_q${quality}.webp`);
       a.click();
     });
   }
@@ -206,9 +208,9 @@ export default function ImageCompressPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Compresie WebP</h1>
+        <h1 className="text-2xl font-bold text-white">Compresie & Conversie WebP</h1>
         <p className="text-zinc-400 text-sm mt-1">
-          Comprimă fișiere WebP statice și animate fără stocare în bucket.
+          Comprimă WebP sau convertește JPG/JPEG/PNG în WebP · fără stocare în bucket.
         </p>
       </div>
 
@@ -227,17 +229,17 @@ export default function ImageCompressPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".webp,image/webp"
+          accept=".webp,.jpg,.jpeg,.png,image/webp,image/jpeg,image/png"
           multiple
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files)}
         />
         <div className="text-4xl mb-3">🖼️</div>
         <p className="text-white font-medium">
-          Trage fișierele WebP aici sau dă click
+          Trage imaginile aici sau dă click
         </p>
         <p className="text-zinc-500 text-sm mt-1">
-          Statice și animate · Max 20 MB per fișier
+          WebP · JPG · JPEG · PNG → WebP · Max 20 MB per fișier
         </p>
       </div>
 
@@ -468,7 +470,7 @@ export default function ImageCompressPage() {
                   {/* Download */}
                   <a
                     href={r.url}
-                    download={r.name.replace(/\.webp$/i, `_q${quality}.webp`)}
+                    download={r.name.replace(/\.(webp|jpg|jpeg|png)$/i, `_q${quality}.webp`)}
                     className="shrink-0 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-medium rounded-lg transition-colors"
                   >
                     Descarcă

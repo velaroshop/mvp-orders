@@ -57,10 +57,12 @@ export async function POST(request: NextRequest) {
       originalSize = arrayBuffer.byteLength;
       // Derive filename from URL path
       const urlPath = new URL(urlInput).pathname;
-      originalName = urlPath.split("/").pop()?.replace(/\.webp$/i, "") || "image";
+      originalName = urlPath.split("/").pop()?.replace(/\.(webp|jpg|jpeg|png|gif)$/i, "") || "image";
     } else {
-      if (!file!.name.toLowerCase().endsWith(".webp")) {
-        return NextResponse.json({ error: "Only WebP files are supported" }, { status: 400 });
+      const allowedExts = [".webp", ".jpg", ".jpeg", ".png"];
+      const hasAllowedExt = allowedExts.some(ext => file!.name.toLowerCase().endsWith(ext));
+      if (!hasAllowedExt) {
+        return NextResponse.json({ error: "Formate acceptate: WebP, JPG, JPEG, PNG" }, { status: 400 });
       }
       if (file!.size > MAX_INPUT_BYTES) {
         return NextResponse.json({ error: "File exceeds 20MB limit" }, { status: 400 });
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
       const arrayBuffer = await file!.arrayBuffer();
       inputBuffer = Buffer.from(arrayBuffer);
       originalSize = file!.size;
-      originalName = file!.name.replace(/\.webp$/i, "");
+      originalName = file!.name.replace(/\.(webp|jpg|jpeg|png)$/i, "");
     }
 
     // Detect if animated by checking page count

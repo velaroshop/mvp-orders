@@ -38,17 +38,14 @@ export default function ImageCompressPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const downloadRefs = useRef<Record<string, HTMLAnchorElement>>({});
 
-  const activeRole = (session?.user as any)?.activeRole;
-  const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
-
   useEffect(() => {
     if (status === "loading") return;
-    if (activeRole !== "owner" || !isSuperadminOrg) {
+    if (!session?.user) {
       router.replace("/admin/orders");
     }
-  }, [status, activeRole, isSuperadminOrg, router]);
+  }, [status, session, router]);
 
-  if (status === "loading" || activeRole !== "owner" || !isSuperadminOrg) {
+  if (status === "loading" || !session?.user) {
     return null;
   }
 
@@ -208,9 +205,14 @@ export default function ImageCompressPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Compresie & Conversie WebP</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white">Convertor & Compresor WebP</h1>
+          <span className="px-2 py-0.5 bg-amber-500/15 border border-amber-500/40 text-amber-400 text-xs font-semibold rounded-full uppercase tracking-wide">
+            Beta
+          </span>
+        </div>
         <p className="text-zinc-400 text-sm mt-1">
-          Comprimă WebP sau convertește JPG/JPEG/PNG în WebP · fără stocare în bucket.
+          Convertește JPG/JPEG/PNG în WebP sau comprimă fișiere WebP existente · fără stocare în bucket.
         </p>
       </div>
 

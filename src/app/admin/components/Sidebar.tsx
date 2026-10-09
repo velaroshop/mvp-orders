@@ -27,6 +27,7 @@ import {
   ChevronUp,
   Building2,
   ImageDown,
+  Wrench,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -45,6 +46,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/settings":                        <Settings className="w-4 h-4" />,
   "/admin/superadmin":                      <Building2 className="w-4 h-4" />,
   "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
+  "/admin/tools":                           <Wrench className="w-4 h-4" />,
 };
 
 const menuGroups = [
@@ -82,10 +84,15 @@ const menuGroups = [
     ],
   },
   {
+    label: "Tools",
+    items: [
+      { name: "Convertor WebP", href: "/admin/superadmin/image-compress" },
+    ],
+  },
+  {
     label: "Superadmin",
     items: [
       { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
-      { name: "Compresie WebP", href: "/admin/superadmin/image-compress", superadminOnly: true },
     ],
   },
 ];

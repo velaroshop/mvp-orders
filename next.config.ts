@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp"],
+  outputFileTracingIncludes: {
+    "/api/superadmin/compress-image": ["./node_modules/@img/**/*"],
+  },
   images: {
     remotePatterns: [
       {

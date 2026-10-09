@@ -26,6 +26,9 @@ export default function ImageCompressPage() {
   const role = (session?.user as any)?.role;
 
   const [files, setFiles] = useState<File[]>([]);
+  const [urlItems, setUrlItems] = useState<{ url: string; name: string }[]>([]);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlError, setUrlError] = useState("");
   const [quality, setQuality] = useState(70);
   const [effort, setEffort] = useState(4);
   const [isDragging, setIsDragging] = useState(false);
@@ -67,6 +70,37 @@ export default function ImageCompressPage() {
     });
   }
 
+  function addUrl() {
+    setUrlError("");
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    try {
+      new URL(trimmed);
+    } catch {
+      setUrlError("URL invalid");
+      return;
+    }
+    const name = trimmed.split("/").pop()?.split("?")[0] || "image.webp";
+    if (urlItems.some(u => u.url === trimmed)) {
+      setUrlError("URL deja adăugat");
+      return;
+    }
+    setUrlItems(prev => [...prev, { url: trimmed, name }]);
+    setUrlInput("");
+    setResults([]);
+    setErrors([]);
+  }
+
+  function removeUrl(url: string) {
+    setUrlItems(prev => prev.filter(u => u.url !== url));
+    setResults(prev => {
+      const name = url.split("/").pop()?.split("?")[0] || "image.webp";
+      const r = prev.find(r => r.name === name);
+      if (r) URL.revokeObjectURL(r.url);
+      return prev.filter(r => r.name !== name);
+    });
+  }
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -74,7 +108,8 @@ export default function ImageCompressPage() {
   }, []);
 
   async function handleCompress() {
-    if (files.length === 0 || isProcessing) return;
+    const totalItems = files.length + urlItems.length;
+    if (totalItems === 0 || isProcessing) return;
     setIsProcessing(true);
     setResults([]);
     setErrors([]);
@@ -82,15 +117,28 @@ export default function ImageCompressPage() {
     const newResults: CompressedFile[] = [];
     const newErrors: { name: string; message: string }[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setProgress({ current: i + 1, total: files.length });
+    const allItems: Array<{ type: "file"; file: File } | { type: "url"; url: string; name: string }> = [
+      ...files.map(f => ({ type: "file" as const, file: f })),
+      ...urlItems.map(u => ({ type: "url" as const, ...u })),
+    ];
+
+    for (let i = 0; i < allItems.length; i++) {
+      const item = allItems[i];
+      setProgress({ current: i + 1, total: allItems.length });
 
       try {
         const fd = new FormData();
-        fd.append("file", file);
         fd.append("quality", quality.toString());
         fd.append("effort", effort.toString());
+
+        let itemName: string;
+        if (item.type === "file") {
+          fd.append("file", item.file);
+          itemName = item.file.name;
+        } else {
+          fd.append("url", item.url);
+          itemName = item.name;
+        }
 
         const response = await fetch("/api/superadmin/compress-image", {
           method: "POST",
@@ -99,30 +147,31 @@ export default function ImageCompressPage() {
 
         if (!response.ok) {
           const data = await response.json();
-          newErrors.push({ name: file.name, message: data.error || "Eroare necunoscută" });
+          newErrors.push({ name: itemName, message: data.error || "Eroare necunoscută" });
           continue;
         }
 
         const compressedSize = parseInt(response.headers.get("X-Compressed-Size") || "0", 10);
-        const originalSize = parseInt(response.headers.get("X-Original-Size") || file.size.toString(), 10);
+        const originalSize = parseInt(response.headers.get("X-Original-Size") || "0", 10);
         const isAnimated = response.headers.get("X-Is-Animated") === "true";
         const pages = parseInt(response.headers.get("X-Pages") || "1", 10);
 
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
 
         newResults.push({
-          name: file.name,
+          name: itemName,
           originalSize,
           compressedSize,
           isAnimated,
           pages,
-          url,
+          url: blobUrl,
           savings: Math.round((1 - compressedSize / originalSize) * 100),
         });
       } catch (err) {
+        const name = item.type === "file" ? item.file.name : item.name;
         newErrors.push({
-          name: file.name,
+          name,
           message: err instanceof Error ? err.message : "Eroare necunoscută",
         });
       }
@@ -185,6 +234,48 @@ export default function ImageCompressPage() {
         <p className="text-zinc-500 text-sm mt-1">
           Statice și animate · Max 20 MB per fișier
         </p>
+      </div>
+
+      {/* URL input */}
+      <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">
+          Sau adaugă după link
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => { setUrlInput(e.target.value); setUrlError(""); }}
+            onKeyDown={(e) => e.key === "Enter" && addUrl()}
+            placeholder="https://example.com/imagine.webp"
+            className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-lg text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <button
+            onClick={addUrl}
+            className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+          >
+            Adaugă
+          </button>
+        </div>
+        {urlError && <p className="text-xs text-red-400 mt-1.5">{urlError}</p>}
+        {urlItems.length > 0 && (
+          <div className="mt-3 divide-y divide-zinc-700/50 border border-zinc-700 rounded-lg overflow-hidden">
+            {urlItems.map(u => (
+              <div key={u.url} className="flex items-center justify-between px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-zinc-300 truncate">{u.name}</p>
+                  <p className="text-xs text-zinc-500 truncate">{u.url}</p>
+                </div>
+                <button
+                  onClick={() => removeUrl(u.url)}
+                  className="text-zinc-600 hover:text-red-400 transition-colors ml-3 shrink-0 text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Files queued */}
@@ -275,17 +366,24 @@ export default function ImageCompressPage() {
       </div>
 
       {/* Compress button */}
-      <button
-        onClick={handleCompress}
-        disabled={files.length === 0 || isProcessing}
-        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-xl transition-colors"
-      >
-        {isProcessing
-          ? progress
-            ? `Se procesează ${progress.current} / ${progress.total}...`
-            : "Se procesează..."
-          : `Comprimă ${files.length > 0 ? files.length + " fișier" + (files.length !== 1 ? "e" : "") : ""}`}
-      </button>
+      {(() => {
+        const total = files.length + urlItems.length;
+        return (
+          <button
+            onClick={handleCompress}
+            disabled={total === 0 || isProcessing}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-xl transition-colors"
+          >
+            {isProcessing
+              ? progress
+                ? `Se procesează ${progress.current} / ${progress.total}...`
+                : "Se procesează..."
+              : total > 0
+              ? `Comprimă ${total} element${total !== 1 ? "e" : ""}`
+              : "Comprimă"}
+          </button>
+        );
+      })()}
 
       {/* Errors */}
       {errors.length > 0 && (

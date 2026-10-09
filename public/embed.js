@@ -240,6 +240,7 @@
     iframe.src = iframeSrc;
     iframe.width = '100%';
     iframe.style.cssText = 'border:none;display:block;min-height:600px;opacity:0;position:absolute;top:0;left:0;width:100%;transition:opacity 0.3s ease;';
+    iframe.title = 'Formular comandă';
     iframe.scrolling = 'no';
     iframe.loading = 'eager';
 

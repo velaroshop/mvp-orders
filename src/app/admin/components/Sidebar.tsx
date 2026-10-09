@@ -177,7 +177,7 @@ export default function Sidebar() {
   const filteredGroups = useMemo(() => {
     const userRole = (session?.user as any)?.activeRole as UserRole;
     const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg as boolean;
-    if (!userRole) return menuGroups;
+    if (!userRole) return [];
 
     return menuGroups
       .map((group) => ({

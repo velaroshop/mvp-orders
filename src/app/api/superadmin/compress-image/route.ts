@@ -80,12 +80,13 @@ export async function POST(request: NextRequest) {
       .toBuffer();
 
     const outputName = `${originalName}_q${quality}.webp`;
+    const safeOutputName = outputName.replace(/[^\x00-\x7F]/g, "_");
 
     return new NextResponse(outputBuffer, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",
-        "Content-Disposition": `attachment; filename="${outputName}"`,
+        "Content-Disposition": `attachment; filename="${safeOutputName}"; filename*=UTF-8''${encodeURIComponent(outputName)}`,
         "Content-Length": outputBuffer.length.toString(),
         "X-Original-Size": originalSize.toString(),
         "X-Compressed-Size": outputBuffer.length.toString(),

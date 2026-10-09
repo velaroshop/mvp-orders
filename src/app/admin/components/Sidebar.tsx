@@ -28,6 +28,7 @@ import {
   Building2,
   ImageDown,
   Wrench,
+  BookOpen,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -47,6 +48,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/superadmin":                      <Building2 className="w-4 h-4" />,
   "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
   "/admin/tools":                           <Wrench className="w-4 h-4" />,
+  "/admin/tutorial":                        <BookOpen className="w-4 h-4" />,
 };
 
 const menuGroups = [
@@ -93,6 +95,7 @@ const menuGroups = [
     label: "Superadmin",
     items: [
       { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
+      { name: "Tutorial", href: "/admin/tutorial", superadminOnly: true },
     ],
   },
 ];

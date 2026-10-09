@@ -7,9 +7,9 @@ import { createHash } from "crypto";
 
 // ─── Versiune și identificator ──────────────────────────────────────────────
 
-export const TERMS_VERSION = "v1.0";
-export const TERMS_EFFECTIVE_DATE = "1 septembrie 2026";
-export const TERMS_IDENTIFIER = "TC-EMS-v1.0-20260901";
+export const TERMS_VERSION = "v1.1";
+export const TERMS_EFFECTIVE_DATE = "9 octombrie 2026";
+export const TERMS_IDENTIFIER = "TC-EMS-v1.1-20261009";
 export const PLATFORM_NAME = "EMS (Ecom Made Simple)";
 
 // ─── Secțiunile termenilor ───────────────────────────────────────────────────
@@ -82,14 +82,46 @@ export const TERMS_SECTIONS: TermsSection[] = [
   },
   {
     id: "5",
-    title: "5. Abonamentul și prețul",
+    title: "5. Planurile de abonament și prețul",
     content: `
-      <p>Costul abonamentului este de <strong>550 lei/lună</strong>, sumă fixă, fără TVA,
-      atât timp cât Furnizorul aplică regimul de scutire de TVA.</p>
+      <p>Platforma este disponibilă în două planuri de abonament, cu prețuri fixe, fără TVA,
+      atât timp cât Furnizorul aplică regimul de scutire de TVA prevăzut la art. 292 din Codul fiscal:</p>
+
+      <p><strong>Planul PRO — 650 lei/lună</strong></p>
+      <ul>
+        <li>Până la <strong>5 magazine</strong> active;</li>
+        <li>Până la <strong>15 produse</strong> și <strong>15 landing pages</strong>;</li>
+        <li>Upsells pre-sale și post-sale;</li>
+        <li>Integrare Helpship WMS (configurare manuală);</li>
+        <li>Meta Pixel și Meta Conversions API (tracking server-side);</li>
+        <li>Echipă: până la <strong>5 utilizatori</strong>;</li>
+        <li>Calculator ROAS cu import manual CSV;</li>
+        <li>Suport standard prin email (timp de răspuns: 24 ore lucrătoare).</li>
+      </ul>
+
+      <p><strong>Planul ULTRA — 1.000 lei/lună</strong></p>
+      <ul>
+        <li>Magazine <strong>nelimitate</strong>;</li>
+        <li>Produse și landing pages <strong>nelimitate</strong>;</li>
+        <li>Upsells pre-sale și post-sale;</li>
+        <li>Integrare Helpship WMS <strong>asistată</strong> (configurare realizată de Furnizor);</li>
+        <li>Meta Pixel și Meta Conversions API (tracking server-side);</li>
+        <li>Echipă: utilizatori <strong>nelimitați</strong>;</li>
+        <li>Import automat date Meta Ads (fără upload manual CSV);</li>
+        <li>Dashboard campanii publicitare (ROAS per campanie și per set de anunțuri);</li>
+        <li>Export date comenzi și clienți (format CSV/Excel);</li>
+        <li>Acces API pentru integrări custom;</li>
+        <li>Suport prioritar cu SLA <strong>24 de ore</strong> (inclusiv zile nelucrătoare);</li>
+        <li>Onboarding dedicat — sesiune de setup asistat cu echipa Furnizorului.</li>
+      </ul>
+
       <p>Abonamentul devine activ după activarea contului de către administratorul platformei.
       Furnizorul va activa contul în cel mai scurt timp rezonabil de la înregistrare.</p>
+      <p>Planul activ al Clientului este cel menționat în confirmarea de activare a contului
+      și pe facturile emise. Trecerea de la un plan la altul se face prin notificarea
+      Furnizorului și produce efecte de la următorul ciclu de facturare.</p>
       <p>În cazul în care Furnizorul devine plătitor de TVA ulterior, prețul abonamentului
-      devine <strong>550 lei + TVA</strong>, Clientul urmând a plăti suma rezultată
+      devine <strong>prețul planului activ + TVA</strong>, Clientul urmând a plăti suma rezultată
       conform cotei de TVA în vigoare la acel moment. Modificarea este supusă notificării
       prealabile conform Secțiunii 13.</p>
       <p>Modificările de preț sunt supuse prevederilor Secțiunii 13.</p>
@@ -160,8 +192,11 @@ export const TERMS_SECTIONS: TermsSection[] = [
       pot afecta temporar accesul. Furnizorul va notifica Clientul cu privire la
       mentenanța programată în avans, în măsura posibilului.</p>
       <p>Suportul tehnic este disponibil la <strong>contact@jupimedia.ro</strong>,
-      în intervalul <strong>Luni–Vineri, 09:00–18:00</strong>. Furnizorul va răspunde
-      solicitărilor în termen de <strong>24 de ore lucrătoare</strong> de la primire.</p>
+      în intervalul <strong>Luni–Vineri, 09:00–18:00</strong>.</p>
+      <p>Timpul de răspuns variază în funcție de planul activ: Clienții cu <strong>Plan PRO</strong>
+      beneficiază de răspuns în termen de <strong>24 de ore lucrătoare</strong>; Clienții cu
+      <strong>Plan ULTRA</strong> beneficiază de suport prioritar cu SLA de <strong>24 de ore</strong>,
+      inclusiv în zilele nelucrătoare.</p>
     `,
   },
   {

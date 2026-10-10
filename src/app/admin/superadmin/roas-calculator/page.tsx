@@ -98,8 +98,9 @@ function calcOffer(offer: Offer, common: CommonInputs): OfferResult {
   const revenueNet    = tva ? revenueClient / (1 + TVA) : revenueClient;
   const costComanda   = numeral * costProdus + costCurier;
 
-  // weighted avg: (1-r) successful orders − r lost courier cost
-  const profitBrut    = (1 - retur) * (revenueNet - costComanda) - retur * costCurier;
+  // product cost only on fulfilled orders (product returns to stock on returns)
+  // courier paid on ALL orders (already paid when shipped, even if returned)
+  const profitBrut    = (1 - retur) * (revenueNet - numeral * costProdus) - costCurier;
 
   const grossMedio    = (1 - retur) * revenueClient;
   const margineNeta   = grossMedio > 0 ? (profitBrut / grossMedio) * 100 : 0;
@@ -351,16 +352,12 @@ function OfferRow({
                     </div>
                   )}
                   <div className="flex justify-between text-white/50 border-t border-white/6 pt-1.5 mt-1.5">
-                    <span>Cost produs ({result.numeral} buc)</span>
-                    <span className="text-white/70 font-medium">{fmt(result.numeral * n(common.costProdus))} lei</span>
+                    <span>Cost produs ({result.numeral} buc × {(1 - n(common.rataRetur)/100).toFixed(2)})</span>
+                    <span className="text-white/70 font-medium">{fmt((1 - n(common.rataRetur)/100) * result.numeral * n(common.costProdus))} lei</span>
                   </div>
                   <div className="flex justify-between text-white/50">
-                    <span>Cost curier</span>
+                    <span>Cost curier (toate comenzile)</span>
                     <span className="text-white/70 font-medium">{fmt(n(common.costCurier))} lei</span>
-                  </div>
-                  <div className="flex justify-between text-white/50">
-                    <span>Cost retur (curier pierdut)</span>
-                    <span className="text-red-400/70 font-medium">−{fmt(n(common.costCurier))}</span>
                   </div>
                   <div className="flex justify-between text-white/50 text-[11px]">
                     <span>Rată retur aplicată</span>

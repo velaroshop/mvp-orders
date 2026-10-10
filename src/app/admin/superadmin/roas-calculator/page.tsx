@@ -32,7 +32,6 @@ interface Inputs {
   rataRetur: string;
   platitorTVA: boolean;
   costCurier: string;
-  comisionRamburs: string;
   roasTarget: string;
 }
 
@@ -82,7 +81,6 @@ function calculate(inputs: Inputs): CalcResult {
   const cost = n(inputs.costProdus);
   const retur = Math.min(99, Math.max(0, n(inputs.rataRetur))) / 100;
   const curier = n(inputs.costCurier);
-  const ramburs = n(inputs.comisionRamburs);
   const roasTarget = n(inputs.roasTarget);
   const tva = inputs.platitorTVA;
 
@@ -108,10 +106,9 @@ function calculate(inputs: Inputs): CalcResult {
   // Costs (user enters net if TVA payer, gross if non-payer)
   const costProdusFinal = cost;
   const costCurierFinal = curier;
-  const comisionFinal = ramburs;
 
   // Per successful order
-  const costCompleta = costProdusFinal + costCurierFinal + comisionFinal;
+  const costCompleta = costProdusFinal + costCurierFinal;
 
   // Per returned order (COD refused at door):
   // Return shipping is included in the outbound fee — no extra charge.
@@ -250,7 +247,6 @@ const DEFAULT_INPUTS: Inputs = {
   rataRetur: "15",
   platitorTVA: false,
   costCurier: "",
-  comisionRamburs: "0",
   roasTarget: "3.5",
 };
 
@@ -336,7 +332,7 @@ export default function RoasCalculatorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
 
           {/* ── LEFT: Inputs ──────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 space-y-5">
+          <div className="rounded-2xl border border-white/10 bg-white/2 p-6 space-y-5">
 
             {/* Mode toggle */}
             <div>
@@ -431,14 +427,6 @@ export default function RoasCalculatorPage() {
               }
             />
 
-            <InputField
-              label="Comision ramburs"
-              value={inputs.comisionRamburs}
-              onChange={(v) => set("comisionRamburs", v)}
-              suffix="lei"
-              hint="Per comandă (0 dacă nu aplică)"
-            />
-
             <Divider label="Parametri" />
 
             <InputField
@@ -489,7 +477,7 @@ export default function RoasCalculatorPage() {
           <div className="space-y-4">
 
             {!result.valid && (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 flex items-center gap-3 text-white/40 text-sm">
+              <div className="rounded-xl border border-white/10 bg-white/3 p-6 flex items-center gap-3 text-white/40 text-sm">
                 <Info className="w-4 h-4 shrink-0" />
                 Completează cost produs, preț vânzare și cost curier pentru a vedea calculele.
               </div>
@@ -545,7 +533,7 @@ export default function RoasCalculatorPage() {
                 </div>
 
                 {/* Cost breakdown */}
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="rounded-xl border border-white/10 bg-white/3 p-4">
                   <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">
                     Detaliu costuri per comandă
                   </p>
@@ -553,9 +541,6 @@ export default function RoasCalculatorPage() {
                     {[
                       { label: "Cost produs", val: n(inputs.costProdus) },
                       { label: "Cost curier (outbound)", val: n(inputs.costCurier) },
-                      ...(n(inputs.comisionRamburs) > 0
-                        ? [{ label: "Comision ramburs", val: n(inputs.comisionRamburs) }]
-                        : []),
                     ].map((row) => (
                       <div key={row.label} className="flex justify-between text-white/60">
                         <span>{row.label}</span>
@@ -574,7 +559,7 @@ export default function RoasCalculatorPage() {
                 </div>
 
                 {/* ROAS table */}
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                <div className="rounded-xl border border-white/10 bg-white/3 overflow-hidden">
                   <div className="px-4 py-3 border-b border-white/8 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-white/40" />
                     <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">

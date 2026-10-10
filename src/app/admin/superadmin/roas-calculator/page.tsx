@@ -23,27 +23,52 @@ interface Product {
   sku: string;
 }
 
-interface Inputs {
-  mode: "catalog" | "manual";
-  selectedProductId: string;
-  productLabel: string;
-  costProdus: string;
-  pretVanzare: string;
-  rataRetur: string;
-  platitorTVA: boolean;
-  costCurier: string;
-  roasTarget: string;
+interface LandingPage {
+  id: string;
+  name: string;
+  offer_heading_1: string;
+  offer_heading_2: string;
+  offer_heading_3: string;
+  numeral_1: number;
+  numeral_2: number;
+  numeral_3: number;
+  price_1: number;
+  price_2: number;
+  price_3: number;
+  shipping_price: number;
+  free_shipping_offer_1: boolean;
+  free_shipping_offer_2: boolean;
+  free_shipping_offer_3: boolean;
 }
 
-interface CalcResult {
-  venitNetPerComanda: number;
-  costPerComandaCompleta: number;
-  costPerComandaReturnata: number;
-  profitBrutPerComanda: number;
-  margineNeta: number;
+// An "offer" as seen by the calculator
+interface Offer {
+  label: string;       // e.g. "Pachet 2 buc"
+  numeral: number;     // quantity
+  pretTotal: string;   // total price customer pays (editable in manual mode)
+  freeShipping: boolean;
+}
+
+interface CommonInputs {
+  costProdus: string;   // per unit
+  costCurier: string;   // real cost we pay (net if TVA payer)
+  rataRetur: string;
+  platitorTVA: boolean;
+  roasTarget: string;
+  shippingPrice: string; // shown to customer (only matters when !freeShipping)
+}
+
+interface OfferResult {
+  label: string;
+  numeral: number;
+  revenueClient: number;   // total the customer pays
+  revenueNet: number;      // after TVA (= revenueClient if not TVA payer)
+  costComanda: number;     // numeral*costProdus + costCurier
+  profitBrut: number;      // weighted after retur
+  margineNeta: number;     // %
   breakEvenRoas: number | null;
-  profitLaRoasTarget: number;
-  cheltuialaReclameLaRoasTarget: number;
+  profitLaTarget: number;
+  cheltuialaReclame: number;
   valid: boolean;
 }
 
@@ -53,13 +78,80 @@ interface CalcResult {
 
 const TVA = 0.21;
 
-function n(val: string): number {
-  const parsed = parseFloat(val.replace(",", "."));
+function n(val: string | number): number {
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
+  const parsed = parseFloat(String(val).replace(",", "."));
   return isNaN(parsed) ? 0 : parsed;
 }
 
 function fmt(val: number, decimals = 2): string {
   return val.toFixed(decimals).replace(".", ",");
+}
+
+function calcOffer(offer: Offer, common: CommonInputs): OfferResult {
+  const numeral = offer.numeral;
+  const costProdus = n(common.costProdus);
+  const costCurier = n(common.costCurier);
+  const retur = Math.min(99, Math.max(0, n(common.rataRetur))) / 100;
+  const roasTarget = n(common.roasTarget);
+  const tva = common.platitorTVA;
+  const shippingPrice = n(common.shippingPrice);
+  const pretTotal = n(offer.pretTotal);
+
+  if (pretTotal <= 0 || costProdus <= 0 || costCurier <= 0 || numeral <= 0) {
+    return {
+      label: offer.label,
+      numeral,
+      revenueClient: 0,
+      revenueNet: 0,
+      costComanda: 0,
+      profitBrut: 0,
+      margineNeta: 0,
+      breakEvenRoas: null,
+      profitLaTarget: 0,
+      cheltuialaReclame: 0,
+      valid: false,
+    };
+  }
+
+  // Total the customer actually pays
+  const revenueClient = pretTotal + (offer.freeShipping ? 0 : shippingPrice);
+
+  // What we keep after TVA
+  const revenueNet = tva ? revenueClient / (1 + TVA) : revenueClient;
+
+  // Our cost per successful order
+  const costComanda = numeral * costProdus + costCurier;
+
+  // Profit per order, weighted after returns
+  // Returned orders: we lose outbound courier; product comes back to stock
+  const profitBrut =
+    (1 - retur) * (revenueNet - costComanda) - retur * costCurier;
+
+  // Margin on gross revenue (weighted for returns)
+  const grossMedio = (1 - retur) * revenueClient;
+  const margineNeta = grossMedio > 0 ? (profitBrut / grossMedio) * 100 : 0;
+
+  // Breakeven ROAS (on gross revenue, as Meta/Google report)
+  const breakEvenRoas = profitBrut > 0 ? grossMedio / profitBrut : null;
+
+  // Profit at target ROAS
+  const cheltuialaReclame = roasTarget > 0 ? grossMedio / roasTarget : 0;
+  const profitLaTarget = profitBrut - cheltuialaReclame;
+
+  return {
+    label: offer.label,
+    numeral,
+    revenueClient,
+    revenueNet,
+    costComanda,
+    profitBrut,
+    margineNeta,
+    breakEvenRoas,
+    profitLaTarget,
+    cheltuialaReclame,
+    valid: true,
+  };
 }
 
 function roasColor(roas: number, breakeven: number | null): string {
@@ -76,179 +168,301 @@ function roasBg(roas: number, breakeven: number | null): string {
   return "bg-emerald-500/8";
 }
 
-function calculate(inputs: Inputs): CalcResult {
-  const pret = n(inputs.pretVanzare);
-  const cost = n(inputs.costProdus);
-  const retur = Math.min(99, Math.max(0, n(inputs.rataRetur))) / 100;
-  const curier = n(inputs.costCurier);
-  const roasTarget = n(inputs.roasTarget);
-  const tva = inputs.platitorTVA;
-
-  if (pret <= 0 || cost <= 0 || curier <= 0) {
-    return {
-      venitNetPerComanda: 0,
-      costPerComandaCompleta: 0,
-      costPerComandaReturnata: 0,
-      profitBrutPerComanda: 0,
-      margineNeta: 0,
-      breakEvenRoas: null,
-      profitLaRoasTarget: 0,
-      cheltuialaReclameLaRoasTarget: 0,
-      valid: false,
-    };
-  }
-
-  // Revenue
-  // ROAS is always on gross selling price (as Meta/Google report it)
-  const venitBrut = pret; // gross, for ROAS numerator
-  const venitNet = tva ? pret / (1 + TVA) : pret; // net, for profit calc
-
-  // Costs (user enters net if TVA payer, gross if non-payer)
-  const costProdusFinal = cost;
-  const costCurierFinal = curier;
-
-  // Per successful order
-  const costCompleta = costProdusFinal + costCurierFinal;
-
-  // Per returned order (COD refused at door):
-  // Return shipping is included in the outbound fee — no extra charge.
-  // We only lose the outbound shipping cost; product comes back to stock.
-  const costReturnata = costCurierFinal;
-
-  // Weighted average profit per order (across all orders sent)
-  // = (1-r) × (net_revenue - cost_complete) - r × cost_return
-  const profitBrut =
-    (1 - retur) * (venitNet - costCompleta) - retur * costReturnata;
-
-  // Margin on gross revenue (weighted)
-  const venitBrutMediu = (1 - retur) * venitBrut;
-  const margineNeta = venitBrutMediu > 0 ? (profitBrut / venitBrutMediu) * 100 : 0;
-
-  // Breakeven ROAS = gross revenue (per avg order) / profit before ads
-  const breakEvenRoas = profitBrut > 0 ? venitBrutMediu / profitBrut : null;
-
-  // Profit at ROAS target
-  const cheltuialaReclame = roasTarget > 0 ? venitBrutMediu / roasTarget : 0;
-  const profitLaRoas = profitBrut - cheltuialaReclame;
-
-  return {
-    venitNetPerComanda: venitNet,
-    costPerComandaCompleta: costCompleta,
-    costPerComandaReturnata: costReturnata,
-    profitBrutPerComanda: profitBrut,
-    margineNeta,
-    breakEvenRoas,
-    profitLaRoasTarget: profitLaRoas,
-    cheltuialaReclameLaRoasTarget: cheltuialaReclame,
-    valid: true,
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function InputField({
+function Field({
   label,
   value,
   onChange,
   suffix,
   hint,
   placeholder = "0",
-  min,
-  max,
+  readOnly,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange?: (v: string) => void;
   suffix?: string;
   hint?: string;
   placeholder?: string;
-  min?: number;
-  max?: number;
+  readOnly?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-medium text-white/60 uppercase tracking-wide">
+      <label className="block text-xs font-medium text-white/55 uppercase tracking-wide">
         {label}
       </label>
       <div className="relative">
         <input
           type="number"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
-          min={min}
-          max={max}
           step="any"
-          className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 focus:bg-white/8 transition-colors pr-12"
+          className={`w-full border rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none transition-colors pr-10 ${
+            readOnly
+              ? "bg-white/3 border-white/8 text-white/50 cursor-default"
+              : "bg-white/5 border-white/12 focus:border-white/30 focus:bg-white/8"
+          }`}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/35 font-medium pointer-events-none">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">
             {suffix}
           </span>
         )}
       </div>
-      {hint && <p className="text-[11px] text-white/35 leading-tight">{hint}</p>}
+      {hint && <p className="text-[11px] text-white/30 leading-tight">{hint}</p>}
     </div>
   );
 }
 
 function Divider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 py-1">
+    <div className="flex items-center gap-3 py-0.5">
       <div className="flex-1 h-px bg-white/8" />
-      <span className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] font-semibold text-white/25 uppercase tracking-widest">{label}</span>
       <div className="flex-1 h-px bg-white/8" />
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  sub,
-  highlight,
-  color,
-  large,
+function OfferColumn({
+  result,
+  roasTarget,
+  offer,
+  onOfferChange,
+  isManual,
+  commonInputs,
 }: {
-  label: string;
-  value: string;
-  sub?: string;
-  highlight?: boolean;
-  color?: "green" | "red" | "amber" | "neutral";
-  large?: boolean;
+  result: OfferResult;
+  roasTarget: string;
+  offer: Offer;
+  onOfferChange?: (field: keyof Offer, value: string | boolean | number) => void;
+  isManual: boolean;
+  commonInputs: CommonInputs;
 }) {
-  const colorClass =
-    color === "green" ? "text-emerald-400" :
-    color === "red" ? "text-red-400" :
-    color === "amber" ? "text-amber-400" :
-    "text-white";
+  // Build ROAS table rows for this offer
+  const rows = [];
+  for (let r = 1.0; r <= 8.0; r += 0.5) {
+    const roas = parseFloat(r.toFixed(1));
+    const grossMedio = result.valid ? (1 - n(commonInputs.rataRetur) / 100) * result.revenueClient : 0;
+    const cheltuiala = result.valid && grossMedio > 0 ? grossMedio / roas : 0;
+    const profit = result.valid ? result.profitBrut - cheltuiala : 0;
+    rows.push({ roas, cheltuiala, profit });
+  }
+
+  const profitColor =
+    !result.valid ? "text-white/40" :
+    result.profitLaTarget > 0 ? "text-emerald-400" :
+    result.profitLaTarget < 0 ? "text-red-400" : "text-amber-400";
+
+  const breakColor =
+    !result.valid ? "text-white/40" :
+    result.breakEvenRoas === null ? "text-red-400" :
+    result.breakEvenRoas > 5 ? "text-amber-400" : "text-emerald-400";
 
   return (
-    <div className={`rounded-xl border p-4 ${highlight ? "border-indigo-500/30 bg-indigo-500/8" : "border-white/10 bg-white/[0.03]"}`}>
-      <p className="text-xs text-white/45 font-medium uppercase tracking-wide mb-1">{label}</p>
-      <p className={`font-bold ${large ? "text-3xl" : "text-xl"} ${colorClass}`}>{value}</p>
-      {sub && <p className="text-xs text-white/35 mt-0.5">{sub}</p>}
+    <div className="flex flex-col rounded-2xl border border-white/10 bg-white/2 overflow-hidden">
+      {/* Offer header */}
+      <div className="px-4 pt-4 pb-3 border-b border-white/8 bg-white/2">
+        {isManual ? (
+          <input
+            type="text"
+            value={offer.label}
+            onChange={(e) => onOfferChange?.("label", e.target.value)}
+            placeholder="Denumire ofertă"
+            className="w-full bg-transparent text-sm font-semibold text-white placeholder-white/25 focus:outline-none border-b border-white/15 pb-1 mb-2"
+          />
+        ) : (
+          <p className="text-sm font-semibold text-white mb-2 truncate">{offer.label}</p>
+        )}
+
+        <div className="flex items-center gap-3 text-xs text-white/45">
+          {isManual ? (
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/30">Buc:</span>
+                <input
+                  type="number"
+                  value={offer.numeral}
+                  min={1}
+                  onChange={(e) => onOfferChange?.("numeral", parseInt(e.target.value) || 1)}
+                  className="w-12 bg-white/5 border border-white/12 rounded px-1.5 py-0.5 text-white text-xs focus:outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/30">Preț:</span>
+                <input
+                  type="number"
+                  value={offer.pretTotal}
+                  placeholder="0"
+                  onChange={(e) => onOfferChange?.("pretTotal", e.target.value)}
+                  className="w-20 bg-white/5 border border-white/12 rounded px-1.5 py-0.5 text-white text-xs focus:outline-none"
+                />
+                <span className="text-white/30">lei</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <span><span className="text-white/30">Buc:</span> <strong className="text-white/70">{offer.numeral}</strong></span>
+              <span><span className="text-white/30">Preț:</span> <strong className="text-white/70">{fmt(n(offer.pretTotal))} lei</strong></span>
+            </>
+          )}
+          <label className="flex items-center gap-1 ml-auto cursor-pointer">
+            <input
+              type="checkbox"
+              checked={offer.freeShipping}
+              onChange={(e) => onOfferChange?.("freeShipping", e.target.checked)}
+              disabled={!isManual}
+              className="w-3 h-3 accent-indigo-500"
+            />
+            <span className={offer.freeShipping ? "text-indigo-300" : "text-white/30"}>
+              Livrare gratuită
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-3 flex-1">
+        {!result.valid ? (
+          <div className="flex items-center gap-2 text-white/30 text-xs py-4">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            <span>Completează costurile și prețul ofertei.</span>
+          </div>
+        ) : (
+          <>
+            {/* Key metrics */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-white/4 border border-white/8 p-3 text-center">
+                <p className="text-[10px] text-white/40 uppercase tracking-wide mb-1">Breakeven ROAS</p>
+                <p className={`text-2xl font-bold ${breakColor}`}>
+                  {result.breakEvenRoas !== null ? `${fmt(result.breakEvenRoas)}x` : "N/A"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/4 border border-white/8 p-3 text-center">
+                <p className="text-[10px] text-white/40 uppercase tracking-wide mb-1">Profit @ {roasTarget}x</p>
+                <p className={`text-2xl font-bold ${profitColor}`}>
+                  {fmt(result.profitLaTarget)} lei
+                </p>
+              </div>
+            </div>
+
+            {/* Secondary metrics */}
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-white/50">
+                <span>Venit client</span>
+                <span className="text-white/70 font-medium">{fmt(result.revenueClient)} lei</span>
+              </div>
+              {commonInputs.platitorTVA && (
+                <div className="flex justify-between text-white/50">
+                  <span>Venit net (fără TVA)</span>
+                  <span className="text-white/70 font-medium">{fmt(result.revenueNet)} lei</span>
+                </div>
+              )}
+              <div className="flex justify-between text-white/50">
+                <span>Cost comandă ({offer.numeral} buc + curier)</span>
+                <span className="text-white/70 font-medium">{fmt(result.costComanda)} lei</span>
+              </div>
+              <div className="flex justify-between text-white/50 pt-1 border-t border-white/6">
+                <span>Profit brut / cmd (după retur)</span>
+                <span className={`font-semibold ${result.profitBrut > 0 ? "text-white/80" : "text-red-400"}`}>
+                  {fmt(result.profitBrut)} lei
+                </span>
+              </div>
+              <div className="flex justify-between text-white/50">
+                <span>Marjă netă</span>
+                <span className={`font-semibold ${result.margineNeta > 0 ? "text-white/80" : "text-red-400"}`}>
+                  {fmt(result.margineNeta)}%
+                </span>
+              </div>
+              <div className="flex justify-between text-white/50">
+                <span>Reclame / cmd @ {roasTarget}x</span>
+                <span className="text-white/60">{fmt(result.cheltuialaReclame)} lei</span>
+              </div>
+            </div>
+
+            {/* Mini ROAS table */}
+            <div className="rounded-lg overflow-hidden border border-white/8 mt-2">
+              <div className="grid grid-cols-4 px-3 py-1.5 text-[10px] font-semibold text-white/25 uppercase tracking-wide bg-white/3">
+                <span>ROAS</span>
+                <span className="text-right">Reclame</span>
+                <span className="text-right">Profit</span>
+                <span className="text-right">ROI%</span>
+              </div>
+              {rows.map(({ roas, cheltuiala, profit }) => {
+                const isTarget = fmt(roas, 1) === fmt(n(roasTarget), 1);
+                const isBreak = result.breakEvenRoas !== null && Math.abs(roas - result.breakEvenRoas) < 0.26;
+                // ROI% = profit / gross revenue × 100
+                const roi = result.revenueClient > 0
+                  ? (profit / ((1 - n(commonInputs.rataRetur) / 100) * result.revenueClient)) * 100
+                  : 0;
+                return (
+                  <div
+                    key={roas}
+                    className={`grid grid-cols-4 px-3 py-1.5 text-xs border-t border-white/5 ${roasBg(roas, result.breakEvenRoas)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
+                  >
+                    <span className={`font-semibold ${roasColor(roas, result.breakEvenRoas)}`}>
+                      {fmt(roas, 1)}x
+                      {isTarget && <span className="ml-1 text-[9px] text-indigo-400">▶</span>}
+                      {isBreak && !isTarget && <span className="ml-1 text-[9px] text-amber-400">●</span>}
+                    </span>
+                    <span className="text-right text-white/40">{fmt(cheltuiala)}</span>
+                    <span className={`text-right font-medium ${roasColor(roas, result.breakEvenRoas)}`}>
+                      {profit >= 0 ? "+" : ""}{fmt(profit)}
+                    </span>
+                    <span className={`text-right font-medium ${roasColor(roas, result.breakEvenRoas)}`}>
+                      {roi >= 0 ? "+" : ""}{fmt(roi, 1)}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Warnings */}
+            {result.breakEvenRoas === null && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/8 px-3 py-2 text-xs text-red-300/80">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-400" />
+                <span>Marja negativă — costurile depășesc venitul.</span>
+              </div>
+            )}
+            {result.breakEvenRoas !== null && result.breakEvenRoas > 4 && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-300/80">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+                <span>Breakeven ridicat — verifică costurile.</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Default states
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_COMMON: CommonInputs = {
+  costProdus: "",
+  costCurier: "",
+  rataRetur: "15",
+  platitorTVA: false,
+  roasTarget: "3.5",
+  shippingPrice: "0",
+};
+
+const DEFAULT_MANUAL_OFFERS: Offer[] = [
+  { label: "Oferta 1", numeral: 1, pretTotal: "", freeShipping: false },
+  { label: "Oferta 2", numeral: 2, pretTotal: "", freeShipping: false },
+  { label: "Oferta 3", numeral: 3, pretTotal: "", freeShipping: true },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
-
-const DEFAULT_INPUTS: Inputs = {
-  mode: "manual",
-  selectedProductId: "",
-  productLabel: "",
-  costProdus: "",
-  pretVanzare: "",
-  rataRetur: "15",
-  platitorTVA: false,
-  costCurier: "",
-  roasTarget: "3.5",
-};
 
 export default function RoasCalculatorPage() {
   const { data: session, status } = useSession();
@@ -257,9 +471,18 @@ export default function RoasCalculatorPage() {
   const activeRole = (session?.user as any)?.activeRole;
   const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
 
-  const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
+  const [mode, setMode] = useState<"catalog" | "manual">("manual");
+  const [common, setCommon] = useState<CommonInputs>(DEFAULT_COMMON);
+  const [manualOffers, setManualOffers] = useState<Offer[]>(DEFAULT_MANUAL_OFFERS);
+
+  // Catalog state
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
+  const [loadingLPs, setLoadingLPs] = useState(false);
+  const [selectedLPId, setSelectedLPId] = useState("");
+  const [catalogOffers, setCatalogOffers] = useState<Offer[]>([]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -268,52 +491,83 @@ export default function RoasCalculatorPage() {
     }
   }, [status, session, activeRole, isSuperadminOrg, router]);
 
-  // Fetch products for catalog mode
+  // Fetch products when switching to catalog
   useEffect(() => {
-    if (inputs.mode !== "catalog") return;
+    if (mode !== "catalog") return;
     setLoadingProducts(true);
     fetch("/api/products/active")
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []))
       .catch(() => setProducts([]))
       .finally(() => setLoadingProducts(false));
-  }, [inputs.mode]);
+  }, [mode]);
 
-  const set = (key: keyof Inputs, value: string | boolean) =>
-    setInputs((prev) => ({ ...prev, [key]: value }));
+  // Fetch landing pages when product changes
+  useEffect(() => {
+    if (!selectedProductId) { setLandingPages([]); setSelectedLPId(""); return; }
+    setLoadingLPs(true);
+    fetch("/api/landing-pages?limit=100")
+      .then((r) => r.json())
+      .then((d) => {
+        const filtered = (d.landingPages ?? []).filter(
+          (lp: any) => lp.product_id === selectedProductId
+        );
+        setLandingPages(filtered);
+        if (filtered.length > 0) setSelectedLPId(filtered[0].id);
+        else setSelectedLPId("");
+      })
+      .catch(() => setLandingPages([]))
+      .finally(() => setLoadingLPs(false));
+  }, [selectedProductId]);
 
-  const result = useMemo(() => calculate(inputs), [inputs]);
+  // Build catalog offers when LP changes
+  useEffect(() => {
+    const lp = landingPages.find((l) => l.id === selectedLPId);
+    if (!lp) { setCatalogOffers([]); return; }
+    setCatalogOffers([
+      {
+        label: lp.offer_heading_1,
+        numeral: lp.numeral_1,
+        pretTotal: String(lp.price_1),
+        freeShipping: lp.free_shipping_offer_1,
+      },
+      {
+        label: lp.offer_heading_2,
+        numeral: lp.numeral_2,
+        pretTotal: String(lp.price_2),
+        freeShipping: lp.free_shipping_offer_2,
+      },
+      {
+        label: lp.offer_heading_3,
+        numeral: lp.numeral_3,
+        pretTotal: String(lp.price_3),
+        freeShipping: lp.free_shipping_offer_3,
+      },
+    ]);
+    // Sync shipping price from LP
+    setCommon((prev) => ({ ...prev, shippingPrice: String(lp.shipping_price) }));
+  }, [selectedLPId, landingPages]);
 
-  // ROAS table rows: 1.0 to 8.0 in steps of 0.5
-  const roasTableRows = useMemo(() => {
-    const rows = [];
-    for (let r = 1.0; r <= 8.0; r += 0.5) {
-      const roas = parseFloat(r.toFixed(1));
-      const cheltuiala = result.valid
-        ? (1 - n(inputs.rataRetur) / 100) * n(inputs.pretVanzare) / roas
-        : 0;
-      const profit = result.valid ? result.profitBrutPerComanda - cheltuiala : 0;
-      rows.push({ roas, cheltuiala, profit });
-    }
-    return rows;
-  }, [result, inputs.rataRetur, inputs.pretVanzare]);
+  const setC = (key: keyof CommonInputs, val: string | boolean) =>
+    setCommon((prev) => ({ ...prev, [key]: val }));
+
+  const updateManualOffer = (idx: number, field: keyof Offer, val: string | boolean | number) =>
+    setManualOffers((prev) => prev.map((o, i) => i === idx ? { ...o, [field]: val } : o));
+
+  const activeOffers = mode === "catalog" ? catalogOffers : manualOffers;
+
+  const results = useMemo(
+    () => activeOffers.map((offer) => calcOffer(offer, common)),
+    [activeOffers, common]
+  );
+
+  const selectedLP = landingPages.find((l) => l.id === selectedLPId);
 
   if (status === "loading" || !session?.user) return null;
 
-  const isTargetRoas = parseFloat(inputs.roasTarget) > 0;
-  const profitColor =
-    !result.valid ? "neutral" :
-    result.profitLaRoasTarget > 0 ? "green" :
-    result.profitLaRoasTarget < 0 ? "red" : "amber";
-
-  const breakEvenColor =
-    !result.valid ? "neutral" :
-    result.breakEvenRoas === null ? "red" :
-    result.breakEvenRoas > 5 ? "amber" : "green";
-
   return (
     <div className="min-h-screen bg-[#0f0f14] p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -322,32 +576,66 @@ export default function RoasCalculatorPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Calculator ROAS</h1>
-            <p className="text-xs text-white/40 mt-0.5">Analiză profitabilitate per produs</p>
+            <p className="text-xs text-white/40 mt-0.5">Analiză profitabilitate per ofertă de preț</p>
           </div>
           <span className="ml-auto px-2 py-0.5 bg-amber-500/15 border border-amber-500/40 text-amber-400 text-xs font-semibold rounded-full uppercase tracking-wide">
             Beta
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
+        {/* Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-6 items-start">
 
-          {/* ── LEFT: Inputs ──────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-white/10 bg-white/2 p-6 space-y-5">
+          {/* ── LEFT: Common inputs ──────────────────────────────────── */}
+          <div className="rounded-2xl border border-white/10 bg-white/2 p-5 space-y-4 sticky top-6">
+
+            {/* TVA toggle — first, centered */}
+            <div className="flex flex-col items-center gap-2 pb-1">
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium transition-colors ${!common.platitorTVA ? "text-white/70" : "text-white/30"}`}>
+                  Neplătitor TVA
+                </span>
+                <button
+                  onClick={() => setC("platitorTVA", !common.platitorTVA)}
+                  className={`relative shrink-0 rounded-full transition-all duration-200 ${
+                    common.platitorTVA
+                      ? "bg-indigo-600 border border-indigo-500"
+                      : "bg-[#2a2a3a] border border-white/20"
+                  }`}
+                  style={{ width: 44, height: 24 }}
+                >
+                  <span
+                    className={`absolute top-0.75 w-4.5 h-4.5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                      common.platitorTVA ? "translate-x-5.5" : "translate-x-0.75"
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium transition-colors ${common.platitorTVA ? "text-white/70" : "text-white/30"}`}>
+                  Plătitor TVA 21%
+                </span>
+              </div>
+              {common.platitorTVA && (
+                <div className="w-full rounded-lg border border-indigo-500/20 bg-indigo-500/8 px-3 py-2 text-[11px] text-indigo-300/80 space-y-0.5">
+                  <p><strong className="text-indigo-300">Prețuri vânzare</strong> → introdu <strong className="text-indigo-300">cu TVA inclus</strong> (prețul clientului)</p>
+                  <p><strong className="text-indigo-300">Cost produs & curier</strong> → introdu <strong className="text-indigo-300">fără TVA</strong> (TVA-ul este deductibil)</p>
+                </div>
+              )}
+            </div>
+
+            <Divider label="Mod" />
 
             {/* Mode toggle */}
             <div>
-              <label className="block text-xs font-medium text-white/60 uppercase tracking-wide mb-2">
-                Mod calcul
-              </label>
+              <label className="block text-xs font-medium text-white/55 uppercase tracking-wide mb-2">Sursă prețuri</label>
               <div className="flex rounded-lg overflow-hidden border border-white/12">
                 {(["catalog", "manual"] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => set("mode", m)}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-medium transition-colors ${
-                      inputs.mode === m
-                        ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
-                        : "text-white/45 hover:text-white/70 hover:bg-white/5"
+                    onClick={() => setMode(m)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium transition-colors ${
+                      mode === m
+                        ? "bg-indigo-500/20 text-indigo-300"
+                        : "text-white/40 hover:text-white/65 hover:bg-white/5"
                     }`}
                   >
                     {m === "catalog" ? <Package className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
@@ -357,272 +645,139 @@ export default function RoasCalculatorPage() {
               </div>
             </div>
 
-            {/* Catalog select */}
-            {inputs.mode === "catalog" && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-white/60 uppercase tracking-wide">
-                  Produs
-                </label>
-                <div className="relative">
-                  <select
-                    value={inputs.selectedProductId}
-                    onChange={(e) => {
-                      const prod = products.find((p) => p.id === e.target.value);
-                      setInputs((prev) => ({
-                        ...prev,
-                        selectedProductId: e.target.value,
-                        productLabel: prod?.name ?? "",
-                      }));
-                    }}
-                    className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/30 appearance-none pr-8"
-                  >
-                    <option value="" className="bg-[#1a1a24]">
-                      {loadingProducts ? "Se încarcă..." : "Selectează produs"}
-                    </option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id} className="bg-[#1a1a24]">
-                        {p.name} {p.sku ? `(${p.sku})` : ""}
+            {/* Catalog selects */}
+            {mode === "catalog" && (
+              <div className="space-y-3">
+                {/* Product select */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-white/55 uppercase tracking-wide">Produs</label>
+                  <div className="relative">
+                    <select
+                      value={selectedProductId}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/25 appearance-none pr-7"
+                    >
+                      <option value="" className="bg-[#1a1a24]">
+                        {loadingProducts ? "Se încarcă..." : "Selectează produs"}
                       </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-[#1a1a24]">
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                  </div>
                 </div>
-                {inputs.productLabel && (
-                  <p className="text-[11px] text-white/35">
-                    Costurile se completează manual — nu sunt stocate în catalog.
-                  </p>
+
+                {/* Landing page select */}
+                {selectedProductId && (
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-white/55 uppercase tracking-wide">Landing Page</label>
+                    <div className="relative">
+                      <select
+                        value={selectedLPId}
+                        onChange={(e) => setSelectedLPId(e.target.value)}
+                        disabled={loadingLPs || landingPages.length === 0}
+                        className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/25 appearance-none pr-7 disabled:opacity-40"
+                      >
+                        {loadingLPs && <option className="bg-[#1a1a24]">Se încarcă...</option>}
+                        {!loadingLPs && landingPages.length === 0 && (
+                          <option className="bg-[#1a1a24]">Nicio landing page</option>
+                        )}
+                        {landingPages.map((lp) => (
+                          <option key={lp.id} value={lp.id} className="bg-[#1a1a24]">{lp.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                    </div>
+                    {selectedLP && (
+                      <p className="text-[11px] text-white/30">
+                        Transport: {selectedLP.shipping_price > 0 ? `${selectedLP.shipping_price} lei` : "—"}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            <Divider label="Produs" />
+            <Divider label="Costuri" />
 
-            <InputField
-              label="Cost produs"
-              value={inputs.costProdus}
-              onChange={(v) => set("costProdus", v)}
+            <Field
+              label="Cost produs / bucată"
+              value={common.costProdus}
+              onChange={(v) => setC("costProdus", v)}
               suffix="lei"
-              hint={inputs.platitorTVA ? "Introdu suma fără TVA (netă)" : "Introdu suma cu TVA inclusă"}
+              hint={common.platitorTVA ? "Suma fără TVA" : "Suma cu TVA inclusă"}
             />
 
-            <InputField
-              label="Preț vânzare — Oferta 1"
-              value={inputs.pretVanzare}
-              onChange={(v) => set("pretVanzare", v)}
-              suffix="lei"
-              hint="Transport inclus în preț"
-            />
-
-            <Divider label="Costuri operaționale" />
-
-            <InputField
+            <Field
               label="Cost curier"
-              value={inputs.costCurier}
-              onChange={(v) => set("costCurier", v)}
+              value={common.costCurier}
+              onChange={(v) => setC("costCurier", v)}
               suffix="lei"
-              hint={
-                inputs.platitorTVA
-                  ? "Introdu suma fără TVA — TVA-ul este deductibil"
-                  : "Introdu suma totală cu TVA inclusă"
-              }
+              hint={common.platitorTVA ? "Suma fără TVA — TVA deductibil" : "Suma totală cu TVA"}
             />
+
+            {/* Shipping price — only relevant in manual mode (in catalog it comes from LP) */}
+            {mode === "manual" && (
+              <Field
+                label="Preț transport client"
+                value={common.shippingPrice}
+                onChange={(v) => setC("shippingPrice", v)}
+                suffix="lei"
+                hint="Suma pe care o plătește clientul (0 dacă e gratuit)"
+              />
+            )}
 
             <Divider label="Parametri" />
 
-            <InputField
+            <Field
               label="Rată retur"
-              value={inputs.rataRetur}
-              onChange={(v) => set("rataRetur", v)}
+              value={common.rataRetur}
+              onChange={(v) => setC("rataRetur", v)}
               suffix="%"
-              min={0}
-              max={99}
-              hint="% din comenzi refuzate sau returnate"
             />
-
-            {/* TVA toggle */}
-            <div className="flex items-center justify-between py-0.5">
-              <div>
-                <p className="text-xs font-medium text-white/60 uppercase tracking-wide">Plătitor TVA</p>
-                <p className="text-[11px] text-white/30 mt-0.5">Cotă 21%</p>
-              </div>
-              <button
-                onClick={() => set("platitorTVA", !inputs.platitorTVA)}
-                className={`relative w-10 h-5.5 rounded-full transition-colors border ${
-                  inputs.platitorTVA
-                    ? "bg-indigo-500/40 border-indigo-500/50"
-                    : "bg-white/10 border-white/15"
-                }`}
-                style={{ height: "22px" }}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform bg-white shadow-sm ${
-                    inputs.platitorTVA ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-            </div>
 
             <Divider label="ROAS Target" />
 
-            <InputField
+            <Field
               label="ROAS Target"
-              value={inputs.roasTarget}
-              onChange={(v) => set("roasTarget", v)}
+              value={common.roasTarget}
+              onChange={(v) => setC("roasTarget", v)}
               suffix="x"
-              hint="Modifică pentru a vedea profitul la orice nivel ROAS"
             />
           </div>
 
-          {/* ── RIGHT: Results ────────────────────────────────────────── */}
-          <div className="space-y-4">
-
-            {!result.valid && (
-              <div className="rounded-xl border border-white/10 bg-white/3 p-6 flex items-center gap-3 text-white/40 text-sm">
-                <Info className="w-4 h-4 shrink-0" />
-                Completează cost produs, preț vânzare și cost curier pentru a vedea calculele.
+          {/* ── RIGHT: 3 offer columns ──────────────────────────────── */}
+          <div>
+            {mode === "catalog" && !selectedProductId && (
+              <div className="rounded-2xl border border-white/10 bg-white/2 p-8 flex items-center justify-center gap-3 text-white/30 text-sm">
+                <TrendingUp className="w-5 h-5" />
+                <span>Selectează un produs pentru a încărca ofertele de preț.</span>
+              </div>
+            )}
+            {mode === "catalog" && selectedProductId && catalogOffers.length === 0 && !loadingLPs && (
+              <div className="rounded-2xl border border-white/10 bg-white/2 p-8 flex items-center justify-center gap-3 text-white/30 text-sm">
+                <Info className="w-5 h-5" />
+                <span>Nu există landing pages pentru acest produs.</span>
               </div>
             )}
 
-            {result.valid && (
-              <>
-                {/* Key metrics */}
-                <div className="grid grid-cols-2 gap-3">
-                  <MetricCard
-                    label="Breakeven ROAS"
-                    value={result.breakEvenRoas !== null ? `${fmt(result.breakEvenRoas)}x` : "N/A"}
-                    sub={
-                      result.breakEvenRoas !== null
-                        ? `Sub acest nivel pierzi bani`
-                        : "Marjă negativă — imposibil de atins"
-                    }
-                    highlight
-                    large
-                    color={breakEvenColor}
+            {(mode === "manual" || (mode === "catalog" && catalogOffers.length > 0)) && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {results.map((res, idx) => (
+                  <OfferColumn
+                    key={idx}
+                    result={res}
+                    roasTarget={common.roasTarget}
+                    offer={activeOffers[idx]}
+                    onOfferChange={mode === "manual" ? (field, val) => updateManualOffer(idx, field, val) : undefined}
+                    isManual={mode === "manual"}
+                    commonInputs={common}
                   />
-                  <MetricCard
-                    label={`Profit la ROAS ${inputs.roasTarget}x`}
-                    value={isTargetRoas ? `${fmt(result.profitLaRoasTarget)} lei` : "—"}
-                    sub={
-                      isTargetRoas
-                        ? `${fmt(result.cheltuialaReclameLaRoasTarget)} lei reclame / comandă`
-                        : undefined
-                    }
-                    large
-                    color={profitColor}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <MetricCard
-                    label="Marjă netă"
-                    value={`${fmt(result.margineNeta)}%`}
-                    sub="înainte de reclame"
-                    color={result.margineNeta > 0 ? "green" : "red"}
-                  />
-                  <MetricCard
-                    label="Profit brut / comandă"
-                    value={`${fmt(result.profitBrutPerComanda)} lei`}
-                    sub="medie după retur"
-                    color={result.profitBrutPerComanda > 0 ? "neutral" : "red"}
-                  />
-                  <MetricCard
-                    label="Venit net / comandă"
-                    value={`${fmt(result.venitNetPerComanda)} lei`}
-                    sub={inputs.platitorTVA ? "fără TVA 21%" : "fără TVA"}
-                  />
-                </div>
-
-                {/* Cost breakdown */}
-                <div className="rounded-xl border border-white/10 bg-white/3 p-4">
-                  <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">
-                    Detaliu costuri per comandă
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    {[
-                      { label: "Cost produs", val: n(inputs.costProdus) },
-                      { label: "Cost curier (outbound)", val: n(inputs.costCurier) },
-                    ].map((row) => (
-                      <div key={row.label} className="flex justify-between text-white/60">
-                        <span>{row.label}</span>
-                        <span className="text-white/80 font-medium">{fmt(row.val)} lei</span>
-                      </div>
-                    ))}
-                    <div className="border-t border-white/8 pt-2 flex justify-between text-white/60">
-                      <span>Cost retur (curier outbound pierdut)</span>
-                      <span className="text-red-400 font-medium">{fmt(result.costPerComandaReturnata)} lei</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-white/35 pt-1">
-                      <span>Rată retur aplicată</span>
-                      <span>{inputs.rataRetur}% din comenzi</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ROAS table */}
-                <div className="rounded-xl border border-white/10 bg-white/3 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/8 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-white/40" />
-                    <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">
-                      Profit per comandă în funcție de ROAS
-                    </p>
-                  </div>
-                  <div className="divide-y divide-white/5">
-                    {/* Header */}
-                    <div className="grid grid-cols-3 px-4 py-2 text-[10px] font-semibold text-white/30 uppercase tracking-wide">
-                      <span>ROAS</span>
-                      <span className="text-right">Reclame / comandă</span>
-                      <span className="text-right">Profit / comandă</span>
-                    </div>
-                    {roasTableRows.map(({ roas, cheltuiala, profit }) => {
-                      const isTarget = fmt(roas, 1) === fmt(n(inputs.roasTarget), 1);
-                      const isBreakeven =
-                        result.breakEvenRoas !== null &&
-                        Math.abs(roas - result.breakEvenRoas) < 0.26;
-                      return (
-                        <div
-                          key={roas}
-                          className={`grid grid-cols-3 px-4 py-2.5 text-sm transition-colors ${roasBg(roas, result.breakEvenRoas)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
-                        >
-                          <span className={`font-semibold ${roasColor(roas, result.breakEvenRoas)}`}>
-                            {fmt(roas, 1)}x
-                            {isTarget && (
-                              <span className="ml-1.5 text-[10px] text-indigo-400 font-medium">← target</span>
-                            )}
-                            {isBreakeven && (
-                              <span className="ml-1.5 text-[10px] text-amber-400 font-medium">← breakeven</span>
-                            )}
-                          </span>
-                          <span className="text-right text-white/55">{fmt(cheltuiala)} lei</span>
-                          <span className={`text-right font-semibold ${roasColor(roas, result.breakEvenRoas)}`}>
-                            {profit >= 0 ? "+" : ""}{fmt(profit)} lei
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Warning if high breakeven */}
-                {result.breakEvenRoas !== null && result.breakEvenRoas > 4 && (
-                  <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-sm text-amber-300/80">
-                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-                    <span>
-                      Breakeven ROAS de <strong className="text-amber-300">{fmt(result.breakEvenRoas)}x</strong> este ridicat.
-                      Verifică dacă costul produsului sau al curierului poate fi optimizat.
-                    </span>
-                  </div>
-                )}
-
-                {result.breakEvenRoas === null && (
-                  <div className="flex items-start gap-3 rounded-xl border border-red-500/25 bg-red-500/8 px-4 py-3 text-sm text-red-300/80">
-                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-                    <span>
-                      Marja netă este negativă — costurile depășesc venitul chiar și fără reclame.
-                      Verifică prețul de vânzare și costurile.
-                    </span>
-                  </div>
-                )}
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>

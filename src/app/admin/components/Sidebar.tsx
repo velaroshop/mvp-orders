@@ -91,6 +91,7 @@ const menuGroups = [
     label: "Tools",
     items: [
       { name: "Convertor WebP", href: "/admin/superadmin/image-compress" },
+      { name: "Calculator ROAS", href: "/admin/superadmin/roas-calculator" },
     ],
   },
   {
@@ -98,7 +99,6 @@ const menuGroups = [
     items: [
       { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
       { name: "Tutorial", href: "/admin/tutorial", superadminOnly: true },
-      { name: "Calculator ROAS", href: "/admin/superadmin/roas-calculator", superadminOnly: true },
     ],
   },
 ];

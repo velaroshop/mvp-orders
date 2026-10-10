@@ -449,8 +449,6 @@ const DEFAULT_OFFERS: Offer[] = [
 export default function RoasCalculatorPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const activeRole    = (session?.user as any)?.activeRole;
-  const isSuperadminOrg = (session?.user as any)?.isSuperadminOrg;
 
   const [mode, setMode] = useState<"catalog" | "manual">("manual");
   const [common, setCommon] = useState<CommonInputs>(DEFAULT_COMMON);
@@ -466,10 +464,10 @@ export default function RoasCalculatorPage() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!session?.user || activeRole !== "owner" || !isSuperadminOrg) {
+    if (!session?.user) {
       router.replace("/admin/orders");
     }
-  }, [status, session, activeRole, isSuperadminOrg, router]);
+  }, [status, session, router]);
 
   useEffect(() => {
     if (mode !== "catalog") return;

@@ -102,10 +102,14 @@ function calcOffer(offer: Offer, common: CommonInputs): OfferResult {
   // courier paid on ALL orders sent (already paid at shipment)
   const profitBrut    = (1 - retur) * (revenueNet - numeral * costProdus) - costCurier;
 
-  const grossMedio    = (1 - retur) * revenueClient;
-  const margineNeta   = grossMedio > 0 ? (profitBrut / grossMedio) * 100 : 0;
-  const breakEvenRoas = profitBrut > 0 ? grossMedio / profitBrut : null;
-  const cheltuialaReclame = roasTarget > 0 ? grossMedio / roasTarget : 0;
+  // Margin: profit as % of net revenue actually received (after TVA and returns)
+  const revenueNetDelivered = revenueNet * (1 - retur);
+  const margineNeta   = revenueNetDelivered > 0 ? (profitBrut / revenueNetDelivered) * 100 : 0;
+
+  // ROAS is measured by Meta on placed orders at full client price (pixel fires at placement, not delivery)
+  // → breakeven and ad spend are based on revenueClient, not delivered revenue
+  const breakEvenRoas     = profitBrut > 0 ? revenueClient / profitBrut : null;
+  const cheltuialaReclame = roasTarget > 0 ? revenueClient / roasTarget : 0;
   const profitLaTarget    = profitBrut - cheltuialaReclame;
 
   return { label: offer.label, numeral, revenueClient, revenueNet, costComanda,
@@ -217,14 +221,13 @@ function OfferRow({
   const rows = useMemo(() => {
     const arr = [];
     for (let r = 1.0; r <= 8.0; r = parseFloat((r + 0.5).toFixed(1))) {
-      const grossMedio = result.valid ? (1 - n(common.rataRetur) / 100) * result.revenueClient : 0;
-      const cheltuiala = result.valid && grossMedio > 0 ? grossMedio / r : 0;
+      const cheltuiala = result.valid ? result.revenueClient / r : 0;
       const profit     = result.valid ? result.profitBrut - cheltuiala : 0;
-      const roi        = result.valid && grossMedio > 0 ? (profit / grossMedio) * 100 : 0;
+      const roi        = result.valid && cheltuiala > 0 ? (profit / cheltuiala) * 100 : 0;
       arr.push({ roas: r, cheltuiala, profit, roi });
     }
     return arr;
-  }, [result, common.rataRetur]);
+  }, [result]);
 
   return (
     <div className="rounded-xl border border-white/10 overflow-hidden">

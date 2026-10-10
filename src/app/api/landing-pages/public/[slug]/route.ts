@@ -71,7 +71,7 @@ export async function GET(
       landingPage.product_id
         ? supabase
             .from("products")
-            .select("id, name, sku, status, variations_label")
+            .select("id, name, sku, status, variations_label, variation_selection_mode")
             .eq("id", landingPage.product_id)
             .single()
         : Promise.resolve({ data: null }),

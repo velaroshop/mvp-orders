@@ -24,6 +24,7 @@ interface Product {
   status: "active" | "testing" | "inactive";
   variations?: Variation[];
   variations_label?: string | null;
+  variation_selection_mode?: "multi" | "single";
 }
 
 interface NewVariationForm {
@@ -75,6 +76,10 @@ export default function EditProductPage() {
   const [variationsLabel, setVariationsLabel] = useState<string>("");
   const [isSavingLabel, setIsSavingLabel] = useState(false);
 
+  // Variation selection mode
+  const [selectionMode, setSelectionMode] = useState<"multi" | "single">("multi");
+  const [isSavingMode, setIsSavingMode] = useState(false);
+
   useEffect(() => {
     if (productId) fetchProduct();
   }, [productId]);
@@ -89,6 +94,7 @@ export default function EditProductPage() {
       setFormData(data.product);
       setVariations(data.product.variations || []);
       setVariationsLabel(data.product.variations_label || "");
+      setSelectionMode(data.product.variation_selection_mode || "multi");
       // Pre-fill new variation SKU prefix
       setNewVariation(v => ({ ...v, sku: (data.product.sku || "") + "-" }));
     } catch (err) {
@@ -216,6 +222,22 @@ export default function EditProductPage() {
       // Non-critical: silent fail
     } finally {
       setIsSavingLabel(false);
+    }
+  }
+
+  async function handleSaveSelectionMode(mode: "multi" | "single") {
+    setSelectionMode(mode);
+    setIsSavingMode(true);
+    try {
+      await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variationSelectionMode: mode }),
+      });
+    } catch {
+      // Non-critical: silent fail
+    } finally {
+      setIsSavingMode(false);
     }
   }
 
@@ -708,7 +730,40 @@ export default function EditProductPage() {
                 {isSavingLabel && <span className="ml-2 text-zinc-500">Se salvează...</span>}
               </p>
             </div>
-            <p className="text-xs text-zinc-600">Clientul distribuie cantitatea ofertei între variațiile active și în stoc. Toate au același preț.</p>
+            <div>
+              <label className="label">Mod selecție variante</label>
+              <div className="flex rounded-lg overflow-hidden border border-zinc-700/60 w-fit">
+                <button
+                  type="button"
+                  onClick={() => handleSaveSelectionMode("multi")}
+                  disabled={isSavingMode}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selectionMode === "multi"
+                      ? "bg-indigo-600 text-white"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-700/60"
+                  }`}
+                >
+                  Selecție multiplă
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveSelectionMode("single")}
+                  disabled={isSavingMode}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selectionMode === "single"
+                      ? "bg-indigo-600 text-white"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-700/60"
+                  }`}
+                >
+                  Selecție unică
+                </button>
+              </div>
+              <p className="text-faint text-xs mt-1">
+                {selectionMode === "multi"
+                  ? "Clientul distribuie unitățile ofertei între variante (ex: 1x Roșu + 2x Verde)."
+                  : "Clientul alege o singură variantă și primește toate unitățile ofertei din acea variantă."}
+              </p>
+            </div>
           </div>
         )}
       </div>

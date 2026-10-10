@@ -68,6 +68,7 @@ interface LandingPage {
     name: string;
     sku?: string;
     status?: string;
+    variation_selection_mode?: "multi" | "single";
   };
   stores?: {
     id: string;
@@ -641,10 +642,35 @@ function WidgetFormContent() {
     });
   }
 
+  // Derive selection mode from product data
+  const variationSelectionMode = landingPage?.products?.variation_selection_mode || "multi";
+
   // Reset variation quantities whenever the offer changes
   useEffect(() => {
-    setVariationQuantities({});
+    if (variationSelectionMode === "single") {
+      // In single mode, keep the selected variant but update its quantity to the new offer quantity
+      const offerQty = landingPage
+        ? selectedOffer === "offer_1"
+          ? landingPage.quantity_offer_1 || 1
+          : selectedOffer === "offer_2"
+          ? landingPage.quantity_offer_2 || 2
+          : landingPage.quantity_offer_3 || 3
+        : 1;
+      setVariationQuantities(prev => {
+        const selectedId = Object.keys(prev).find(id => (prev[id] || 0) > 0);
+        if (!selectedId) return {};
+        return { [selectedId]: offerQty };
+      });
+    } else {
+      setVariationQuantities({});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOffer]);
+
+  function handleSingleVariationSelect(varId: string) {
+    const offerQty = getOfferQuantity();
+    setVariationQuantities({ [varId]: offerQty });
+  }
 
   function getUpsellsTotal() {
     return presaleUpsells
@@ -891,7 +917,10 @@ function WidgetFormContent() {
       const offerQty = getOfferQuantity();
       const totalVarQty = getTotalVariationQuantity();
       if (totalVarQty !== offerQty) {
-        setError(`Selectați variante pentru toate cele ${offerQty} unit${offerQty === 1 ? "ate" : "ăți"} ale ofertei.`);
+        const isSingleMode = landingPage?.products?.variation_selection_mode === "single";
+        setError(isSingleMode
+          ? "Selectați o variantă pentru a continua."
+          : `Selectați variante pentru toate cele ${offerQty} unit${offerQty === 1 ? "ate" : "ăți"} ale ofertei.`);
         submittingRef.current = false;
         setSubmitting(false);
         return;
@@ -1679,109 +1708,168 @@ function WidgetFormContent() {
             const offerQty = getOfferQuantity();
             const totalVarQty = getTotalVariationQuantity();
             const remaining = offerQty - totalVarQty;
+            const isSingle = variationSelectionMode === "single";
+            const selectedSingleId = isSingle
+              ? Object.keys(variationQuantities).find(id => (variationQuantities[id] || 0) > 0) || null
+              : null;
             return (
               <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 2 } : undefined}>
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-1 text-center">
-                  {landingPage.variations_label || "Selectați variantele dorite"}
+                  {landingPage.variations_label || (isSingle ? "Selectați varianta dorită" : "Selectați variantele dorite")}
                 </h2>
                 <div className="text-xs sm:text-sm text-center mb-3">
-                  {remaining > 0
-                    ? <span className="text-zinc-500">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
-                    : totalVarQty === offerQty
-                    ? <span className="text-emerald-600 font-semibold">✓ Selecție completă</span>
-                    : null}
+                  {isSingle ? (
+                    selectedSingleId
+                      ? <span className="text-emerald-600 font-semibold">✓ Variantă selectată</span>
+                      : <span className="text-zinc-500">Alegeți o variantă</span>
+                  ) : (
+                    remaining > 0
+                      ? <span className="text-zinc-500">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
+                      : totalVarQty === offerQty
+                      ? <span className="text-emerald-600 font-semibold">✓ Selecție completă</span>
+                      : null
+                  )}
                 </div>
-                <div className="space-y-2">
-                  {productVariations.map((variation) => {
-                    const qty = variationQuantities[variation.id] || 0;
-                    const isOutOfStock = !variation.in_stock;
-                    return (
-                      <div
-                        key={variation.id}
-                        className={`flex items-center gap-3 p-2.5 sm:p-3 rounded-lg border transition-all ${
-                          isOutOfStock
-                            ? "border-zinc-200 bg-zinc-50 opacity-60"
-                            : qty > 0
-                            ? "border-2"
-                            : "border-zinc-200 bg-white"
-                        }`}
-                        style={qty > 0 && !isOutOfStock
-                          ? { borderColor: "#16a34a", backgroundColor: "#f0fdf4" }
-                          : undefined}
-                      >
-                        {/* Visual preview */}
-                        {variation.variation_visual_type === "image" && variation.variation_visual_value && (
-                          <img
-                            src={variation.variation_visual_value}
-                            alt={variation.name}
-                            className="w-16 h-16 object-cover rounded-md shrink-0"
-                          />
-                        )}
-                        {variation.variation_visual_type === "color" && variation.variation_visual_value && (
-                          <div
-                            className="w-8 h-8 rounded-full border-2 border-zinc-300 shrink-0"
-                            style={{ backgroundColor: variation.variation_visual_value }}
-                          />
-                        )}
 
-                        {/* Name + out-of-stock label */}
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm sm:text-base font-medium text-zinc-900 truncate block">
+                {isSingle ? (
+                  /* Single mode: grid of clickable cards */
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {productVariations.map((variation) => {
+                      const isSelected = selectedSingleId === variation.id;
+                      const isOutOfStock = !variation.in_stock;
+                      return (
+                        <button
+                          key={variation.id}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => handleSingleVariationSelect(variation.id)}
+                          className={`flex flex-col items-center rounded-xl border-2 p-2 transition-all text-center ${
+                            isOutOfStock
+                              ? "border-zinc-200 bg-zinc-50 opacity-50 cursor-not-allowed"
+                              : isSelected
+                              ? "border-emerald-500 bg-emerald-50"
+                              : "border-zinc-200 bg-white hover:border-zinc-400"
+                          }`}
+                        >
+                          {variation.variation_visual_type === "image" && variation.variation_visual_value ? (
+                            <img
+                              src={variation.variation_visual_value}
+                              alt={variation.name}
+                              className="w-full aspect-square object-cover rounded-lg mb-1.5"
+                            />
+                          ) : variation.variation_visual_type === "color" && variation.variation_visual_value ? (
+                            <div
+                              className="w-10 h-10 rounded-full border-2 border-zinc-200 mb-1.5 shrink-0"
+                              style={{ backgroundColor: variation.variation_visual_value }}
+                            />
+                          ) : null}
+                          <span className="text-xs sm:text-sm font-medium text-zinc-900 leading-tight">
                             {variation.name}
                           </span>
                           {isOutOfStock && (
-                            <span className="text-xs text-red-500 font-medium">Lipsă stoc</span>
+                            <span className="text-[10px] text-red-500 font-medium mt-0.5">Lipsă stoc</span>
+                          )}
+                          {isSelected && !isOutOfStock && (
+                            <span className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ Selectat</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Multi mode: stepper rows */
+                  <div className="space-y-2">
+                    {productVariations.map((variation) => {
+                      const qty = variationQuantities[variation.id] || 0;
+                      const isOutOfStock = !variation.in_stock;
+                      return (
+                        <div
+                          key={variation.id}
+                          className={`flex items-center gap-3 p-2.5 sm:p-3 rounded-lg border transition-all ${
+                            isOutOfStock
+                              ? "border-zinc-200 bg-zinc-50 opacity-60"
+                              : qty > 0
+                              ? "border-2"
+                              : "border-zinc-200 bg-white"
+                          }`}
+                          style={qty > 0 && !isOutOfStock
+                            ? { borderColor: "#16a34a", backgroundColor: "#f0fdf4" }
+                            : undefined}
+                        >
+                          {/* Visual preview */}
+                          {variation.variation_visual_type === "image" && variation.variation_visual_value && (
+                            <img
+                              src={variation.variation_visual_value}
+                              alt={variation.name}
+                              className="w-16 h-16 object-cover rounded-md shrink-0"
+                            />
+                          )}
+                          {variation.variation_visual_type === "color" && variation.variation_visual_value && (
+                            <div
+                              className="w-8 h-8 rounded-full border-2 border-zinc-300 shrink-0"
+                              style={{ backgroundColor: variation.variation_visual_value }}
+                            />
+                          )}
+
+                          {/* Name + out-of-stock label */}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm sm:text-base font-medium text-zinc-900 truncate block">
+                              {variation.name}
+                            </span>
+                            {isOutOfStock && (
+                              <span className="text-xs text-red-500 font-medium">Lipsă stoc</span>
+                            )}
+                          </div>
+
+                          {/* Quantity stepper */}
+                          {isOutOfStock ? (
+                            <div className="shrink-0 w-20 text-center text-xs text-zinc-400 italic">
+                              Indisponibil
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={qty === 0}
+                                onClick={() =>
+                                  setVariationQuantities(prev => ({
+                                    ...prev,
+                                    [variation.id]: Math.max(0, (prev[variation.id] || 0) - 1),
+                                  }))
+                                }
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                style={qty > 0
+                                  ? { borderColor: "#dc2626", color: "#dc2626" }
+                                  : { borderColor: "#d1d5db", color: "#9ca3af" }
+                                }
+                              >
+                                −
+                              </button>
+                              <span className="w-5 text-center text-sm font-bold text-zinc-900">{qty}</span>
+                              <button
+                                type="button"
+                                disabled={remaining === 0}
+                                onClick={() =>
+                                  setVariationQuantities(prev => ({
+                                    ...prev,
+                                    [variation.id]: (prev[variation.id] || 0) + 1,
+                                  }))
+                                }
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                style={remaining > 0
+                                  ? { borderColor: "#16a34a", color: "#16a34a" }
+                                  : { borderColor: "#d1d5db", color: "#9ca3af" }
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
                           )}
                         </div>
-
-                        {/* Quantity stepper */}
-                        {isOutOfStock ? (
-                          <div className="shrink-0 w-20 text-center text-xs text-zinc-400 italic">
-                            Indisponibil
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              disabled={qty === 0}
-                              onClick={() =>
-                                setVariationQuantities(prev => ({
-                                  ...prev,
-                                  [variation.id]: Math.max(0, (prev[variation.id] || 0) - 1),
-                                }))
-                              }
-                              className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              style={qty > 0
-                                ? { borderColor: "#dc2626", color: "#dc2626" }
-                                : { borderColor: "#d1d5db", color: "#9ca3af" }
-                              }
-                            >
-                              −
-                            </button>
-                            <span className="w-5 text-center text-sm font-bold text-zinc-900">{qty}</span>
-                            <button
-                              type="button"
-                              disabled={remaining === 0}
-                              onClick={() =>
-                                setVariationQuantities(prev => ({
-                                  ...prev,
-                                  [variation.id]: (prev[variation.id] || 0) + 1,
-                                }))
-                              }
-                              className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                              style={remaining > 0
-                                ? { borderColor: "#16a34a", color: "#16a34a" }
-                                : { borderColor: "#d1d5db", color: "#9ca3af" }
-                              }
-                            >
-                              +
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })()}

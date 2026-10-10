@@ -1234,7 +1234,7 @@ function WidgetFormContent() {
 
             {hasFreeShipping() && (
               <div className="text-center mb-1">
-                <span className="text-sm font-bold text-zinc-900 uppercase">Transport Gratuit</span>
+                <span className="text-sm font-bold uppercase" style={{ color: textOnDarkColor }}>Transport Gratuit</span>
               </div>
             )}
 
@@ -1599,7 +1599,7 @@ function WidgetFormContent() {
                   {landingPage.price_1.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_1 && (
-                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-zinc-900 uppercase">Transport Gratuit</div>
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
                 )}
                 {isV2 && selectedOffer === "offer_1" && (
                   <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
@@ -1646,7 +1646,7 @@ function WidgetFormContent() {
                   {landingPage.price_2.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_2 && (
-                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-zinc-900 uppercase">Transport Gratuit</div>
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
                 )}
                 {isV2 && selectedOffer === "offer_2" && (
                   <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
@@ -1693,7 +1693,7 @@ function WidgetFormContent() {
                   {landingPage.price_3.toFixed(2)} LEI
                 </div>
                 {landingPage.free_shipping_offer_3 && (
-                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-zinc-900 uppercase">Transport Gratuit</div>
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
                 )}
                 {isV2 && selectedOffer === "offer_3" && (
                   <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>

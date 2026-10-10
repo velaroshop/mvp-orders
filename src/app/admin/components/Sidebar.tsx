@@ -29,6 +29,7 @@ import {
   ImageDown,
   Wrench,
   BookOpen,
+  Calculator,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -49,6 +50,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
   "/admin/tools":                           <Wrench className="w-4 h-4" />,
   "/admin/tutorial":                        <BookOpen className="w-4 h-4" />,
+  "/admin/superadmin/roas-calculator":      <Calculator className="w-4 h-4" />,
 };
 
 const menuGroups = [
@@ -96,6 +98,7 @@ const menuGroups = [
     items: [
       { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
       { name: "Tutorial", href: "/admin/tutorial", superadminOnly: true },
+      { name: "Calculator ROAS", href: "/admin/superadmin/roas-calculator", superadminOnly: true },
     ],
   },
 ];

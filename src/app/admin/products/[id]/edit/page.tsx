@@ -379,7 +379,7 @@ export default function EditProductPage() {
             <h2 className="text-sm font-semibold text-white">Variații produs</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Culori, mărimi sau modele. Fiecare variație are SKU propriu în Helpship.</p>
           </div>
-          {variations.length < 6 && (
+          {variations.length < 6 ? (
             <button
               type="button"
               onClick={() => { setShowAddVariation(true); setVariationError(null); }}
@@ -388,6 +388,8 @@ export default function EditProductPage() {
               <Plus className="w-3.5 h-3.5" />
               Adaugă variație
             </button>
+          ) : (
+            <span className="text-xs text-zinc-500">Limită atinsă (6/6)</span>
           )}
         </div>
 

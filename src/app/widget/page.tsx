@@ -1720,13 +1720,13 @@ function WidgetFormContent() {
                 <div className="text-xs sm:text-sm text-center mb-3">
                   {isSingle ? (
                     selectedSingleId
-                      ? <span className="text-emerald-600 font-semibold">✓ Variantă selectată</span>
-                      : <span className="text-zinc-500">Alegeți o variantă</span>
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-semibold">✓ Variantă selectată</span>
+                      : <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-semibold">Alegeți o variantă</span>
                   ) : (
                     remaining > 0
-                      ? <span className="text-zinc-500">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-semibold">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
                       : totalVarQty === offerQty
-                      ? <span className="text-emerald-600 font-semibold">✓ Selecție completă</span>
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-semibold">✓ Selecție completă</span>
                       : null
                   )}
                 </div>

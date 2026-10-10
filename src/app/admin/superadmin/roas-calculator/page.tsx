@@ -98,10 +98,9 @@ function calcOffer(offer: Offer, common: CommonInputs): OfferResult {
   const revenueNet    = tva ? revenueClient / (1 + TVA) : revenueClient;
   const costComanda   = numeral * costProdus + costCurier;
 
-  // return rate reduces revenue (only fulfilled orders pay)
-  // product cost: fixed per order sent (returned products go back to stock, not a loss)
-  // courier cost: fixed per order sent (paid on shipment regardless of outcome)
-  const profitBrut    = (1 - retur) * revenueNet - numeral * costProdus - costCurier;
+  // returned products go back to stock → product cost only on fulfilled orders
+  // courier paid on ALL orders sent (already paid at shipment)
+  const profitBrut    = (1 - retur) * (revenueNet - numeral * costProdus) - costCurier;
 
   const grossMedio    = (1 - retur) * revenueClient;
   const margineNeta   = grossMedio > 0 ? (profitBrut / grossMedio) * 100 : 0;

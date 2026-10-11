@@ -1421,29 +1421,29 @@ export default function LandingPagesPage() {
                   {/* Summary row */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/40">
-                      <div className="text-xs text-zinc-400 mb-1">Total comenzi</div>
+                      <div className="text-xs text-zinc-300 mb-1">Total comenzi</div>
                       <div className="text-xl font-semibold text-white">{salesData.totalOrders}</div>
-                      <div className="text-xs text-zinc-500 mt-0.5">din care confirmate: <span className="text-emerald-400">{salesData.totalConfirmed}</span></div>
+                      <div className="text-xs text-zinc-300 mt-0.5">din care confirmate: <span className="text-emerald-400">{salesData.totalConfirmed}</span></div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/40">
-                      <div className="text-xs text-zinc-400 mb-1">Revenue total</div>
+                      <div className="text-xs text-zinc-300 mb-1">Revenue total</div>
                       <div className="text-xl font-semibold text-white">
                         {salesData.totalRevenue.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} lei
                       </div>
-                      <div className="text-xs text-zinc-500 mt-0.5">toate statusurile</div>
+                      <div className="text-xs text-zinc-300 mt-0.5">toate statusurile</div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/40">
-                      <div className="text-xs text-zinc-400 mb-1">AOV global</div>
+                      <div className="text-xs text-zinc-300 mb-1">AOV global</div>
                       <div className="text-xl font-semibold text-white">
                         {salesData.globalAov.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} lei
                       </div>
-                      <div className="text-xs text-zinc-500 mt-0.5">valoare medie / comandă</div>
+                      <div className="text-xs text-zinc-300 mt-0.5">valoare medie / comandă</div>
                     </div>
                   </div>
 
                   {/* Offer distribution */}
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">Distribuție oferte</h4>
+                    <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide mb-2">Distribuție oferte</h4>
                     <div className="space-y-2">
                       {salesData.offerStats
                         .filter((o: any) => o.count > 0)
@@ -1470,15 +1470,15 @@ export default function LandingPagesPage() {
                               />
                             </div>
                             {/* Sub-stats */}
-                            <div className="flex items-center gap-4 text-[11px] text-zinc-400">
+                            <div className="flex items-center gap-4 text-[11px] text-zinc-300">
                               <span>
                                 Confirmate: <span className="text-emerald-400">{offer.confirmedCount}</span>
                                 {offer.count > 0 && (
-                                  <span className="text-zinc-600"> ({offer.confirmedPct.toFixed(0)}%)</span>
+                                  <span className="text-zinc-400"> ({offer.confirmedPct.toFixed(0)}%)</span>
                                 )}
                               </span>
                               <span>
-                                AOV: <span className="text-zinc-300">{offer.aov.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} lei</span>
+                                AOV: <span className="text-white">{offer.aov.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} lei</span>
                               </span>
                             </div>
                           </div>
@@ -1486,7 +1486,7 @@ export default function LandingPagesPage() {
                     </div>
                   </div>
 
-                  <p className="text-[10px] text-zinc-600">
+                  <p className="text-[11px] text-zinc-400">
                     Include toate comenzile (queue, pending, confirmed, cancelled etc.), excl. testing.
                   </p>
                 </div>

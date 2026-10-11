@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Get all active main products (not variation children) with SKU for HelpShip integration
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name, sku")
+      .select("id, name, sku, import_price")
       .eq("organization_id", organizationId)
       .eq("status", "active")
       .is("parent_product_id", null)

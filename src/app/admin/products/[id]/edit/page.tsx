@@ -22,6 +22,7 @@ interface Product {
   name: string;
   sku?: string;
   status: "active" | "testing" | "inactive";
+  import_price?: number | null;
   variations?: Variation[];
   variations_label?: string | null;
   variation_selection_mode?: "multi" | "single";
@@ -113,7 +114,12 @@ export default function EditProductPage() {
       const res = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: formData.name, sku: formData.sku, status: formData.status }),
+        body: JSON.stringify({
+          name: formData.name,
+          sku: formData.sku,
+          status: formData.status,
+          import_price: formData.import_price ?? null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Eroare la salvarea produsului");
@@ -335,6 +341,27 @@ export default function EditProductPage() {
               required
             />
             <p className="text-faint text-xs mt-1">Identificator unic, convertit automat la majuscule. Maxim 10 caractere.</p>
+          </div>
+
+          {/* Preț import */}
+          <div>
+            <label className="label">Preț import / bucată</label>
+            <div className="flex items-center gap-2 max-w-xs">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.import_price ?? ""}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  import_price: e.target.value === "" ? null : parseFloat(e.target.value),
+                })}
+                className="input"
+                placeholder="ex. 24.50"
+              />
+              <span className="text-sm text-zinc-400 shrink-0">RON</span>
+            </div>
+            <p className="text-faint text-xs mt-1">Opțional. Pre-completează costul produsului în Calculatorul ROAS.</p>
           </div>
 
           {/* Status */}

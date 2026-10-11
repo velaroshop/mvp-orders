@@ -18,7 +18,7 @@ import {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface Product { id: string; name: string; sku: string; }
+interface Product { id: string; name: string; sku: string; import_price?: number | null; }
 
 interface LandingPage {
   id: string; name: string;
@@ -667,6 +667,11 @@ export default function RoasCalculatorPage() {
 
   useEffect(() => {
     if (!selectedProductId) { setLandingPages([]); setSelectedLPId(""); return; }
+    // Pre-populate costProdus if the selected product has an import_price
+    const product = products.find(p => p.id === selectedProductId);
+    if (product?.import_price != null) {
+      setCommon(prev => ({ ...prev, costProdus: String(product.import_price) }));
+    }
     setLoadingLPs(true);
     fetch("/api/landing-pages?limit=100")
       .then(r => r.json())

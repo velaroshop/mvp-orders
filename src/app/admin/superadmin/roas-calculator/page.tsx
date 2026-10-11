@@ -23,8 +23,8 @@ interface Product { id: string; name: string; sku: string; }
 interface LandingPage {
   id: string; name: string;
   offer_heading_1: string; offer_heading_2: string; offer_heading_3: string;
-  numeral_1: number;       numeral_2: number;       numeral_3: number;
-  price_1: number;         price_2: number;         price_3: number;
+  quantity_offer_1: number; quantity_offer_2: number; quantity_offer_3: number;
+  price_1: number;          price_2: number;          price_3: number;
   shipping_price: number;
   free_shipping_offer_1: boolean; free_shipping_offer_2: boolean; free_shipping_offer_3: boolean;
 }
@@ -482,7 +482,7 @@ function OfferRow({ index, result, common, offer, onOfferChange, isManual }: {
                     <span className="text-white/70 font-medium">{fmt(result.numeral * n(common.costProdus))} lei</span>
                   </div>
                   <div className="flex justify-between text-white/50">
-                    <span>Cost curier</span>
+                    <span>Cost livrare</span>
                     <span className="text-white/70 font-medium">{fmt(n(common.costCurier))} lei</span>
                   </div>
                   <div className="flex justify-between text-white/50 text-[11px]">
@@ -682,9 +682,9 @@ export default function RoasCalculatorPage() {
     const lp = landingPages.find(l => l.id === selectedLPId);
     if (!lp) { setCatalogOffers([]); return; }
     setCatalogOffers([
-      { label: "Oferta 1", numeral: n(lp.numeral_1) || 1, pretTotal: String(n(lp.price_1)), freeShipping: !!lp.free_shipping_offer_1 },
-      { label: "Oferta 2", numeral: n(lp.numeral_2) || 2, pretTotal: String(n(lp.price_2)), freeShipping: !!lp.free_shipping_offer_2 },
-      { label: "Oferta 3", numeral: n(lp.numeral_3) || 3, pretTotal: String(n(lp.price_3)), freeShipping: !!lp.free_shipping_offer_3 },
+      { label: "Oferta 1", numeral: n(lp.quantity_offer_1) || 1, pretTotal: String(n(lp.price_1)), freeShipping: !!lp.free_shipping_offer_1 },
+      { label: "Oferta 2", numeral: n(lp.quantity_offer_2) || 1, pretTotal: String(n(lp.price_2)), freeShipping: !!lp.free_shipping_offer_2 },
+      { label: "Oferta 3", numeral: n(lp.quantity_offer_3) || 1, pretTotal: String(n(lp.price_3)), freeShipping: !!lp.free_shipping_offer_3 },
     ]);
     setCommon(prev => ({ ...prev, shippingPrice: String(n(lp.shipping_price)) }));
   }, [selectedLPId, landingPages]);
@@ -733,7 +733,7 @@ export default function RoasCalculatorPage() {
               {common.platitorTVA && (
                 <div className="w-full rounded-lg border border-indigo-500/20 bg-indigo-500/8 px-3 py-2 text-[11px] text-indigo-300/75 space-y-0.5">
                   <p><strong className="text-indigo-300">Prețuri de vânzare</strong> → cu TVA inclus (prețul clientului)</p>
-                  <p><strong className="text-indigo-300">Cost produs & curier</strong> → fără TVA (suma netă)</p>
+                  <p><strong className="text-indigo-300">Cost produs & livrare</strong> → fără TVA (suma netă)</p>
                 </div>
               )}
             </div>
@@ -792,7 +792,7 @@ export default function RoasCalculatorPage() {
               onChange={v => setC("costProdus", v)} suffix="lei"
               hint={common.platitorTVA ? "Fără TVA" : "Cu TVA inclus"}
             />
-            <Field label="Cost curier" value={common.costCurier}
+            <Field label="Cost livrare (curier + împachetare)" value={common.costCurier}
               onChange={v => setC("costCurier", v)} suffix="lei"
               hint={common.platitorTVA ? "Fără TVA (deductibil)" : "Cu TVA inclus"}
             />

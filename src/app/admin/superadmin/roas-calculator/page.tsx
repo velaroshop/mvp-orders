@@ -507,30 +507,43 @@ function OfferRow({ index, result, common, offer, onOfferChange, isManual }: {
                       <span className="text-right">ROAS</span>
                       <span className="text-right">ROI%</span>
                     </div>
-                    {cpaRows.map(({ cpa, profit, roas, roi }) => {
-                      const isTarget = cpa === cpaTarget;
-                      const isBreak  = Math.abs(cpa - result.profitBrut) <= 2.5;
-                      return (
-                        <div key={cpa}
-                          className={`grid grid-cols-4 px-3 py-1.5 text-xs border-t border-white/5 ${cpaBg(cpa, result.profitBrut)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
-                        >
-                          <span className={`font-semibold ${cpaColor(cpa, result.profitBrut)}`}>
-                            {cpaFmt(cpa)} lei
-                            {isTarget && <span className="ml-1 text-[9px] text-indigo-400">▶</span>}
-                            {isBreak && !isTarget && <span className="ml-1 text-[9px] text-amber-400">●</span>}
-                          </span>
-                          <span className={`text-right font-medium ${cpaColor(cpa, result.profitBrut)}`}>
-                            {profit >= 0 ? "+" : ""}{fmt(profit)}
-                          </span>
-                          <span className={`text-right font-medium ${cpaColor(cpa, result.profitBrut)}`}>
-                            {fmt(roas)}x
-                          </span>
-                          <span className={`text-right font-medium ${cpaColor(cpa, result.profitBrut)}`}>
-                            {roi >= 0 ? "+" : ""}{fmt(roi, 1)}%
+                    {(() => {
+                      const pc = (p: number) => p > 5 ? "text-emerald-400" : p >= 0 ? "text-amber-400" : "text-red-400";
+                      const pb = (p: number) => p > 5 ? "bg-emerald-500/5"  : p >= 0 ? "bg-amber-500/5"  : "bg-red-500/5";
+                      const sep = (
+                        <div key="be-sep" className="px-3 py-0.5 border-y border-amber-500/40 bg-amber-500/5 text-center">
+                          <span className="text-[10px] font-semibold text-amber-400 tracking-wide">
+                            Break-even · {fmt(result.profitBrut)} lei
                           </span>
                         </div>
                       );
-                    })}
+                      const out: React.ReactNode[] = [];
+                      let sepInserted = false;
+                      cpaRows.forEach((row, idx) => {
+                        const { cpa, profit, roas, roi } = row;
+                        const isTarget  = cpa === cpaTarget;
+                        const isExactBE = Math.abs(profit) < 0.01;
+                        // Insert separator between last profitable row and first loss row
+                        if (!sepInserted && !isExactBE && profit < 0) {
+                          const prev = cpaRows[idx - 1];
+                          if (!prev || prev.profit >= 0) { sepInserted = true; out.push(sep); }
+                        }
+                        out.push(
+                          <div key={cpa}
+                            className={`grid grid-cols-4 px-3 py-1.5 text-xs border-t border-white/5 ${isExactBE ? "bg-amber-500/5" : pb(profit)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
+                          >
+                            <span className={`font-semibold ${isExactBE ? "text-amber-400" : pc(profit)}`}>
+                              {cpaFmt(cpa)} lei
+                              {isTarget && <span className="ml-1 text-[9px] text-indigo-400">▶</span>}
+                            </span>
+                            <span className={`text-right font-medium ${isExactBE ? "text-amber-400" : pc(profit)}`}>{profit >= 0 ? "+" : ""}{fmt(profit)}</span>
+                            <span className={`text-right font-medium ${isExactBE ? "text-amber-400" : pc(profit)}`}>{fmt(roas)}x</span>
+                            <span className={`text-right font-medium ${isExactBE ? "text-amber-400" : pc(profit)}`}>{roi >= 0 ? "+" : ""}{fmt(roi, 1)}%</span>
+                          </div>
+                        );
+                      });
+                      return out;
+                    })()}
                   </div>
                 ) : (
                   /* ROAS table */
@@ -541,28 +554,43 @@ function OfferRow({ index, result, common, offer, onOfferChange, isManual }: {
                       <span className="text-right">Profit</span>
                       <span className="text-right">ROI%</span>
                     </div>
-                    {roasRows.map(({ roas, cheltuiala, profit, roi }) => {
-                      const isTarget = fmt(roas, 1) === fmt(n(roasTarget), 1);
-                      const isBreak  = result.breakEvenRoas !== null && Math.abs(roas - result.breakEvenRoas) < 0.26;
-                      return (
-                        <div key={roas}
-                          className={`grid grid-cols-4 px-3 py-1.5 text-xs border-t border-white/5 ${roasBg(roas, result.breakEvenRoas)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
-                        >
-                          <span className={`font-semibold ${roasColor(roas, result.breakEvenRoas)}`}>
-                            {fmt(roas, 1)}x
-                            {isTarget && <span className="ml-1 text-[9px] text-indigo-400">▶</span>}
-                            {isBreak && !isTarget && <span className="ml-1 text-[9px] text-amber-400">●</span>}
-                          </span>
-                          <span className="text-right text-white/35">{fmt(cheltuiala)}</span>
-                          <span className={`text-right font-medium ${roasColor(roas, result.breakEvenRoas)}`}>
-                            {profit >= 0 ? "+" : ""}{fmt(profit)}
-                          </span>
-                          <span className={`text-right font-medium ${roasColor(roas, result.breakEvenRoas)}`}>
-                            {roi >= 0 ? "+" : ""}{fmt(roi, 1)}%
+                    {(() => {
+                      const pc = (p: number) => p > 5 ? "text-emerald-400" : p >= 0 ? "text-amber-400" : "text-red-400";
+                      const pb = (p: number) => p > 5 ? "bg-emerald-500/5"  : p >= 0 ? "bg-amber-500/5"  : "bg-red-500/5";
+                      const sep = result.breakEvenRoas !== null ? (
+                        <div key="be-sep" className="px-3 py-0.5 border-y border-amber-500/40 bg-amber-500/5 text-center">
+                          <span className="text-[10px] font-semibold text-amber-400 tracking-wide">
+                            Break-even · {fmt(result.breakEvenRoas)}x
                           </span>
                         </div>
-                      );
-                    })}
+                      ) : null;
+                      const out: React.ReactNode[] = [];
+                      let sepInserted = false;
+                      roasRows.forEach((row, idx) => {
+                        const { roas, cheltuiala, profit, roi } = row;
+                        const isTarget  = fmt(roas, 1) === fmt(n(roasTarget), 1);
+                        const isExactBE = Math.abs(profit) < 0.01;
+                        // Insert separator between last loss row and first profitable row
+                        if (!sepInserted && sep && !isExactBE && profit >= 0) {
+                          const prev = roasRows[idx - 1];
+                          if (!prev || prev.profit < 0) { sepInserted = true; out.push(sep); }
+                        }
+                        out.push(
+                          <div key={roas}
+                            className={`grid grid-cols-4 px-3 py-1.5 text-xs border-t border-white/5 ${isExactBE ? "bg-amber-500/5" : pb(profit)} ${isTarget ? "ring-1 ring-inset ring-indigo-500/30" : ""}`}
+                          >
+                            <span className={`font-semibold ${isExactBE ? "text-amber-400" : pc(profit)}`}>
+                              {fmt(roas, 1)}x
+                              {isTarget && <span className="ml-1 text-[9px] text-indigo-400">▶</span>}
+                            </span>
+                            <span className="text-right text-white/35">{fmt(cheltuiala)}</span>
+                            <span className={`text-right font-medium ${isExactBE ? "text-amber-400" : pc(profit)}`}>{profit >= 0 ? "+" : ""}{fmt(profit)}</span>
+                            <span className={`text-right font-medium ${isExactBE ? "text-amber-400" : pc(profit)}`}>{roi >= 0 ? "+" : ""}{fmt(roi, 1)}%</span>
+                          </div>
+                        );
+                      });
+                      return out;
+                    })()}
                   </div>
                 )}
               </div>

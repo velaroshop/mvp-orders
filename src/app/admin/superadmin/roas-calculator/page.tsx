@@ -206,16 +206,19 @@ function Divider({ label }: { label: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MixOferte({ results, common }: { results: OfferResult[]; common: CommonInputs }) {
+  const validResults = results.filter(r => r.valid);
   const [mix, setMix] = useState(["60", "30", "10"]);
 
-  const allValid = results.every(r => r.valid);
-  if (!allValid) return null;
+  if (validResults.length < 2) return null;
 
-  const total = mix.reduce((s, v) => s + n(v), 0);
+  // Only consider valid offers; map mix percentages to valid indices
+  const validMix = results.map((r, i) => r.valid ? mix[i] : "0");
+
+  const total = results.reduce((s, r, i) => s + (r.valid ? n(mix[i]) : 0), 0);
   const isValid = Math.abs(total - 100) < 0.01;
 
-  const aovMediu       = results.reduce((s, r, i) => s + (n(mix[i]) / 100) * r.revenueClient, 0);
-  const profitBrutMediu = results.reduce((s, r, i) => s + (n(mix[i]) / 100) * r.profitBrut, 0);
+  const aovMediu        = results.reduce((s, r, i) => s + (n(validMix[i]) / 100) * r.revenueClient, 0);
+  const profitBrutMediu = results.reduce((s, r, i) => s + (n(validMix[i]) / 100) * r.profitBrut, 0);
   const roasBeReal     = isValid && aovMediu > 0 ? aovMediu / profitBrutMediu : 0;
   const cpaBeMax       = isValid ? profitBrutMediu : 0;
 
@@ -242,18 +245,20 @@ function MixOferte({ results, common }: { results: OfferResult[]; common: Common
       <div className="px-5 py-4 space-y-4">
         <div className="grid grid-cols-3 gap-3">
           {results.map((r, i) => (
-            <div key={i} className="space-y-1">
-              <label className="block text-[10px] font-semibold text-white/35 uppercase tracking-wide">
-                Oferta {i + 1}
-              </label>
-              <div className="relative">
-                <input type="number" min={0} max={100} value={mix[i]} placeholder="0"
-                  onChange={(e) => { const next = [...mix]; next[i] = e.target.value; setMix(next); }}
-                  className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/28 pr-7"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
+            r.valid ? (
+              <div key={i} className="space-y-1">
+                <label className="block text-[10px] font-semibold text-white/35 uppercase tracking-wide">
+                  Oferta {i + 1}
+                </label>
+                <div className="relative">
+                  <input type="number" min={0} max={100} value={mix[i]} placeholder="0"
+                    onChange={(e) => { const next = [...mix]; next[i] = e.target.value; setMix(next); }}
+                    className="w-full bg-white/5 border border-white/12 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/28 pr-7"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-white/30 pointer-events-none">%</span>
+                </div>
               </div>
-            </div>
+            ) : null
           ))}
         </div>
 

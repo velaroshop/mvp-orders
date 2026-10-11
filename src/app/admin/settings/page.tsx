@@ -30,6 +30,11 @@ export default function SettingsPage() {
   const [duplicateCheckDays, setDuplicateCheckDays] = useState(14);
   const [isSavingDuplicateDays, setIsSavingDuplicateDays] = useState(false);
   const [duplicateDaysMessage, setDuplicateDaysMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // Shipping costs
+  const [courierCost, setCourierCost] = useState("");
+  const [packagingCost, setPackagingCost] = useState("");
+  const [isSavingShipping, setIsSavingShipping] = useState(false);
+  const [shippingMessage, setShippingMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -45,6 +50,8 @@ export default function SettingsPage() {
         setMetaAdsToken("");
         setMetaAdsAccountId(data.settings.meta_ads_account_id || "");
         setMetaAdsTokenExpiresAt(data.settings.meta_ads_token_expires_at || null);
+        setCourierCost(data.settings.courier_cost != null ? String(data.settings.courier_cost) : "");
+        setPackagingCost(data.settings.packaging_cost != null ? String(data.settings.packaging_cost) : "");
       } catch (error) {
         console.error("Error loading settings:", error);
         setCredentialsMessage({ type: "error", text: "Failed to load settings" });
@@ -481,6 +488,91 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>}
+
+      {/* Shipping Costs */}
+      <div className="card p-6 space-y-4">
+        <div>
+          <h2 className="section-title">Costuri livrare</h2>
+          <p className="text-xs text-zinc-400 mt-1">
+            Folosite pentru a pre-completa câmpul „Cost livrare" din Calculatorul ROAS.
+            {" "}Dacă ești plătitor TVA, introdu sumele <strong className="text-zinc-300">fără TVA</strong>.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Cost curier / comandă</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={courierCost}
+                onChange={(e) => setCourierCost(e.target.value)}
+                className="input"
+                placeholder="ex. 15.00"
+              />
+              <span className="text-sm text-zinc-400 shrink-0">RON</span>
+            </div>
+          </div>
+          <div>
+            <label className="label">Cost împachetare / comandă</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={packagingCost}
+                onChange={(e) => setPackagingCost(e.target.value)}
+                className="input"
+                placeholder="ex. 3.00"
+              />
+              <span className="text-sm text-zinc-400 shrink-0">RON</span>
+            </div>
+          </div>
+        </div>
+
+        {(courierCost || packagingCost) && (
+          <p className="text-xs text-zinc-400">
+            Total cost livrare:{" "}
+            <span className="text-white font-medium">
+              {((parseFloat(courierCost) || 0) + (parseFloat(packagingCost) || 0)).toFixed(2)} RON
+            </span>
+          </p>
+        )}
+
+        <MessageBox msg={shippingMessage} />
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={isSavingShipping}
+            onClick={async () => {
+              setIsSavingShipping(true);
+              setShippingMessage(null);
+              try {
+                const res = await fetch("/api/settings/shipping-costs", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ courierCost, packagingCost }),
+                });
+                if (!res.ok) {
+                  const data = await res.json();
+                  throw new Error(data.error || "Eroare la salvare");
+                }
+                setShippingMessage({ type: "success", text: "Costuri de livrare salvate!" });
+              } catch (error) {
+                setShippingMessage({ type: "error", text: error instanceof Error ? error.message : "Eroare la salvare" });
+              } finally {
+                setIsSavingShipping(false);
+              }
+            }}
+            className="btn btn-primary"
+          >
+            {isSavingShipping ? "Se salvează..." : "Salvează"}
+          </button>
+        </div>
+      </div>
 
       {/* Security Note */}
       <div className="card p-4 border-blue-700/40 text-blue-300 text-xs">

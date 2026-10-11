@@ -54,6 +54,8 @@ export async function GET() {
         meta_ads_access_token: hasMetaAdsToken ? "configured" : "",
         meta_ads_account_id: data?.meta_ads_account_id || "",
         meta_ads_token_expires_at: data?.meta_ads_token_expires_at || null,
+        courier_cost:   data?.courier_cost   ?? null,
+        packaging_cost: data?.packaging_cost ?? null,
       },
     });
   } catch (error) {

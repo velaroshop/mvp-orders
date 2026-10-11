@@ -658,6 +658,21 @@ export default function RoasCalculatorPage() {
   }, [status, session, router]);
 
   useEffect(() => {
+    // Pre-populate shipping cost from org settings on first load
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(d => {
+        const courier   = parseFloat(d.settings?.courier_cost)   || 0;
+        const packaging = parseFloat(d.settings?.packaging_cost) || 0;
+        const total = courier + packaging;
+        if (total > 0) {
+          setCommon(prev => ({ ...prev, costCurier: String(total) }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (mode !== "catalog") return;
     setLoadingProducts(true);
     fetch("/api/products/active")

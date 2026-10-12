@@ -91,7 +91,7 @@ const menuGroups = [
     label: "Tools",
     items: [
       { name: "Convertor WebP", href: "/admin/superadmin/image-compress" },
-      { name: "Calculator ROAS", href: "/admin/superadmin/roas-calculator" },
+      { name: "Calculator Profit", href: "/admin/superadmin/roas-calculator" },
     ],
   },
   {
@@ -200,6 +200,7 @@ export default function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/admin/refunds" && pathname.startsWith("/admin/refunds/settings")) return false;
+    if (href === "/admin/superadmin") return pathname === "/admin/superadmin";
     return pathname.startsWith(href);
   };
 

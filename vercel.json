@@ -1,5 +1,4 @@
 {
-  "nodeVersion": "22.x",
   "crons": [
     {
       "path": "/api/cron/confirm-scheduled",

@@ -1384,7 +1384,7 @@ export default function LandingPagesPage() {
             {/* Period filter */}
             <div className="px-5 py-3 border-b border-zinc-700/50 flex items-center gap-2">
               <span className="text-xs text-zinc-400 mr-1">Perioadă:</span>
-              {[1, 3, 7, 30, 60].map((p) => (
+              {[0, 1, 3, 7, 30, 60].map((p) => (
                 <button
                   key={p}
                   onClick={() => {
@@ -1397,7 +1397,7 @@ export default function LandingPagesPage() {
                       : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
                   }`}
                 >
-                  {p === 1 ? "Ieri" : `${p} zile`}
+                  {p === 0 ? "Azi" : p === 1 ? "Ieri" : `${p} zile`}
                 </button>
               ))}
             </div>

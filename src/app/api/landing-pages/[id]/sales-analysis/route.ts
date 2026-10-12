@@ -28,9 +28,11 @@ export async function GET(
     const { id: landingPageId } = await params;
     const organizationId = session.user.activeOrganizationId;
 
-    // Parse period in days (default 7)
+    // Parse period in days (default 7). period=0 means "today" (from midnight local time).
     const periodDays = parseInt(request.nextUrl.searchParams.get("period") || "7");
-    const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+    const since = periodDays === 0
+      ? (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); })()
+      : new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
     // Fetch the landing page to get its slug and verify ownership
     const { data: landingPage, error: lpError } = await supabase

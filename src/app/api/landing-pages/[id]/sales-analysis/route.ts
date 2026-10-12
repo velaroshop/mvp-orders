@@ -10,9 +10,9 @@ const supabase = createClient(
 );
 
 /**
- * GET /api/landing-pages/[id]/sales-analysis?period=7
+ * GET /api/landing-pages/[id]/sales-analysis?period=7&includeTesting=true
  * Returns offer distribution stats for a landing page.
- * Includes all orders except "testing". Shows confirmed count separately.
+ * By default excludes "testing" orders. Pass includeTesting=true to include them.
  */
 export async function GET(
   request: NextRequest,
@@ -34,6 +34,8 @@ export async function GET(
       ? (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); })()
       : new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
+    const includeTesting = request.nextUrl.searchParams.get("includeTesting") === "true";
+
     // Fetch the landing page to get its slug and verify ownership
     const { data: landingPage, error: lpError } = await supabase
       .from("landing_pages")
@@ -46,14 +48,19 @@ export async function GET(
       return NextResponse.json({ error: "Landing page not found" }, { status: 404 });
     }
 
-    // Fetch all orders for this landing page in the period, excluding testing
-    const { data: orders, error: ordersError } = await supabase
+    // Fetch all orders for this landing page in the period
+    let ordersQuery = supabase
       .from("orders")
       .select("offer_code, status, total")
       .eq("organization_id", organizationId)
       .eq("landing_key", landingPage.slug)
-      .neq("status", "testing")
       .gte("created_at", since);
+
+    if (!includeTesting) {
+      ordersQuery = ordersQuery.neq("status", "testing");
+    }
+
+    const { data: orders, error: ordersError } = await ordersQuery;
 
     if (ordersError) {
       return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
@@ -113,6 +120,7 @@ export async function GET(
     const totalConfirmed = allOrders.filter((o) =>
       confirmedStatuses.includes(o.status)
     ).length;
+    const totalTesting = allOrders.filter((o) => o.status === "testing").length;
     const totalRevenue = allOrders.reduce(
       (sum, o) => sum + parseFloat((o.total || 0).toString()),
       0
@@ -122,8 +130,10 @@ export async function GET(
     return NextResponse.json({
       period: periodDays,
       since,
+      includeTesting,
       totalOrders,
       totalConfirmed,
+      totalTesting,
       totalRevenue,
       globalAov,
       offerStats,

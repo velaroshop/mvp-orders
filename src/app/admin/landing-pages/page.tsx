@@ -95,6 +95,7 @@ export default function LandingPagesPage() {
   const [salesData, setSalesData] = useState<any | null>(null);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesPeriod, setSalesPeriod] = useState(7);
+  const [salesIncludeTesting, setSalesIncludeTesting] = useState(false);
 
   useEffect(() => {
     fetchLandingPages();
@@ -349,12 +350,12 @@ export default function LandingPagesPage() {
     }
   }
 
-  async function openSalesModal(pageId: string, pageName: string, period: number) {
+  async function openSalesModal(pageId: string, pageName: string, period: number, includeTesting = false) {
     setSalesModal({ pageId, pageName });
     setSalesLoading(true);
     setSalesData(null);
     try {
-      const res = await fetch(`/api/landing-pages/${pageId}/sales-analysis?period=${period}`);
+      const res = await fetch(`/api/landing-pages/${pageId}/sales-analysis?period=${period}&includeTesting=${includeTesting}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setSalesData(data);
@@ -610,7 +611,8 @@ export default function LandingPagesPage() {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSalesPeriod(7);
-                                    openSalesModal(page.id, page.name, 7);
+                                    setSalesIncludeTesting(false);
+                                    openSalesModal(page.id, page.name, 7, false);
                                   }}
                                   className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-xs font-medium hover:bg-emerald-500/20 transition-colors"
                                 >
@@ -1381,25 +1383,42 @@ export default function LandingPagesPage() {
               </button>
             </div>
 
-            {/* Period filter */}
-            <div className="px-5 py-3 border-b border-zinc-700/50 flex items-center gap-2">
-              <span className="text-xs text-zinc-400 mr-1">Perioadă:</span>
-              {[0, 1, 3, 7, 30, 60].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    setSalesPeriod(p);
-                    openSalesModal(salesModal.pageId, salesModal.pageName, p);
-                  }}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                    salesPeriod === p
-                      ? "bg-indigo-600 text-white"
-                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
-                  }`}
-                >
-                  {p === 0 ? "Azi" : p === 1 ? "Ieri" : `${p} zile`}
-                </button>
-              ))}
+            {/* Period filter + testing toggle */}
+            <div className="px-5 py-3 border-b border-zinc-700/50 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400 mr-1">Perioadă:</span>
+                {[0, 1, 3, 7, 30, 60].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => {
+                      setSalesPeriod(p);
+                      openSalesModal(salesModal.pageId, salesModal.pageName, p, salesIncludeTesting);
+                    }}
+                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                      salesPeriod === p
+                        ? "bg-indigo-600 text-white"
+                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+                    }`}
+                  >
+                    {p === 0 ? "Azi" : p === 1 ? "Ieri" : `${p} zile`}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const next = !salesIncludeTesting;
+                  setSalesIncludeTesting(next);
+                  openSalesModal(salesModal.pageId, salesModal.pageName, salesPeriod, next);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
+                  salesIncludeTesting
+                    ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
+                    : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-300"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${salesIncludeTesting ? "bg-amber-400" : "bg-zinc-600"}`} />
+                Testing
+              </button>
             </div>
 
             {/* Content */}
@@ -1423,7 +1442,12 @@ export default function LandingPagesPage() {
                     <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/40">
                       <div className="text-xs text-zinc-300 mb-1">Total comenzi</div>
                       <div className="text-xl font-semibold text-white">{salesData.totalOrders}</div>
-                      <div className="text-xs text-zinc-300 mt-0.5">din care confirmate: <span className="text-emerald-400">{salesData.totalConfirmed}</span></div>
+                      <div className="text-xs text-zinc-300 mt-0.5">
+                        din care confirmate: <span className="text-emerald-400">{salesData.totalConfirmed}</span>
+                        {salesData.totalTesting > 0 && (
+                          <span className="ml-2 text-amber-400">· testing: {salesData.totalTesting}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/40">
                       <div className="text-xs text-zinc-300 mb-1">Revenue total</div>
@@ -1487,7 +1511,9 @@ export default function LandingPagesPage() {
                   </div>
 
                   <p className="text-[11px] text-zinc-400">
-                    Include toate comenzile (queue, pending, confirmed, cancelled etc.), excl. testing.
+                    {salesData.includeTesting
+                      ? "Include toate comenzile incl. testing."
+                      : "Include toate comenzile (queue, pending, confirmed, cancelled etc.), excl. testing."}
                   </p>
                 </div>
               )}

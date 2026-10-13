@@ -787,6 +787,7 @@ export default function RoasPage() {
                       <th className="text-right">Medie coș</th>
                       <th className="text-center">ROAS</th>
                       <th className="text-right">Comenzi</th>
+                      <th className="text-right">CPA</th>
                       <th className="text-right">Produse</th>
                     </tr>
                   </thead>
@@ -820,6 +821,9 @@ export default function RoasPage() {
                                 </span>)
                               </span>
                             )}
+                          </td>
+                          <td className="text-right">
+                            {row.orders > 0 ? `${Math.round(row.adSpend / row.orders)} lei` : <span className="text-zinc-600">-</span>}
                           </td>
                           <td className="text-right">{row.productsSold}</td>
                         </tr>
@@ -855,6 +859,9 @@ export default function RoasPage() {
                             </span>)
                           </span>
                         )}
+                      </td>
+                      <td className="text-right font-bold text-white">
+                        {roasData.totals.orders > 0 ? `${Math.round(roasData.totals.adSpend / roasData.totals.orders)} lei` : "-"}
                       </td>
                       <td className="text-right font-bold text-white">{roasData.totals.productsSold}</td>
                     </tr>

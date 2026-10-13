@@ -662,7 +662,15 @@ export default function RoasPage() {
                   </span>
                 </div>
                 <div>
-                  <span className="label">CPA mediu</span>
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className="label mb-0!">CPA mediu</span>
+                    <span
+                      className="text-zinc-500 cursor-default text-[10px] leading-none"
+                      title="Cost Per Achiziție — calculat pe toate comenzile intrate (exclusiv anulate și testing). Comenzile pending sunt incluse, deci CPA-ul real după confirmare poate fi ușor mai mare."
+                    >
+                      ⓘ
+                    </span>
+                  </div>
                   {isLoadingCalendarRoas ? (
                     <span className="text-zinc-500 font-semibold">Se încarcă...</span>
                   ) : (() => {

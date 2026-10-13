@@ -136,6 +136,12 @@ export async function GET(
     return NextResponse.json({
       landingPage: {
         ...landingPage,
+        // Ensure numeric fields are numbers (Supabase returns DECIMAL as string)
+        srp: parseFloat(landingPage.srp),
+        price_1: parseFloat(landingPage.price_1),
+        price_2: parseFloat(landingPage.price_2),
+        price_3: parseFloat(landingPage.price_3),
+        shipping_price: parseFloat(landingPage.shipping_price),
         products: productData,
         stores: storeData,
         meta_test_mode: metaTestMode,

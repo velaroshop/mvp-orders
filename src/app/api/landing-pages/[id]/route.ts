@@ -209,6 +209,7 @@ export async function PUT(
     if (body.serverSideTracking !== undefined) updateData.server_side_tracking = body.serverSideTracking;
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
     if (body.variationsLabel !== undefined) updateData.variations_label = body.variationsLabel || null;
+    if (body.discountType !== undefined) updateData.discount_type = body.discountType === "amount" ? "amount" : "percent";
 
     const { data: landingPage, error } = await supabase
       .from("landing_pages")

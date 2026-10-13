@@ -280,6 +280,7 @@ export async function POST(request: NextRequest) {
     if (serverSideTracking !== undefined) insertData.server_side_tracking = serverSideTracking;
     // Variations label (optional)
     if (body.variationsLabel !== undefined) insertData.variations_label = body.variationsLabel || null;
+    if (body.discountType !== undefined) insertData.discount_type = body.discountType === "amount" ? "amount" : "percent";
 
     const { data: landingPage, error } = await supabase
       .from("landing_pages")

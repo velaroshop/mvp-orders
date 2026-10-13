@@ -54,6 +54,8 @@ export default function NewLandingPagePage() {
     serverSideTracking: false,
     // Variations
     variationsLabel: "",
+    // Discount display
+    discountType: "percent" as "percent" | "amount",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -749,6 +751,40 @@ export default function NewLandingPagePage() {
                     </span>
                   </span>
                 </label>
+              </div>
+
+              {/* Discount Display Type */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-2">
+                  Afișare reducere în widget
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, discountType: "percent" })}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                      formData.discountType === "percent"
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                    }`}
+                  >
+                    REDUCERE 54%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, discountType: "amount" })}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                      formData.discountType === "amount"
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                    }`}
+                  >
+                    REDUCERE 80 LEI
+                  </button>
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Valoarea în LEI se calculează dinamic: SRP − prețul ofertei selectate.
+                </p>
               </div>
             </div>
           </div>

@@ -63,6 +63,7 @@ interface LandingPage {
   meta_test_event_code?: string;
   default_offer?: string;
   variations_label?: string | null;
+  discount_type?: "percent" | "amount";
   products?: {
     id: string;
     name: string;
@@ -1180,6 +1181,13 @@ function WidgetFormContent() {
   const totalPrice = getTotalPrice();
   const discount = calculateDiscount();
   const discountV2 = landingPage ? Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100) : 0;
+  const isAmountDiscount = landingPage?.discount_type === "amount";
+  const discountBadgeV2 = isAmountDiscount
+    ? `REDUCERE ${Math.round(landingPage.srp - landingPage.price_1)} LEI`
+    : `REDUCERE ${discountV2}%`;
+  const discountBadge = isAmountDiscount
+    ? `REDUCERE ${Math.round(landingPage.srp - currentPrice)} LEI`
+    : `REDUCERE ${discount}%`;
 
   // Get colors from store with fallback to defaults
   const storeColors = landingPage.stores;
@@ -1212,7 +1220,7 @@ function WidgetFormContent() {
                   boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
                 }}
               >
-                REDUCERE {discountV2}%
+                {discountBadgeV2}
               </span>
             </div>
 
@@ -1259,7 +1267,7 @@ function WidgetFormContent() {
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
               }}
             >
-              REDUCERE {discount}%
+              {discountBadge}
             </span>
           </div>
 

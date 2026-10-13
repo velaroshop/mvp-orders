@@ -47,6 +47,7 @@ interface LandingPage {
   server_side_tracking: boolean;
   default_offer?: string;
   variations_label?: string;
+  discount_type?: "percent" | "amount";
 }
 
 export default function EditLandingPagePage() {
@@ -254,6 +255,7 @@ export default function EditLandingPagePage() {
           clientSideTracking: formData.client_side_tracking,
           serverSideTracking: formData.server_side_tracking,
           variationsLabel: formData.variations_label || "",
+          discountType: formData.discount_type || "percent",
         }),
       });
 
@@ -994,6 +996,40 @@ export default function EditLandingPagePage() {
                     )}
                   </span>
                 </label>
+              </div>
+
+              {/* Discount Display Type */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-2">
+                  Afișare reducere în widget
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, discount_type: "percent" })}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                      (formData.discount_type || "percent") === "percent"
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                    }`}
+                  >
+                    REDUCERE 54%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, discount_type: "amount" })}
+                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                      formData.discount_type === "amount"
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                    }`}
+                  >
+                    REDUCERE 80 LEI
+                  </button>
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Valoarea în LEI se calculează dinamic: SRP − prețul ofertei selectate.
+                </p>
               </div>
             </div>
           </div>

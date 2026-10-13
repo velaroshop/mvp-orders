@@ -759,28 +759,38 @@ export default function NewLandingPagePage() {
                   Afișare reducere în widget
                 </label>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, discountType: "percent" })}
-                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
-                      formData.discountType === "percent"
-                        ? "bg-emerald-600 border-emerald-600 text-white"
-                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
-                    }`}
-                  >
-                    REDUCERE 54%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, discountType: "amount" })}
-                    className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
-                      formData.discountType === "amount"
-                        ? "bg-emerald-600 border-emerald-600 text-white"
-                        : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
-                    }`}
-                  >
-                    REDUCERE 80 LEI
-                  </button>
+                  {(() => {
+                    const srp = Number(formData.srp) || 0;
+                    const price1 = Number(formData.price1) || 0;
+                    const pct = srp > 0 && price1 > 0 ? Math.round(((srp - price1) / srp) * 100) : null;
+                    const amt = srp > 0 && price1 > 0 ? Math.round(srp - price1) : null;
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, discountType: "percent" })}
+                          className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                            formData.discountType === "percent"
+                              ? "bg-emerald-600 border-emerald-600 text-white"
+                              : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                          }`}
+                        >
+                          {pct !== null ? `REDUCERE ${pct}%` : "REDUCERE %"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, discountType: "amount" })}
+                          className={`px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
+                            formData.discountType === "amount"
+                              ? "bg-emerald-600 border-emerald-600 text-white"
+                              : "bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400"
+                          }`}
+                        >
+                          {amt !== null ? `REDUCERE ${amt} LEI` : "REDUCERE LEI"}
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">
                   Valoarea în LEI se calculează dinamic: SRP − prețul ofertei selectate.

@@ -578,6 +578,9 @@ export default function RoasPage() {
                               <span>Chelt: <span className="text-zinc-300">{Math.round(roasRow.adSpend)}</span></span>
                               <span>Ven: <span className="text-zinc-300">{Math.round(roasRow.revenue).toLocaleString("ro-RO")}</span></span>
                               <span>Cmd: <span className="text-zinc-300">{roasRow.orders}</span></span>
+                              {roasRow.orders > 0 && (
+                                <span>CPA: <span className="text-zinc-300">{Math.round(roasRow.adSpend / roasRow.orders)} lei</span></span>
+                              )}
                             </div>
                             <div className="flex flex-col items-center">
                               <span className={`font-bold text-base ${getRoasColor(roasRow.roas)}`}>
@@ -639,7 +642,7 @@ export default function RoasPage() {
               </div>
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-900/60 rounded-lg border border-zinc-700/60">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-zinc-900/60 rounded-lg border border-zinc-700/60">
                 <div>
                   <span className="label">Zile cu date</span>
                   <span className="text-white font-semibold">{uploadedDates.length} / {daysInMonth}</span>
@@ -657,6 +660,18 @@ export default function RoasPage() {
                       ? <span className="text-zinc-500">Se încarcă...</span>
                       : formatCurrency(calendarRoasData.reduce((sum, d) => sum + d.revenue, 0))}
                   </span>
+                </div>
+                <div>
+                  <span className="label">CPA mediu</span>
+                  {isLoadingCalendarRoas ? (
+                    <span className="text-zinc-500 font-semibold">Se încarcă...</span>
+                  ) : (() => {
+                    const totalSpend = calendarRoasData.reduce((sum, d) => sum + d.adSpend, 0);
+                    const totalOrders = calendarRoasData.reduce((sum, d) => sum + d.orders, 0);
+                    if (totalOrders === 0) return <span className="text-zinc-500 font-semibold">-</span>;
+                    const cpa = totalSpend / totalOrders;
+                    return <span className="text-white font-bold text-lg">{Math.round(cpa)} lei</span>;
+                  })()}
                 </div>
                 <div>
                   <span className="label">ROAS lunar</span>

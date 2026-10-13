@@ -12,7 +12,9 @@ import {
   Package,
   PenLine,
   Layers,
+  BarChart2,
 } from "lucide-react";
+import SalesAnalysisModal from "@/app/admin/components/SalesAnalysisModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -205,7 +207,13 @@ function Divider({ label }: { label: string }) {
 // Mix Oferte
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MixOferte({ results, common }: { results: OfferResult[]; common: CommonInputs }) {
+function MixOferte({ results, common, landingPageId, landingPageName, onOpenSalesAnalysis }: {
+  results: OfferResult[];
+  common: CommonInputs;
+  landingPageId?: string;
+  landingPageName?: string;
+  onOpenSalesAnalysis?: () => void;
+}) {
   const validResults = results.filter(r => r.valid);
   const [mix, setMix] = useState(["60", "30", "10"]);
 
@@ -238,9 +246,22 @@ function MixOferte({ results, common }: { results: OfferResult[]; common: Common
 
   return (
     <div className="rounded-xl border border-white/10 overflow-hidden">
-      <div className="flex items-center gap-3 px-5 py-3 bg-white/2 border-b border-white/8">
-        <Layers className="w-4 h-4 text-white/40" />
-        <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Mix Oferte</span>
+      <div className="flex items-center justify-between px-5 py-3 bg-white/2 border-b border-white/8">
+        <div className="flex items-center gap-3">
+          <Layers className="w-4 h-4 text-white/40" />
+          <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Mix Oferte</span>
+        </div>
+        {landingPageId && onOpenSalesAnalysis && (
+          <button
+            type="button"
+            onClick={onOpenSalesAnalysis}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-colors"
+            title={`Analiză vânzări: ${landingPageName}`}
+          >
+            <BarChart2 className="w-3 h-3" />
+            Analiză vânzări
+          </button>
+        )}
       </div>
       <div className="px-5 py-4 space-y-4">
         <div className="grid grid-cols-3 gap-3">
@@ -651,6 +672,7 @@ export default function RoasCalculatorPage() {
   const [loadingLPs, setLoadingLPs]       = useState(false);
   const [selectedLPId, setSelectedLPId]   = useState("");
   const [catalogOffers, setCatalogOffers] = useState<Offer[]>([]);
+  const [showSalesModal, setShowSalesModal] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -872,7 +894,22 @@ export default function RoasCalculatorPage() {
                 isManual={mode === "manual"}
               />
             ))}
-            {showOffers && <MixOferte results={results} common={common} />}
+            {showOffers && (
+              <MixOferte
+                results={results}
+                common={common}
+                landingPageId={mode === "catalog" && selectedLPId ? selectedLPId : undefined}
+                landingPageName={mode === "catalog" && selectedLPId ? (landingPages.find(l => l.id === selectedLPId)?.name ?? "") : undefined}
+                onOpenSalesAnalysis={() => setShowSalesModal(true)}
+              />
+            )}
+            {showSalesModal && mode === "catalog" && selectedLPId && (
+              <SalesAnalysisModal
+                pageId={selectedLPId}
+                pageName={landingPages.find(l => l.id === selectedLPId)?.name ?? ""}
+                onClose={() => setShowSalesModal(false)}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -114,7 +114,7 @@ export default function CompactRevenueChart({
         <h3 className="text-sm font-semibold text-white">
           {hideRevenue ? "Comenzi azi" : "Venituri azi"}
         </h3>
-        <p className="text-xs text-zinc-500 mt-0.5">
+        <p className="text-xs text-zinc-400 mt-0.5">
           {granularity === "hourly" ? "Azi vs. ieri la aceeași oră" : "Azi vs. ieri"}
         </p>
       </div>
@@ -123,7 +123,7 @@ export default function CompactRevenueChart({
       <div className="flex items-start justify-between mb-4 gap-3">
         {/* Today */}
         <div>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Azi</p>
+          <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Azi</p>
           {hideRevenue ? (
             <p className="text-xl font-bold text-white leading-none">
               {todayOrders}
@@ -136,7 +136,7 @@ export default function CompactRevenueChart({
             </p>
           )}
           {!hideRevenue && (
-            <p className="text-xs text-zinc-500 mt-0.5">{todayOrders} comenzi</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{todayOrders} comenzi</p>
           )}
         </div>
 
@@ -154,41 +154,41 @@ export default function CompactRevenueChart({
         {/* Yesterday at same time */}
         {hasYesterday && granularity === "hourly" && (
           <div className="text-right">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">
+            <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">
               Ieri {currentHourKey}
             </p>
             {hideRevenue ? (
               <p className="text-sm font-semibold text-zinc-400 leading-none">
                 {yesterdaySameTimeOrders}
-                <span className="text-xs font-normal text-zinc-500 ml-1">comenzi</span>
+                <span className="text-xs font-normal text-zinc-400 ml-1">comenzi</span>
               </p>
             ) : (
               <p className="text-sm font-semibold text-zinc-400 leading-none">
                 {yesterdaySameTime.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
+                <span className="text-xs font-normal text-zinc-400 ml-1">RON</span>
               </p>
             )}
             {!hideRevenue && (
-              <p className="text-xs text-zinc-500 mt-0.5">{yesterdaySameTimeOrders} comenzi</p>
+              <p className="text-xs text-zinc-400 mt-0.5">{yesterdaySameTimeOrders} comenzi</p>
             )}
           </div>
         )}
         {hasYesterday && granularity !== "hourly" && (
           <div className="text-right">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Ieri</p>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Ieri</p>
             {hideRevenue ? (
               <p className="text-sm font-semibold text-zinc-400 leading-none">
                 {yesterdayOrders}
-                <span className="text-xs font-normal text-zinc-500 ml-1">comenzi</span>
+                <span className="text-xs font-normal text-zinc-400 ml-1">comenzi</span>
               </p>
             ) : (
               <p className="text-sm font-semibold text-zinc-400 leading-none">
                 {yesterdayTotal.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
+                <span className="text-xs font-normal text-zinc-400 ml-1">RON</span>
               </p>
             )}
             {!hideRevenue && (
-              <p className="text-xs text-zinc-500 mt-0.5">{yesterdayOrders} comenzi</p>
+              <p className="text-xs text-zinc-400 mt-0.5">{yesterdayOrders} comenzi</p>
             )}
           </div>
         )}
@@ -209,14 +209,14 @@ export default function CompactRevenueChart({
                   "repeating-linear-gradient(90deg, #71717a 0px, #71717a 4px, transparent 4px, transparent 8px)",
               }}
             />
-            <span className="text-[10px] text-zinc-500">Ieri</span>
+            <span className="text-[10px] text-zinc-400">Ieri</span>
           </div>
         )}
       </div>
 
       {/* Ieri total + de recuperat / depășit */}
       {hasYesterday && granularity === "hourly" && !hideRevenue && yesterdayTotal > 0 && (
-        <div className="mb-2 text-[11px] text-zinc-500">
+        <div className="mb-2 text-[11px] text-zinc-400">
           {gap > 0 ? (
             <>
               Ieri total:{" "}

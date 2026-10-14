@@ -56,7 +56,11 @@ export async function GET(
       .eq("landing_key", landingPage.slug)
       .gte("created_at", since);
 
-    if (!includeTesting) {
+    if (includeTesting) {
+      // Testing mode: show ONLY testing orders
+      ordersQuery = ordersQuery.eq("status", "testing");
+    } else {
+      // Normal mode: exclude testing orders
       ordersQuery = ordersQuery.neq("status", "testing");
     }
 

@@ -171,7 +171,7 @@ export default function SalesAnalysisModal({ pageId, pageName, onClose }: SalesA
 
               <p className="text-[11px] text-zinc-400">
                 {salesData.includeTesting
-                  ? "Include toate comenzile incl. testing."
+                  ? "Afișează exclusiv comenzile cu status Testing."
                   : "Include toate comenzile (queue, pending, confirmed, cancelled etc.), excl. testing."}
               </p>
             </div>

@@ -70,9 +70,31 @@ export default function CompactRevenueChart({
     ? yesterdayData.reduce((s, d) => s + d.orderCount, 0)
     : 0;
   const hasYesterday = yesterdayData && yesterdayData.length > 0;
+
+  // Yesterday at same time — sum only hours <= current hour (period format "HH:00")
+  const currentHourKey = `${String(new Date().getHours()).padStart(2, "0")}:00`;
+  const yesterdaySameTime = yesterdayData
+    ? yesterdayData
+        .filter((d) => d.period <= currentHourKey)
+        .reduce((s, d) => s + d.totalRevenue, 0)
+    : 0;
+  const yesterdaySameTimeOrders = yesterdayData
+    ? yesterdayData
+        .filter((d) => d.period <= currentHourKey)
+        .reduce((s, d) => s + d.orderCount, 0)
+    : 0;
+
+  // Badge: compare today vs yesterday at same time
   const diffPercent =
-    yesterdayTotal > 0 ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 : null;
+    granularity === "hourly" && yesterdaySameTime > 0
+      ? ((todayTotal - yesterdaySameTime) / yesterdaySameTime) * 100
+      : yesterdayTotal > 0
+      ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100
+      : null;
   const isUp = diffPercent !== null && diffPercent >= 0;
+
+  // De recuperat / depășit vs ieri total
+  const gap = yesterdayTotal - todayTotal; // positive = de recuperat, negative = depășit
 
   const mainKey = hideRevenue ? "orderCount" : "totalRevenue";
   const yestKey = hideRevenue ? "yesterdayOrders" : "yesterdayRevenue";
@@ -92,7 +114,9 @@ export default function CompactRevenueChart({
         <h3 className="text-sm font-semibold text-white">
           {hideRevenue ? "Comenzi azi" : "Venituri azi"}
         </h3>
-        <p className="text-xs text-zinc-500 mt-0.5">Azi vs. ieri</p>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          {granularity === "hourly" ? "Azi vs. ieri la aceeași oră" : "Azi vs. ieri"}
+        </p>
       </div>
 
       {/* Totals */}
@@ -127,8 +151,29 @@ export default function CompactRevenueChart({
           </div>
         )}
 
-        {/* Yesterday */}
-        {hasYesterday && (
+        {/* Yesterday at same time */}
+        {hasYesterday && granularity === "hourly" && (
+          <div className="text-right">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">
+              Ieri {currentHourKey}
+            </p>
+            {hideRevenue ? (
+              <p className="text-sm font-semibold text-zinc-400 leading-none">
+                {yesterdaySameTimeOrders}
+                <span className="text-xs font-normal text-zinc-500 ml-1">comenzi</span>
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-zinc-400 leading-none">
+                {yesterdaySameTime.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
+              </p>
+            )}
+            {!hideRevenue && (
+              <p className="text-xs text-zinc-500 mt-0.5">{yesterdaySameTimeOrders} comenzi</p>
+            )}
+          </div>
+        )}
+        {hasYesterday && granularity !== "hourly" && (
           <div className="text-right">
             <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Ieri</p>
             {hideRevenue ? (
@@ -168,6 +213,44 @@ export default function CompactRevenueChart({
           </div>
         )}
       </div>
+
+      {/* Ieri total + de recuperat / depășit */}
+      {hasYesterday && granularity === "hourly" && !hideRevenue && yesterdayTotal > 0 && (
+        <div className="mb-2 text-[11px] text-zinc-500">
+          {gap > 0 ? (
+            <>
+              Ieri total:{" "}
+              <span className="text-zinc-400">
+                {yesterdayTotal.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON
+              </span>
+              {" · "}de recuperat:{" "}
+              <span className="text-red-400">
+                {gap.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON
+              </span>
+              {" "}
+              <span className="text-red-500">
+                ({(-(gap / yesterdayTotal) * 100).toFixed(1)}%)
+              </span>
+            </>
+          ) : (
+            <>
+              Ieri total:{" "}
+              <span className="text-zinc-400">
+                {yesterdayTotal.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON
+              </span>
+              {" · "}
+              <span className="text-emerald-400">
+                Ai depășit ziua de ieri cu{" "}
+                {Math.abs(gap).toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON
+              </span>
+              {" "}
+              <span className="text-emerald-500">
+                (+{((Math.abs(gap) / yesterdayTotal) * 100).toFixed(1)}%)
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Chart */}
       <div className="flex-1 min-h-0">

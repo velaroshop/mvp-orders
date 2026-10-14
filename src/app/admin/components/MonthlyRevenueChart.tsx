@@ -48,15 +48,19 @@ export default function MonthlyRevenueChart({
   const diffPct = lastTotal > 0 ? ((thisTotal - lastTotal) / lastTotal) * 100 : null;
   const isUp = diffPct !== null && diffPct >= 0;
 
-  // Prediction — daily average based on last 7 days (or all elapsed if fewer)
-  const recentDays = Math.min(7, daysElapsed);
-  const recentData = thisMonthData.slice(-recentDays);
+  // Prediction — use only fully completed days (exclude today which is incomplete)
+  const completedDays = daysElapsed - 1;
+  const recentDays = Math.min(7, completedDays);
+  // Exclude today's entry (last item) from the slice so we only average complete days
+  const completedData = thisMonthData.slice(0, -1);
+  const recentData = completedData.slice(-recentDays);
   const recentTotal = recentData.reduce((s, d) => s + d.totalRevenue, 0);
   const dailyAvgRecent = recentDays > 0 ? recentTotal / recentDays : 0;
-  // Also compute simple average for display
-  const dailyAvgSimple = daysElapsed > 0 ? thisTotal / daysElapsed : 0;
-  // Use recent trend for projection (more responsive, but only if we have ≥3 days)
-  const dailyAvg = daysElapsed >= 3 ? dailyAvgRecent : dailyAvgSimple;
+  // Also compute simple average for display (on completed days only)
+  const completedTotal = completedData.reduce((s, d) => s + d.totalRevenue, 0);
+  const dailyAvgSimple = completedDays > 0 ? completedTotal / completedDays : 0;
+  // Use recent trend for projection (more responsive, but only if we have ≥3 completed days)
+  const dailyAvg = completedDays >= 3 ? dailyAvgRecent : dailyAvgSimple;
   const projectedTotal = thisTotal + dailyAvg * daysRemaining;
   const projectedVsLast = lastTotal > 0 ? ((projectedTotal - lastTotal) / lastTotal) * 100 : null;
   const projectedIsUp = projectedVsLast !== null && projectedVsLast >= 0;

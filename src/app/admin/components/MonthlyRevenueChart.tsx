@@ -129,19 +129,19 @@ export default function MonthlyRevenueChart({
       {/* Header */}
       <div className="mb-3">
         <h3 className="text-sm font-semibold text-white">Venituri lunare</h3>
-        <p className="text-xs text-zinc-500 mt-0.5">Luna curentă vs luna trecută</p>
+        <p className="text-xs text-zinc-400 mt-0.5">Luna curentă vs luna trecută</p>
       </div>
 
       {/* Totals */}
       <div className="flex items-start justify-between mb-4 gap-3">
         {/* This month */}
         <div>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">{thisMonthLabel}</p>
+          <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">{thisMonthLabel}</p>
           <p className="text-xl font-bold text-white leading-none">
             {thisTotal.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             <span className="text-sm font-normal text-zinc-400 ml-1">RON</span>
           </p>
-          <p className="text-xs text-zinc-500 mt-0.5">{thisOrders} comenzi</p>
+          <p className="text-xs text-zinc-400 mt-0.5">{thisOrders} comenzi</p>
         </div>
 
         {/* % diff badge */}
@@ -157,12 +157,12 @@ export default function MonthlyRevenueChart({
 
         {/* Last month */}
         <div className="text-right">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">{lastMonthLabel}</p>
+          <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">{lastMonthLabel}</p>
           <p className="text-sm font-semibold text-zinc-400 leading-none">
             {lastTotal.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
+            <span className="text-xs font-normal text-zinc-400 ml-1">RON</span>
           </p>
-          <p className="text-xs text-zinc-500 mt-0.5">{lastOrders} comenzi</p>
+          <p className="text-xs text-zinc-400 mt-0.5">{lastOrders} comenzi</p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ export default function MonthlyRevenueChart({
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-0.5 bg-zinc-500 rounded-full" style={{ backgroundImage: "repeating-linear-gradient(90deg, #71717a 0px, #71717a 4px, transparent 4px, transparent 8px)" }} />
-          <span className="text-[10px] text-zinc-500">{lastMonthLabel}</span>
+          <span className="text-[10px] text-zinc-400">{lastMonthLabel}</span>
         </div>
         {!isMonthComplete && dailyAvg > 0 && (
           <div className="flex items-center gap-1.5">
@@ -198,13 +198,13 @@ export default function MonthlyRevenueChart({
             <XAxis
               dataKey="day"
               stroke="#52525b"
-              tick={{ fill: "#52525b", fontSize: 9 }}
+              tick={{ fill: "#a1a1aa", fontSize: 9 }}
               tickLine={false}
               interval={4}
             />
             <YAxis
               stroke="#52525b"
-              tick={{ fill: "#52525b", fontSize: 9 }}
+              tick={{ fill: "#a1a1aa", fontSize: 9 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
@@ -272,10 +272,10 @@ export default function MonthlyRevenueChart({
         <div className="mt-3 pt-3 border-t border-zinc-800">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-0.5">Prognoză finală lună</p>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Prognoză finală lună</p>
               <p className="text-base font-bold text-indigo-300 leading-none">
                 {projectedTotal.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                <span className="text-xs font-normal text-zinc-500 ml-1">RON</span>
+                <span className="text-xs font-normal text-zinc-400 ml-1">RON</span>
               </p>
               <p className="text-[10px] text-zinc-400 mt-1">
                 ~{dailyAvg.toLocaleString("ro-RO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RON/zi · {daysRemaining} zile rămase · {confidenceLabel}

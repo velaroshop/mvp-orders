@@ -1651,10 +1651,10 @@ export default function AdminPage() {
                         return (
                           <div key={status.key}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className={`text-sm ${isZero ? "text-zinc-500" : "text-zinc-300"}`}>
+                              <span className={`text-sm ${isZero ? "text-zinc-400" : "text-zinc-300"}`}>
                                 {status.label}
                               </span>
-                              <span className={`text-sm font-bold ${isZero ? "text-zinc-500" : isSyncError && count > 0 ? "text-red-400" : status.text}`}>
+                              <span className={`text-sm font-bold ${isZero ? "text-zinc-400" : isSyncError && count > 0 ? "text-red-400" : status.text}`}>
                                 {count}
                               </span>
                             </div>

@@ -266,13 +266,13 @@ export default function CompactRevenueChart({
             <XAxis
               dataKey="displayLabel"
               stroke="#52525b"
-              tick={{ fill: "#52525b", fontSize: 9 }}
+              tick={{ fill: "#a1a1aa", fontSize: 9 }}
               tickLine={false}
               interval={granularity === "hourly" ? 3 : "preserveStartEnd"}
             />
             <YAxis
               stroke="#52525b"
-              tick={{ fill: "#52525b", fontSize: 9 }}
+              tick={{ fill: "#a1a1aa", fontSize: 9 }}
               tickLine={false}
               axisLine={false}
               allowDecimals={!hideRevenue}

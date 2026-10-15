@@ -30,6 +30,7 @@ import {
   Wrench,
   BookOpen,
   Calculator,
+  Film,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -48,6 +49,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/settings":                        <Settings className="w-4 h-4" />,
   "/admin/superadmin":                      <Building2 className="w-4 h-4" />,
   "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
+  "/admin/superadmin/video-convert":        <Film className="w-4 h-4" />,
   "/admin/tools":                           <Wrench className="w-4 h-4" />,
   "/admin/tutorial":                        <BookOpen className="w-4 h-4" />,
   "/admin/superadmin/roas-calculator":      <Calculator className="w-4 h-4" />,
@@ -91,6 +93,7 @@ const menuGroups = [
     label: "Tools",
     items: [
       { name: "Convertor WebP", href: "/admin/superadmin/image-compress" },
+      { name: "Convertor WebM", href: "/admin/superadmin/video-convert" },
       { name: "Calculator Profit", href: "/admin/superadmin/roas-calculator" },
     ],
   },

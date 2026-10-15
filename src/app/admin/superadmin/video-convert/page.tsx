@@ -84,8 +84,12 @@ export default function VideoConvertPage() {
         "-cpu-used", "8",
         "output.webm",
       ]);
-      const data = await ffmpeg.readFile("output.webm") as Uint8Array;
-      const blob = new Blob([data], { type: "video/webm" });
+      const raw = await ffmpeg.readFile("output.webm");
+      // slice() copies SharedArrayBuffer → regular ArrayBuffer, compatible with Blob
+      const blob = new Blob(
+        [raw instanceof Uint8Array ? raw.slice() : raw],
+        { type: "video/webm" }
+      );
       const url = URL.createObjectURL(blob);
       setResult({
         name: file.name.replace(/\.[^.]+$/, "") + ".webm",

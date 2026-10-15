@@ -79,15 +79,19 @@ export default function VideoConvertPage() {
     try {
       const ffmpeg = await loadFFmpeg();
       await ffmpeg.writeFile("input.mp4", await fetchFile(file));
+      // VP8 (libvpx) — more stable in wasm than VP9; good quality/size ratio
+      const qmin = Math.max(4, crf - 10);
+      const qmax = Math.min(63, crf + 5);
       await ffmpeg.exec([
         "-i", "input.mp4",
-        "-c:v", "libvpx-vp9",
-        "-crf", String(crf),
+        "-c:v", "libvpx",
+        "-qmin", String(qmin),
+        "-qmax", String(qmax),
         "-b:v", "0",
         "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
-        "-an", // no audio
-        "-deadline", "realtime",
-        "-cpu-used", "8",
+        "-an",
+        "-cpu-used", "5",
+        "-threads", "1",
         "output.webm",
       ]);
       const raw = await ffmpeg.readFile("output.webm");

@@ -79,15 +79,13 @@ export default function VideoConvertPage() {
     try {
       const ffmpeg = await loadFFmpeg();
       await ffmpeg.writeFile("input.mp4", await fetchFile(file));
-      // VP8 (libvpx) — more stable in wasm than VP9; good quality/size ratio
-      const qmin = Math.max(4, crf - 10);
-      const qmax = Math.min(63, crf + 5);
+      // VP8 (libvpx) — map CRF slider (20=best → 55=smallest) to bitrate range (600k → 40k)
+      // VP8 has no pure CRF mode; -b:v 0 with qmin/qmax breaks at high values → use explicit bitrate
+      const bitrate = Math.round(600 * Math.pow(40 / 600, (crf - 20) / (55 - 20)));
       await ffmpeg.exec([
         "-i", "input.mp4",
         "-c:v", "libvpx",
-        "-qmin", String(qmin),
-        "-qmax", String(qmax),
-        "-b:v", "0",
+        "-b:v", `${bitrate}k`,
         "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
         "-an",
         "-cpu-used", "5",
@@ -220,7 +218,7 @@ export default function VideoConvertPage() {
           </div>
 
           <div>
-            <label className="label">Calitate (CRF): {crf}</label>
+            <label className="label">Calitate: {crf}</label>
             <input
               type="range"
               min={20}
@@ -236,8 +234,8 @@ export default function VideoConvertPage() {
           </div>
         </div>
 
-        <p className="text-xs text-zinc-500">
-          Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, CRF 38–45.
+        <p className="text-xs text-zinc-400">
+          Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, calitate 38–45.
           Audio este eliminat automat.
         </p>
       </div>

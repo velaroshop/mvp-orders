@@ -12,12 +12,14 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
+type OutputFormat = "webm" | "webp";
+
 interface ConvertedFile {
   name: string;
   originalSize: number;
   convertedSize: number;
   url: string;
-  duration: number;
+  format: OutputFormat;
 }
 
 export default function VideoConvertPage() {
@@ -28,14 +30,14 @@ export default function VideoConvertPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [convertProgress, setConvertProgress] = useState(0);
   const [result, setResult] = useState<ConvertedFile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Settings
-  const [crf, setCrf] = useState(40); // 0=best, 63=worst; 35-45 = small file
-  const [scale, setScale] = useState("640"); // output width
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>("webp");
+  const [crf, setCrf] = useState(40);
+  const [scale, setScale] = useState("640");
   const [fps, setFps] = useState(15);
 
   const ffmpegRef = useRef<FFmpeg | null>(null);
@@ -49,7 +51,6 @@ export default function VideoConvertPage() {
   async function loadFFmpeg() {
     if (ffmpegRef.current) return ffmpegRef.current;
     setIsLoading(true);
-    setLoadingProgress(0);
     try {
       if (typeof SharedArrayBuffer === "undefined") {
         throw new Error("SharedArrayBuffer indisponibil — headerele COOP/COEP lipsesc pe această pagină.");
@@ -79,32 +80,57 @@ export default function VideoConvertPage() {
     try {
       const ffmpeg = await loadFFmpeg();
       await ffmpeg.writeFile("input.mp4", await fetchFile(file));
-      // VP8 (libvpx) — map CRF slider (20=best → 55=smallest) to bitrate range (600k → 40k)
-      // VP8 has no pure CRF mode; -b:v 0 with qmin/qmax breaks at high values → use explicit bitrate
-      const bitrate = Math.round(600 * Math.pow(40 / 600, (crf - 20) / (55 - 20)));
-      await ffmpeg.exec([
-        "-i", "input.mp4",
-        "-c:v", "libvpx",
-        "-b:v", `${bitrate}k`,
-        "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
-        "-an",
-        "-cpu-used", "5",
-        "-threads", "1",
-        "output.webm",
-      ]);
-      const raw = await ffmpeg.readFile("output.webm");
-      // slice() copies SharedArrayBuffer → regular ArrayBuffer, compatible with Blob
+
+      let outputFile: string;
+      let mimeType: string;
+
+      if (outputFormat === "webp") {
+        // Animated WebP — works in <img> tags, ideal for upsells
+        // libwebp quality: 0=worst, 100=best (opposite of CRF slider)
+        const webpQuality = Math.round(90 - ((crf - 20) / 35) * 70); // 90 at crf=20, 20 at crf=55
+        outputFile = "output.webp";
+        mimeType = "image/webp";
+        await ffmpeg.exec([
+          "-i", "input.mp4",
+          "-c:v", "libwebp",
+          "-loop", "0",
+          "-quality", String(webpQuality),
+          "-preset", "picture",
+          "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
+          "-an",
+          outputFile,
+        ]);
+      } else {
+        // WebM — smaller files, needs <video> tag
+        // VP8 has no pure CRF mode; map slider to bitrate range 600k→40k
+        const bitrate = Math.round(600 * Math.pow(40 / 600, (crf - 20) / (55 - 20)));
+        outputFile = "output.webm";
+        mimeType = "video/webm";
+        await ffmpeg.exec([
+          "-i", "input.mp4",
+          "-c:v", "libvpx",
+          "-b:v", `${bitrate}k`,
+          "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
+          "-an",
+          "-cpu-used", "5",
+          "-threads", "1",
+          outputFile,
+        ]);
+      }
+
+      const raw = await ffmpeg.readFile(outputFile);
       const blob = new Blob(
         [raw instanceof Uint8Array ? raw.slice() : raw],
-        { type: "video/webm" }
+        { type: mimeType }
       );
       const url = URL.createObjectURL(blob);
+      const ext = outputFormat === "webp" ? ".webp" : ".webm";
       setResult({
-        name: file.name.replace(/\.[^.]+$/, "") + ".webm",
+        name: file.name.replace(/\.[^.]+$/, "") + ext,
         originalSize: file.size,
         convertedSize: blob.size,
         url,
-        duration: 0,
+        format: outputFormat,
       });
     } catch (err: any) {
       console.error("[VideoConvert] Error:", err);
@@ -136,10 +162,36 @@ export default function VideoConvertPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-4">
       <div>
-        <h1 className="page-title">Convertor Video → WebM</h1>
+        <h1 className="page-title">Convertor Video</h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Convertește MP4/MOV în WebM mic — ideal pentru 4-5 secunde la 50–200 KB.
+          Convertește MP4/MOV în WebP animat (pentru upsell-uri) sau WebM (pentru video embed).
         </p>
+      </div>
+
+      {/* Format toggle */}
+      <div className="card p-1 flex gap-1">
+        <button
+          onClick={() => { setOutputFormat("webp"); setResult(null); }}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            outputFormat === "webp"
+              ? "bg-indigo-600 text-white"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          WebP animat
+          <span className="block text-[10px] font-normal opacity-70">funcționează în &lt;img&gt; · upsell-uri</span>
+        </button>
+        <button
+          onClick={() => { setOutputFormat("webm"); setResult(null); }}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            outputFormat === "webm"
+              ? "bg-indigo-600 text-white"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          WebM video
+          <span className="block text-[10px] font-normal opacity-70">necesită tag &lt;video&gt; · fișier mai mic</span>
+        </button>
       </div>
 
       {/* Drop zone */}
@@ -167,7 +219,7 @@ export default function VideoConvertPage() {
           <div>
             <p className="text-white font-medium">{file.name}</p>
             <p className="text-zinc-400 text-sm mt-1">{formatBytes(file.size)}</p>
-            <p className="text-zinc-500 text-xs mt-2">Click pentru a schimba fișierul</p>
+            <p className="text-zinc-400 text-xs mt-2">Click pentru a schimba fișierul</p>
           </div>
         ) : (
           <div>
@@ -175,7 +227,7 @@ export default function VideoConvertPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
             <p className="text-zinc-300 font-medium">Trage un fișier MP4 / MOV aici</p>
-            <p className="text-zinc-500 text-sm mt-1">sau click pentru a selecta</p>
+            <p className="text-zinc-400 text-sm mt-1">sau click pentru a selecta</p>
           </div>
         )}
       </div>
@@ -211,7 +263,7 @@ export default function VideoConvertPage() {
               onChange={(e) => setFps(Number(e.target.value))}
               className="w-full mt-2 accent-indigo-500"
             />
-            <div className="flex justify-between text-[10px] text-zinc-500 mt-0.5">
+            <div className="flex justify-between text-[10px] text-zinc-400 mt-0.5">
               <span>5 fps</span>
               <span>20 fps</span>
             </div>
@@ -227,7 +279,7 @@ export default function VideoConvertPage() {
               onChange={(e) => setCrf(Number(e.target.value))}
               className="w-full mt-2 accent-indigo-500"
             />
-            <div className="flex justify-between text-[10px] text-zinc-500 mt-0.5">
+            <div className="flex justify-between text-[10px] text-zinc-400 mt-0.5">
               <span>Mai bună</span>
               <span>Mai mică</span>
             </div>
@@ -235,8 +287,9 @@ export default function VideoConvertPage() {
         </div>
 
         <p className="text-xs text-zinc-400">
-          Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, calitate 38–45.
-          Audio este eliminat automat.
+          {outputFormat === "webp"
+            ? "Pentru 4-5 sec la 100–400 KB: lățime 480–640px, FPS 8–15, calitate 35–45. WebP animat e mai mare decât WebM dar funcționează direct în upsell-uri."
+            : "Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, calitate 38–45. Audio este eliminat automat."}
         </p>
       </div>
 
@@ -250,7 +303,7 @@ export default function VideoConvertPage() {
           ? "Se încarcă ffmpeg.wasm (~30MB, o singură dată)..."
           : isConverting
           ? `Se convertește... ${convertProgress}%`
-          : "Convertește în WebM"}
+          : `Convertește în ${outputFormat === "webp" ? "WebP animat" : "WebM"}`}
       </button>
 
       {/* Progress bar */}
@@ -286,19 +339,30 @@ export default function VideoConvertPage() {
               <p className="text-white font-semibold">{formatBytes(result.originalSize)}</p>
             </div>
             <div className="bg-zinc-800/60 rounded-lg p-3">
-              <p className="text-zinc-400 text-xs mb-1">Convertit (WebM)</p>
+              <p className="text-zinc-400 text-xs mb-1">
+                Convertit ({result.format === "webp" ? "WebP animat" : "WebM"})
+              </p>
               <p className="text-white font-semibold">{formatBytes(result.convertedSize)}</p>
             </div>
           </div>
 
-          <video
-            src={result.url}
-            controls
-            autoPlay
-            loop
-            muted
-            className="w-full rounded-lg bg-black"
-          />
+          {/* Preview: WebP as <img>, WebM as <video> */}
+          {result.format === "webp" ? (
+            <img
+              src={result.url}
+              alt="preview"
+              className="w-full rounded-lg bg-black"
+            />
+          ) : (
+            <video
+              src={result.url}
+              controls
+              autoPlay
+              loop
+              muted
+              className="w-full rounded-lg bg-black"
+            />
+          )}
 
           <a
             href={result.url}

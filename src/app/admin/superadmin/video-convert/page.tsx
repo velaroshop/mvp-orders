@@ -50,18 +50,24 @@ export default function VideoConvertPage() {
     if (ffmpegRef.current) return ffmpegRef.current;
     setIsLoading(true);
     setLoadingProgress(0);
-    const ffmpeg = new FFmpeg();
-    ffmpeg.on("progress", ({ progress }) => {
-      setConvertProgress(Math.round(progress * 100));
-    });
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpegRef.current = ffmpeg;
-    setIsLoading(false);
-    return ffmpeg;
+    try {
+      if (typeof SharedArrayBuffer === "undefined") {
+        throw new Error("SharedArrayBuffer indisponibil — headerele COOP/COEP lipsesc pe această pagină.");
+      }
+      const ffmpeg = new FFmpeg();
+      ffmpeg.on("progress", ({ progress }) => {
+        setConvertProgress(Math.round(progress * 100));
+      });
+      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+      ffmpegRef.current = ffmpeg;
+      return ffmpeg;
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleConvert() {
@@ -99,7 +105,9 @@ export default function VideoConvertPage() {
         duration: 0,
       });
     } catch (err: any) {
-      setError(err?.message || "Eroare la conversie");
+      console.error("[VideoConvert] Error:", err);
+      const msg = err?.message || String(err) || "Eroare necunoscută";
+      setError(`Eroare: ${msg}`);
     } finally {
       setIsConverting(false);
     }

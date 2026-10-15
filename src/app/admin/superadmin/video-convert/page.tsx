@@ -128,13 +128,14 @@ export default function VideoConvertPage() {
       const url = URL.createObjectURL(blob);
       const ext = outputFormat === "webp" ? ".webp" : ".webm";
 
-      // Extract first frame as static WebP
+      // Extract first frame as static WebP — same quality mapping as animated WebP
+      const frameQuality = Math.round(90 - ((crf - 20) / 35) * 70);
       await ffmpeg.exec([
         "-i", "input.mp4",
         "-vframes", "1",
         "-vf", `scale=${scale}:-2`,
         "-c:v", "webp",
-        "-quality", "90",
+        "-quality", String(frameQuality),
         "firstframe.webp",
       ]);
       const rawFrame = await ffmpeg.readFile("firstframe.webp");

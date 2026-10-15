@@ -20,6 +20,8 @@ interface ConvertedFile {
   convertedSize: number;
   url: string;
   format: OutputFormat;
+  firstFrameUrl: string;
+  firstFrameName: string;
 }
 
 export default function VideoConvertPage() {
@@ -125,12 +127,32 @@ export default function VideoConvertPage() {
       );
       const url = URL.createObjectURL(blob);
       const ext = outputFormat === "webp" ? ".webp" : ".webm";
+
+      // Extract first frame as static WebP
+      await ffmpeg.exec([
+        "-i", "input.mp4",
+        "-vframes", "1",
+        "-vf", `scale=${scale}:-2`,
+        "-c:v", "webp",
+        "-quality", "90",
+        "firstframe.webp",
+      ]);
+      const rawFrame = await ffmpeg.readFile("firstframe.webp");
+      const frameBlob = new Blob(
+        [rawFrame instanceof Uint8Array ? rawFrame.slice() : rawFrame],
+        { type: "image/webp" }
+      );
+      const frameUrl = URL.createObjectURL(frameBlob);
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+
       setResult({
-        name: file.name.replace(/\.[^.]+$/, "") + ext,
+        name: baseName + ext,
         originalSize: file.size,
         convertedSize: blob.size,
         url,
         format: outputFormat,
+        firstFrameUrl: frameUrl,
+        firstFrameName: baseName + "-firstframe.webp",
       });
     } catch (err: any) {
       console.error("[VideoConvert] Error:", err);
@@ -374,6 +396,26 @@ export default function VideoConvertPage() {
             </svg>
             Descarcă {result.name}
           </a>
+
+          {/* First frame */}
+          <div className="border-t border-zinc-800 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Primul cadru (WebP static)</p>
+            <img
+              src={result.firstFrameUrl}
+              alt="First frame"
+              className="w-full rounded-lg bg-black"
+            />
+            <a
+              href={result.firstFrameUrl}
+              download={result.firstFrameName}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white font-semibold text-sm transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Descarcă {result.firstFrameName}
+            </a>
+          </div>
         </div>
       )}
     </div>

@@ -92,8 +92,8 @@ const menuGroups = [
   {
     label: "Tools",
     items: [
-      { name: "Convertor WebP", href: "/admin/superadmin/image-compress" },
-      { name: "Convertor WebM", href: "/admin/superadmin/video-convert" },
+      { name: "Convertor Imagini", href: "/admin/superadmin/image-compress" },
+      { name: "Convertor Video", href: "/admin/superadmin/video-convert" },
       { name: "Calculator Profit", href: "/admin/superadmin/roas-calculator" },
     ],
   },

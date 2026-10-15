@@ -36,7 +36,7 @@ export default function VideoConvertPage() {
   // Settings
   const [crf, setCrf] = useState(40); // 0=best, 63=worst; 35-45 = small file
   const [scale, setScale] = useState("640"); // output width
-  const [fps, setFps] = useState("24");
+  const [fps, setFps] = useState(15);
 
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,7 +78,7 @@ export default function VideoConvertPage() {
         "-c:v", "libvpx-vp9",
         "-crf", String(crf),
         "-b:v", "0",
-        "-vf", `scale=${scale}:-2,fps=${fps}`,
+        "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
         "-an", // no audio
         "-deadline", "realtime",
         "-cpu-used", "8",
@@ -187,16 +187,20 @@ export default function VideoConvertPage() {
           </div>
 
           <div>
-            <label className="label">FPS</label>
-            <select
+            <label className="label">FPS: {fps}</label>
+            <input
+              type="range"
+              min={5}
+              max={20}
+              step={1}
               value={fps}
-              onChange={(e) => setFps(e.target.value)}
-              className="input"
-            >
-              <option value="15">15 fps</option>
-              <option value="24">24 fps</option>
-              <option value="30">30 fps</option>
-            </select>
+              onChange={(e) => setFps(Number(e.target.value))}
+              className="w-full mt-2 accent-indigo-500"
+            />
+            <div className="flex justify-between text-[10px] text-zinc-500 mt-0.5">
+              <span>5 fps</span>
+              <span>20 fps</span>
+            </div>
           </div>
 
           <div>
@@ -217,7 +221,7 @@ export default function VideoConvertPage() {
         </div>
 
         <p className="text-xs text-zinc-500">
-          Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 15–24, CRF 38–45.
+          Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, CRF 38–45.
           Audio este eliminat automat.
         </p>
       </div>

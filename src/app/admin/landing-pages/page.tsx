@@ -411,13 +411,13 @@ export default function LandingPagesPage() {
 
     if (type === "thankyou") {
       return `<!-- Thank You Page Embed (Post-Purchase) -->
-<script src="${origin}/thank-you-embed.js"></script>
+<script src="${origin}/thank-you-embed.js" defer></script>
 <div id="${orgSlug}-thank-you"></div>`;
     }
 
     const containerId = `${orgSlug}-widget-${slug}`;
     return `<!-- Widget Embed with Tracking -->
-<script src="${origin}/embed.js"></script>
+<script src="${origin}/embed.js" defer></script>
 <div id="${containerId}"></div>`;
   }
 

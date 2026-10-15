@@ -84,7 +84,7 @@ export default function VideoConvertPage() {
         "-cpu-used", "8",
         "output.webm",
       ]);
-      const data = await ffmpeg.readFile("output.webm");
+      const data = await ffmpeg.readFile("output.webm") as Uint8Array;
       const blob = new Blob([data], { type: "video/webm" });
       const url = URL.createObjectURL(blob);
       setResult({

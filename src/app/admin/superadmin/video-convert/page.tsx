@@ -81,7 +81,9 @@ export default function VideoConvertPage() {
     setIsConverting(true);
     try {
       const ffmpeg = await loadFFmpeg();
-      await ffmpeg.writeFile("input.mp4", await fetchFile(file));
+      const inputExt = file.name.split(".").pop()?.toLowerCase() || "mp4";
+      const inputFile = `input.${inputExt}`;
+      await ffmpeg.writeFile(inputFile, await fetchFile(file));
 
       let outputFile: string;
       let mimeType: string;
@@ -93,7 +95,7 @@ export default function VideoConvertPage() {
         outputFile = "output.webp";
         mimeType = "image/webp";
         await ffmpeg.exec([
-          "-i", "input.mp4",
+          "-i", inputFile,
           "-c:v", "libwebp",
           "-loop", "0",
           "-quality", String(webpQuality),
@@ -109,7 +111,7 @@ export default function VideoConvertPage() {
         outputFile = "output.webm";
         mimeType = "video/webm";
         await ffmpeg.exec([
-          "-i", "input.mp4",
+          "-i", inputFile,
           "-c:v", "libvpx",
           "-b:v", `${bitrate}k`,
           "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
@@ -131,7 +133,7 @@ export default function VideoConvertPage() {
       // Extract first frame as static WebP — same quality mapping as animated WebP
       const frameQuality = Math.round(90 - ((crf - 20) / 35) * 70);
       await ffmpeg.exec([
-        "-i", "input.mp4",
+        "-i", inputFile,
         "-vframes", "1",
         "-vf", `scale=${scale}:-2`,
         "-c:v", "webp",
@@ -168,7 +170,7 @@ export default function VideoConvertPage() {
     e.preventDefault();
     setIsDragging(false);
     const f = Array.from(e.dataTransfer.files).find(f =>
-      f.type === "video/mp4" || f.name.endsWith(".mp4") || f.name.endsWith(".mov")
+      f.type.startsWith("video/") || f.name.endsWith(".mp4") || f.name.endsWith(".mov") || f.name.endsWith(".webm")
     );
     if (f) { setFile(f); setResult(null); setError(null); }
   }
@@ -234,7 +236,7 @@ export default function VideoConvertPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="video/mp4,video/quicktime,.mp4,.mov"
+          accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -249,7 +251,7 @@ export default function VideoConvertPage() {
             <svg className="w-10 h-10 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
-            <p className="text-zinc-300 font-medium">Trage un fișier MP4 / MOV aici</p>
+            <p className="text-zinc-300 font-medium">Trage un fișier MP4 / MOV / WebM aici</p>
             <p className="text-zinc-400 text-sm mt-1">sau click pentru a selecta</p>
           </div>
         )}

@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, RefreshCw, Download } from "lucide-react";
 import RomaniaMap from "./RomaniaMap";
 import type { CountyStat } from "@/app/api/admin/returns-map/route";
 
-type Period = "30" | "90" | "180" | "365" | "all";
+type Period = "30" | "90" | "180" | "365" | "all" | "custom";
 
 const PERIOD_LABELS: Record<Period, string> = {
   "30": "30 zile",
@@ -15,6 +15,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   "180": "6 luni",
   "365": "1 an",
   "all": "Tot timpul",
+  "custom": "Custom",
 };
 
 interface Summary {
@@ -32,6 +33,7 @@ export default function ReturnsMapPage() {
   const router = useRouter();
 
   const [period, setPeriod] = useState<Period>("90");
+  const [customDays, setCustomDays] = useState("60");
   const [minOrders, setMinOrders] = useState(5);
   const [productName, setProductName] = useState("");
   const [productNames, setProductNames] = useState<string[]>([]);
@@ -47,10 +49,13 @@ export default function ReturnsMapPage() {
     if (!session?.user) router.replace("/admin/orders");
   }, [status, session, router]);
 
+  const effectivePeriod = period === "custom" ? customDays : period;
+
   const fetchData = useCallback(async () => {
+    if (period === "custom" && (!customDays || Number(customDays) < 1)) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ period, minOrders: String(minOrders) });
+      const params = new URLSearchParams({ period: effectivePeriod, minOrders: String(minOrders) });
       if (productName) params.set("productName", productName);
       const res = await fetch(`/api/admin/returns-map?${params}`);
       const data = await res.json();
@@ -62,7 +67,7 @@ export default function ReturnsMapPage() {
     } finally {
       setLoading(false);
     }
-  }, [period, minOrders, productName]);
+  }, [period, customDays, minOrders, productName, effectivePeriod]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -115,7 +120,7 @@ export default function ReturnsMapPage() {
 
       {/* Filters */}
       <div className="card p-3 flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
             <button
               key={p}
@@ -127,6 +132,21 @@ export default function ReturnsMapPage() {
               {PERIOD_LABELS[p]}
             </button>
           ))}
+          {period === "custom" && (
+            <div className="flex items-center gap-1 ml-1">
+              <input
+                type="number"
+                min={1}
+                max={3650}
+                value={customDays}
+                onChange={(e) => setCustomDays(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchData()}
+                className="input py-1 text-xs w-20 text-center"
+                placeholder="zile"
+              />
+              <span className="text-xs text-zinc-400">zile</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-4 ml-auto flex-wrap">
           {productNames.length > 0 && (

@@ -32,22 +32,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
 
-    // Fetch orders that need syncing: have helpship_order_id and non-final tracking_status
-    const { data: orders, error } = await supabaseAdmin
-      .from("orders")
-      .select("id, helpship_order_id, tracking_status")
-      .eq("organization_id", organizationId)
-      .not("helpship_order_id", "is", null)
-      .not("status", "in", '("testing","queue","cancelled")')
-      .order("created_at", { ascending: false })
-      .limit(10000); // high cap — 5000 orders fits in 300s on Vercel Pro
+    // Fetch all orders via pagination (Supabase caps at 1000 rows per request)
+    const PAGE_SIZE = 1000;
+    let allOrders: { id: string; helpship_order_id: string; tracking_status: string | null }[] = [];
+    let from = 0;
 
-    if (error) {
-      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    while (true) {
+      const { data: page, error } = await supabaseAdmin
+        .from("orders")
+        .select("id, helpship_order_id, tracking_status")
+        .eq("organization_id", organizationId)
+        .not("helpship_order_id", "is", null)
+        .not("status", "in", '("testing","queue","cancelled")')
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
+      if (!page || page.length === 0) break;
+      allOrders = allOrders.concat(page);
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
 
-    // Filter out already-final statuses
-    const toSync = (orders || []).filter(
+    // Filter out already-final statuses — these won't change, skip them
+    const toSync = allOrders.filter(
       (o) => !o.tracking_status || !FINAL_STATUSES.includes(o.tracking_status)
     );
 
@@ -95,8 +105,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       synced,
       errors,
-      skipped: (orders?.length ?? 0) - toSync.length,
-      total: orders?.length ?? 0,
+      skipped: allOrders.length - toSync.length,
+      total: allOrders.length,
     });
   } catch (err) {
     console.error("[BulkSyncTracking] Error:", err);

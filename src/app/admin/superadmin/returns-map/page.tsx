@@ -33,6 +33,8 @@ export default function ReturnsMapPage() {
 
   const [period, setPeriod] = useState<Period>("90");
   const [minOrders, setMinOrders] = useState(5);
+  const [productName, setProductName] = useState("");
+  const [productNames, setProductNames] = useState<string[]>([]);
   const [stats, setStats] = useState<CountyStat[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,16 +50,19 @@ export default function ReturnsMapPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/returns-map?period=${period}&minOrders=${minOrders}`);
+      const params = new URLSearchParams({ period, minOrders: String(minOrders) });
+      if (productName) params.set("productName", productName);
+      const res = await fetch(`/api/admin/returns-map?${params}`);
       const data = await res.json();
       if (res.ok) {
         setStats(data.stats);
         setSummary(data.summary);
+        if (data.productNames) setProductNames(data.productNames);
       }
     } finally {
       setLoading(false);
     }
-  }, [period, minOrders]);
+  }, [period, minOrders, productName]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -123,19 +128,36 @@ export default function ReturnsMapPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <label className="text-xs text-zinc-400">Min. comenzi:</label>
-          <select
-            value={minOrders}
-            onChange={(e) => setMinOrders(Number(e.target.value))}
-            className="input py-1 text-xs w-20"
-          >
-            <option value={1}>1</option>
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
+        <div className="flex items-center gap-4 ml-auto flex-wrap">
+          {productNames.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-zinc-400">Produs:</label>
+              <select
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="input py-1 text-xs w-44 truncate"
+              >
+                <option value="">Toate produsele</option>
+                {productNames.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-zinc-400">Min. comenzi:</label>
+            <select
+              value={minOrders}
+              onChange={(e) => setMinOrders(Number(e.target.value))}
+              className="input py-1 text-xs w-20"
+            >
+              <option value={1}>1</option>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
       </div>
 

@@ -25,11 +25,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "90"; // days; "all" = no filter
     const minOrders = parseInt(searchParams.get("minOrders") || "5", 10);
+    const productName = searchParams.get("productName") || "";
 
     const organizationId = (session.user as any).activeOrganizationId;
     if (!organizationId) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
+
+    // Fetch distinct product names for the dropdown (no period filter — always show all products)
+    const { data: productRows } = await supabaseAdmin
+      .from("orders")
+      .select("product_name")
+      .eq("organization_id", organizationId)
+      .neq("status", "testing")
+      .neq("status", "queue")
+      .not("product_name", "is", null)
+      .neq("product_name", "");
+
+    const productNames = [...new Set((productRows ?? []).map((r) => r.product_name as string))].sort();
 
     // Supabase has a server-side max_rows cap (default 1000) that ignores .limit().
     // Workaround: paginate with .range() until we get all rows.
@@ -46,6 +59,10 @@ export async function GET(request: NextRequest) {
         .neq("status", "queue")
         .not("county", "is", null)
         .neq("county", "");
+
+      if (productName) {
+        q = q.eq("product_name", productName);
+      }
 
       if (period !== "all") {
         const days = parseInt(period, 10);
@@ -115,6 +132,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       stats,
+      productNames,
       summary: {
         totalOrders,
         totalReturned,

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const organizationId = (session.user as any).organizationId;
+    const organizationId = (session.user as any).activeOrganizationId;
     if (!organizationId) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }

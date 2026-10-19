@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get("period") || "90"; // days; "all" = no filter
     const minOrders = parseInt(searchParams.get("minOrders") || "5", 10);
 
-    const organizationId = (session.user as any).organizationId;
+    const organizationId = (session.user as any).activeOrganizationId;
     if (!organizationId) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }

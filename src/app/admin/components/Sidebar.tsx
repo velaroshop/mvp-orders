@@ -31,6 +31,7 @@ import {
   BookOpen,
   Calculator,
   Film,
+  MapPin,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -53,6 +54,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/tools":                           <Wrench className="w-4 h-4" />,
   "/admin/tutorial":                        <BookOpen className="w-4 h-4" />,
   "/admin/superadmin/roas-calculator":      <Calculator className="w-4 h-4" />,
+  "/admin/superadmin/returns-map":          <MapPin className="w-4 h-4" />,
 };
 
 const menuGroups = [
@@ -95,6 +97,7 @@ const menuGroups = [
       { name: "Convertor Imagini", href: "/admin/superadmin/image-compress" },
       { name: "Convertor Video", href: "/admin/superadmin/video-convert" },
       { name: "Calculator Profit", href: "/admin/superadmin/roas-calculator" },
+      { name: "Hartă Retururi", href: "/admin/superadmin/returns-map" },
     ],
   },
   {

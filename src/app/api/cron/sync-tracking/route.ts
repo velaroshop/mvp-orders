@@ -18,27 +18,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Calculăm data de acum 14 zile
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    const cutoffDate = fourteenDaysAgo.toISOString();
+    // Extindem lookback la 6 luni pentru a acoperi retururi istorice (necesar pentru harta retururi)
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 6);
+    const cutoffDate = cutoff.toISOString();
 
     console.log(`[Cron Tracking] Starting tracking sync for orders since ${cutoffDate}`);
 
-    // Găsește toate comenzile confirmate cu helpship_order_id din ultimele 14 zile
-    // Excludem comenzile care au deja tracking_status "Delivered" sau "Returned" (statusuri finale)
-    // Note: We filter out final statuses in code since Supabase .not("in") excludes NULLs
+    // Statusuri finale — nu se mai schimbă, nu are rost să re-sincronizăm
+    const FINAL_STATUSES = ["Returned", "Delivered", "Cancelled"];
+
+    // Găsește comenzile cu helpship_order_id din ultimele 6 luni (exclusiv testing/queue)
     const { data: allOrders, error: fetchError } = await supabaseAdmin
       .from("orders")
       .select("id, helpship_order_id, organization_id, tracking_status")
-      .eq("status", "confirmed")
       .not("helpship_order_id", "is", null)
+      .not("status", "in", '("testing","queue")')
       .gte("created_at", cutoffDate)
       .order("created_at", { ascending: false });
 
-    // Filter out final statuses in code (Delivered, Returned) to properly handle NULLs
+    // Filter out final statuses in code to properly handle NULLs
     const orders = (allOrders || []).filter(
-      (o) => o.tracking_status !== "Delivered" && o.tracking_status !== "Returned"
+      (o) => !o.tracking_status || !FINAL_STATUSES.includes(o.tracking_status)
     );
 
     if (fetchError) {

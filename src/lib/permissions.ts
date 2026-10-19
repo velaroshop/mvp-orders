@@ -24,6 +24,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/admin/superadmin/image-compress": ["owner", "admin"],
   "/admin/superadmin/video-convert": ["owner", "admin"],
   "/admin/superadmin/roas-calculator": ["owner", "admin"],
+  "/admin/superadmin/returns-map": ["owner", "admin"],
 };
 
 // Check if user has permission to access a route

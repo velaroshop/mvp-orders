@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       query = query.gte("created_at", since.toISOString());
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(50000);
 
     if (error) {
       console.error("[ReturnsMap] DB error:", error);

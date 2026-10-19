@@ -23,6 +23,7 @@ interface Summary {
   overallRate: number;
   totalReturnedValue: number;
   syncedOrders: number;
+  noHelpshipOrders: number;
   unsyncedOrders: number;
 }
 
@@ -170,7 +171,16 @@ export default function ReturnsMapPage() {
         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-950/40 border border-amber-700/40 text-sm text-amber-400">
           <span>⚠</span>
           <span>
-            <strong>{summary.unsyncedOrders}</strong> comenzi nu au tracking sincronizat — folosește butonul &ldquo;Import date istorice&rdquo; pentru date complete.
+            {summary.unsyncedOrders > summary.noHelpshipOrders ? (
+              <>
+                <strong>{summary.unsyncedOrders - summary.noHelpshipOrders}</strong> comenzi pot fi sincronizate — apasă &ldquo;Import date istorice&rdquo;.
+                {summary.noHelpshipOrders > 0 && (
+                  <span className="text-amber-500/70"> · {summary.noHelpshipOrders} fără expediere Helpship (nu pot fi sincronizate).</span>
+                )}
+              </>
+            ) : (
+              <><strong>{summary.noHelpshipOrders}</strong> comenzi fără expediere Helpship — tracking indisponibil (comenzi anulate sau neexpediate).</>
+            )}
           </span>
         </div>
       )}

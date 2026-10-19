@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
     // Supabase has a server-side max_rows cap (default 1000) that ignores .limit().
     // Workaround: paginate with .range() until we get all rows.
     const PAGE_SIZE = 1000;
-    let allRows: { county: string; tracking_status: string | null; total: string }[] = [];
+    let allRows: { county: string; tracking_status: string | null; total: string; helpship_order_id: string | null }[] = [];
     let from = 0;
 
     while (true) {
       let q = supabaseAdmin
         .from("orders")
-        .select("county, tracking_status, total")
+        .select("county, tracking_status, total, helpship_order_id")
         .eq("organization_id", organizationId)
         .neq("status", "testing")
         .neq("status", "queue")
@@ -109,6 +109,9 @@ export async function GET(request: NextRequest) {
     const totalReturned = allData.reduce((s, d) => s + d.returnedOrders, 0);
     const totalReturnedValue = allData.reduce((s, d) => s + d.returnedValue, 0);
     const syncedOrders = (data || []).filter((r) => r.tracking_status !== null).length;
+    // noHelpshipOrders = orders that never reached Helpship (can't be synced)
+    const noHelpshipOrders = (data || []).filter((r) => !r.helpship_order_id).length;
+    const unsyncedOrders = totalOrders - syncedOrders;
 
     return NextResponse.json({
       stats,
@@ -118,7 +121,8 @@ export async function GET(request: NextRequest) {
         overallRate: totalOrders > 0 ? (totalReturned / totalOrders) * 100 : 0,
         totalReturnedValue,
         syncedOrders,
-        unsyncedOrders: totalOrders - syncedOrders,
+        unsyncedOrders,
+        noHelpshipOrders,
       },
     });
   } catch (err) {
@@ -127,12 +131,31 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Normalize county name to a canonical lowercase form for grouping */
-function normalizeCountyName(raw: string): string {
-  return raw
+// Whitelist of valid Romanian county names (normalized, hyphens → spaces)
+const VALID_COUNTIES = new Set([
+  "alba", "arges", "arad", "bacau", "bihor", "bistrita nasaud", "braila",
+  "botosani", "bucuresti", "brasov", "buzau", "cluj", "calarasi",
+  "caras severin", "constanta", "covasna", "dambovita", "dolj", "gorj",
+  "galati", "giurgiu", "hunedoara", "harghita", "ilfov", "ialomita",
+  "iasi", "mehedinti", "maramures", "mures", "neamt", "olt", "prahova",
+  "sibiu", "salaj", "satu mare", "suceava", "tulcea", "timis",
+  "teleorman", "valcea", "vrancea", "vaslui",
+]);
+
+/**
+ * Normalize county name to canonical form:
+ * - strip diacritics
+ * - lowercase
+ * - hyphens → spaces (unifies "bistrita-nasaud" and "bistrita nasaud")
+ * Returns null if not a valid Romanian county.
+ */
+function normalizeCountyName(raw: string): string | null {
+  const normalized = raw
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+    .replace(/-/g, " ")              // hyphens → spaces
     .replace(/\s+/g, " ");
+  return VALID_COUNTIES.has(normalized) ? normalized : null;
 }

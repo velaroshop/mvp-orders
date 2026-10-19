@@ -57,6 +57,7 @@ export function normalizeToId(raw: string): string | null {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/-/g, " ")   // hyphens → spaces (bistrita-nasaud = bistrita nasaud)
     .replace(/\s+/g, " ");
   return NORM_TO_ID[key] ?? null;
 }

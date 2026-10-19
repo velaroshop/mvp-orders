@@ -31,28 +31,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
 
-    let query = supabaseAdmin
-      .from("orders")
-      .select("county, tracking_status, total")
-      .eq("organization_id", organizationId)
-      .neq("status", "testing")
-      .neq("status", "queue")
-      .not("county", "is", null)
-      .neq("county", "");
+    // Supabase has a server-side max_rows cap (default 1000) that ignores .limit().
+    // Workaround: paginate with .range() until we get all rows.
+    const PAGE_SIZE = 1000;
+    let allRows: { county: string; tracking_status: string | null; total: string }[] = [];
+    let from = 0;
 
-    if (period !== "all") {
-      const days = parseInt(period, 10);
-      const since = new Date();
-      since.setDate(since.getDate() - days);
-      query = query.gte("created_at", since.toISOString());
+    while (true) {
+      let q = supabaseAdmin
+        .from("orders")
+        .select("county, tracking_status, total")
+        .eq("organization_id", organizationId)
+        .neq("status", "testing")
+        .neq("status", "queue")
+        .not("county", "is", null)
+        .neq("county", "");
+
+      if (period !== "all") {
+        const days = parseInt(period, 10);
+        const since = new Date();
+        since.setDate(since.getDate() - days);
+        q = q.gte("created_at", since.toISOString());
+      }
+
+      const { data: page, error } = await q.range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        console.error("[ReturnsMap] DB error:", error);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
+
+      if (!page || page.length === 0) break;
+      allRows = allRows.concat(page);
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
 
-    const { data, error } = await query.limit(50000);
-
-    if (error) {
-      console.error("[ReturnsMap] DB error:", error);
-      return NextResponse.json({ error: "DB error" }, { status: 500 });
-    }
+    const data = allRows;
 
     // Aggregate by county
     const map = new Map<string, { total: number; returned: number; returnedValue: number }>();

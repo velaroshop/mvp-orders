@@ -5,11 +5,14 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { HelpshipClient } from "@/lib/helpship";
 
+// Allow up to 300s on Vercel Pro — needed for large order volumes
+export const maxDuration = 300;
+
 // Statuses that are final — won't change, no need to re-sync
 const FINAL_STATUSES = ["Returned", "Delivered", "Cancelled"];
 
 const BATCH_SIZE = 20;
-const DELAY_MS = 500; // between batches
+const DELAY_MS = 400; // between batches — 400ms balances speed vs Helpship rate limits
 
 /**
  * POST /api/admin/bulk-sync-tracking
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
       .not("helpship_order_id", "is", null)
       .not("status", "in", '("testing","queue","cancelled")')
       .order("created_at", { ascending: false })
-      .limit(2000); // safety cap per run
+      .limit(10000); // high cap — 5000 orders fits in 300s on Vercel Pro
 
     if (error) {
       return NextResponse.json({ error: "DB error" }, { status: 500 });

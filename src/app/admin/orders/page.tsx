@@ -1182,7 +1182,7 @@ export default function AdminPage() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to resync order");
+          throw new Error(errorData.details || errorData.error || "Failed to resync order");
         }
 
         const result = await response.json();
@@ -1204,6 +1204,7 @@ export default function AdminPage() {
         // Rollback on error
         updateOrderLocally(orderId, {
           status: originalOrder.status,
+          syncErrorMessage: originalOrder.syncErrorMessage,
         });
         const errorMessage = error instanceof Error ? error.message : "Eroare la re-sincronizarea comenzii";
         setToast({

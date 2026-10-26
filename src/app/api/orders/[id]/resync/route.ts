@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { HelpshipClient } from "@/lib/helpship";
-import { getHelpshipCredentials } from "@/lib/helpship-credentials";
-import { scheduleOrderConfirmationWhatsApp } from "@/lib/whatsapp-confirmation";
+import { syncOrderToHelpship } from "@/lib/helpship-sync";
 
 export async function POST(
   request: NextRequest,
@@ -20,10 +18,9 @@ export async function POST(
 
     const orderId = params.id;
 
-    // Get order details
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("*")
+      .select("id, organization_id, helpship_order_id")
       .eq("id", orderId)
       .single();
 
@@ -32,15 +29,11 @@ export async function POST(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Verify user has access to this organization
     const activeOrganizationId = (session.user as any).activeOrganizationId;
-    const orderOrganizationId = order.organization_id;
-
-    if (activeOrganizationId !== orderOrganizationId) {
+    if (activeOrganizationId !== order.organization_id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Check if order already has a Helpship ID
     if (order.helpship_order_id) {
       return NextResponse.json(
         { error: "Order already synced with Helpship" },
@@ -48,129 +41,27 @@ export async function POST(
       );
     }
 
-    // Get landing page to find store_id, SKU and quantities
-    const { data: landingPage } = await supabaseAdmin
-      .from("landing_pages")
-      .select("store_id, product_id, main_sku, quantity_offer_1, quantity_offer_2, quantity_offer_3")
-      .eq("slug", order.landing_key)
-      .single();
+    console.log(`[Resync] Attempting to sync order ${orderId} to Helpship...`);
 
-    // Determine quantity based on offer code
-    const quantityMap: Record<string, number> = {
-      offer_1: landingPage?.quantity_offer_1 || 1,
-      offer_2: landingPage?.quantity_offer_2 || 2,
-      offer_3: landingPage?.quantity_offer_3 || 3,
-    };
-    const productQuantity = quantityMap[order.offer_code] || 1;
-    const productSku = landingPage?.main_sku || null;
+    // Same path as the regular sync: variations, VAT, quantities and upsell names stay consistent
+    const syncResult = await syncOrderToHelpship(orderId);
 
-    // Get product name from database
-    let productName: string | null = null;
-    if (landingPage?.product_id) {
-      const { data: product } = await supabaseAdmin
-        .from("products")
-        .select("name")
-        .eq("id", landingPage.product_id)
-        .single();
-      productName = product?.name || null;
-    }
-
-    // Get order series and order email from store
-    let orderSeries = "VLR";
-    let orderEmail: string | null = null;
-    if (landingPage?.store_id) {
-      const { data: store } = await supabaseAdmin
-        .from("stores")
-        .select("order_series, order_email")
-        .eq("id", landingPage.store_id)
-        .single();
-
-      if (store?.order_series) {
-        orderSeries = store.order_series;
-      }
-      if (store?.order_email) {
-        orderEmail = store.order_email;
-      }
-    }
-
-    // Get Helpship credentials for organization
-    const credentials = await getHelpshipCredentials(orderOrganizationId);
-    const helpshipClient = new HelpshipClient(credentials);
-
-    // Try to create order in Helpship
-    try {
-      console.log(`[Resync] Attempting to sync order ${orderId} to Helpship...`);
-
-      const helpshipResult = await helpshipClient.createOrder({
-        orderId: order.id,
-        orderNumber: order.order_number || 0,
-        orderSeries: orderSeries,
-        orderEmail: orderEmail, // Email from store settings
-        customerName: order.full_name,
-        customerPhone: order.phone,
-        county: order.county,
-        city: order.city,
-        address: order.address,
-        offerCode: order.offer_code,
-        productSku, // SKU-ul produsului (același pentru toate ofertele)
-        productName, // Numele produsului din baza noastră
-        productQuantity, // Cantitatea din oferta selectată
-        subtotal: parseFloat(order.subtotal.toString()),
-        shippingCost: parseFloat(order.shipping_cost.toString()),
-        total: parseFloat(order.total.toString()),
-        upsells: order.upsells || [],
-      });
-
-      console.log(`[Resync] Order synced successfully:`, helpshipResult);
-
-      // Update order with helpship_order_id and change status to pending, clear any previous error
-      const { error: updateError } = await supabaseAdmin
-        .from("orders")
-        .update({
-          helpship_order_id: helpshipResult.orderId,
-          status: "pending",
-          sync_error_message: null,
-        })
-        .eq("id", orderId);
-
-      if (updateError) {
-        console.error("[Resync] Failed to update order:", updateError);
-        throw new Error("Failed to update order status");
-      }
-
-      try {
-        scheduleOrderConfirmationWhatsApp(order, order.upsells || [], parseFloat(order.total.toString()));
-      } catch (waErr) {
-        console.error("[Resync] WhatsApp scheduling failed (ignored):", waErr);
-      }
-
-      return NextResponse.json({
-        success: true,
-        helpshipOrderId: helpshipResult.orderId,
-        message: "Order synced successfully with Helpship",
-      });
-    } catch (err) {
-      console.error("[Resync] Failed to sync order:", err);
-
-      const errorMessage = err instanceof Error ? err.message : String(err);
-
-      // Update the error message on the order
-      await supabaseAdmin
-        .from("orders")
-        .update({
-          sync_error_message: errorMessage,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", orderId);
-
+    if (!syncResult.success) {
+      console.error("[Resync] Failed to sync order:", syncResult.error);
       return NextResponse.json(
         {
           error: "Failed to sync with Helpship",
-          details: errorMessage,
+          details: syncResult.error,
         },
         { status: 500 }
       );
     }
+
+    return NextResponse.json({
+      success: true,
+      helpshipOrderId: syncResult.helpshipOrderId,
+      message: "Order synced successfully with Helpship",
+    });
   } catch (error) {
     console.error("Error in resync endpoint", error);
     return NextResponse.json(

@@ -3,6 +3,8 @@ import { HelpshipClient } from "./helpship";
 import { getHelpshipCredentials } from "./helpship-credentials";
 import { scheduleOrderConfirmationWhatsApp } from "./whatsapp-confirmation";
 
+export const HELPSHIP_UNAVAILABLE_MESSAGE = "Helpship indisponibil (503). Se va reîncerca automat.";
+
 /**
  * Syncs an order to Helpship with all its products (main + presale + postsale upsells)
  * Updates order status to 'pending' and stores helpship_order_id
@@ -147,6 +149,7 @@ export async function syncOrderToHelpship(
       .update({
         helpship_order_id: helpshipResult.orderId,
         status: "pending",
+        sync_error_message: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
@@ -177,10 +180,14 @@ export async function syncOrderToHelpship(
     console.error("[Helpship Sync] Failed to sync order:", error);
 
     const rawMessage = error instanceof Error ? error.message : String(error);
-    const isHelpshipDown = /50[234]/.test(rawMessage) || rawMessage.includes("Service Unavailable");
-    const errorMessage = isHelpshipDown
-      ? "Helpship indisponibil (503). Se va reîncerca automat."
-      : rawMessage;
+    const gatewayCode = rawMessage.match(/\b50[234]\b/)?.[0];
+    // Only 503 is retried automatically: on 502/504 Helpship may have created the order anyway
+    const errorMessage =
+      gatewayCode === "503" || (!gatewayCode && rawMessage.includes("Service Unavailable"))
+        ? HELPSHIP_UNAVAILABLE_MESSAGE
+        : gatewayCode
+        ? `Helpship nu a răspuns corect (${gatewayCode}). Verifică în Helpship dacă comanda există deja, apoi apasă Resync.`
+        : rawMessage;
 
     // Update order status to 'sync_error' and store the error message
     try {

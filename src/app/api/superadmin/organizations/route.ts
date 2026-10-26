@@ -39,7 +39,6 @@ export async function GET() {
         created_at,
         updated_at
       `)
-      .neq("slug", "system-health-monitor")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -115,16 +114,7 @@ export async function GET() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    // Check if current user has extended access
-    const activeOrgId = (session.user as any).activeOrganizationId;
-    const { data: currentOrg } = await supabaseAdmin
-      .from("organizations")
-      .select("slug")
-      .eq("id", activeOrgId)
-      .single();
-    const extendedAccess = currentOrg?.slug === "system-health-monitor";
-
-    return NextResponse.json({ organizations: mappedOrganizations, extendedAccess });
+    return NextResponse.json({ organizations: mappedOrganizations });
   } catch (error) {
     console.error("Error in GET /api/superadmin/organizations:", error);
     return NextResponse.json(

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
 import SalesAnalysisModal from "@/app/admin/components/SalesAnalysisModal";
+import WhatsAppIcon from "@/app/admin/components/WhatsAppIcon";
 
 interface Upsell {
   id: string;
@@ -51,6 +52,7 @@ interface LandingPage {
   price_3?: number;
   shipping_price?: number;
   post_purchase_status?: boolean;
+  whatsapp_confirmation_enabled?: boolean;
   products?: {
     id: string;
     name: string;
@@ -374,6 +376,27 @@ export default function LandingPagesPage() {
     }
   }
 
+  async function handleToggleWhatsApp(landingPageId: string, currentEnabled: boolean) {
+    const setEnabled = (enabled: boolean) =>
+      setLandingPages((prev) =>
+        prev.map((p) => (p.id === landingPageId ? { ...p, whatsapp_confirmation_enabled: enabled } : p))
+      );
+
+    setEnabled(!currentEnabled);
+    try {
+      const response = await fetch(`/api/landing-pages/${landingPageId}/whatsapp`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !currentEnabled }),
+      });
+      if (!response.ok) throw new Error("Failed to update WhatsApp setting");
+    } catch (err) {
+      console.error("Error updating WhatsApp setting:", err);
+      setEnabled(currentEnabled);
+      alert("Nu am putut salva setarea WhatsApp.");
+    }
+  }
+
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString("ro-RO", {
       year: "numeric",
@@ -533,6 +556,27 @@ export default function LandingPagesPage() {
                               ? "Arhivat"
                               : "Draft"}
                           </span>
+                          {isSuperadmin && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleWhatsApp(page.id, page.whatsapp_confirmation_enabled === true);
+                              }}
+                              title={
+                                page.whatsapp_confirmation_enabled
+                                  ? "Confirmare WhatsApp activă — click pentru oprire"
+                                  : "Confirmare WhatsApp oprită — click pentru activare"
+                              }
+                              className={`p-1 rounded transition-colors ${
+                                page.whatsapp_confirmation_enabled
+                                  ? "text-[#25D366] bg-[#25D366]/15"
+                                  : "text-zinc-400 hover:text-zinc-300"
+                              }`}
+                            >
+                              <WhatsAppIcon className="w-4 h-4" />
+                            </button>
+                          )}
                           {page.products?.status === "inactive" && (
                             <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] rounded uppercase font-medium">
                               ⚠️ Produs Inactiv

@@ -56,6 +56,7 @@ export async function GET() {
         meta_ads_token_expires_at: data?.meta_ads_token_expires_at || null,
         courier_cost:   data?.courier_cost   ?? null,
         packaging_cost: data?.packaging_cost ?? null,
+        whatsapp_confirmation_enabled: data?.whatsapp_confirmation_enabled ?? false,
       },
     });
   } catch (error) {

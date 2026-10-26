@@ -117,6 +117,10 @@ export async function GET(request: Request) {
       updatedAt: row.updated_at ?? undefined,
     }));
 
+    if ((session.user as any).isSuperadminOrg && orders.length > 0) {
+      await attachWhatsAppConfirmations(orders);
+    }
+
     return NextResponse.json({
       orders,
       total: totalCount,
@@ -129,6 +133,26 @@ export async function GET(request: Request) {
       { error: "Internal server error" },
       { status: 500 },
     );
+  }
+}
+
+// Kept outside search_orders RPC on purpose; failures (e.g. migration not applied) are ignored
+async function attachWhatsAppConfirmations(orders: { id: string; whatsappConfirmedAt?: string }[]) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("orders")
+      .select("id, whatsapp_confirmed_at")
+      .in("id", orders.map((o) => o.id))
+      .not("whatsapp_confirmed_at", "is", null);
+    if (error || !data) return;
+
+    const confirmedAt = new Map(data.map((r) => [r.id, r.whatsapp_confirmed_at as string]));
+    for (const order of orders) {
+      const value = confirmedAt.get(order.id);
+      if (value) order.whatsappConfirmedAt = value;
+    }
+  } catch (err) {
+    console.warn("[Orders List] WhatsApp confirmations lookup failed:", err);
   }
 }
 
@@ -224,6 +248,7 @@ async function fallbackSearch(
     callStatus: row.call_status ?? undefined,
     callAttempts: row.call_attempts ?? 0,
     lastCallAt: row.last_call_at ?? undefined,
+    whatsappConfirmedAt: row.whatsapp_confirmed_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
   }));

@@ -110,6 +110,7 @@ export interface Order {
   lastCallAt?: string;
   // Product variations selected by customer
   selectedVariations?: SelectedVariation[];
+  whatsappConfirmedAt?: string;
   createdAt: string;
   updatedAt?: string;
 }

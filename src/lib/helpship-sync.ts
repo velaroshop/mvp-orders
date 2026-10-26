@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "./supabase";
 import { HelpshipClient } from "./helpship";
 import { getHelpshipCredentials } from "./helpship-credentials";
+import { scheduleOrderConfirmationWhatsApp } from "./whatsapp-confirmation";
 
 /**
  * Syncs an order to Helpship with all its products (main + presale + postsale upsells)
@@ -156,6 +157,13 @@ export async function syncOrderToHelpship(orderId: string): Promise<{
     }
 
     console.log("[Helpship Sync] Order synced successfully");
+
+    try {
+      scheduleOrderConfirmationWhatsApp(order, upsellsWithProductNames, actualTotal);
+    } catch (waErr) {
+      console.error("[Helpship Sync] WhatsApp scheduling failed (ignored):", waErr);
+    }
+
     return {
       success: true,
       helpshipOrderId: helpshipResult.orderId,

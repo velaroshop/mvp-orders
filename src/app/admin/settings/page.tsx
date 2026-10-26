@@ -36,6 +36,10 @@ export default function SettingsPage() {
   const [isSavingShipping, setIsSavingShipping] = useState(false);
   const [shippingMessage, setShippingMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [isSavingWhatsapp, setIsSavingWhatsapp] = useState(false);
+  const [whatsappMessage, setWhatsappMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   useEffect(() => {
     async function loadSettings() {
       try {
@@ -52,6 +56,7 @@ export default function SettingsPage() {
         setMetaAdsTokenExpiresAt(data.settings.meta_ads_token_expires_at || null);
         setCourierCost(data.settings.courier_cost != null ? String(data.settings.courier_cost) : "");
         setPackagingCost(data.settings.packaging_cost != null ? String(data.settings.packaging_cost) : "");
+        setWhatsappEnabled(data.settings.whatsapp_confirmation_enabled === true);
       } catch (error) {
         console.error("Error loading settings:", error);
         setCredentialsMessage({ type: "error", text: "Failed to load settings" });
@@ -349,6 +354,56 @@ export default function SettingsPage() {
           </div>
         </div>
       </form>
+
+      {/* WhatsApp order confirmation — superadmin only */}
+      {isSuperadmin && (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setIsSavingWhatsapp(true);
+          setWhatsappMessage(null);
+          try {
+            const response = await fetch("/api/settings/whatsapp", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enabled: whatsappEnabled }),
+            });
+            if (!response.ok) throw new Error("Failed to save WhatsApp settings");
+            setWhatsappMessage({ type: "success", text: "Setarea WhatsApp a fost salvată." });
+          } catch (error) {
+            setWhatsappMessage({ type: "error", text: "Eroare la salvarea setării WhatsApp." });
+          } finally {
+            setIsSavingWhatsapp(false);
+          }
+        }}>
+          <div className="card p-6 space-y-4">
+            <h2 className="section-title">Confirmare comandă pe WhatsApp</h2>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={whatsappEnabled}
+                onChange={(e) => setWhatsappEnabled(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>
+                <span className="block text-sm font-medium text-white">Trimite mesaj de confirmare pe WhatsApp</span>
+                <span className="block text-xs text-zinc-400 mt-0.5">
+                  Clientul primește mesajul imediat după ce comanda intră în Helpship. Se trimite doar pentru landing page-urile
+                  la care ai activat iconița WhatsApp în pagina Landing Pages.
+                </span>
+              </span>
+            </label>
+
+            <MessageBox msg={whatsappMessage} />
+
+            <div className="flex justify-end">
+              <button type="submit" disabled={isSavingWhatsapp} className="btn btn-primary">
+                {isSavingWhatsapp ? "Se salvează..." : "Salvează"}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
 
       {/* Meta Ads Dashboard — superadmin only */}
       {isSuperadmin && <div className="card p-6 space-y-4">

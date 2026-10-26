@@ -17,6 +17,7 @@ import CallHistoryModal from "../components/CallHistoryModal";
 import ChangeOrderModal from "../components/ChangeOrderModal";
 import type { ChangeOrderData } from "../components/ChangeOrderModal";
 import Toast from "../components/Toast";
+import WhatsAppIcon from "../components/WhatsAppIcon";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
 export default function AdminPage() {
@@ -2049,7 +2050,17 @@ export default function AdminPage() {
                     <td className="px-1 py-1.5">
                       <div className="flex items-start gap-1.5">
                         <div>
-                          <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
+                          <div className="flex items-center gap-1">
+                            <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
+                            {order.whatsappConfirmedAt && (
+                              <span
+                                className="shrink-0 text-[#25D366]"
+                                title={`Confirmat de client pe WhatsApp: ${new Date(order.whatsappConfirmedAt).toLocaleString("ro-RO")}`}
+                              >
+                                <WhatsAppIcon className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
                           <p className="text-zinc-400 text-xs">{order.phone}</p>
                         </div>
                       </div>

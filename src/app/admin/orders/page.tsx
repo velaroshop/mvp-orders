@@ -2060,6 +2060,22 @@ export default function AdminPage() {
                                 <WhatsAppIcon className="w-3.5 h-3.5" />
                               </span>
                             )}
+                            {order.whatsappReply && (() => {
+                              const replyInfo = `Clientul a scris pe WhatsApp (${new Date(order.whatsappReplyAt || order.createdAt).toLocaleString("ro-RO")}):\n\n${order.whatsappReply}`;
+                              return (
+                                <button
+                                  type="button"
+                                  className="shrink-0 text-orange-400 hover:text-orange-300"
+                                  title={replyInfo}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    alert(replyInfo);
+                                  }}
+                                >
+                                  <WhatsAppIcon className="w-3.5 h-3.5" />
+                                </button>
+                              );
+                            })()}
                           </div>
                           <p className="text-zinc-400 text-xs">{order.phone}</p>
                         </div>

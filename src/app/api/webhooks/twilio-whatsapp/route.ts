@@ -4,11 +4,14 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 const CONFIRM_PAYLOAD = "confirm_order";
 const CONFIRM_REPLY = "Mulțumim! Comanda ta a fost confirmată și o pregătim pentru trimitere. 📦";
+const TEXT_REPLY_ACK = "Am primit mesajul tău. Dacă e nevoie, un coleg te contactează în scurt timp. 🙏";
 const PHONE_FALLBACK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const ACK_COOLDOWN_MS = 60 * 60 * 1000;
+const REPLY_MAX_LENGTH = 1000;
 
 /**
  * POST /api/webhooks/twilio-whatsapp
- * Incoming WhatsApp messages from Twilio. Handles the "Confirm comanda" quick reply.
+ * Incoming WhatsApp messages from Twilio: the "Confirm comanda" quick reply and free-text replies.
  */
 export async function POST(request: NextRequest) {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -24,31 +27,83 @@ export async function POST(request: NextRequest) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  if (params.ButtonPayload !== CONFIRM_PAYLOAD) {
-    return twiml();
-  }
-
   try {
     const orderId = await findOrderId(params.OriginalRepliedMessageSid, params.From);
     if (!orderId) {
-      console.warn("[WhatsApp Webhook] No order found for confirmation:", {
+      console.warn("[WhatsApp Webhook] No order found for incoming message:", {
         repliedSid: params.OriginalRepliedMessageSid,
       });
       return twiml();
     }
 
-    await supabaseAdmin
-      .from("orders")
-      .update({ whatsapp_confirmed_at: new Date().toISOString() })
-      .eq("id", orderId)
-      .is("whatsapp_confirmed_at", null);
+    if (params.ButtonPayload === CONFIRM_PAYLOAD) {
+      await supabaseAdmin
+        .from("orders")
+        .update({ whatsapp_confirmed_at: new Date().toISOString() })
+        .eq("id", orderId)
+        .is("whatsapp_confirmed_at", null);
 
-    console.log("[WhatsApp Webhook] Order confirmed by customer:", orderId);
-    return twiml(CONFIRM_REPLY);
+      console.log("[WhatsApp Webhook] Order confirmed by customer:", orderId);
+      return twiml(CONFIRM_REPLY);
+    }
+
+    const text = describeMessage(params);
+    if (!text) return twiml();
+
+    const shouldAck = await saveReply(orderId, text);
+    console.log("[WhatsApp Webhook] Customer reply saved:", orderId);
+    return twiml(shouldAck ? TEXT_REPLY_ACK : undefined);
   } catch (err) {
     console.error("[WhatsApp Webhook] Error:", err);
     return twiml();
   }
+}
+
+// Text, voice notes and media; voice notes are common with this audience
+function describeMessage(params: Record<string, string>): string | null {
+  const body = (params.Body || params.ButtonText || "").trim();
+  let media = "";
+  if (Number(params.NumMedia || 0) > 0) {
+    const type = params.MediaContentType0 || "";
+    media = type.startsWith("audio/")
+      ? "🎤 Mesaj vocal"
+      : type.startsWith("image/")
+      ? "📷 Imagine"
+      : type.startsWith("video/")
+      ? "🎥 Video"
+      : "📎 Fișier";
+  }
+  const text = [media, body].filter(Boolean).join(" ");
+  return text || null;
+}
+
+// Appends the reply to the order; returns whether to send the auto-acknowledgement
+async function saveReply(orderId: string, text: string): Promise<boolean> {
+  const { data: current, error } = await supabaseAdmin
+    .from("orders")
+    .select("whatsapp_reply, whatsapp_reply_at")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) {
+    console.error("[WhatsApp Webhook] Reading reply failed:", error.message);
+    return false;
+  }
+
+  const combined = current?.whatsapp_reply ? `${current.whatsapp_reply}\n${text}` : text;
+  const { error: updateError } = await supabaseAdmin
+    .from("orders")
+    .update({
+      whatsapp_reply: combined.slice(-REPLY_MAX_LENGTH),
+      whatsapp_reply_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+  if (updateError) {
+    console.error("[WhatsApp Webhook] Saving reply failed:", updateError.message);
+    return false;
+  }
+
+  const lastReplyAt = current?.whatsapp_reply_at ? new Date(current.whatsapp_reply_at).getTime() : 0;
+  return Date.now() - lastReplyAt > ACK_COOLDOWN_MS;
 }
 
 async function findOrderId(repliedSid?: string, from?: string): Promise<string | null> {

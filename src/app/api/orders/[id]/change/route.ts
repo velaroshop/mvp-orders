@@ -133,7 +133,8 @@ export async function POST(
         const originalStatus = order.status;
 
         // Recreate order in Helpship (reads updated data from DB)
-        const syncResult = await syncOrderToHelpship(orderId);
+        // A modified order must not trigger the first-time WhatsApp confirmation
+        const syncResult = await syncOrderToHelpship(orderId, { sendWhatsApp: false });
 
         if (syncResult.success && syncResult.helpshipOrderId) {
           newHelpshipOrderId = syncResult.helpshipOrderId;

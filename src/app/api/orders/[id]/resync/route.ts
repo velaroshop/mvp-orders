@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { HelpshipClient } from "@/lib/helpship";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { scheduleOrderConfirmationWhatsApp } from "@/lib/whatsapp-confirmation";
 
 export async function POST(
   request: NextRequest,
@@ -135,6 +136,12 @@ export async function POST(
       if (updateError) {
         console.error("[Resync] Failed to update order:", updateError);
         throw new Error("Failed to update order status");
+      }
+
+      try {
+        scheduleOrderConfirmationWhatsApp(order, order.upsells || [], parseFloat(order.total.toString()));
+      } catch (waErr) {
+        console.error("[Resync] WhatsApp scheduling failed (ignored):", waErr);
       }
 
       return NextResponse.json({

@@ -118,7 +118,7 @@ export async function GET(request: Request) {
     }));
 
     if ((session.user as any).isSuperadminOrg && orders.length > 0) {
-      await attachWhatsAppConfirmations(orders);
+      await attachWhatsAppState(orders);
     }
 
     return NextResponse.json({
@@ -137,22 +137,27 @@ export async function GET(request: Request) {
 }
 
 // Kept outside search_orders RPC on purpose; failures (e.g. migration not applied) are ignored
-async function attachWhatsAppConfirmations(orders: { id: string; whatsappConfirmedAt?: string }[]) {
+async function attachWhatsAppState(
+  orders: { id: string; whatsappConfirmedAt?: string; whatsappReply?: string; whatsappReplyAt?: string }[]
+) {
   try {
     const { data, error } = await supabaseAdmin
       .from("orders")
-      .select("id, whatsapp_confirmed_at")
+      .select("id, whatsapp_confirmed_at, whatsapp_reply, whatsapp_reply_at")
       .in("id", orders.map((o) => o.id))
-      .not("whatsapp_confirmed_at", "is", null);
+      .or("whatsapp_confirmed_at.not.is.null,whatsapp_reply_at.not.is.null");
     if (error || !data) return;
 
-    const confirmedAt = new Map(data.map((r) => [r.id, r.whatsapp_confirmed_at as string]));
+    const byId = new Map(data.map((r) => [r.id, r]));
     for (const order of orders) {
-      const value = confirmedAt.get(order.id);
-      if (value) order.whatsappConfirmedAt = value;
+      const row = byId.get(order.id);
+      if (!row) continue;
+      order.whatsappConfirmedAt = row.whatsapp_confirmed_at ?? undefined;
+      order.whatsappReply = row.whatsapp_reply ?? undefined;
+      order.whatsappReplyAt = row.whatsapp_reply_at ?? undefined;
     }
   } catch (err) {
-    console.warn("[Orders List] WhatsApp confirmations lookup failed:", err);
+    console.warn("[Orders List] WhatsApp state lookup failed:", err);
   }
 }
 
@@ -249,6 +254,8 @@ async function fallbackSearch(
     callAttempts: row.call_attempts ?? 0,
     lastCallAt: row.last_call_at ?? undefined,
     whatsappConfirmedAt: row.whatsapp_confirmed_at ?? undefined,
+    whatsappReply: row.whatsapp_reply ?? undefined,
+    whatsappReplyAt: row.whatsapp_reply_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
   }));

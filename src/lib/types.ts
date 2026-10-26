@@ -111,6 +111,8 @@ export interface Order {
   // Product variations selected by customer
   selectedVariations?: SelectedVariation[];
   whatsappConfirmedAt?: string;
+  whatsappReply?: string; // Free-text replies from the customer, newline separated
+  whatsappReplyAt?: string;
   createdAt: string;
   updatedAt?: string;
 }

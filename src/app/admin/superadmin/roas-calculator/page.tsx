@@ -13,6 +13,7 @@ import {
   PenLine,
   Layers,
   BarChart2,
+  CalendarDays,
 } from "lucide-react";
 import SalesAnalysisModal from "@/app/admin/components/SalesAnalysisModal";
 
@@ -320,6 +321,135 @@ function MixOferte({ results, common, landingPageId, landingPageName, onOpenSale
             </div>
             <p className="text-[11px] text-white/30 leading-snug">
               <strong className="text-white/45">ROAS break-even real {fmt(roasBeReal)}x</strong> = pragul de comparat cu ROAS-ul din Ads Manager. Sub acest ROAS, mixul de oferte e neprofitabil.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Estimare luna aceasta
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface MonthOrders {
+  since: string;
+  offers: { confirmed: number; cancelled: number; pending: number }[];
+}
+
+// Pessimistic on purpose: only confirmed orders earn profit, cancelled ones cost their ad spend,
+// undecided orders and upsells are left out.
+function MonthEstimate({ landingPageId, results, common }: {
+  landingPageId: string;
+  results: OfferResult[];
+  common: CommonInputs;
+}) {
+  const [data, setData] = useState<MonthOrders | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/landing-pages/${landingPageId}/month-orders`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled) setData(d); })
+      .catch(() => { if (!cancelled) setData(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [landingPageId]);
+
+  const monthLabel = data
+    ? new Date(data.since).toLocaleDateString("ro-RO", { month: "long", year: "numeric", timeZone: "Europe/Bucharest" })
+    : "";
+
+  const rows = data
+    ? results.map((r, i) => {
+        const c = data.offers[i] ?? { confirmed: 0, cancelled: 0, pending: 0 };
+        return {
+          ...c,
+          valid: r.valid,
+          profit: r.valid ? c.confirmed * r.profitLaTarget : 0,
+          cancelCost: r.valid ? c.cancelled * r.cheltuialaReclame : 0,
+        };
+      })
+    : [];
+
+  const totalConfirmed = rows.reduce((s, r) => s + r.confirmed, 0);
+  const totalCancelled = rows.reduce((s, r) => s + r.cancelled, 0);
+  const totalPending   = rows.reduce((s, r) => s + r.pending, 0);
+  const totalProfit    = rows.reduce((s, r) => s + r.profit, 0);
+  const totalCancelCost = rows.reduce((s, r) => s + r.cancelCost, 0);
+  const net = totalProfit - totalCancelCost;
+  const skipped = rows.reduce((s, r) => s + (r.valid ? 0 : r.confirmed + r.cancelled), 0);
+
+  const targetLabel = common.calcMode === "cpa" ? `CPA ${common.cpaTarget} lei` : `ROAS ${common.roasTarget}x`;
+
+  return (
+    <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3 bg-white/2 border-b border-white/8">
+        <CalendarDays className="w-4 h-4 text-white/60" />
+        <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Estimare luna aceasta</span>
+        {monthLabel && <span className="text-xs text-white/60 capitalize">· {monthLabel}</span>}
+      </div>
+
+      <div className="px-5 py-4 space-y-4">
+        {loading ? (
+          <p className="text-sm text-white/60">Se încarcă comenzile...</p>
+        ) : !data ? (
+          <p className="text-sm text-red-400">Nu am putut încărca comenzile lunii.</p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] text-white/60 uppercase tracking-wide text-left">
+                    <th className="pb-2 font-semibold">Ofertă</th>
+                    <th className="pb-2 font-semibold text-right">Confirmate</th>
+                    <th className="pb-2 font-semibold text-right">Profit</th>
+                    <th className="pb-2 font-semibold text-right">Anulate</th>
+                    <th className="pb-2 font-semibold text-right">Reclamă pierdută</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {rows.map((r, i) => (
+                    <tr key={i} className="text-white/80">
+                      <td className="py-1.5">Oferta {i + 1}</td>
+                      <td className="py-1.5 text-right">{r.confirmed}</td>
+                      <td className={`py-1.5 text-right ${r.profit < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                        {r.valid ? `${fmt(r.profit, 0)} lei` : "—"}
+                      </td>
+                      <td className="py-1.5 text-right">{r.cancelled}</td>
+                      <td className="py-1.5 text-right text-red-400">
+                        {r.valid && r.cancelCost > 0 ? `-${fmt(r.cancelCost, 0)} lei` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="text-white font-semibold">
+                    <td className="pt-2">Total</td>
+                    <td className="pt-2 text-right">{totalConfirmed}</td>
+                    <td className="pt-2 text-right">{fmt(totalProfit, 0)} lei</td>
+                    <td className="pt-2 text-right">{totalCancelled}</td>
+                    <td className="pt-2 text-right text-red-400">{totalCancelCost > 0 ? `-${fmt(totalCancelCost, 0)} lei` : "—"}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className={`rounded-lg border p-3 ${net >= 0 ? "border-emerald-500/20 bg-emerald-500/8" : "border-red-500/20 bg-red-500/8"}`}>
+              <p className={`text-[10px] uppercase tracking-wide mb-1 ${net >= 0 ? "text-emerald-300/80" : "text-red-300/80"}`}>
+                Profit net estimat @ {targetLabel}
+              </p>
+              <p className={`font-bold text-xl ${net >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {net >= 0 ? "+" : ""}{fmt(net, 0)} lei
+              </p>
+            </div>
+
+            <p className="text-[11px] text-white/60 leading-snug">
+              Estimare pesimistă: profit doar pe comenzile confirmate (cu rata de retur de {common.rataRetur}%), minus costul de reclamă
+              al comenzilor anulate. Nu include upsell-urile
+              {totalPending > 0 && <> și nici cele <strong className="text-white/80">{totalPending}</strong> comenzi încă neconfirmate</>}.
+              {skipped > 0 && <> {skipped} comenzi pe oferte fără preț nu au putut fi calculate.</>}
             </p>
           </>
         )}
@@ -902,6 +1032,9 @@ export default function RoasCalculatorPage() {
                 landingPageName={mode === "catalog" && selectedLPId ? (landingPages.find(l => l.id === selectedLPId)?.name ?? "") : undefined}
                 onOpenSalesAnalysis={() => setShowSalesModal(true)}
               />
+            )}
+            {mode === "catalog" && selectedLPId && catalogOffers.length > 0 && (
+              <MonthEstimate landingPageId={selectedLPId} results={results} common={common} />
             )}
             {showSalesModal && mode === "catalog" && selectedLPId && (
               <SalesAnalysisModal

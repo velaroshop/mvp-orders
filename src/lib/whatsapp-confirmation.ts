@@ -64,7 +64,7 @@ async function sendOrderConfirmationWhatsApp(order: any, upsells: any[], total: 
   const now = bucharestNow();
   const variables = {
     "1": greeting(now.hour),
-    "2": firstName(order.full_name || ""),
+    "2": greetingName(order.full_name || ""),
     "3": formatOrderNumber(order.order_number, order.order_series, order.id),
     "4": truncate(formatProducts(buildLines(order, upsells)), MAX_PRODUCTS_TEXT),
     "5": new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 2 }).format(total),
@@ -182,10 +182,11 @@ function formatOrderNumber(orderNumber?: number | null, orderSeries?: string | n
   return `${series}${String(orderNumber).padStart(5, "0")}`;
 }
 
-function firstName(fullName: string): string {
-  const first = fullName.trim().split(/\s+/)[0];
-  if (!first) return "client";
-  return first.toLowerCase().replace(/(^|[-'])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
+// Full name on purpose: many customers type the surname first ("Popovici Mariana")
+function greetingName(fullName: string): string {
+  const name = fullName.trim().replace(/\s+/g, " ");
+  if (!name) return "client";
+  return name.toLowerCase().replace(/(^|[\s\-'])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
 }
 
 function greeting(hour: number): string {

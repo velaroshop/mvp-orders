@@ -1912,8 +1912,7 @@ function WidgetFormContent() {
               <div className="mb-2 text-center">
                 {isV3 ? (
                   <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
-                    <span className="text-xl sm:text-2xl">🎁</span>
-                    Alege produse cu EXTRA-REDUCERE
+                    Adaugă produse cu EXTRA REDUCERE
                   </h2>
                 ) : (
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
@@ -1931,7 +1930,7 @@ function WidgetFormContent() {
                 }
               `}</style>
 
-              <div className={isV3 ? "space-y-4 pt-3" : "space-y-2"}>
+              <div className="space-y-2">
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
                   const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
@@ -1941,7 +1940,7 @@ function WidgetFormContent() {
                       key={upsell.id}
                       type="button"
                       onClick={() => toggleUpsell(upsell.id)}
-                      className={`relative w-full ${isV3 ? "px-2 pb-2 pt-5 sm:px-3 sm:pb-3" : "p-2 sm:p-3"} rounded-lg text-left transition-all duration-300`}
+                      className="relative w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-300"
                       style={{
                         background: isSelected ? backgroundColor : '#fff',
                         border: isSelected
@@ -1974,7 +1973,7 @@ function WidgetFormContent() {
                       )}
 
                       {/* Discount badge - compact */}
-                      {discount > 0 && !isV3 && (
+                      {discount > 0 && (
                         <div className="absolute -top-2 -right-2 z-20">
                           <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                             REDUCERE -{discount}%
@@ -1982,67 +1981,6 @@ function WidgetFormContent() {
                         </div>
                       )}
 
-                      {isV3 ? (
-                      <>
-                        {/* Filled price pill sitting on the dashed border, top centre */}
-                        <div
-                          className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap flex items-baseline gap-1.5 px-3 py-0.5 rounded-full border-2 shadow"
-                          style={{ backgroundColor, borderColor: primaryColor }}
-                        >
-                          {upsell.srp > upsell.price && (
-                            <span
-                              className="text-sm font-bold line-through decoration-red-500 decoration-2"
-                              style={{ color: textOnDarkColor, opacity: 0.8 }}
-                            >
-                              {upsell.srp.toFixed(2)} Lei
-                            </span>
-                          )}
-                          <span className="text-lg font-black" style={{ color: accentColor }}>
-                            {upsell.price.toFixed(2)} Lei
-                          </span>
-                        </div>
-
-                        <div className="relative z-10">
-                          <div className="flex items-start gap-3">
-                            {/* Checkbox */}
-                            <div className="flex-shrink-0">
-                              <div
-                                className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
-                                  isSelected ? 'border-0' : 'border-zinc-500'
-                                }`}
-                                style={isSelected ? { backgroundColor: primaryColor } : {}}
-                              >
-                                {isSelected && (
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            </div>
-                            {/* Title spans the full width, "Adaugă" set apart from the product name */}
-                            <h3 className="flex-1 min-w-0 text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
-                              <span className="font-normal" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>Adaugă</span>{' '}
-                              <span className="font-bold">{upsell.title}</span>
-                            </h3>
-                          </div>
-
-                          <div className="mt-1.5 flex items-center justify-between gap-3">
-                            {upsell.srp > upsell.price ? (
-                              <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm sm:text-base font-bold">
-                                Economisești {Math.round(upsell.srp - upsell.price)} lei
-                              </span>
-                            ) : <span />}
-                            {upsell.media_url && (
-                              <img
-                                src={upsell.media_url}
-                                alt={upsell.title}
-                                className="flex-shrink-0 w-[72px] h-[72px] sm:w-20 sm:h-20 object-contain bg-white rounded-lg"
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </>
-                      ) : (
                       <div className="flex items-start gap-3 relative z-10">
                         {/* Checkbox */}
                         <div className="flex-shrink-0 mt-0.5">
@@ -2073,9 +2011,18 @@ function WidgetFormContent() {
                                   {upsell.price.toFixed(2)} Lei
                                 </span>
                                 {upsell.srp > upsell.price && (
+                                  isV3 ? (
+                                    <span className="text-sm sm:text-base" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>
+                                      {' '}(redus de la{' '}
+                                      <span className="font-bold text-red-600">
+                                        {Number.isInteger(upsell.srp) ? upsell.srp.toFixed(0) : upsell.srp.toFixed(2)} Lei
+                                      </span>)
+                                    </span>
+                                  ) : (
                                   <span className="text-xs sm:text-sm" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
                                     {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
                                   </span>
+                                  )
                                 )}
                               </h3>
                             </div>
@@ -2091,7 +2038,6 @@ function WidgetFormContent() {
                           </div>
                         </div>
                       </div>
-                      )}
                     </button>
                   );
                 })}

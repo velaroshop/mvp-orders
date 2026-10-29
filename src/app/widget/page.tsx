@@ -1896,11 +1896,18 @@ function WidgetFormContent() {
             <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 4 } : undefined}>
               {/* Header */}
               <div className="mb-2 text-center">
+                {isV3 ? (
+                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
+                    <span className="text-xl sm:text-2xl">🎁</span>
+                    Produse cu extra-reducere, doar la această comandă
+                  </h2>
+                ) : (
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
                   <span className="text-base sm:text-lg">⚡</span>
                   PRODUSE AFLATE ÎN OFERTĂ
                   <span className="text-base sm:text-lg">⚡</span>
                 </h2>
+                )}
               </div>
 
               <style jsx>{`
@@ -1961,7 +1968,7 @@ function WidgetFormContent() {
                         </div>
                       )}
 
-                      <div className="flex items-start gap-3 relative z-10">
+                      <div className={`flex ${isV3 ? "items-stretch" : "items-start"} gap-3 relative z-10`}>
                         {/* Checkbox */}
                         <div className="flex-shrink-0 mt-0.5">
                           <div
@@ -1980,14 +1987,14 @@ function WidgetFormContent() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-3">
+                          <div className={`flex ${isV3 ? "items-stretch h-full" : "items-start"} justify-between gap-3`}>
                             <div className="flex-1">
                               {isV3 ? (
                                 <div style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
                                   <h3 className="text-base sm:text-lg font-bold leading-tight">Adaugă {upsell.title}</h3>
                                   <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                                     {upsell.srp > upsell.price && (
-                                      <span className="text-base line-through decoration-red-600 decoration-2">
+                                      <span className="text-xl sm:text-2xl font-bold line-through decoration-red-600 decoration-[3px]">
                                         {upsell.srp.toFixed(2)} Lei
                                       </span>
                                     )}
@@ -2019,11 +2026,11 @@ function WidgetFormContent() {
                               )}
                             </div>
                             {upsell.media_url && (
-                              <div className="flex-shrink-0">
+                              <div className={`flex-shrink-0 ${isV3 ? "w-24 sm:w-28" : ""}`}>
                                 <img
                                   src={upsell.media_url}
                                   alt={upsell.title}
-                                  className="w-16 h-16 object-cover rounded-lg"
+                                  className={isV3 ? "w-full h-full min-h-[96px] object-contain bg-white rounded-lg" : "w-16 h-16 object-cover rounded-lg"}
                                 />
                               </div>
                             )}

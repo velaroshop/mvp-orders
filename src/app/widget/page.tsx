@@ -1207,7 +1207,7 @@ function WidgetFormContent() {
   const isV3 = landingPage.form_variant === 3;
   const isV2 = landingPage.form_variant === 2 || isV3;
   const labelClass = isV3
-    ? "block text-sm sm:text-base font-bold text-zinc-900 mb-1.5"
+    ? "block text-lg sm:text-xl font-bold text-zinc-900 mb-1.5"
     : "block text-base sm:text-lg font-medium text-zinc-900 mb-1";
   const inputBase = isV3
     ? "w-full px-3.5 py-3 border rounded-xl focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base placeholder:text-zinc-500"
@@ -1410,7 +1410,7 @@ function WidgetFormContent() {
                 {errors.phone ? (
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-zinc-400">Format: 10 cifre, fără prefix internațional</p>
+                  !isV3 && <p className="mt-1 text-xs text-zinc-400">Format: 10 cifre, fără prefix internațional</p>
                 )}
               </div>
               <div>

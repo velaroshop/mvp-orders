@@ -1941,7 +1941,7 @@ function WidgetFormContent() {
                       key={upsell.id}
                       type="button"
                       onClick={() => toggleUpsell(upsell.id)}
-                      className={`relative w-full ${isV3 ? "px-2 pb-2 pt-4 sm:px-3 sm:pb-3" : "p-2 sm:p-3"} rounded-lg text-left transition-all duration-300`}
+                      className={`relative w-full ${isV3 ? "px-2 pb-2 pt-5 sm:px-3 sm:pb-3" : "p-2 sm:p-3"} rounded-lg text-left transition-all duration-300`}
                       style={{
                         background: isSelected ? backgroundColor : '#fff',
                         border: isSelected
@@ -1984,60 +1984,62 @@ function WidgetFormContent() {
 
                       {isV3 ? (
                       <>
-                        {/* Price pill sitting on the dashed border, top centre */}
+                        {/* Filled price pill sitting on the dashed border, top centre */}
                         <div
-                          className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap flex items-baseline gap-2 px-3.5 py-0.5 rounded-full bg-white border-2 shadow"
-                          style={{ borderColor: primaryColor }}
+                          className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap flex items-baseline gap-1.5 px-3 py-0.5 rounded-full border-2 shadow"
+                          style={{ backgroundColor, borderColor: primaryColor }}
                         >
                           {upsell.srp > upsell.price && (
-                            <span className="text-base font-bold text-zinc-700 line-through decoration-red-600 decoration-2">
+                            <span
+                              className="text-sm font-bold line-through decoration-red-500 decoration-2"
+                              style={{ color: textOnDarkColor, opacity: 0.8 }}
+                            >
                               {upsell.srp.toFixed(2)} Lei
                             </span>
                           )}
-                          <span className="text-xl font-black" style={{ color: accentColor }}>
+                          <span className="text-lg font-black" style={{ color: accentColor }}>
                             {upsell.price.toFixed(2)} Lei
                           </span>
                         </div>
 
-                        <div className="relative z-10 flex items-stretch gap-3">
-                          {/* Checkbox */}
-                          <div className="flex-shrink-0 mt-0.5">
-                            <div
-                              className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
-                                isSelected ? 'border-0' : 'border-zinc-500'
-                              }`}
-                              style={isSelected ? { backgroundColor: primaryColor } : {}}
-                            >
-                              {isSelected && (
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
+                        <div className="relative z-10">
+                          <div className="flex items-start gap-3">
+                            {/* Checkbox */}
+                            <div className="flex-shrink-0">
+                              <div
+                                className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
+                                  isSelected ? 'border-0' : 'border-zinc-500'
+                                }`}
+                                style={isSelected ? { backgroundColor: primaryColor } : {}}
+                              >
+                                {isSelected && (
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
                             </div>
-                          </div>
-
-                          {/* Title + savings, "Adaugă" set apart from the product name */}
-                          <div className="flex-1 min-w-0 flex flex-col items-start justify-between gap-2">
-                            <h3 className="text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                            {/* Title spans the full width, "Adaugă" set apart from the product name */}
+                            <h3 className="flex-1 min-w-0 text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
                               <span className="font-normal" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>Adaugă</span>{' '}
                               <span className="font-bold">{upsell.title}</span>
                             </h3>
-                            {upsell.srp > upsell.price && (
-                              <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm font-bold">
-                                Economisești {Math.round(upsell.srp - upsell.price)} lei
-                              </span>
-                            )}
                           </div>
 
-                          {upsell.media_url && (
-                            <div className="flex-shrink-0 w-24 sm:w-28">
+                          <div className="mt-1.5 flex items-center justify-between gap-3">
+                            {upsell.srp > upsell.price ? (
+                              <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm sm:text-base font-bold">
+                                Economisești {Math.round(upsell.srp - upsell.price)} lei
+                              </span>
+                            ) : <span />}
+                            {upsell.media_url && (
                               <img
                                 src={upsell.media_url}
                                 alt={upsell.title}
-                                className="w-full h-full min-h-[88px] object-contain bg-white rounded-lg"
+                                className="flex-shrink-0 w-[72px] h-[72px] sm:w-20 sm:h-20 object-contain bg-white rounded-lg"
                               />
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </>
                       ) : (

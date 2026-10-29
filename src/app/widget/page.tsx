@@ -1220,13 +1220,27 @@ function WidgetFormContent() {
 
         {/* V2 Header — Explicit old/new price, dynamic with selected offer */}
         {isV2 && (
-          <div className="relative rounded-lg shadow-lg p-2.5 pt-5 mb-2 sm:mb-3" style={{ backgroundColor }}>
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+          <div className={`relative rounded-lg shadow-lg p-2.5 ${isV3 ? "pt-7" : "pt-5"} mb-2 sm:mb-3`} style={{ backgroundColor }}>
+            <div className={`absolute ${isV3 ? "-top-4" : "-top-3"} left-1/2 -translate-x-1/2 z-10`}>
+              {isV3 && (
+                <style dangerouslySetInnerHTML={{__html: `
+                  @keyframes badgePulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+                    50% { transform: scale(1.08); box-shadow: 0 6px 22px rgba(239, 68, 68, 0.75); }
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .badge-pulse { animation: none !important; }
+                  }
+                `}} />
+              )}
               <span
-                className="px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"
+                className={isV3
+                  ? "badge-pulse inline-block px-5 py-1.5 text-white rounded-full text-lg sm:text-xl font-black whitespace-nowrap shadow-lg"
+                  : "px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"}
                 style={{
                   background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-                  boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
+                  boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
+                  ...(isV3 ? { animation: 'badgePulse 1.4s ease-in-out infinite' } : {})
                 }}
               >
                 {discountBadgeV2}
@@ -1573,7 +1587,7 @@ function WidgetFormContent() {
           {/* Quantity Selection */}
           <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
-              SELECTAȚI OFERTA DORITĂ
+              {isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button

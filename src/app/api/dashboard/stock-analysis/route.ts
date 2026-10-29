@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { HelpshipClient } from "@/lib/helpship";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
+import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso, shiftDateKey } from "@/lib/romania-time";
 
 // Use service role key for API routes to bypass RLS
 const supabase = createClient(
@@ -44,13 +45,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate date range (exclude today — incomplete day skews daily average)
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() - 1); // Yesterday
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days); // N days before today
-
-    const startDateTime = startDate.toISOString().split("T")[0] + "T00:00:00.000Z";
-    const endDateTime = endDate.toISOString().split("T")[0] + "T23:59:59.999Z";
+    // Days are Romania calendar days: from N days ago through yesterday
+    const todayKey = bucharestDateKey(new Date());
+    const startDateTime = bucharestDayStartIso(shiftDateKey(todayKey, -days));
+    const endDateTime = bucharestDayEndIso(shiftDateKey(todayKey, -1));
 
     // Query orders for this product in the period
     const { data: orders, error } = await supabase

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { bucharestDayEndIso, bucharestDayStartIso } from "@/lib/romania-time";
 
 const EVENT_TYPES = [
   "form_loaded",
@@ -36,12 +37,8 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    const startDateTime = startDate
-      ? new Date(`${startDate}T00:00:00.000+03:00`).toISOString()
-      : null;
-    const endDateTime = endDate
-      ? new Date(`${endDate}T23:59:59.999+03:00`).toISOString()
-      : null;
+    const startDateTime = startDate ? bucharestDayStartIso(startDate) : null;
+    const endDateTime = endDate ? bucharestDayEndIso(endDate) : null;
 
     function buildBase() {
       let q = supabaseAdmin.from("widget_events").select("*", { count: "exact", head: true });

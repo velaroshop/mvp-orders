@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { bucharestDayEndIso, bucharestDayStartIso } from "@/lib/romania-time";
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,11 +43,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (startDate) {
-      query = query.gte("created_at", `${startDate}T00:00:00.000+03:00`);
+      query = query.gte("created_at", bucharestDayStartIso(startDate));
     }
 
     if (endDate) {
-      query = query.lte("created_at", `${endDate}T23:59:59.999+03:00`);
+      query = query.lte("created_at", bucharestDayEndIso(endDate));
     }
 
     const { data: logs, error, count } = await query;

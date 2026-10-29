@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso } from "@/lib/romania-time";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,9 +143,9 @@ export async function GET(request: NextRequest) {
       product = productData;
     }
 
-    // Use Romania timezone for date filtering (UTC+3 summer time)
-    const startDateTime = `${startDateStr}T00:00:00+03:00`;
-    const endDateTime = `${endDateStr}T23:59:59+03:00`;
+    // Use Romania time (winter/summer aware) for date filtering
+    const startDateTime = bucharestDayStartIso(startDateStr);
+    const endDateTime = bucharestDayEndIso(endDateStr);
 
     // Fetch all orders using pagination (Supabase server-side max_rows caps single requests to 1000)
     const allOrders: any[] = [];
@@ -158,8 +159,8 @@ export async function GET(request: NextRequest) {
         .eq("organization_id", organizationId)
         .neq("status", "cancelled")
         .neq("status", "testing")
-        .gte("created_at", new Date(startDateTime).toISOString())
-        .lte("created_at", new Date(endDateTime).toISOString())
+        .gte("created_at", startDateTime)
+        .lte("created_at", endDateTime)
         .order("created_at", { ascending: true })
         .range(offset, offset + batchSize - 1);
 
@@ -186,19 +187,13 @@ export async function GET(request: NextRequest) {
     const orders = allOrders;
 
     // Group orders by date (Romania time)
-    const ROMANIA_OFFSET_HOURS = 3;
     const ordersByDate: Map<
       string,
       { revenue: number; count: number; productsSold: number }
     > = new Map();
 
     (orders || []).forEach((order: any) => {
-      const createdAt = new Date(order.created_at);
-      // Convert to Romania time
-      const romaniaTime = new Date(
-        createdAt.getTime() + ROMANIA_OFFSET_HOURS * 60 * 60 * 1000
-      );
-      const dateKey = `${romaniaTime.getUTCFullYear()}-${String(romaniaTime.getUTCMonth() + 1).padStart(2, "0")}-${String(romaniaTime.getUTCDate()).padStart(2, "0")}`;
+      const dateKey = bucharestDateKey(new Date(order.created_at));
 
       const existing = ordersByDate.get(dateKey) || {
         revenue: 0,

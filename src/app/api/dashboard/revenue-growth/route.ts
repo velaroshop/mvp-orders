@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import {
+  bucharestDateKey,
+  bucharestDayEndIso,
+  bucharestDayStartIso,
+  bucharestMonthKey,
+  toBucharestParts,
+} from "@/lib/romania-time";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +44,10 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Build datetime range using Romania timezone (UTC+3 summer time)
+    // Build datetime range using Romania time (winter/summer aware)
     // This ensures "Today" shows orders from 00:00 to 23:59 Romania time
-    const startDateTime = startDate
-      ? new Date(`${startDate}T00:00:00.000+03:00`).toISOString()
-      : new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
-    const endDateTime = endDate
-      ? new Date(`${endDate}T23:59:59.999+03:00`).toISOString()
-      : new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
+    const startDateTime = bucharestDayStartIso(startDate || bucharestDateKey(new Date()));
+    const endDateTime = bucharestDayEndIso(endDate || bucharestDateKey(new Date()));
 
     // Fetch ALL orders using pagination (Supabase default limit is 1000)
     const PAGE_SIZE = 1000;
@@ -91,8 +94,11 @@ export async function GET(request: NextRequest) {
     const end = new Date(endDateTime);
 
     // Calculate the difference in days
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Counted on calendar dates so a 23h/25h clock-change day still counts as one day
+    const diffDays = Math.ceil(
+      (Date.parse(`${bucharestDateKey(end)}T00:00:00Z`) - Date.parse(`${bucharestDateKey(start)}T00:00:00Z`) + 1) /
+        (1000 * 60 * 60 * 24)
+    );
 
     // Determine granularity: hourly (1 day), daily (2-31 days), monthly (>31 days)
     let granularity: 'hourly' | 'daily' | 'monthly' = 'hourly';
@@ -142,22 +148,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fill in actual order data
-    // Romania timezone offset (UTC+3 summer time)
-    const ROMANIA_OFFSET_HOURS = 3;
-
+    // Fill in actual order data (bucketed by Romania local time)
     filteredOrders.forEach((order: any) => {
       const createdAt = new Date(order.created_at);
-      // Convert to Romania time by adding the offset
-      const romaniaTime = new Date(createdAt.getTime() + ROMANIA_OFFSET_HOURS * 60 * 60 * 1000);
       let key: string;
 
       if (granularity === 'hourly') {
-        key = `${String(romaniaTime.getUTCHours()).padStart(2, '0')}:00`;
+        key = `${String(toBucharestParts(createdAt).hour).padStart(2, '0')}:00`;
       } else if (granularity === 'daily') {
-        key = `${romaniaTime.getUTCFullYear()}-${String(romaniaTime.getUTCMonth() + 1).padStart(2, '0')}-${String(romaniaTime.getUTCDate()).padStart(2, '0')}`;
+        key = bucharestDateKey(createdAt);
       } else {
-        key = `${romaniaTime.getUTCFullYear()}-${String(romaniaTime.getUTCMonth() + 1).padStart(2, '0')}`;
+        key = bucharestMonthKey(createdAt);
       }
 
       if (revenueData[key]) {

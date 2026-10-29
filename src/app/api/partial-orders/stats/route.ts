@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { bucharestDateKey, bucharestDayStartIso } from "@/lib/romania-time";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,16 +23,15 @@ export async function GET() {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
 
-    const now = new Date();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
+    // "Today" starts at midnight Romania time
+    const todayStart = bucharestDayStartIso(bucharestDateKey(new Date()));
 
     // Fetch all today's partials with their status in one query
     const { data: todayRows } = await supabaseAdmin
       .from("partial_orders")
       .select("status")
       .eq("organization_id", activeOrganizationId)
-      .gte("created_at", todayStart.toISOString());
+      .gte("created_at", todayStart);
 
     const todayTotal = todayRows?.length ?? 0;
 

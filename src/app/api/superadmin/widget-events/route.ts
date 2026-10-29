@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { bucharestDayEndIso, bucharestDayStartIso } from "@/lib/romania-time";
 
 const PAGE_SIZE = 50;
 
@@ -60,10 +61,10 @@ export async function GET(request: NextRequest) {
       query = query.ilike("landing_key", `%${landingKey}%`);
     }
     if (startDate) {
-      query = query.gte("created_at", new Date(`${startDate}T00:00:00.000+03:00`).toISOString());
+      query = query.gte("created_at", bucharestDayStartIso(startDate));
     }
     if (endDate) {
-      query = query.lte("created_at", new Date(`${endDate}T23:59:59.999+03:00`).toISOString());
+      query = query.lte("created_at", bucharestDayEndIso(endDate));
     }
 
     const { data, error, count } = await query;

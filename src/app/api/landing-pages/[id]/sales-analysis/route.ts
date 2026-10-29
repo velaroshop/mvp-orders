@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { bucharestDateKey, bucharestDayStartIso } from "@/lib/romania-time";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,10 +29,10 @@ export async function GET(
     const { id: landingPageId } = await params;
     const organizationId = session.user.activeOrganizationId;
 
-    // Parse period in days (default 7). period=0 means "today" (from midnight local time).
+    // Parse period in days (default 7). period=0 means "today" (from midnight Romania time).
     const periodDays = parseInt(request.nextUrl.searchParams.get("period") || "7");
     const since = periodDays === 0
-      ? (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); })()
+      ? bucharestDayStartIso(bucharestDateKey(new Date()))
       : new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
     const includeTesting = request.nextUrl.searchParams.get("includeTesting") === "true";

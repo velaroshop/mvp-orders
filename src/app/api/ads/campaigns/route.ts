@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { AdsKPIs, AdsCampaignRow } from "@/lib/types";
+import { bucharestDayEndIso, bucharestDayStartIso } from "@/lib/romania-time";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +73,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch orders for revenue calculation (same pattern as dashboard/stats)
-    // Use Romania timezone offset (UTC+3 summer time) for proper local date filtering
-    const startDateTime = new Date(`${startDate}T00:00:00.000+03:00`).toISOString();
-    const endDateTime = new Date(`${endDate}T23:59:59.999+03:00`).toISOString();
+    // Use Romania time (winter/summer aware) for proper local date filtering
+    const startDateTime = bucharestDayStartIso(startDate);
+    const endDateTime = bucharestDayEndIso(endDate);
 
     let ordersQuery = supabaseAdmin
       .from("orders")

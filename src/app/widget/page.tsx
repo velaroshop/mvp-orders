@@ -1913,7 +1913,7 @@ function WidgetFormContent() {
                 {isV3 ? (
                   <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
                     <span className="text-xl sm:text-2xl">🎁</span>
-                    Produse cu extra-reducere, doar la această comandă
+                    Alege produse cu EXTRA-REDUCERE
                   </h2>
                 ) : (
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
@@ -1931,7 +1931,7 @@ function WidgetFormContent() {
                 }
               `}</style>
 
-              <div className="space-y-2">
+              <div className={isV3 ? "space-y-4 pt-3" : "space-y-2"}>
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
                   const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
@@ -1941,7 +1941,7 @@ function WidgetFormContent() {
                       key={upsell.id}
                       type="button"
                       onClick={() => toggleUpsell(upsell.id)}
-                      className="relative w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-300"
+                      className={`relative w-full ${isV3 ? "px-2 pb-2 pt-4 sm:px-3 sm:pb-3" : "p-2 sm:p-3"} rounded-lg text-left transition-all duration-300`}
                       style={{
                         background: isSelected ? backgroundColor : '#fff',
                         border: isSelected
@@ -1983,10 +1983,25 @@ function WidgetFormContent() {
                       )}
 
                       {isV3 ? (
-                      <div className="relative z-10">
-                        <div className="flex items-start gap-3">
+                      <>
+                        {/* Price pill sitting on the dashed border, top centre */}
+                        <div
+                          className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap flex items-baseline gap-2 px-3.5 py-0.5 rounded-full bg-white border-2 shadow"
+                          style={{ borderColor: primaryColor }}
+                        >
+                          {upsell.srp > upsell.price && (
+                            <span className="text-base font-bold text-zinc-700 line-through decoration-red-600 decoration-2">
+                              {upsell.srp.toFixed(2)} Lei
+                            </span>
+                          )}
+                          <span className="text-xl font-black" style={{ color: accentColor }}>
+                            {upsell.price.toFixed(2)} Lei
+                          </span>
+                        </div>
+
+                        <div className="relative z-10 flex items-stretch gap-3">
                           {/* Checkbox */}
-                          <div className="flex-shrink-0">
+                          <div className="flex-shrink-0 mt-0.5">
                             <div
                               className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
                                 isSelected ? 'border-0' : 'border-zinc-500'
@@ -2000,42 +2015,31 @@ function WidgetFormContent() {
                               )}
                             </div>
                           </div>
-                          {/* Title spans the full width, "Adaugă" set apart from the product name */}
-                          <h3 className="flex-1 min-w-0 text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
-                            <span className="font-normal" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>Adaugă</span>{' '}
-                            <span className="font-bold">{upsell.title}</span>
-                          </h3>
-                        </div>
 
-                        <div className="mt-2 flex items-stretch justify-between gap-3">
-                          <div className="flex-1 min-w-0 flex flex-col justify-center items-start" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
-                            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                              {upsell.srp > upsell.price && (
-                                <span className="text-xl sm:text-2xl font-bold line-through decoration-red-600 decoration-[3px]">
-                                  {upsell.srp.toFixed(2)}
-                                </span>
-                              )}
-                              <span className="text-2xl font-black" style={{ color: accentColor }}>
-                                {upsell.price.toFixed(2)} Lei
-                              </span>
-                            </div>
+                          {/* Title + savings, "Adaugă" set apart from the product name */}
+                          <div className="flex-1 min-w-0 flex flex-col items-start justify-between gap-2">
+                            <h3 className="text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                              <span className="font-normal" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>Adaugă</span>{' '}
+                              <span className="font-bold">{upsell.title}</span>
+                            </h3>
                             {upsell.srp > upsell.price && (
-                              <span className="inline-block mt-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm font-bold">
+                              <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm font-bold">
                                 Economisești {Math.round(upsell.srp - upsell.price)} lei
                               </span>
                             )}
                           </div>
+
                           {upsell.media_url && (
                             <div className="flex-shrink-0 w-24 sm:w-28">
                               <img
                                 src={upsell.media_url}
                                 alt={upsell.title}
-                                className="w-full h-full min-h-[80px] object-contain bg-white rounded-lg"
+                                className="w-full h-full min-h-[88px] object-contain bg-white rounded-lg"
                               />
                             </div>
                           )}
                         </div>
-                      </div>
+                      </>
                       ) : (
                       <div className="flex items-start gap-3 relative z-10">
                         {/* Checkbox */}

@@ -1968,12 +1968,67 @@ function WidgetFormContent() {
                         </div>
                       )}
 
-                      <div className={`flex ${isV3 ? "items-stretch" : "items-start"} gap-3 relative z-10`}>
+                      {isV3 ? (
+                      <div className="relative z-10">
+                        <div className="flex items-start gap-3">
+                          {/* Checkbox */}
+                          <div className="flex-shrink-0">
+                            <div
+                              className={`w-7 h-7 rounded border-2 flex items-center justify-center transition-all ${
+                                isSelected ? 'border-0' : 'border-zinc-500'
+                              }`}
+                              style={isSelected ? { backgroundColor: primaryColor } : {}}
+                            >
+                              {isSelected && (
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          {/* Title spans the full width, "Adaugă" set apart from the product name */}
+                          <h3 className="flex-1 min-w-0 text-base sm:text-lg leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                            <span className="font-normal" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>Adaugă</span>{' '}
+                            <span className="font-bold">{upsell.title}</span>
+                          </h3>
+                        </div>
+
+                        <div className="mt-2 flex items-stretch justify-between gap-3">
+                          <div className="flex-1 min-w-0 flex flex-col justify-center items-start" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                              {upsell.srp > upsell.price && (
+                                <span className="text-xl sm:text-2xl font-bold line-through decoration-red-600 decoration-[3px]">
+                                  {upsell.srp.toFixed(2)}
+                                </span>
+                              )}
+                              <span className="text-2xl font-black" style={{ color: accentColor }}>
+                                {upsell.price.toFixed(2)} Lei
+                              </span>
+                            </div>
+                            {upsell.srp > upsell.price && (
+                              <span className="inline-block mt-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm font-bold">
+                                Economisești {Math.round(upsell.srp - upsell.price)} lei
+                              </span>
+                            )}
+                          </div>
+                          {upsell.media_url && (
+                            <div className="flex-shrink-0 w-24 sm:w-28">
+                              <img
+                                src={upsell.media_url}
+                                alt={upsell.title}
+                                className="w-full h-full min-h-[80px] object-contain bg-white rounded-lg"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      ) : (
+                      <div className="flex items-start gap-3 relative z-10">
                         {/* Checkbox */}
                         <div className="flex-shrink-0 mt-0.5">
                           <div
-                            className={`${isV3 ? 'w-7 h-7' : 'w-5 h-5'} rounded border-2 flex items-center justify-center transition-all ${
-                              isSelected ? 'border-0' : isV3 ? 'border-zinc-500' : 'border-zinc-300'
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected ? 'border-0' : 'border-zinc-300'
                             }`}
                             style={isSelected ? { backgroundColor: primaryColor } : {}}
                           >
@@ -1987,28 +2042,8 @@ function WidgetFormContent() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <div className={`flex ${isV3 ? "items-stretch h-full" : "items-start"} justify-between gap-3`}>
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              {isV3 ? (
-                                <div style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
-                                  <h3 className="text-base sm:text-lg font-bold leading-tight">Adaugă {upsell.title}</h3>
-                                  <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                                    {upsell.srp > upsell.price && (
-                                      <span className="text-xl sm:text-2xl font-bold line-through decoration-red-600 decoration-[3px]">
-                                        {upsell.srp.toFixed(2)} Lei
-                                      </span>
-                                    )}
-                                    <span className="text-2xl font-black" style={{ color: accentColor }}>
-                                      {upsell.price.toFixed(2)} Lei
-                                    </span>
-                                  </div>
-                                  {upsell.srp > upsell.price && (
-                                    <span className="inline-block mt-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-sm font-bold">
-                                      Economisești {Math.round(upsell.srp - upsell.price)} lei
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
                               <h3 className="text-sm sm:text-base leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
                                 Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
                                 <span
@@ -2023,20 +2058,20 @@ function WidgetFormContent() {
                                   </span>
                                 )}
                               </h3>
-                              )}
                             </div>
                             {upsell.media_url && (
-                              <div className={`flex-shrink-0 ${isV3 ? "w-24 sm:w-28" : ""}`}>
+                              <div className="flex-shrink-0">
                                 <img
                                   src={upsell.media_url}
                                   alt={upsell.title}
-                                  className={isV3 ? "w-full h-full min-h-[96px] object-contain bg-white rounded-lg" : "w-16 h-16 object-cover rounded-lg"}
+                                  className="w-16 h-16 object-cover rounded-lg"
                                 />
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
+                      )}
                     </button>
                   );
                 })}

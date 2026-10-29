@@ -692,6 +692,7 @@ export default function LandingPagesPage() {
                                   >
                                     <option value={1}>V1 — Clasic</option>
                                     <option value={2}>V2 — Oferte sus</option>
+                                    <option value={3}>V3 — Oferte sus + câmpuri noi</option>
                                   </select>
                                 </div>
                               </div>

@@ -1203,7 +1203,16 @@ function WidgetFormContent() {
     return color;
   };
 
-  const isV2 = landingPage.form_variant === 2;
+  // V3 = V2 layout (offers on top) + redesigned delivery fields
+  const isV3 = landingPage.form_variant === 3;
+  const isV2 = landingPage.form_variant === 2 || isV3;
+  const labelClass = isV3
+    ? "block text-sm sm:text-base font-bold text-zinc-900 mb-1.5"
+    : "block text-base sm:text-lg font-medium text-zinc-900 mb-1";
+  const inputBase = isV3
+    ? "w-full px-3.5 py-3 border rounded-xl focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base placeholder:text-zinc-500"
+    : "w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500";
+  const requiredMark = isV3 ? <span className="text-red-600">*</span> : null;
 
   return (
     <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
@@ -1332,10 +1341,10 @@ function WidgetFormContent() {
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
-            <div className="space-y-3">
+            <div className={isV3 ? "space-y-4" : "space-y-3"}>
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                  Număr Telefon
+                <label className={labelClass}>
+                  {isV3 ? "Telefon" : "Număr Telefon"}{requiredMark}
                 </label>
                 <input
                   type="tel"
@@ -1351,7 +1360,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder="Ex: 0722 123 456"
-                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`${inputBase} ${
                     errors.phone
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
@@ -1405,8 +1414,8 @@ function WidgetFormContent() {
                 )}
               </div>
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                  Nume complet
+                <label className={labelClass}>
+                  {isV3 ? "Nume și prenume" : "Nume complet"}{requiredMark}
                 </label>
                 <input
                   type="text"
@@ -1418,9 +1427,9 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, fullName: undefined }));
                     }
                   }}
-                  placeholder="Introduceți aici numele complet"
+                  placeholder={isV3 ? "Te rugăm să introduci numele complet" : "Introduceți aici numele complet"}
                   maxLength={100}
-                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`${inputBase} ${
                     errors.fullName
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
@@ -1442,10 +1451,10 @@ function WidgetFormContent() {
                   <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className={isV3 ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-3"}>
                 <div>
-                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                    Județ
+                  <label className={labelClass}>
+                    Județ{requiredMark}
                   </label>
                   <input
                     type="text"
@@ -1457,9 +1466,9 @@ function WidgetFormContent() {
                         setErrors((prev) => ({ ...prev, county: undefined }));
                       }
                     }}
-                    placeholder="Introduceți aici județul"
+                    placeholder={isV3 ? "Scrie județul pentru livrare" : "Introduceți aici județul"}
                     maxLength={50}
-                    className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    className={`${inputBase} ${
                       errors.county
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
@@ -1482,8 +1491,8 @@ function WidgetFormContent() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                    Localitate, comună sau sat
+                  <label className={labelClass}>
+                    {isV3 ? "Localitate" : "Localitate, comună sau sat"}{requiredMark}
                   </label>
                   <input
                     type="text"
@@ -1495,9 +1504,9 @@ function WidgetFormContent() {
                         setErrors((prev) => ({ ...prev, city: undefined }));
                       }
                     }}
-                    placeholder="Introduceți aici localitatea / comuna / satul"
+                    placeholder={isV3 ? "Scrie localitatea pentru livrare" : "Introduceți aici localitatea / comuna / satul"}
                     maxLength={100}
-                    className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                    className={`${inputBase} ${
                       errors.city
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
@@ -1521,8 +1530,8 @@ function WidgetFormContent() {
                 </div>
               </div>
               <div>
-                <label className="block text-base sm:text-lg font-medium text-zinc-900 mb-1">
-                  Stradă, număr, bloc, scară, ap.
+                <label className={labelClass}>
+                  {isV3 ? "Adresa" : "Stradă, număr, bloc, scară, ap."}{requiredMark}
                 </label>
                 <input
                   type="text"
@@ -1534,9 +1543,9 @@ function WidgetFormContent() {
                       setErrors((prev) => ({ ...prev, address: undefined }));
                     }
                   }}
-                  placeholder="Strada și numărul"
+                  placeholder={isV3 ? "Strada, Număr, bloc, scară, ap." : "Strada și numărul"}
                   maxLength={200}
-                  className={`w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500 ${
+                  className={`${inputBase} ${
                     errors.address
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'

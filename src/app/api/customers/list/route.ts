@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     const searchQuery = searchParams.get("q") || "";
     const limit = parseInt(searchParams.get("limit") || "25");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const onlyBlacklisted = searchParams.get("blacklisted") === "true";
 
     let totalCount = 0;
     let customersData: any[] = [];
@@ -32,13 +33,15 @@ export async function GET(request: Request) {
     if (searchQuery.trim()) {
       // OPTIMIZED: Search using SQL ILIKE (case-insensitive) on phone field
       // Phone search is direct on customers table
-      const { data: phoneMatches, error: phoneError, count } = await supabaseAdmin
+      let phoneQuery = supabaseAdmin
         .from("customers")
         .select("*", { count: "exact" })
         .eq("organization_id", activeOrganizationId)
         .ilike("phone", `%${searchQuery}%`)
         .order("total_orders", { ascending: false })
         .range(offset, offset + limit - 1);
+      if (onlyBlacklisted) phoneQuery = phoneQuery.eq("is_blacklisted", true);
+      const { data: phoneMatches, error: phoneError, count } = await phoneQuery;
 
       if (phoneError) {
         throw new Error(`Failed to search customers: ${phoneError.message}`);
@@ -63,12 +66,14 @@ export async function GET(request: Request) {
       // Fetch customer details for name matches
       let nameMatchCustomers: any[] = [];
       if (customerIdsFromNames.length > 0) {
-        const { data: nameCustomers } = await supabaseAdmin
+        let nameQuery = supabaseAdmin
           .from("customers")
           .select("*")
           .in("id", customerIdsFromNames)
           .eq("organization_id", activeOrganizationId)
           .order("total_orders", { ascending: false });
+        if (onlyBlacklisted) nameQuery = nameQuery.eq("is_blacklisted", true);
+        const { data: nameCustomers } = await nameQuery;
 
         nameMatchCustomers = nameCustomers || [];
       }
@@ -91,12 +96,14 @@ export async function GET(request: Request) {
 
     } else {
       // No search - optimized query with pagination in DB
-      const { data, error, count } = await supabaseAdmin
+      let listQuery = supabaseAdmin
         .from("customers")
         .select("*", { count: "exact" })
-        .eq("organization_id", activeOrganizationId)
-        .order("total_orders", { ascending: false })
-        .range(offset, offset + limit - 1);
+        .eq("organization_id", activeOrganizationId);
+      listQuery = onlyBlacklisted
+        ? listQuery.eq("is_blacklisted", true).order("blacklisted_at", { ascending: false })
+        : listQuery.order("total_orders", { ascending: false });
+      const { data, error, count } = await listQuery.range(offset, offset + limit - 1);
 
       if (error) {
         throw new Error(`Failed to list customers: ${error.message}`);
@@ -150,6 +157,8 @@ export async function GET(request: Request) {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       isBlacklisted: row.is_blacklisted || false,
+      blacklistedAt: row.blacklisted_at || null,
+      blacklistedReason: row.blacklisted_reason || null,
     }));
 
     console.log(`[Customers List] Returned ${mappedCustomers.length} customers (search: "${searchQuery}", total: ${totalCount})`);

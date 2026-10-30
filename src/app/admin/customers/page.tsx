@@ -12,6 +12,7 @@ function CustomersPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
+  const [onlyBlacklisted, setOnlyBlacklisted] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const phoneFilter = searchParams.get("phone");
@@ -22,6 +23,12 @@ function CustomersPageContent() {
   useEffect(() => {
     fetchCustomers();
   }, [currentPage]);
+
+  // Reload from the first page when the blacklist filter is toggled
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchCustomers();
+  }, [onlyBlacklisted]);
 
   // Debounced search effect
   useEffect(() => {
@@ -54,6 +61,9 @@ function CustomersPageContent() {
       const effectiveQuery = phoneFilter || searchQuery.trim();
       if (effectiveQuery) {
         params.append("q", effectiveQuery);
+      }
+      if (onlyBlacklisted) {
+        params.append("blacklisted", "true");
       }
 
       const response = await fetch(`/api/customers/list?${params.toString()}`);
@@ -139,8 +149,8 @@ function CustomersPageContent() {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
+      <div className="mb-6 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
               className="h-5 w-5 text-zinc-400"
@@ -184,6 +194,18 @@ function CustomersPageContent() {
             </button>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => setOnlyBlacklisted((v) => !v)}
+          aria-pressed={onlyBlacklisted}
+          className={`px-4 py-3 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors ${
+            onlyBlacklisted
+              ? "bg-red-600 border-red-500 text-white"
+              : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
+          }`}
+        >
+          🚫 Doar blacklist
+        </button>
       </div>
 
       {/* Customers Table */}
@@ -197,7 +219,9 @@ function CustomersPageContent() {
         </div>
       ) : customers.length === 0 ? (
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
-          <p className="text-zinc-400">Nu există clienți înregistrați încă.</p>
+          <p className="text-zinc-400">
+            {onlyBlacklisted ? "Nu există clienți pe blacklist." : "Nu există clienți înregistrați încă."}
+          </p>
         </div>
       ) : (
         <>
@@ -244,6 +268,12 @@ function CustomersPageContent() {
                             <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">BLACKLIST</span>
                           )}
                         </div>
+                        {(customer as any).isBlacklisted && (
+                          <div className="text-xs text-red-400 mt-1">
+                            {(customer as any).blacklistedAt ? `Din ${formatDate((customer as any).blacklistedAt)}` : ""}
+                            {(customer as any).blacklistedReason ? ` · Motiv: ${(customer as any).blacklistedReason}` : ""}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-zinc-300">

@@ -11,7 +11,8 @@ export type FieldDef =
   // minWidth: below this width the uploaded image is flagged as possibly blurry on a phone (it is never enlarged)
   | (FieldBase & { kind: "image"; maxWidth?: number; minWidth?: number; dims?: { width?: string; height?: string } })
   | (FieldBase & { kind: "color" })
-  | (FieldBase & { kind: "number"; min?: number; max?: number })
+  // keepRatioWith: another number field of the same block that follows this one proportionally (width <-> height)
+  | (FieldBase & { kind: "number"; min?: number; max?: number; keepRatioWith?: string })
   | (FieldBase & { kind: "toggle" })
   | (FieldBase & { kind: "select"; options: { value: string; label: string }[] })
   | (FieldBase & { kind: "strings"; addLabel: string })
@@ -61,13 +62,22 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "🖼",
     description: "O imagine pe toată lățimea",
     kinds: ALL,
-    create: () => ({ type: "image", src: "", alt: "", rounded: false }),
+    create: () => ({ type: "image", src: "", alt: "", radius: 0, inset: 0 }),
     fields: [
       { kind: "image", key: "src", label: "Imagine", maxWidth: 800, minWidth: 500, dims: { width: "width", height: "height" } },
       { kind: "text", key: "alt", label: "Text alternativ", help: "Descrie imaginea (accesibilitate)" },
-      { kind: "number", key: "width", label: "Lățime (px)", min: 1, max: 10000, help: "Se completează singur la încărcare; evită săltarea paginii" },
-      { kind: "number", key: "height", label: "Înălțime (px)", min: 1, max: 10000 },
-      { kind: "toggle", key: "rounded", label: "Colțuri rotunjite, cu margini" },
+      {
+        kind: "number",
+        key: "width",
+        label: "Lățime (px)",
+        min: 1,
+        max: 10000,
+        keepRatioWith: "height",
+        help: "Dimensiunea reală a fișierului: se completează singură la încărcare. Doar rezervă spațiul, imaginea se afișează pe toată lățimea",
+      },
+      { kind: "number", key: "height", label: "Înălțime (px)", min: 1, max: 10000, keepRatioWith: "width", help: "Se ajustează singură când schimbi lățimea (păstrează proporțiile)" },
+      { kind: "number", key: "radius", label: "Rotunjirea colțurilor (px)", min: 0, max: 48, help: "0 = colțuri drepte. Se vede doar dacă imaginea are fundal diferit de pagină" },
+      { kind: "number", key: "inset", label: "Margini laterale (px)", min: 0, max: 32, help: "0 = imaginea umple tot ecranul pe lățime" },
       { kind: "url", key: "href", label: "Link la apăsare (opțional)" },
     ],
   },
@@ -244,12 +254,13 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "▶",
     description: "Fișier video (mp4)",
     kinds: ALL,
-    create: () => ({ type: "video", src: "", poster: "", autoplay: false, rounded: false }),
+    create: () => ({ type: "video", src: "", poster: "", autoplay: false, radius: 0, inset: 0 }),
     fields: [
       { kind: "url", key: "src", label: "Adresa fișierului video (mp4)" },
       { kind: "image", key: "poster", label: "Imagine de copertă", maxWidth: 800, minWidth: 500 },
       { kind: "toggle", key: "autoplay", label: "Pornește singur, mut, în buclă" },
-      { kind: "toggle", key: "rounded", label: "Colțuri rotunjite, cu margini" },
+      { kind: "number", key: "radius", label: "Rotunjirea colțurilor (px)", min: 0, max: 48 },
+      { kind: "number", key: "inset", label: "Margini laterale (px)", min: 0, max: 32 },
     ],
   },
   {

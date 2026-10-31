@@ -11,7 +11,10 @@ export type ImageBlock = {
   alt: string;
   width: number | null;
   height: number | null;
-  rounded: boolean;
+  /** Corner radius in px (0 = square) */
+  radius: number;
+  /** Side margin in px around the image (0 = edge to edge) */
+  inset: number;
   href: string | null;
 };
 export type TextBlock = {
@@ -48,7 +51,8 @@ export type VideoBlock = {
   src: string;
   poster: string | null;
   autoplay: boolean;
-  rounded: boolean;
+  radius: number;
+  inset: number;
 };
 export type GalleryBlock = { type: "gallery"; images: { src: string; alt: string }[] };
 export type BeforeAfterBlock = {
@@ -138,6 +142,17 @@ const list = (value: unknown): unknown[] => (Array.isArray(value) ? value.slice(
 const obj = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
+/**
+ * Corner radius and side margin of an image/video. Old pages only had "rounded: true", which meant a 12px radius
+ * with a 16px margin: that is still what they get, until a value is set explicitly.
+ */
+function radiusAndInset(b: Record<string, unknown>): { radius: number; inset: number } {
+  const legacy = b.rounded === true;
+  const bounded = (value: unknown, fallback: number, max: number) =>
+    typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.round(value))) : fallback;
+  return { radius: bounded(b.radius, legacy ? 12 : 0, 48), inset: bounded(b.inset, legacy ? 16 : 0, 32) };
+}
+
 const str = (value: unknown, fallback = ""): string => (typeof value === "string" ? value : fallback);
 const color = (value: unknown, fallback: string): string =>
   typeof value === "string" && HEX_COLOR.test(value.trim()) ? value.trim() : fallback;
@@ -174,7 +189,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         alt: str(b.alt),
         width: dimension(b.width),
         height: dimension(b.height),
-        rounded: b.rounded === true,
+        ...radiusAndInset(b),
         href: typeof b.href === "string" && SAFE_HREF.test(b.href.trim()) ? b.href.trim() : null,
       };
     }
@@ -253,7 +268,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
     case "video": {
       const src = imageSrc(b.src);
       if (!src) return null;
-      return { type: "video", src, poster: imageSrc(b.poster), autoplay: b.autoplay === true, rounded: b.rounded === true };
+      return { type: "video", src, poster: imageSrc(b.poster), autoplay: b.autoplay === true, ...radiusAndInset(b) };
     }
 
     case "gallery": {

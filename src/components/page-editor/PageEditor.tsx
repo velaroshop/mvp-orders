@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BLOCK_DEFS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
+import { normalizeBlocks } from "@/lib/page-blocks";
 import { FieldsPanel } from "./FieldInputs";
+import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
 type Obj = Record<string, unknown>;
 type Item = { id: string; data: Obj };
@@ -48,7 +50,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [title, setTitle] = useState(initial.title);
   const [slug, setSlug] = useState(initial.slug ?? "");
   const [background, setBackground] = useState(initial.background);
-  const [items, setItems] = useState<Item[]>(() => toItems(initial.blocks));
+  const [items, setItems] = useState<Item[]>(() => toItems(normalizeBlocks(initial.blocks)));
   const [status, setStatus] = useState<"draft" | "published">(initial.status ?? "draft");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -251,35 +253,40 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
 
           {items.length === 0 && <p className="py-6 text-center text-sm text-zinc-400">Pagina e goală. Adaugă primul bloc.</p>}
 
-          <ul className="space-y-1">
-            {items.map((item, index) => {
-              const def = blockDef(item.data.type);
-              const active = item.id === selectedId;
-              return (
-                <li key={item.id}>
-                  <div
-                    className={`flex items-center gap-2 rounded-md border px-2 py-1.5 ${active ? "border-emerald-500 bg-zinc-700" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-700/60"}`}
-                  >
-                    <button type="button" onClick={() => setSelectedId(item.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                      <span className="w-5 text-center text-zinc-300">{def?.icon ?? "?"}</span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm text-white">{def?.label ?? String(item.data.type)}</span>
-                        <span className="block truncate text-xs text-zinc-400">{summary(item.data)}</span>
-                      </span>
-                    </button>
-                    {active && (
-                      <div className="flex gap-1">
-                        <button type="button" className={iconButton} disabled={index === 0} onClick={() => move(item.id, -1)} aria-label="Mută sus">↑</button>
-                        <button type="button" className={iconButton} disabled={index === items.length - 1} onClick={() => move(item.id, 1)} aria-label="Mută jos">↓</button>
-                        <button type="button" className={iconButton} onClick={() => duplicate(item.id)} aria-label="Duplică">⧉</button>
-                        <button type="button" className={iconButton} onClick={() => remove(item.id)} aria-label="Șterge">🗑</button>
+          <SortableList ids={items.map((i) => i.id)} onMove={(from, to) => setItems((prev) => arrayMove(prev, from, to))}>
+            <ul className="space-y-1">
+              {items.map((item, index) => {
+                const def = blockDef(item.data.type);
+                const active = item.id === selectedId;
+                return (
+                  <SortableRow key={item.id} id={item.id}>
+                    {(handle) => (
+                      <div
+                        className={`flex items-center gap-1.5 rounded-md border px-1.5 py-1.5 ${active ? "border-emerald-500 bg-zinc-700" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-700/60"}`}
+                      >
+                        {handle}
+                        <button type="button" onClick={() => setSelectedId(item.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                          <span className="w-5 text-center text-zinc-300">{def?.icon ?? "?"}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm text-white">{def?.label ?? String(item.data.type)}</span>
+                            <span className="block truncate text-xs text-zinc-400">{summary(item.data)}</span>
+                          </span>
+                        </button>
+                        {active && (
+                          <div className="flex gap-1">
+                            <button type="button" className={iconButton} disabled={index === 0} onClick={() => move(item.id, -1)} aria-label="Mută sus">↑</button>
+                            <button type="button" className={iconButton} disabled={index === items.length - 1} onClick={() => move(item.id, 1)} aria-label="Mută jos">↓</button>
+                            <button type="button" className={iconButton} onClick={() => duplicate(item.id)} aria-label="Duplică">⧉</button>
+                            <button type="button" className={iconButton} onClick={() => remove(item.id)} aria-label="Șterge">🗑</button>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                  </SortableRow>
+                );
+              })}
+            </ul>
+          </SortableList>
         </div>
 
         {/* Settings */}

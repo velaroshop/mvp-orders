@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
+import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
 type Obj = Record<string, unknown>;
 
@@ -183,21 +184,31 @@ function FieldInput({
 
     case "strings": {
       const list = Array.isArray(value) ? (value as string[]) : [];
+      const ids = list.map((_, i) => `s${i}`);
       return (
         <div className="space-y-2">
-          {list.map((item, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                type="text"
-                value={typeof item === "string" ? item : ""}
-                onChange={(e) => onChange(list.map((x, j) => (j === i ? e.target.value : x)))}
-                className={inputClass}
-              />
-              <button type="button" className={smallButton} onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Șterge">
-                ✕
-              </button>
+          <SortableList ids={ids} onMove={(from, to) => onChange(arrayMove(list, from, to))}>
+            <div className="space-y-2">
+              {list.map((item, i) => (
+                <SortableRow key={ids[i]} id={ids[i]} as="div">
+                  {(handle) => (
+                    <div className="flex items-center gap-2">
+                      {handle}
+                      <input
+                        type="text"
+                        value={typeof item === "string" ? item : ""}
+                        onChange={(e) => onChange(list.map((x, j) => (j === i ? e.target.value : x)))}
+                        className={inputClass}
+                      />
+                      <button type="button" className={smallButton} onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Șterge">
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </SortableRow>
+              ))}
             </div>
-          ))}
+          </SortableList>
           <button type="button" className={smallButton} onClick={() => onChange([...list, ""])}>
             + {def.addLabel}
           </button>
@@ -207,36 +218,43 @@ function FieldInput({
 
     case "items": {
       const list = Array.isArray(value) ? (value as Obj[]) : [];
+      const ids = list.map((_, i) => `i${i}`);
       const move = (from: number, to: number) => {
         if (to < 0 || to >= list.length) return;
-        const next = [...list];
-        const [item] = next.splice(from, 1);
-        next.splice(to, 0, item);
-        onChange(next);
+        onChange(arrayMove(list, from, to));
       };
       return (
         <div className="space-y-3">
-          {list.map((item, i) => (
-            <div key={i} className="rounded-lg border border-zinc-700 bg-zinc-800/60 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  {def.itemLabel} {i + 1}
-                </span>
-                <div className="flex gap-1">
-                  <button type="button" className={smallButton} disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Mută sus">
-                    ↑
-                  </button>
-                  <button type="button" className={smallButton} disabled={i === list.length - 1} onClick={() => move(i, i + 1)} aria-label="Mută jos">
-                    ↓
-                  </button>
-                  <button type="button" className={smallButton} onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Șterge">
-                    ✕
-                  </button>
-                </div>
-              </div>
-              <FieldsPanel fields={def.fields} value={item} onChange={(next) => onChange(list.map((x, j) => (j === i ? next : x)))} />
+          <SortableList ids={ids} onMove={move}>
+            <div className="space-y-3">
+              {list.map((item, i) => (
+                <SortableRow key={ids[i]} id={ids[i]} as="div">
+                  {(handle) => (
+                    <div className="rounded-lg border border-zinc-700 bg-zinc-800/60 p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                          {handle}
+                          {def.itemLabel} {i + 1}
+                        </span>
+                        <div className="flex gap-1">
+                          <button type="button" className={smallButton} disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Mută sus">
+                            ↑
+                          </button>
+                          <button type="button" className={smallButton} disabled={i === list.length - 1} onClick={() => move(i, i + 1)} aria-label="Mută jos">
+                            ↓
+                          </button>
+                          <button type="button" className={smallButton} onClick={() => onChange(list.filter((_, j) => j !== i))} aria-label="Șterge">
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                      <FieldsPanel fields={def.fields} value={item} onChange={(next) => onChange(list.map((x, j) => (j === i ? next : x)))} />
+                    </div>
+                  )}
+                </SortableRow>
+              ))}
             </div>
-          ))}
+          </SortableList>
           <button type="button" className={smallButton} onClick={() => onChange([...list, def.newItem()])}>
             + {def.addLabel}
           </button>
@@ -258,6 +276,14 @@ export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; v
             value={getPath(value, def.key)}
             onChange={(v, extras) => {
               let next = setPath(value, def.key, v);
+              // Width and height of an image keep their proportions: changing one adjusts the other
+              if (def.kind === "number" && def.keepRatioWith && typeof v === "number") {
+                const oldSelf = getPath(value, def.key);
+                const oldOther = getPath(value, def.keepRatioWith);
+                if (typeof oldSelf === "number" && oldSelf > 0 && typeof oldOther === "number") {
+                  next = setPath(next, def.keepRatioWith, Math.max(1, Math.round((v * oldOther) / oldSelf)));
+                }
+              }
               // An uploaded image also fills in its size (image blocks reserve the space, so the page does not jump)
               if (def.kind === "image" && def.dims && extras) {
                 if (def.dims.width && typeof extras.width === "number") next = setPath(next, def.dims.width, extras.width);

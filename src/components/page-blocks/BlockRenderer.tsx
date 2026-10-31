@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
 import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 import OrderSummary from "@/components/thank-you/OrderSummary";
@@ -16,6 +16,10 @@ const SIZE_CLASS: Record<TextSize, string> = {
   xl: "text-xl",
   "2xl": "text-2xl",
 };
+
+/** Margin around an image or video: full inset at the sides, half of it above and below */
+const insetStyle = (inset: number): CSSProperties | undefined =>
+  inset > 0 ? { padding: `${Math.round(inset / 2)}px ${inset}px` } : undefined;
 
 /** Plain text with **bold** and line breaks; React escapes everything else. */
 function renderInline(text: string): ReactNode[] {
@@ -60,11 +64,12 @@ function Block({
           loading={index === firstImageIndex ? "eager" : "lazy"}
           fetchPriority={index === firstImageIndex ? "high" : "auto"}
           decoding="async"
-          className={`block h-auto w-full ${block.rounded ? "rounded-xl" : ""}`}
+          className="block h-auto w-full"
+          style={block.radius > 0 ? { borderRadius: block.radius } : undefined}
         />
       );
       const wrapped = block.href ? <a href={block.href}>{img}</a> : img;
-      return <div className={block.rounded ? "px-4 py-2" : ""}>{wrapped}</div>;
+      return <div style={insetStyle(block.inset)}>{wrapped}</div>;
     }
 
     case "text":
@@ -172,7 +177,7 @@ function Block({
 
     case "video":
       return (
-        <div className={block.rounded ? "px-4 py-2" : ""}>
+        <div style={insetStyle(block.inset)}>
           <video
             src={block.src}
             poster={block.poster ?? undefined}
@@ -182,7 +187,8 @@ function Block({
             loop={block.autoplay}
             playsInline
             preload={block.autoplay ? "auto" : "none"}
-            className={`block h-auto w-full bg-black ${block.rounded ? "rounded-xl" : ""}`}
+            className="block h-auto w-full bg-black"
+            style={block.radius > 0 ? { borderRadius: block.radius } : undefined}
           />
         </div>
       );

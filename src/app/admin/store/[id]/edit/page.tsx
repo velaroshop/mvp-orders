@@ -465,7 +465,7 @@ export default function EditStorePage() {
                   rows={3}
                   maxLength={400}
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
-                  placeholder="Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Dacă vrei, vezi și alte produse pe care le vindem. Plătești tot la livrare."
+                  placeholder="Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare. Dacă vrei, vezi și alte produse pe care le vindem."
                 />
               </div>
 

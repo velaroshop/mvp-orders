@@ -186,6 +186,24 @@
   /**
    * Render postsale offer - SPECTACULAR DESIGN
    */
+  /**
+   * Make the widget edge-to-edge: break out of the theme's page container and paint the page
+   * in the widget's dark colour so no white margins remain. Runs only on the thank-you page.
+   */
+  function applyFullBleed(container) {
+    try {
+      container.style.width = '100vw';
+      container.style.maxWidth = '100vw';
+      container.style.position = 'relative';
+      container.style.left = '50%';
+      container.style.marginLeft = '-50vw';
+      container.style.marginRight = '-50vw';
+      document.documentElement.style.background = '#0f172a';
+      document.body.style.background = '#0f172a';
+      document.body.style.overflowX = 'hidden';
+    } catch (e) {}
+  }
+
   function renderPostsaleOffer(container, data) {
     const upsell = data.postsaleUpsells[0]; // Take first upsell
     const colors = data.storeColors;
@@ -209,7 +227,7 @@
     }
 
     const html = `
-      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 20px;">
+      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 4px;">
 
         <!-- Animated sparkles/particles background -->
         <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
@@ -320,6 +338,7 @@
     `;
 
     container.innerHTML = html;
+    applyFullBleed(container);
 
     // Attach event listeners
     const acceptBtn = document.getElementById('accept-postsale-btn');
@@ -470,8 +489,10 @@
       `;
     }
 
+    const ctaHtml = buildCtaHtml();
+
     const html = `
-      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 20px;">
+      <div style="min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; position: relative; padding-top: 4px;">
 
         <!-- Animated sparkles/particles background -->
         <div style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
@@ -479,26 +500,19 @@
         </div>
 
         <!-- Main content -->
-        <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 24px; display: flex; flex-direction: column; align-items: center;">
+        <div style="position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 12px 24px 24px; display: flex; flex-direction: column; align-items: center;">
 
           <!-- TITLE -->
-          <div style="text-align: center; margin-bottom: 12px;">
+          <div style="text-align: center; margin-bottom: 16px;">
             <span style="font-size: 26px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 2px 4px rgba(0,0,0,0.3); display: block; letter-spacing: -0.5px;">
               COMANDĂ FINALIZATĂ!
             </span>
           </div>
 
-          <!-- Customer name greeting -->
-          <div style="text-align: center; margin: 0 0 20px 0;">
-            <p style="font-size: 18px; font-weight: 600; color: white; margin: 0 0 4px 0;">
-              Mulțumim pentru comandă,
-            </p>
-            ${customerName ? `<p style="font-size: 20px; font-weight: 700; color: #ffd700; margin: 0;">${customerName}!</p>` : ''}
-          </div>
-
           ${orderSummaryHtml}
 
-          <!-- Shipping & Payment info (compact, below summary) -->
+          ${ctaHtml || `
+          <!-- Shipping & Payment info (compact, below summary) - shown only when the CTA block is off -->
           <div style="width: 100%; display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;">
             <p style="font-size: 13px; color: #94a3b8; margin: 0; text-align: center;">
               <span style="color: #e2e8f0; font-weight: 600;">Livrare prin curier rapid</span> · 1-3 zile lucrătoare
@@ -506,9 +520,7 @@
             <p style="font-size: 13px; color: #94a3b8; margin: 0; text-align: center;">
               <span style="color: #e2e8f0; font-weight: 600;">Plată la livrare</span> · Cash sau card la curier
             </p>
-          </div>
-
-          ${buildCtaHtml()}
+          </div>`}
 
         </div>
       </div>
@@ -526,6 +538,7 @@
     `;
 
     container.innerHTML = html;
+    applyFullBleed(container);
   }
 
   function escapeHtml(value) {

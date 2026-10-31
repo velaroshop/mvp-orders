@@ -58,7 +58,7 @@ function isDevOrigin(origin: string | null): boolean {
 }
 
 const DEFAULT_CTA_MESSAGE =
-  "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare.\nDacă vrei, vezi și alte produse pe care le vindem. Plătești tot la livrare.";
+  "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare.\nDacă vrei, vezi și alte produse pe care le vindem.";
 const DEFAULT_CTA_BUTTON_TEXT = "Vezi toate produsele";
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 

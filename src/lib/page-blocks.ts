@@ -58,6 +58,8 @@ export type BeforeAfterBlock = {
   beforeLabel: string;
   afterLabel: string;
 };
+// Order form (the landing page configuration with this slug drives offers, prices, upsells, tracking)
+export type FormBlock = { type: "form"; landingSlug: string; org: string | null };
 export type SpacerBlock = { type: "spacer"; height: number };
 export type FooterBlock = {
   type: "footer";
@@ -85,6 +87,7 @@ export type PageBlock =
   | GalleryBlock
   | BeforeAfterBlock
   | SpacerBlock
+  | FormBlock
   | FooterBlock;
 
 export const ANPC_LINKS = [
@@ -98,6 +101,7 @@ const TEXT_SIZES: TextSize[] = ["sm", "base", "lg", "xl", "2xl"];
 const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★" };
 
 const MAX_ITEMS = 30;
+const SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/i;
 const imageSrc = (value: unknown): string | null =>
   typeof value === "string" && /^(https?:\/\/|\/(?!\/))/i.test(value.trim()) ? value.trim() : null;
 const list = (value: unknown): unknown[] => (Array.isArray(value) ? value.slice(0, MAX_ITEMS) : []);
@@ -236,6 +240,13 @@ function normalizeBlock(raw: unknown): PageBlock | null {
         beforeLabel: str(b.beforeLabel, "Înainte"),
         afterLabel: str(b.afterLabel, "După"),
       };
+    }
+
+    case "form": {
+      const landingSlug = str(b.landingSlug).trim();
+      if (!SLUG.test(landingSlug)) return null;
+      const org = str(b.org).trim();
+      return { type: "form", landingSlug, org: SLUG.test(org) ? org : null };
     }
 
     case "spacer":

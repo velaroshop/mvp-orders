@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
+import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -203,6 +204,14 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
             </figure>
           ))}
         </div>
+      );
+
+    case "form":
+      // #comanda is the anchor used by the buttons ("href": "#comanda")
+      return (
+        <section id="comanda" className="scroll-mt-4">
+          <OwnOrderForm slug={block.landingSlug} org={block.org} />
+        </section>
       );
 
     case "spacer":

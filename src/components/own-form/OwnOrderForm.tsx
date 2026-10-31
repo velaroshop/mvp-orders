@@ -1,0 +1,2367 @@
+"use client";
+
+// Copy of the iframe widget form (src/app/widget/page.tsx) for own pages: it lives directly on the page,
+// so there is no iframe and no postMessage relay. Always renders form variant 3.
+// Server calls (/api/orders, /api/partial-orders, ...) are the same as the widget's.
+import { FormEvent, useState, useEffect, useRef } from "react";
+import type { OfferCode } from "@/lib/types";
+import { initInlinePixel, trackInlinePixel, readMetaCookies } from "@/lib/inline-pixel";
+
+interface Upsell {
+  id: string;
+  title: string;
+  description?: string;
+  quantity: number;
+  price: number;
+  srp: number;
+  media_url?: string;
+  active: boolean;
+  product?: {
+    name: string;
+    sku?: string;
+    status?: string;
+  };
+}
+
+interface ProductVariation {
+  id: string;
+  name: string;
+  sku: string;
+  status: string;
+  in_stock: boolean;
+  variation_visual_type: "image" | "color" | null;
+  variation_visual_value: string | null;
+  variation_display_order: number;
+}
+
+interface LandingPage {
+  id: string;
+  organization_id: string;
+  name: string;
+  slug: string;
+  thank_you_path?: string;
+  srp: number;
+  price_1: number;
+  price_2: number;
+  price_3: number;
+  shipping_price: number;
+  quantity_offer_1?: number;
+  quantity_offer_2?: number;
+  quantity_offer_3?: number;
+  free_shipping_offer_1?: boolean;
+  free_shipping_offer_2?: boolean;
+  free_shipping_offer_3?: boolean;
+  form_variant?: number;
+  offer_heading_1: string;
+  offer_heading_2: string;
+  offer_heading_3: string;
+  numeral_1: string;
+  numeral_2: string;
+  numeral_3: string;
+  order_button_text: string;
+  post_purchase_status: boolean;
+  fb_pixel_id?: string;
+  client_side_tracking?: boolean;
+  meta_test_mode?: boolean;
+  meta_test_event_code?: string;
+  default_offer?: string;
+  variations_label?: string | null;
+  discount_type?: "percent" | "amount";
+  products?: {
+    id: string;
+    name: string;
+    sku?: string;
+    status?: string;
+    variation_selection_mode?: "multi" | "single";
+  };
+  stores?: {
+    id: string;
+    url: string;
+    primary_color: string;
+    accent_color: string;
+    background_color: string;
+    text_on_dark_color: string;
+    thank_you_slug?: string;
+    organization_id: string;
+  };
+}
+
+export default function OwnOrderForm({ slug, org = null }: { slug: string; org?: string | null }) {
+
+  const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
+  const [productVariations, setProductVariations] = useState<ProductVariation[]>([]);
+  const [variationQuantities, setVariationQuantities] = useState<Record<string, number>>({});
+  const [presaleUpsells, setPresaleUpsells] = useState<Upsell[]>([]);
+  const [postsaleUpsells, setPostsaleUpsells] = useState<Upsell[]>([]);
+  const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [success, setSuccess] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showPostsaleOffer, setShowPostsaleOffer] = useState(false);
+  const [postsaleCountdown, setPostsaleCountdown] = useState(180);
+  const [queueExpiresAt, setQueueExpiresAt] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [postsaleProcessing, setPostsaleProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [willShowPostsale, setWillShowPostsale] = useState(false);
+
+  const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [county, setCounty] = useState("");
+  const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
+  const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
+
+  // Unique session ID for correlating widget events in logs
+  const sessionId = useRef<string>(
+    typeof crypto !== "undefined"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
+
+
+  // Partial order tracking
+  const [partialOrderId, setPartialOrderId] = useState<string | null>(null);
+  const partialOrderIdRef = useRef<string | null>(null);
+  const savingPartialRef = useRef(false);
+  const saveOnLeaveRef = useRef<() => void>(() => {});
+
+  // Meta tracking data from URL params
+  const [trackingData, setTrackingData] = useState<{
+    fbclid?: string;
+    fbp?: string;
+    gclid?: string;
+    ttclid?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+    landing_url?: string;
+  }>({});
+
+  // Error states for validation
+  const [errors, setErrors] = useState<{
+    phone?: string;
+    fullName?: string;
+    county?: string;
+    city?: string;
+    address?: string;
+  }>({});
+
+  // Fire-and-forget widget event logger — never blocks the form
+  function logEvent(eventType: string, extra?: Record<string, unknown>) {
+    try {
+      const payload = JSON.stringify({
+        sessionId: sessionId.current,
+        organizationId: landingPage?.organization_id ?? null,
+        landingKey: landingPage?.slug ?? slug,
+        eventType,
+        ...extra,
+      });
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/log", new Blob([payload], { type: "application/json" }));
+      }
+    } catch {
+      // Never fail — logging must not affect form functionality
+    }
+  }
+
+  /**
+   * Send a Meta Pixel event to the parent page via postMessage relay.
+   * embed.js receives it and calls window.fbq(...) first-party on the parent domain.
+   * Standard events: PageView, ViewContent, AddToCart, InitiateCheckout, Purchase
+   * Custom events: FormSubmit, OfferSelected (anything else)
+   */
+  function sendPixelEvent(event: string, params?: Record<string, unknown>, eventID?: string) {
+    if (typeof window === 'undefined') return;
+    trackInlinePixel(event, params, eventID);
+  }
+
+  // Helper function to capitalize first letter of each word
+  // Uses space/hyphen split instead of \b\w to handle Romanian diacritics (ă, ș, ț, î, â)
+  function toTitleCase(str: string): string {
+    return str.replace(/(^|[\s-])(\S)/g, (match, separator, char) => separator + char.toUpperCase());
+  }
+
+  useEffect(() => {
+    if (slug) {
+      fetchLandingPage();
+    } else {
+      setError("Slug parameter is required");
+      setLoading(false);
+    }
+  }, [slug]);
+
+
+  // Initialize Meta Pixel relay and fire PageView + ViewContent
+  // Sends pixel_init to embed.js which initializes fbq first-party on the parent page.
+  // Subsequent pixel events are relayed via sendPixelEvent (postMessage → fbq).
+  useEffect(() => {
+    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+      // Initialize fbq on this page (first-party cookies); PageView is fired right after init
+      initInlinePixel(
+        landingPage.fb_pixel_id,
+        landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined,
+        () => setTrackingData(prev => ({ ...prev, ...readMetaCookies() })),
+      );
+
+      if (landingPage.products?.name) {
+        const defaultOffer = (landingPage.default_offer as string | undefined) || 'offer_1';
+        const defaultPrice = defaultOffer === 'offer_2' ? landingPage.price_2
+          : defaultOffer === 'offer_3' ? landingPage.price_3
+          : landingPage.price_1;
+        sendPixelEvent('ViewContent', {
+          content_name: landingPage.products.name,
+          content_ids: [defaultOffer],
+          content_type: 'product',
+          value: defaultPrice,
+          currency: 'RON',
+        });
+      }
+    }
+    // Log form_loaded when landing page data is ready
+    if (landingPage) {
+      logEvent("form_loaded");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landingPage]);
+
+
+  // Extract tracking parameters from this page's URL on mount
+  useEffect(() => {
+    const tracking: typeof trackingData = {};
+
+    const pageParams = new URLSearchParams(window.location.search);
+    const getParam = (name: string): string | null => pageParams.get(name);
+
+    // Facebook tracking
+    const fbclid = getParam('fbclid');
+    if (fbclid) tracking.fbclid = fbclid;
+
+    const fbp = getParam('fbp');
+    if (fbp) tracking.fbp = fbp;
+
+    // UTM parameters
+    const utmSource = getParam('utm_source');
+    if (utmSource) tracking.utm_source = utmSource;
+
+    const utmMedium = getParam('utm_medium');
+    if (utmMedium) tracking.utm_medium = utmMedium;
+
+    const utmCampaign = getParam('utm_campaign');
+    if (utmCampaign) tracking.utm_campaign = utmCampaign;
+
+    const utmTerm = getParam('utm_term');
+    if (utmTerm) tracking.utm_term = utmTerm;
+
+    const utmContent = getParam('utm_content');
+    if (utmContent) tracking.utm_content = utmContent;
+
+    // Google Ads tracking
+    const gclid = getParam('gclid');
+    if (gclid) tracking.gclid = gclid;
+
+    // TikTok tracking
+    const ttclid = getParam('ttclid');
+    if (ttclid) tracking.ttclid = ttclid;
+
+    // Landing page URL: this page itself (full URL with its params)
+    tracking.landing_url = window.location.href;
+
+    setTrackingData(tracking);
+  }, []);
+
+  // Countdown timer for postsale offer - based on absolute timestamp
+  useEffect(() => {
+    if (!showPostsaleOffer || !queueExpiresAt) return;
+
+    const calculateTimeRemaining = () => {
+      const expiresAt = new Date(queueExpiresAt).getTime();
+      const now = Date.now();
+      const remaining = Math.floor((expiresAt - now) / 1000);
+      return Math.max(0, remaining);
+    };
+
+    // Set initial countdown
+    setPostsaleCountdown(calculateTimeRemaining());
+
+    const interval = setInterval(() => {
+      const remaining = calculateTimeRemaining();
+      setPostsaleCountdown(remaining);
+
+      if (remaining <= 0) {
+        // Time's up! Finalize order without postsale and redirect
+        clearInterval(interval);
+        finalizeOrderAndRedirect();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showPostsaleOffer, queueExpiresAt]);
+
+  // The form lives on the page itself, so there is no parent window to scroll
+  const scrollParentToWidget = () => {};
+
+  // Keep saveOnLeaveRef up to date with latest form values
+  useEffect(() => {
+    saveOnLeaveRef.current = () => {
+      if (!landingPage || success || !isValidPhone(phone)) return;
+
+      let lastField = "phone";
+      if (address) lastField = "address";
+      else if (city) lastField = "city";
+      else if (county) lastField = "county";
+      else if (fullName) lastField = "fullName";
+
+      const selectedUpsellsData = presaleUpsells
+        .filter(upsell => selectedUpsells.has(upsell.id))
+        .map(upsell => ({
+          upsellId: upsell.id,
+          title: upsell.title,
+          quantity: upsell.quantity,
+          price: upsell.price,
+          productSku: upsell.product?.sku || null,
+          type: "presale",
+        }));
+
+      const selectedVariationsBeacon = productVariations.length > 0
+        ? productVariations
+            .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+            .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+        : undefined;
+
+      const payload = {
+        partialOrderId: partialOrderIdRef.current,
+        organizationId: landingPage.stores?.organization_id,
+        landingKey: landingPage.slug,
+        offerCode: selectedOffer,
+        phone: phone || undefined,
+        fullName: fullName.trim() || undefined,
+        county: county.trim() || undefined,
+        city: city.trim() || undefined,
+        address: address.trim() || undefined,
+        productName: landingPage.products?.name,
+        productSku: landingPage.products?.sku,
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
+        upsells: selectedUpsellsData,
+        selectedVariations: selectedVariationsBeacon,
+        subtotal: getCurrentPrice(),
+        shippingCost: getShippingPrice(),
+        total: getTotalPrice(),
+        lastCompletedField: lastField,
+      };
+
+      navigator.sendBeacon(
+        "/api/partial-orders",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
+      );
+    };
+  });
+
+  // Register page unload / tab switch listeners once
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveOnLeaveRef.current();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      saveOnLeaveRef.current();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  async function fetchLandingPage() {
+    try {
+      setLoading(true);
+      const apiUrl = org
+        ? `/api/landing-pages/public/${slug}?org=${encodeURIComponent(org)}`
+        : `/api/landing-pages/public/${slug}`;
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error("Landing page not found");
+      }
+
+      const data = await response.json();
+      setLandingPage(data.landingPage);
+
+      // Set default offer from landing page config
+      if (data.landingPage.default_offer) {
+        setSelectedOffer(data.landingPage.default_offer as OfferCode);
+      }
+
+      // Use presale upsells from the same response (optimized - no extra request)
+      if (data.presaleUpsells) {
+        setPresaleUpsells(data.presaleUpsells);
+      }
+
+      // Load product variations (active ones, including out-of-stock)
+      if (data.productVariations) {
+        setProductVariations(data.productVariations);
+        setVariationQuantities({});
+      }
+    } catch (err) {
+      console.error("Error fetching landing page:", err);
+      setError(err instanceof Error ? err.message : "Failed to load form");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchPostsaleUpsells(landingPageId: string): Promise<Upsell[]> {
+    try {
+      const response = await fetch(`/api/upsells/public/${landingPageId}?type=postsale`);
+
+      if (!response.ok) {
+        console.error("Failed to fetch postsale upsells", response.status);
+        return [];
+      }
+
+      const data = await response.json();
+      const upsells = data.upsells || [];
+      setPostsaleUpsells(upsells);
+      return upsells;
+    } catch (err) {
+      console.error("Error fetching postsale upsells:", err);
+      return [];
+    }
+  }
+
+  async function finalizeOrderAndRedirect() {
+    if (postsaleProcessing) return; // Prevent double click
+
+    setPostsaleProcessing(true);
+
+    // If we have a created order ID, finalize it (no postsale)
+    if (createdOrderId) {
+      try {
+        console.log('[Finalize] Finalizing order without postsale:', createdOrderId);
+        const response = await fetch(`/api/orders/${createdOrderId}/finalize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          console.error('[Finalize] Failed to finalize order');
+        } else {
+          console.log('[Finalize] Order finalized successfully');
+
+          // Send client-side Purchase event (deduplicated with server-side CAPI)
+          sendClientSidePurchaseEvent(createdOrderId, getTotalPrice());
+        }
+      } catch (error) {
+        console.error('[Finalize] Error finalizing order:', error);
+      }
+    }
+
+    // Redirect to thank you page
+    redirectToThankYouPage();
+  }
+
+  /**
+   * Send client-side Purchase event to Meta Pixel with deduplication
+   * Uses same eventID as server-side CAPI for deduplication
+   * Uses state data directly — no extra fetch needed
+   */
+  function sendClientSidePurchaseEvent(orderId: string, totalAmount: number) {
+    if (!landingPage?.client_side_tracking || !landingPage?.fb_pixel_id) {
+      return; // Tracking not enabled
+    }
+
+    try {
+      // Build content_ids: offer identifier + selected upsell SKUs
+      const contentIds: string[] = [selectedOffer];
+      presaleUpsells
+        .filter(u => selectedUpsells.has(u.id))
+        .forEach(u => {
+          if (u.product?.sku) contentIds.push(u.product.sku);
+        });
+
+      // Main quantity: default per offer (actual value set server-side)
+      const mainQtyMap: Record<string, number> = { offer_1: 1, offer_2: 2, offer_3: 3 };
+      const mainQty = mainQtyMap[selectedOffer] || 1;
+      const upsellQty = presaleUpsells
+        .filter(u => selectedUpsells.has(u.id))
+        .reduce((sum, u) => sum + (u.quantity || 1), 0);
+
+      // Send Purchase event with same eventID as CAPI for deduplication
+      sendPixelEvent('Purchase', {
+        value: totalAmount,
+        currency: 'RON',
+        content_ids: contentIds,
+        content_name: landingPage.products?.name,
+        num_items: mainQty + upsellQty,
+      }, `purchase_${orderId}`);
+
+      console.log('[Purchase Tracking] Client-side Purchase event sent with deduplication:', {
+        orderId,
+        eventID: `purchase_${orderId}`,
+        value: totalAmount,
+        contentIds,
+      });
+    } catch (error) {
+      console.error('[Purchase Tracking] Error sending client-side Purchase event:', error);
+    }
+  }
+
+  function redirectToThankYouPage() {
+    setShowPostsaleOffer(false);
+    if (landingPage?.stores?.url && createdOrderId) {
+      const thankYouSlug = landingPage.thank_you_path || "thank-you";
+      let storeUrl = landingPage.stores.url;
+      if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+        storeUrl = `https://${storeUrl}`;
+      }
+      storeUrl = storeUrl.replace(/\/$/, '');
+      // Add order ID as query parameter
+      const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${createdOrderId}`;
+      window.location.href = thankYouUrl;
+    }
+  }
+
+  function toggleUpsell(upsellId: string) {
+    setSelectedUpsells(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(upsellId)) {
+        newSet.delete(upsellId);
+      } else {
+        newSet.add(upsellId);
+      }
+      return newSet;
+    });
+  }
+
+  // Derive selection mode from product data
+  const variationSelectionMode = landingPage?.products?.variation_selection_mode || "multi";
+
+  // Reset variation quantities whenever the offer changes
+  useEffect(() => {
+    if (variationSelectionMode === "single") {
+      // In single mode, keep the selected variant but update its quantity to the new offer quantity
+      const offerQty = landingPage
+        ? selectedOffer === "offer_1"
+          ? landingPage.quantity_offer_1 || 1
+          : selectedOffer === "offer_2"
+          ? landingPage.quantity_offer_2 || 2
+          : landingPage.quantity_offer_3 || 3
+        : 1;
+      setVariationQuantities(prev => {
+        const selectedId = Object.keys(prev).find(id => (prev[id] || 0) > 0);
+        if (!selectedId) return {};
+        return { [selectedId]: offerQty };
+      });
+    } else {
+      setVariationQuantities({});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOffer]);
+
+  function handleSingleVariationSelect(varId: string) {
+    const offerQty = getOfferQuantity();
+    setVariationQuantities({ [varId]: offerQty });
+  }
+
+  function getUpsellsTotal() {
+    return presaleUpsells
+      .filter(upsell => selectedUpsells.has(upsell.id))
+      .reduce((total, upsell) => total + upsell.price, 0);
+  }
+
+  function getOfferQuantity(): number {
+    if (!landingPage) return 1;
+    if (selectedOffer === "offer_1") return landingPage.quantity_offer_1 || 1;
+    if (selectedOffer === "offer_2") return landingPage.quantity_offer_2 || 2;
+    return landingPage.quantity_offer_3 || 3;
+  }
+
+  function getTotalVariationQuantity(): number {
+    return Object.values(variationQuantities).reduce((sum, q) => sum + q, 0);
+  }
+
+
+  // Save partial order (auto-save as user fills form)
+  async function savePartialOrder(lastField?: string, phoneOverride?: string) {
+    if (!landingPage || !landingPage.stores?.organization_id) return;
+    if (savingPartialRef.current) return; // Prevent concurrent saves
+    savingPartialRef.current = true;
+
+    try {
+      const selectedUpsellsData = presaleUpsells
+        .filter(upsell => selectedUpsells.has(upsell.id))
+        .map(upsell => ({
+          upsellId: upsell.id,
+          title: upsell.title,
+          quantity: upsell.quantity,
+          price: upsell.price,
+          productSku: upsell.product?.sku || null,
+          type: "presale",
+        }));
+
+      const selectedVariationsData = productVariations.length > 0
+        ? productVariations
+            .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+            .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+        : undefined;
+
+      const payload = {
+        partialOrderId,
+        organizationId: landingPage.stores.organization_id,
+        landingKey: landingPage.slug,
+        offerCode: selectedOffer,
+        phone: phoneOverride || phone || undefined,
+        fullName: fullName.trim() || undefined,
+        county: county.trim() || undefined,
+        city: city.trim() || undefined,
+        address: address.trim() || undefined,
+        productName: landingPage.products?.name,
+        productSku: landingPage.products?.sku,
+        productQuantity: selectedOffer === "offer_1" ? 1 : selectedOffer === "offer_2" ? 2 : 3,
+        upsells: selectedUpsellsData,
+        selectedVariations: selectedVariationsData,
+        subtotal: getCurrentPrice(),
+        shippingCost: getShippingPrice(),
+        total: getTotalPrice(),
+        lastCompletedField: lastField,
+      };
+
+      const response = await fetch("/api/partial-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (!partialOrderId && data.partialOrder?.id) {
+          setPartialOrderId(data.partialOrder.id);
+          partialOrderIdRef.current = data.partialOrder.id;
+
+        }
+      }
+    } catch (error) {
+      console.error("Error saving partial order:", error);
+      // Silently fail - don't interrupt user experience
+    } finally {
+      savingPartialRef.current = false;
+    }
+  }
+
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    const digitsOnly = value.replace(/\D/g, "");
+    const limited = digitsOnly.slice(0, 16);
+    setPhone(limited);
+  }
+
+  function getCurrentPrice() {
+    if (!landingPage) return 0;
+    switch (selectedOffer) {
+      case "offer_1":
+        return landingPage.price_1;
+      case "offer_2":
+        return landingPage.price_2;
+      case "offer_3":
+        return landingPage.price_3;
+      default:
+        return landingPage.price_1;
+    }
+  }
+
+  function hasFreeShipping() {
+    if (!landingPage) return false;
+    if (selectedOffer === "offer_1") return landingPage.free_shipping_offer_1 || false;
+    if (selectedOffer === "offer_2") return landingPage.free_shipping_offer_2 || false;
+    if (selectedOffer === "offer_3") return landingPage.free_shipping_offer_3 || false;
+    return false;
+  }
+
+  function getShippingPrice() {
+    if (hasFreeShipping()) return 0;
+    return landingPage?.shipping_price || 0;
+  }
+
+  function getTotalPrice() {
+    return getCurrentPrice() + getShippingPrice() + getUpsellsTotal();
+  }
+
+  // Analytics: track field focus/blur timing
+  function calculateDiscount() {
+    if (!landingPage) return 0;
+    const currentPrice = getCurrentPrice();
+    const discount = ((landingPage.srp - currentPrice) / landingPage.srp) * 100;
+    return Math.round(discount);
+  }
+
+  function calculateSavings() {
+    if (!landingPage) return 0;
+    const currentPrice = getCurrentPrice();
+    return landingPage.srp - currentPrice;
+  }
+
+  // Check if phone has enough digits to be worth saving as partial
+  function isValidPhone(p: string) {
+    return p.length >= 4;
+  }
+
+  // Validation function
+  function validateField(fieldName: string, value: string): string | undefined {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      switch (fieldName) {
+        case "phone":
+          return "Introduceți numărul de telefon";
+        case "fullName":
+          return "Introduceți numele complet";
+        case "county":
+          return "Introduceți județul";
+        case "city":
+          return "Introduceți localitatea";
+        case "address":
+          return "Introduceți strada și numărul";
+        default:
+          return "Acest câmp este obligatoriu";
+      }
+    }
+    return undefined;
+  }
+
+  // Handle field blur for validation + partial order save
+  function handleFieldBlur(fieldName: string, value: string) {
+    const error = validateField(fieldName, value);
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: error,
+    }));
+
+    // Save partial order on blur if phone is valid (10 digits)
+    if (isValidPhone(phone) && !success) {
+      savePartialOrder(fieldName);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!landingPage) return;
+    if (submitting || submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setError(null);
+    setErrors({});
+
+    logEvent("submit_attempt");
+
+    // Track FormSubmit custom event — captures intent even if validation fails
+    if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+      sendPixelEvent('FormSubmit', {
+        content_ids: [selectedOffer],
+        value: getTotalPrice(),
+        currency: 'RON',
+      });
+    }
+
+    // Validate all fields
+    const phoneDigits = phone.replace(/\D/g, "");
+    const newErrors: typeof errors = {};
+
+    if (!phoneDigits) {
+      newErrors.phone = "Introduceți numărul de telefon";
+    } else if (phoneDigits.length < 10) {
+      newErrors.phone = "Numărul de telefon trebuie să aibă minim 10 cifre";
+    }
+    if (!fullName.trim()) {
+      newErrors.fullName = "Introduceți numele complet";
+    }
+    if (!county.trim()) {
+      newErrors.county = "Introduceți județul";
+    }
+    if (!city.trim()) {
+      newErrors.city = "Introduceți localitatea";
+    }
+    if (!address.trim()) {
+      newErrors.address = "Introduceți strada și numărul";
+    }
+
+    // If there are errors, set them, focus first error field, and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      submittingRef.current = false;
+      setSubmitting(false);
+      logEvent("submit_blocked_validation", { fieldErrors: newErrors });
+      // Focus first empty field
+      const fieldOrder = ["phone", "fullName", "county", "city", "address"];
+      const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
+      if (firstError) {
+        const inputs = event.currentTarget.querySelectorAll<HTMLInputElement>("input");
+        const fieldIndex = fieldOrder.indexOf(firstError);
+        if (inputs[fieldIndex]) {
+          inputs[fieldIndex].focus();
+        }
+      }
+      return;
+    }
+
+    // Validate variations: if product has variations, quantities must sum to offer quantity
+    if (productVariations.length > 0) {
+      const offerQty = getOfferQuantity();
+      const totalVarQty = getTotalVariationQuantity();
+      if (totalVarQty !== offerQty) {
+        const isSingleMode = landingPage?.products?.variation_selection_mode === "single";
+        setError(isSingleMode
+          ? "Selectați o variantă pentru a continua."
+          : `Selectați variante pentru toate cele ${offerQty} unit${offerQty === 1 ? "ate" : "ăți"} ale ofertei.`);
+        submittingRef.current = false;
+        setSubmitting(false);
+        return;
+      }
+    }
+
+
+    // Prepare selected upsells data
+    const selectedUpsellsData = presaleUpsells
+      .filter(upsell => selectedUpsells.has(upsell.id))
+      .map(upsell => ({
+        upsellId: upsell.id,
+        title: upsell.title,
+        quantity: upsell.quantity,
+        price: upsell.price,
+        productSku: upsell.product?.sku || null,
+        type: "presale",
+      }));
+
+    // Build complete event source URL for Meta CAPI attribution
+    // Priority: 1) landing_url from embed.js (has full URL with params)
+    //           2) Reconstruct from referrer + captured tracking params
+    //           3) Fallback to widget URL
+    const buildEventSourceUrl = (): string | undefined => {
+      if (typeof window === 'undefined') return undefined;
+
+      // Full URL of this page (set from window.location on mount)
+      if (trackingData.landing_url) {
+        return trackingData.landing_url;
+      }
+
+      return window.location.href;
+    };
+
+    const selectedVariationsData = productVariations.length > 0
+      ? productVariations
+          .filter(v => v.in_stock && (variationQuantities[v.id] || 0) > 0)
+          .map(v => ({ productId: v.id, name: v.name, sku: v.sku, quantity: variationQuantities[v.id] }))
+      : undefined;
+
+    const payload = {
+      landingKey: landingPage.slug,
+      organizationId: landingPage.organization_id,
+      offerCode: selectedOffer,
+      phone: phoneDigits,
+      fullName: fullName.trim(),
+      county: county.trim(),
+      city: city.trim(),
+      address: address.trim(),
+      upsells: selectedUpsellsData,
+      selectedVariations: selectedVariationsData,
+      subtotal: getCurrentPrice(),
+      shippingCost: getShippingPrice(),
+      total: getTotalPrice(),
+      // Meta tracking data + form timing for bot detection
+      tracking: {
+        ...trackingData,
+        ...readMetaCookies(),
+        formSubmittedAt: Date.now(),
+      },
+      // Use complete parent page URL for accurate Meta CAPI attribution
+      eventSourceUrl: buildEventSourceUrl(),
+    };
+
+    try {
+      logEvent("submit_sent");
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const errorMsg = data.error || "Nu s-a putut trimite comanda.";
+        logEvent("submit_error", { errorMessage: errorMsg, errorCode: response.status });
+        throw new Error(errorMsg);
+      }
+
+      // Get order ID from response
+      const orderData = await response.json();
+      const orderId = orderData.orderId;
+      setCreatedOrderId(orderId);
+
+      logEvent("submit_success", { orderId });
+
+      // Show processing popup
+      setShowSuccessPopup(true);
+
+      // Scroll parent page to widget so popup is visible
+      scrollParentToWidget();
+
+      // Send client-side Purchase event (deduplicated with server-side CAPI)
+      // Synchronous — uses state data, no extra fetch, no latency before redirect
+      sendClientSidePurchaseEvent(orderId, getTotalPrice());
+
+      // Redirect to thank you page immediately after tracking
+      if (landingPage.stores?.url) {
+        const thankYouSlug = landingPage.thank_you_path || "thank-you";
+        let storeUrl = landingPage.stores.url;
+        if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+          storeUrl = `https://${storeUrl}`;
+        }
+        storeUrl = storeUrl.replace(/\/$/, '');
+        // Add order ID to URL for thank you page to process
+        const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
+
+        logEvent("redirect_sent", { orderId });
+
+        window.location.href = thankYouUrl;
+        return;
+      } else {
+        // Fallback to success message if no store URL
+        setSuccess(true);
+        setShowSuccessPopup(false);
+        // Reset form
+        setPhone("");
+        setFullName("");
+        setCounty("");
+        setCity("");
+        setAddress("");
+        setSelectedOffer("offer_1");
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "A apărut o eroare neașteptată. Încearcă din nou.";
+      // Log network errors or unexpected exceptions not caught above
+      logEvent("submit_error", { errorMessage: errorMsg });
+      setError(errorMsg);
+      // Only reset on error so user can retry
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
+        <div className="max-w-xl mx-auto">
+          {/* Skeleton Header */}
+          <div className="rounded-lg p-3 pt-5 mb-3 bg-zinc-200 animate-pulse">
+            <div className="h-6 w-32 bg-zinc-300 rounded-full mx-auto mb-3" />
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="h-6 w-24 bg-zinc-300 rounded" />
+              <div className="h-6 w-4 bg-zinc-300 rounded" />
+              <div className="h-8 w-28 bg-zinc-300 rounded" />
+            </div>
+            <div className="h-4 w-20 bg-zinc-300 rounded mx-auto mb-1" />
+            <div className="h-3 w-48 bg-zinc-300 rounded mx-auto" />
+          </div>
+          {/* Skeleton Form Card */}
+          <div className="bg-white rounded-lg shadow-lg p-4">
+            <div className="h-5 w-48 bg-zinc-200 rounded mx-auto mb-4 animate-pulse" />
+            {/* Skeleton fields */}
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="mb-3 animate-pulse">
+                <div className="h-3 w-24 bg-zinc-200 rounded mb-1.5" />
+                <div className="h-10 bg-zinc-100 border border-zinc-200 rounded-lg" />
+              </div>
+            ))}
+            {/* Skeleton offers */}
+            <div className="border-t border-zinc-200 pt-3 mt-3">
+              <div className="h-5 w-44 bg-zinc-200 rounded mx-auto mb-3 animate-pulse" />
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 bg-zinc-100 border border-zinc-200 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            </div>
+            {/* Skeleton button */}
+            <div className="mt-4 h-12 bg-zinc-200 rounded-lg animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !landingPage) {
+    return (
+      <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md">
+          <p className="text-red-600 text-center">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!landingPage) {
+    return null;
+  }
+
+  // Check if product is inactive
+  if (landingPage.products?.status === "inactive") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 sm:p-8 text-center">
+          <div className="mb-4">
+            <svg className="w-16 h-16 mx-auto text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-zinc-900 mb-2">
+            Produsul nu mai este disponibil
+          </h1>
+          <p className="text-zinc-600 mb-6">
+            Ne pare rău, acest produs nu se mai află în catalogul nostru de produse.
+          </p>
+          <div className="text-sm text-zinc-500">
+            Pentru informații suplimentare, vă rugăm să ne contactați.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 mb-2">Comandă plasată cu succes!</h2>
+          <p className="text-sm sm:text-base text-zinc-600">Vă vom contacta în curând pentru confirmarea comenzii.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentPrice = getCurrentPrice();
+  const totalPrice = getTotalPrice();
+  const discount = calculateDiscount();
+  const discountV2 = landingPage ? Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100) : 0;
+  const isAmountDiscount = landingPage?.discount_type === "amount";
+  const discountBadgeV2 = isAmountDiscount
+    ? `REDUCERE ${Math.round(landingPage.srp - landingPage.price_1)} LEI`
+    : `REDUCERE ${discountV2}%`;
+  const discountBadge = isAmountDiscount
+    ? `REDUCERE ${Math.round(landingPage.srp - currentPrice)} LEI`
+    : `REDUCERE ${discount}%`;
+
+  // Get colors from store with fallback to defaults
+  const storeColors = landingPage.stores;
+  const backgroundColor = storeColors?.background_color || "#000000";
+  const accentColor = storeColors?.accent_color || "#10b981"; // emerald-600
+  const primaryColor = storeColors?.primary_color || "#10b981"; // emerald-600 fallback
+  const textOnDarkColor = storeColors?.text_on_dark_color || "#FFFFFF";
+  
+  // Helper function to create lighter variant of accent color for selected states
+  const getAccentLightColor = (color: string) => {
+    // Simple approach: add opacity or use a lighter variant
+    // For now, we'll use a CSS variable approach or inline style
+    return color;
+  };
+
+  // V3 = V2 layout (offers on top) + redesigned delivery fields
+  const isV3 = true;
+  const isV2 = true;
+  const labelClass = isV3
+    ? "block text-lg sm:text-xl font-bold text-zinc-900 mb-1.5"
+    : "block text-base sm:text-lg font-medium text-zinc-900 mb-1";
+  const inputBase = isV3
+    ? "w-full px-3.5 py-3 border rounded-xl focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base placeholder:text-zinc-500"
+    : "w-full px-3 py-2 sm:py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-base sm:text-lg text-zinc-900 placeholder:text-base sm:placeholder:text-lg placeholder:text-zinc-500";
+  const requiredMark = isV3 ? <span className="text-red-600">*</span> : null;
+
+  return (
+    <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 py-4 sm:py-8 px-3 sm:px-4">
+      <div className="max-w-xl mx-auto">
+
+        {/* V2 Header — Explicit old/new price, dynamic with selected offer */}
+        {isV2 && (
+          <div className={`relative rounded-lg shadow-lg p-2.5 ${isV3 ? "pt-7" : "pt-5"} mb-2 sm:mb-3`} style={{ backgroundColor }}>
+            <div className={`absolute ${isV3 ? "-top-4" : "-top-3"} left-1/2 -translate-x-1/2 z-10`}>
+              {isV3 && (
+                <style dangerouslySetInnerHTML={{__html: `
+                  @keyframes badgePulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+                    50% { transform: scale(1.08); box-shadow: 0 6px 22px rgba(239, 68, 68, 0.75); }
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .badge-pulse { animation: none !important; }
+                  }
+                `}} />
+              )}
+              <span
+                className={isV3
+                  ? "badge-pulse inline-block px-5 py-1.5 text-white rounded-full text-lg sm:text-xl font-black whitespace-nowrap shadow-lg"
+                  : "px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"}
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+                  boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
+                  ...(isV3 ? { animation: 'badgePulse 1.4s ease-in-out infinite' } : {})
+                }}
+              >
+                {discountBadgeV2}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-1.5">
+              <div className="text-center">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.6 }}>Preț vechi</p>
+                <span className="text-lg sm:text-xl font-bold line-through" style={{ color: textOnDarkColor, opacity: 0.5 }}>
+                  {landingPage.srp.toFixed(2)} Lei
+                </span>
+              </div>
+              <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+              <div className="text-center">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-0.5" style={{ color: textOnDarkColor, opacity: 0.8 }}>Preț nou</p>
+                <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
+                  {landingPage.price_1.toFixed(2)} LEI
+                </span>
+              </div>
+            </div>
+
+            {hasFreeShipping() && (
+              <div className="text-center mb-1">
+                <span className="text-sm font-bold uppercase" style={{ color: textOnDarkColor }}>Transport Gratuit</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-sm sm:text-base">⭐⭐⭐⭐⭐</span>
+            </div>
+            <div className="flex items-center justify-center text-[10px] sm:text-xs mt-0.5" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="font-medium">Peste 10.000 de clienți din România sunt mulțumiți de acest produs</span>
+            </div>
+          </div>
+        )}
+
+        {/* V1 Header — Original */}
+        {!isV2 && (
+        <div className="relative rounded-lg shadow-lg p-3 pt-5 mb-3 sm:mb-4" style={{ backgroundColor }}>
+          {/* Discount Badge - Positioned on top edge */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            <span
+              className="px-3 py-1 text-white rounded-full text-sm sm:text-base font-bold whitespace-nowrap shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+                boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              {discountBadge}
+            </span>
+          </div>
+
+          {/* Prices */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+            <span className="text-lg sm:text-xl font-bold" style={{ color: textOnDarkColor, opacity: 0.6 }}>
+              {landingPage.srp.toFixed(2)} Lei
+            </span>
+            <span className="text-xl sm:text-2xl" style={{ color: textOnDarkColor, opacity: 0.7 }}>→</span>
+            <span className="text-2xl sm:text-3xl font-black" style={{ color: textOnDarkColor }}>
+              {landingPage.price_1.toFixed(2)} LEI
+            </span>
+          </div>
+
+          {/* Trust Signals */}
+          <div className="space-y-1.5">
+            {/* First Row: Stars */}
+            <div className="flex items-center justify-center" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="text-yellow-400 text-base sm:text-lg">⭐⭐⭐⭐⭐</span>
+            </div>
+
+            {/* Second Row: Social Proof Text */}
+            <div className="flex items-center justify-center text-xs sm:text-sm" style={{ color: textOnDarkColor, opacity: 0.9 }}>
+              <span className="font-medium">Peste 9.847 clienți mulțumiți de magazinul nostru</span>
+            </div>
+
+            {/* Third Row: Delivery & Payment */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.85 }}>
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                </svg>
+                <span className="font-semibold">Livrare 1-3 zile</span>
+              </div>
+              <div className="hidden sm:block" style={{ color: textOnDarkColor, opacity: 0.3 }}>|</div>
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="font-semibold">Plată la livrare</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
+              e.preventDefault();
+            }
+          }}
+          noValidate
+          className="space-y-4 sm:space-y-6"
+        >
+          {/* Unified Card: Delivery + Offers + Upsells + Summary */}
+          <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isV2 ? "flex flex-col" : ""}`}>
+
+          {/* Delivery Information */}
+          <div className={isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"} style={isV2 ? { order: 3 } : undefined}>
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
+              Introduceți datele de livrare
+            </h2>
+            <div className={isV3 ? "space-y-4" : "space-y-3"}>
+              <div>
+                <label className={labelClass}>
+                  {isV3 ? "Telefon" : "Număr Telefon"}{requiredMark}
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    handlePhoneChange(e);
+                    // Clear error when phone reaches 10 digits
+                    if (errors.phone) {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      if (digits.length >= 10) {
+                        setErrors((prev) => ({ ...prev, phone: undefined }));
+                      }
+                    }
+                  }}
+                  placeholder="Ex: 0722 123 456"
+                  className={`${inputBase} ${
+                    errors.phone
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.phone ? {} : { 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    if (!errors.phone) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
+                    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+                      const atcKey = `atc_fired_${slug}`;
+                      if (!sessionStorage.getItem(atcKey)) {
+                        sessionStorage.setItem(atcKey, '1');
+                        const atcPrice = selectedOffer === 'offer_2' ? landingPage.price_2
+                          : selectedOffer === 'offer_3' ? landingPage.price_3
+                          : landingPage.price_1;
+                        sendPixelEvent('AddToCart', {
+                          content_ids: [selectedOffer],
+                          content_name: landingPage.products?.name,
+                          value: atcPrice,
+                          currency: 'RON',
+                        });
+                      }
+                      const icKey = `ic_fired_${slug}`;
+                      if (!sessionStorage.getItem(icKey)) {
+                        sessionStorage.setItem(icKey, '1');
+                        const selectedPrice = selectedOffer === 'offer_2' ? landingPage.price_2
+                          : selectedOffer === 'offer_3' ? landingPage.price_3
+                          : landingPage.price_1;
+                        sendPixelEvent('InitiateCheckout', {
+                          content_ids: [selectedOffer],
+                          content_name: landingPage.products?.name,
+                          num_items: 1 + selectedUpsells.size,
+                          value: selectedPrice,
+                          currency: 'RON',
+                        });
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("phone", phone);
+                  }}
+                />
+                {errors.phone ? (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                ) : (
+                  !isV3 && <p className="mt-1 text-xs text-zinc-400">Format: 10 cifre, fără prefix internațional</p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {isV3 ? "Nume și prenume" : "Nume complet"}{requiredMark}
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(toTitleCase(e.target.value));
+                    // Clear error when user starts typing
+                    if (errors.fullName) {
+                      setErrors((prev) => ({ ...prev, fullName: undefined }));
+                    }
+                  }}
+                  placeholder={isV3 ? "Te rugăm să introduci numele complet" : "Introduceți aici numele complet"}
+                  maxLength={100}
+                  className={`${inputBase} ${
+                    errors.fullName
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.fullName ? {} : { 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    if (!errors.fullName) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("fullName", fullName);
+                  }}
+                />
+                {errors.fullName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                )}
+              </div>
+              <div className={isV3 ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-3"}>
+                <div>
+                  <label className={labelClass}>
+                    Județ{requiredMark}
+                  </label>
+                  <input
+                    type="text"
+                    value={county}
+                    onChange={(e) => {
+                      setCounty(toTitleCase(e.target.value));
+                      // Clear error when user starts typing
+                      if (errors.county) {
+                        setErrors((prev) => ({ ...prev, county: undefined }));
+                      }
+                    }}
+                    placeholder={isV3 ? "Scrie județul pentru livrare" : "Introduceți aici județul"}
+                    maxLength={50}
+                    className={`${inputBase} ${
+                      errors.county
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                        : 'border-zinc-300'
+                    }`}
+                    style={errors.county ? {} : { 
+                      '--tw-ring-color': accentColor 
+                    } as React.CSSProperties & { '--tw-ring-color': string }}
+                    onFocus={(e) => {
+                      if (!errors.county) {
+                        e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                      handleFieldBlur("county", county);
+                    }}
+                  />
+                  {errors.county && (
+                    <p className="mt-1 text-sm text-red-600">{errors.county}</p>
+                  )}
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    {isV3 ? "Localitate" : "Localitate, comună sau sat"}{requiredMark}
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(toTitleCase(e.target.value));
+                      // Clear error when user starts typing
+                      if (errors.city) {
+                        setErrors((prev) => ({ ...prev, city: undefined }));
+                      }
+                    }}
+                    placeholder={isV3 ? "Scrie localitatea pentru livrare" : "Introduceți aici localitatea / comuna / satul"}
+                    maxLength={100}
+                    className={`${inputBase} ${
+                      errors.city
+                        ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                        : 'border-zinc-300'
+                    }`}
+                    style={errors.city ? {} : { 
+                      '--tw-ring-color': accentColor 
+                    } as React.CSSProperties & { '--tw-ring-color': string }}
+                    onFocus={(e) => {
+                      if (!errors.city) {
+                        e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = '';
+                      handleFieldBlur("city", city);
+                    }}
+                  />
+                  {errors.city && (
+                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>
+                  {isV3 ? "Adresa" : "Stradă, număr, bloc, scară, ap."}{requiredMark}
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => {
+                    setAddress(toTitleCase(e.target.value));
+                    // Clear error when user starts typing
+                    if (errors.address) {
+                      setErrors((prev) => ({ ...prev, address: undefined }));
+                    }
+                  }}
+                  placeholder={isV3 ? "Strada, Număr, bloc, scară, ap." : "Strada și numărul"}
+                  maxLength={200}
+                  className={`${inputBase} ${
+                    errors.address
+                      ? 'border-red-500 bg-red-50 focus:ring-red-500'
+                      : 'border-zinc-300'
+                  }`}
+                  style={errors.address ? {} : { 
+                    '--tw-ring-color': accentColor 
+                  } as React.CSSProperties & { '--tw-ring-color': string }}
+                  onFocus={(e) => {
+                    if (!errors.address) {
+                      e.currentTarget.style.boxShadow = `0 0 0 2px ${accentColor}`;
+                    }
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = '';
+                    handleFieldBlur("address", address);
+                  }}
+                />
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity Selection */}
+          <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
+              {isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
+            </h2>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOffer("offer_1");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_1'], value: landingPage.price_1, currency: 'RON' });
+                  }
+                }}
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
+                style={selectedOffer === "offer_1" ? {
+                  border: `3px solid ${landingPage.free_shipping_offer_1 ? '#10b981' : primaryColor}`,
+                  backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
+                } : {
+                  border: landingPage.free_shipping_offer_1 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_1 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
+                  boxShadow: landingPage.free_shipping_offer_1 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
+                }}
+              >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_1 && selectedOffer !== "offer_1" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: selectedOffer === "offer_1" ? primaryColor : backgroundColor }}
+                >
+                  {landingPage.offer_heading_1}
+                </div>
+
+                <div className="text-xs sm:text-sm font-bold mb-1 leading-tight line-clamp-2" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>
+                  {landingPage.numeral_1}
+                </div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_1" ? accentColor : accentColor }}>
+                  {landingPage.price_1.toFixed(2)} LEI
+                </div>
+                {landingPage.free_shipping_offer_1 && (
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_1" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
+                )}
+                {isV2 && selectedOffer === "offer_1" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOffer("offer_2");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_2'], value: landingPage.price_2, currency: 'RON' });
+                  }
+                }}
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
+                style={selectedOffer === "offer_2" ? {
+                  border: `3px solid ${landingPage.free_shipping_offer_2 ? '#10b981' : primaryColor}`,
+                  backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
+                } : {
+                  border: landingPage.free_shipping_offer_2 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_2 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
+                  boxShadow: landingPage.free_shipping_offer_2 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
+                }}
+              >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_2 && selectedOffer !== "offer_2" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: selectedOffer === "offer_2" ? primaryColor : backgroundColor }}
+                >
+                  {landingPage.offer_heading_2}
+                </div>
+
+                <div className="text-xs sm:text-sm font-bold mb-1 leading-tight line-clamp-2" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>
+                  {landingPage.numeral_2}
+                </div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_2" ? accentColor : accentColor }}>
+                  {landingPage.price_2.toFixed(2)} LEI
+                </div>
+                {landingPage.free_shipping_offer_2 && (
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_2" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
+                )}
+                {isV2 && selectedOffer === "offer_2" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOffer("offer_3");
+                  if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                    sendPixelEvent('OfferSelected', { content_ids: ['offer_3'], value: landingPage.price_3, currency: 'RON' });
+                  }
+                }}
+                className="relative p-2 sm:p-3 pt-4 sm:pt-5 rounded-lg transition-all text-center"
+                style={selectedOffer === "offer_3" ? {
+                  border: `3px solid ${landingPage.free_shipping_offer_3 ? '#10b981' : primaryColor}`,
+                  backgroundColor: backgroundColor,
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 18px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3)' : undefined,
+                } : {
+                  border: landingPage.free_shipping_offer_3 ? 'none' : '2px solid #e5e7eb',
+                  backgroundColor: landingPage.free_shipping_offer_3 ? 'rgba(16, 185, 129, 0.08)' : '#fff',
+                  boxShadow: landingPage.free_shipping_offer_3 ? '0 0 14px rgba(16, 185, 129, 0.4), 0 0 4px rgba(16, 185, 129, 0.2)' : undefined,
+                }}
+              >
+                {/* SVG Marching Ants for free shipping (unselected) */}
+                {landingPage.free_shipping_offer_3 && selectedOffer !== "offer_3" && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ borderRadius: '0.5rem' }}>
+                    <rect x="1.5" y="1.5" width="calc(100% - 3px)" height="calc(100% - 3px)" fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="8 4" rx="8" style={{ animation: 'marchingAnts 1s linear infinite' }} />
+                  </svg>
+                )}
+                {/* Label on border */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold text-white uppercase whitespace-nowrap"
+                  style={{ backgroundColor: selectedOffer === "offer_3" ? primaryColor : backgroundColor }}
+                >
+                  {landingPage.offer_heading_3}
+                </div>
+
+                <div className="text-xs sm:text-sm font-bold mb-1 leading-tight line-clamp-2" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>
+                  {landingPage.numeral_3}
+                </div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: selectedOffer === "offer_3" ? accentColor : accentColor }}>
+                  {landingPage.price_3.toFixed(2)} LEI
+                </div>
+                {landingPage.free_shipping_offer_3 && (
+                  <div className="mt-1 text-[11px] sm:text-xs font-bold uppercase" style={{ color: selectedOffer === "offer_3" ? textOnDarkColor : '#18181b' }}>Transport Gratuit</div>
+                )}
+                {isV2 && selectedOffer === "offer_3" && (
+                  <div className="mt-1 text-[8px] sm:text-[9px] font-bold uppercase" style={{ color: primaryColor }}>✓ Oferta selectată</div>
+                )}
+              </button>
+            </div>
+
+          </div>
+
+          {/* Variation Selector */}
+          {productVariations.length > 0 && (() => {
+            const offerQty = getOfferQuantity();
+            const totalVarQty = getTotalVariationQuantity();
+            const remaining = offerQty - totalVarQty;
+            const isSingle = variationSelectionMode === "single";
+            const selectedSingleId = isSingle
+              ? Object.keys(variationQuantities).find(id => (variationQuantities[id] || 0) > 0) || null
+              : null;
+            return (
+              <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 2 } : undefined}>
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 mb-1 text-center">
+                  {landingPage.variations_label || (isSingle ? "Selectați varianta dorită" : "Selectați variantele dorite")}
+                </h2>
+                <div className="text-xs sm:text-sm text-center mb-3">
+                  {isSingle ? (
+                    selectedSingleId
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-semibold">✓ Variantă selectată</span>
+                      : <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-semibold">Alegeți o variantă</span>
+                  ) : (
+                    remaining > 0
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-semibold">Mai selectați {remaining} unit{remaining === 1 ? "ate" : "ăți"}</span>
+                      : totalVarQty === offerQty
+                      ? <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs sm:text-sm font-semibold">✓ Selecție completă</span>
+                      : null
+                  )}
+                </div>
+
+                {isSingle ? (
+                  /* Single mode: grid of clickable cards */
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {productVariations.map((variation) => {
+                      const isSelected = selectedSingleId === variation.id;
+                      const isOutOfStock = !variation.in_stock;
+                      return (
+                        <button
+                          key={variation.id}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => handleSingleVariationSelect(variation.id)}
+                          className={`flex flex-col items-center rounded-xl border-2 p-2 transition-all text-center ${
+                            isOutOfStock
+                              ? "border-zinc-200 bg-zinc-50 opacity-50 cursor-not-allowed"
+                              : isSelected
+                              ? "border-emerald-500 bg-emerald-50"
+                              : "border-zinc-200 bg-white hover:border-zinc-400"
+                          }`}
+                        >
+                          {variation.variation_visual_type === "image" && variation.variation_visual_value ? (
+                            <img
+                              src={variation.variation_visual_value}
+                              alt={variation.name}
+                              className="w-full aspect-square object-cover rounded-lg mb-1.5"
+                            />
+                          ) : variation.variation_visual_type === "color" && variation.variation_visual_value ? (
+                            <div
+                              className="w-10 h-10 rounded-full border-2 border-zinc-200 mb-1.5 shrink-0"
+                              style={{ backgroundColor: variation.variation_visual_value }}
+                            />
+                          ) : null}
+                          <span className="text-xs sm:text-sm font-medium text-zinc-900 leading-tight">
+                            {variation.name}
+                          </span>
+                          {isOutOfStock && (
+                            <span className="text-[10px] text-red-500 font-medium mt-0.5">Lipsă stoc</span>
+                          )}
+                          {isSelected && !isOutOfStock && (
+                            <span className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ Selectat</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Multi mode: stepper rows */
+                  <div className="space-y-2">
+                    {productVariations.map((variation) => {
+                      const qty = variationQuantities[variation.id] || 0;
+                      const isOutOfStock = !variation.in_stock;
+                      return (
+                        <div
+                          key={variation.id}
+                          className={`flex items-center gap-3 p-2.5 sm:p-3 rounded-lg border transition-all ${
+                            isOutOfStock
+                              ? "border-zinc-200 bg-zinc-50 opacity-60"
+                              : qty > 0
+                              ? "border-2"
+                              : "border-zinc-200 bg-white"
+                          }`}
+                          style={qty > 0 && !isOutOfStock
+                            ? { borderColor: "#16a34a", backgroundColor: "#f0fdf4" }
+                            : undefined}
+                        >
+                          {/* Visual preview */}
+                          {variation.variation_visual_type === "image" && variation.variation_visual_value && (
+                            <img
+                              src={variation.variation_visual_value}
+                              alt={variation.name}
+                              className="w-16 h-16 object-cover rounded-md shrink-0"
+                            />
+                          )}
+                          {variation.variation_visual_type === "color" && variation.variation_visual_value && (
+                            <div
+                              className="w-8 h-8 rounded-full border-2 border-zinc-300 shrink-0"
+                              style={{ backgroundColor: variation.variation_visual_value }}
+                            />
+                          )}
+
+                          {/* Name + out-of-stock label */}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm sm:text-base font-medium text-zinc-900 truncate block">
+                              {variation.name}
+                            </span>
+                            {isOutOfStock && (
+                              <span className="text-xs text-red-500 font-medium">Lipsă stoc</span>
+                            )}
+                          </div>
+
+                          {/* Quantity stepper */}
+                          {isOutOfStock ? (
+                            <div className="shrink-0 w-20 text-center text-xs text-zinc-400 italic">
+                              Indisponibil
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={qty === 0}
+                                onClick={() =>
+                                  setVariationQuantities(prev => ({
+                                    ...prev,
+                                    [variation.id]: Math.max(0, (prev[variation.id] || 0) - 1),
+                                  }))
+                                }
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                style={qty > 0
+                                  ? { borderColor: "#dc2626", color: "#dc2626" }
+                                  : { borderColor: "#d1d5db", color: "#9ca3af" }
+                                }
+                              >
+                                −
+                              </button>
+                              <span className="w-5 text-center text-sm font-bold text-zinc-900">{qty}</span>
+                              <button
+                                type="button"
+                                disabled={remaining === 0}
+                                onClick={() =>
+                                  setVariationQuantities(prev => ({
+                                    ...prev,
+                                    [variation.id]: (prev[variation.id] || 0) + 1,
+                                  }))
+                                }
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                style={remaining > 0
+                                  ? { borderColor: "#16a34a", color: "#16a34a" }
+                                  : { borderColor: "#d1d5db", color: "#9ca3af" }
+                                }
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Presale Upsells */}
+          {presaleUpsells.length > 0 && (
+            <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 4 } : undefined}>
+              {/* Header */}
+              <div className="mb-2 text-center">
+                {isV3 ? (
+                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
+                    Adaugă produse cu EXTRA REDUCERE
+                  </h2>
+                ) : (
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center justify-center gap-2">
+                  <span className="text-base sm:text-lg">⚡</span>
+                  PRODUSE AFLATE ÎN OFERTĂ
+                  <span className="text-base sm:text-lg">⚡</span>
+                </h2>
+                )}
+              </div>
+
+              <style jsx>{`
+                @keyframes marchingAnts {
+                  0% { stroke-dashoffset: 0; }
+                  100% { stroke-dashoffset: 20; }
+                }
+              `}</style>
+
+              <div className="space-y-2">
+                {presaleUpsells.map((upsell) => {
+                  const isSelected = selectedUpsells.has(upsell.id);
+                  const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
+
+                  return (
+                    <button
+                      key={upsell.id}
+                      type="button"
+                      onClick={() => toggleUpsell(upsell.id)}
+                      className="relative w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-300"
+                      style={{
+                        background: isSelected ? backgroundColor : '#fff',
+                        border: isSelected
+                          ? `3px solid ${primaryColor}`
+                          : 'none',
+                        boxShadow: isSelected ? '0 4px 12px -1px rgba(0, 0, 0, 0.15)' : 'none',
+                      }}
+                    >
+                      {/* SVG Marching Ants Border for non-selected - uses primaryColor */}
+                      {!isSelected && (
+                        <svg
+                          className="absolute inset-0 w-full h-full pointer-events-none"
+                          style={{ borderRadius: '0.5rem' }}
+                        >
+                          <rect
+                            x="1.5"
+                            y="1.5"
+                            width="calc(100% - 3px)"
+                            height="calc(100% - 3px)"
+                            fill="none"
+                            stroke={primaryColor}
+                            strokeWidth="2"
+                            strokeDasharray="8 4"
+                            rx="8"
+                            style={{
+                              animation: 'marchingAnts 1s linear infinite',
+                            }}
+                          />
+                        </svg>
+                      )}
+
+                      {/* Discount badge - compact */}
+                      {discount > 0 && (
+                        <div className="absolute -top-2 -right-2 z-20">
+                          <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                            REDUCERE -{discount}%
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-3 relative z-10">
+                        {/* Checkbox */}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              isSelected ? 'border-0' : 'border-zinc-300'
+                            }`}
+                            style={isSelected ? { backgroundColor: primaryColor } : {}}
+                          >
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="text-sm sm:text-base leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
+                                Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
+                                <span
+                                  className="font-bold text-base sm:text-lg"
+                                  style={{ color: accentColor }}
+                                >
+                                  {upsell.price.toFixed(2)} Lei
+                                </span>
+                                {upsell.srp > upsell.price && (
+                                  isV3 ? (
+                                    <span className="text-sm sm:text-base" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>
+                                      {' '}(redus de la{' '}
+                                      <span className="font-bold text-red-600">
+                                        {Number.isInteger(upsell.srp) ? upsell.srp.toFixed(0) : upsell.srp.toFixed(2)} Lei
+                                      </span>)
+                                    </span>
+                                  ) : (
+                                  <span className="text-xs sm:text-sm" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
+                                    {' '}(redus de la {upsell.srp.toFixed(2)} Lei)
+                                  </span>
+                                  )
+                                )}
+                              </h3>
+                            </div>
+                            {upsell.media_url && (
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={upsell.media_url}
+                                  alt={upsell.title}
+                                  className="w-16 h-16 object-cover rounded-lg"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Order Summary */}
+          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor, order: 5 } : { backgroundColor }}>
+            <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
+              Rezumatul comenzii
+            </h2>
+            <div className="space-y-0.5 mb-1.5 text-center">
+              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                Preț produse: <span className="font-bold">{currentPrice.toFixed(2)} Lei</span>
+              </div>
+              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                {hasFreeShipping() ? (
+                  <>Livrare curier rapid: <span className="line-through opacity-50">{landingPage.shipping_price.toFixed(2)} Lei</span> <span className="font-bold text-emerald-400">GRATUIT</span></>
+                ) : (
+                  <>Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span></>
+                )}
+              </div>
+              {getUpsellsTotal() > 0 && (
+                <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                  Oferte speciale ({selectedUpsells.size}): <span className="font-bold">{getUpsellsTotal().toFixed(2)} Lei</span>
+                </div>
+              )}
+            </div>
+            <div className="pt-1.5 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
+              <div className="flex justify-center items-center gap-3">
+                <span className="text-sm sm:text-base font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
+                <span className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
+                  {totalPrice.toFixed(2)} LEI
+                </span>
+              </div>
+            </div>
+          </div>
+
+          </div>{/* End Unified Card */}
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-base sm:text-lg">{error}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="space-y-2 flex flex-col items-center">
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`w-3/5 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+                !submitting ? 'animate-pulse' : ''
+              }`}
+              style={{
+                backgroundColor: primaryColor,
+                touchAction: 'manipulation',
+                ...(!submitting ? {
+                  boxShadow: `0 0 0 0 ${primaryColor}B3`,
+                  animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                } : {})
+              }}
+              onMouseEnter={(e) => {
+                if (!submitting) {
+                  // Darken color on hover (reduce brightness by ~10%)
+                  const rgb = primaryColor.match(/\d+/g);
+                  if (rgb && rgb.length === 3) {
+                    const r = Math.max(0, parseInt(rgb[0]) - 20);
+                    const g = Math.max(0, parseInt(rgb[1]) - 20);
+                    const b = Math.max(0, parseInt(rgb[2]) - 20);
+                    e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                  }
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.backgroundColor = primaryColor;
+                }
+              }}
+            >
+              {submitting ? "Se procesează..." : landingPage.order_button_text}
+            </button>
+            <p className="text-center text-sm sm:text-base text-zinc-600 italic">
+              cu reducere aplicată
+            </p>
+          </div>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes pulse-button {
+              0%, 100% {
+                box-shadow: 0 0 0 0 ${primaryColor}B3, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+              }
+              50% {
+                box-shadow: 0 0 0 10px ${primaryColor}00, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+              }
+            }
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            @keyframes scaleIn {
+              from {
+                opacity: 0;
+                transform: scale(0.8);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            @keyframes marchingAnts {
+              0% {
+                stroke-dashoffset: 0;
+              }
+              100% {
+                stroke-dashoffset: 12;
+              }
+            }
+          `}} />
+
+          {/* Success Popup */}
+          {showSuccessPopup && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              style={{
+                animation: 'fadeIn 0.3s ease-out'
+              }}
+            >
+              <div
+                className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center"
+                style={{
+                  animation: 'fadeIn 0.3s ease-out'
+                }}
+              >
+                {/* Success Icon */}
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: `${accentColor}20` }}
+                >
+                  <svg
+                    className="w-12 h-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: accentColor }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Processing Message */}
+                <h2
+                  className="text-2xl sm:text-3xl font-bold mb-3"
+                  style={{ color: accentColor }}
+                >
+                  FELICITĂRI!
+                </h2>
+                <p className="text-xl sm:text-2xl font-bold text-zinc-900 mb-4">
+                  COMANDA ESTE ÎN PROCESARE
+                </p>
+                <p className="text-sm sm:text-base text-zinc-600">
+                  Vă redirecționăm...
+                </p>
+
+                {/* Loading Spinner */}
+                <div className="mt-6">
+                  <div
+                    className="animate-spin rounded-full h-10 w-10 border-b-4 mx-auto"
+                    style={{ borderColor: accentColor }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Post-Sale Offer Popup - SPECTACULAR DESIGN */}
+          {showPostsaleOffer && postsaleUpsells.length > 0 && postsaleUpsells[0] && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              style={{
+                animation: 'fadeIn 0.3s ease-out',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
+              }}
+            >
+              {/* Animated sparkles/particles background */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-10 left-10 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+                <div className="absolute top-20 right-20 w-3 h-3 bg-yellow-300 rounded-full animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}></div>
+                <div className="absolute bottom-32 left-16 w-2 h-2 bg-yellow-500 rounded-full animate-ping" style={{ animationDuration: '1.8s', animationDelay: '1s' }}></div>
+                <div className="absolute top-1/3 right-10 w-2 h-2 bg-amber-400 rounded-full animate-ping" style={{ animationDuration: '2.2s', animationDelay: '0.3s' }}></div>
+                <div className="absolute bottom-40 right-24 w-3 h-3 bg-yellow-400 rounded-full animate-ping" style={{ animationDuration: '2.7s', animationDelay: '0.8s' }}></div>
+              </div>
+
+              {/* Main content - fits mobile screen */}
+              <div
+                className="relative w-full max-w-md mx-4 flex flex-col"
+                style={{
+                  animation: 'scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  maxHeight: '100dvh',
+                  paddingTop: 'env(safe-area-inset-top, 12px)',
+                  paddingBottom: 'env(safe-area-inset-bottom, 12px)'
+                }}
+              >
+                {/* COUNTDOWN TIMER - Top sticky */}
+                <div className="flex-shrink-0 mb-3">
+                  <div
+                    className="mx-auto w-fit px-6 py-2.5 rounded-full shadow-2xl border-2 border-red-400"
+                    style={{
+                      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                      animation: 'pulse 1.5s ease-in-out infinite'
+                    }}
+                  >
+                    <div className="flex items-center gap-3 text-white">
+                      <svg className="w-5 h-5 animate-spin" style={{ animationDuration: '3s' }} fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-black text-lg tracking-wider">
+                        {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')}
+                      </span>
+                      <span className="font-bold text-sm uppercase">rămase</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* FELICITĂRI TITLE */}
+                <div className="flex-shrink-0 text-center mb-2">
+                  <h1
+                    className="text-4xl sm:text-5xl font-black tracking-tight"
+                    style={{
+                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #fbbf24 60%, #fcd34d 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      textShadow: '0 0 40px rgba(251, 191, 36, 0.5)',
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                    }}
+                  >
+                    FELICITĂRI!
+                  </h1>
+                </div>
+
+                {/* SUBTITLE */}
+                <div className="flex-shrink-0 text-center mb-4">
+                  <p className="text-white text-base sm:text-lg font-bold uppercase tracking-wide">
+                    <span className="text-yellow-400">★</span> AI DEBLOCAT O REDUCERE LIMITATĂ <span className="text-yellow-400">★</span>
+                  </p>
+                </div>
+
+                {/* PRODUCT IMAGE - Centered hero */}
+                <div className="flex-shrink-0 flex justify-center mb-3">
+                  <div className="relative">
+                    {/* Glow effect behind image */}
+                    <div
+                      className="absolute inset-0 rounded-2xl blur-xl opacity-60"
+                      style={{ background: accentColor, transform: 'scale(1.1)' }}
+                    ></div>
+                    {postsaleUpsells[0].media_url ? (
+                      <img
+                        src={postsaleUpsells[0].media_url}
+                        alt={postsaleUpsells[0].title}
+                        className="relative w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-2xl shadow-2xl border-4 border-white/20"
+                      />
+                    ) : (
+                      <div className="relative w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-zinc-700 to-zinc-800 rounded-2xl shadow-2xl border-4 border-white/20 flex items-center justify-center">
+                        <span className="text-5xl">🎁</span>
+                      </div>
+                    )}
+                    {/* DISCOUNT BADGE - Overlapping image */}
+                    <div
+                      className="absolute -top-3 -right-3 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shadow-xl border-2 border-white"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                        animation: 'bounce 1s ease-in-out infinite'
+                      }}
+                    >
+                      <span className="text-white font-black text-lg sm:text-xl leading-none text-center">
+                        -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PRODUCT TITLE */}
+                <div className="flex-shrink-0 text-center mb-2 px-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                    {postsaleUpsells[0].title}
+                  </h2>
+                </div>
+
+                {/* PRODUCT DESCRIPTION */}
+                {postsaleUpsells[0].description && (
+                  <div className="flex-shrink-0 text-center mb-3 px-6">
+                    <p className="text-zinc-300 text-sm sm:text-base leading-snug">
+                      {postsaleUpsells[0].description}
+                    </p>
+                  </div>
+                )}
+
+                {/* PRICE SECTION */}
+                <div className="flex-shrink-0 text-center mb-4">
+                  <div className="flex items-center justify-center gap-4">
+                    {/* Old price */}
+                    <div className="relative">
+                      <span className="text-zinc-400 text-lg sm:text-xl font-medium">
+                        {postsaleUpsells[0].srp.toFixed(2)} Lei
+                      </span>
+                      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 transform -rotate-12"></div>
+                    </div>
+                    {/* Arrow */}
+                    <span className="text-yellow-400 text-2xl">→</span>
+                    {/* New price */}
+                    <div
+                      className="px-4 py-2 rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
+                    >
+                      <span className="text-white text-2xl sm:text-3xl font-black">
+                        {postsaleUpsells[0].price.toFixed(2)} Lei
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* URGENCY MESSAGE */}
+                <div className="flex-shrink-0 mx-4 mb-4 p-3 rounded-xl bg-red-950/50 border border-red-500/50">
+                  <p className="text-center text-red-300 text-sm font-semibold">
+                    ⚡ Această ofertă dispare pentru totdeauna după {Math.floor(postsaleCountdown / 60)}:{String(postsaleCountdown % 60).padStart(2, '0')} ⚡
+                  </p>
+                </div>
+
+                {/* ACTION BUTTONS - Stacked vertically */}
+                <div className="flex-shrink-0 px-4 space-y-3">
+                  {/* DECLINE BUTTON - Now first */}
+                  <button
+                    onClick={finalizeOrderAndRedirect}
+                    disabled={postsaleProcessing}
+                    className={`w-full py-3 rounded-xl font-medium text-base transition-all ${
+                      postsaleProcessing
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : 'text-zinc-400 hover:text-zinc-300'
+                    }`}
+                  >
+                    NU MĂ INTERESEAZĂ
+                  </button>
+
+                  {/* ACCEPT BUTTON - Now second */}
+                  <button
+                    onClick={async () => {
+                      if (postsaleProcessing) return;
+
+                      if (!createdOrderId || !postsaleUpsells[0]) {
+                        console.error('Missing order ID or upsell');
+                        redirectToThankYouPage();
+                        return;
+                      }
+
+                      setPostsaleProcessing(true);
+
+                      try {
+                        const response = await fetch(`/api/orders/${createdOrderId}/add-postsale-upsell`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ upsellId: postsaleUpsells[0].id }),
+                        });
+
+                        if (!response.ok) {
+                          console.error('Failed to add postsale upsell');
+                        } else {
+                          console.log('Postsale upsell added successfully!');
+                          const postsaleTotal = getTotalPrice() + (postsaleUpsells[0].price * postsaleUpsells[0].quantity);
+                          await sendClientSidePurchaseEvent(createdOrderId, postsaleTotal);
+                        }
+                      } catch (error) {
+                        console.error('Error adding postsale upsell:', error);
+                      }
+
+                      redirectToThankYouPage();
+                    }}
+                    disabled={postsaleProcessing}
+                    className={`w-full py-4 sm:py-5 rounded-2xl font-black text-xl sm:text-2xl text-white shadow-2xl transition-all relative overflow-hidden ${
+                      postsaleProcessing ? 'opacity-60 cursor-not-allowed' : 'transform hover:scale-[1.02] active:scale-[0.98]'
+                    }`}
+                    style={{
+                      background: `linear-gradient(135deg, ${accentColor} 0%, ${primaryColor} 100%)`,
+                      boxShadow: `0 10px 40px -10px ${accentColor}80`
+                    }}
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {postsaleProcessing ? (
+                        <>
+                          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          SE PROCESEAZĂ...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-2xl">✓</span>
+                          DA, ADAUGĂ LA OFERTĂ
+                        </>
+                      )}
+                    </span>
+                    {!postsaleProcessing && (
+                      <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent 0%, white 50%, transparent 100%)',
+                          animation: 'shimmer 2s infinite'
+                        }}
+                      ></div>
+                    )}
+                  </button>
+                </div>
+
+                {/* TRUST BADGE */}
+                <div className="flex-shrink-0 text-center mt-3 pb-2">
+                  <p className="text-zinc-500 text-xs">
+                    ✓ Plata la livrare • ✓ Retur gratuit 14 zile
+                  </p>
+                </div>
+              </div>
+
+              {/* CSS for shimmer animation */}
+              <style jsx>{`
+                @keyframes shimmer {
+                  0% { transform: translateX(-100%); }
+                  100% { transform: translateX(100%); }
+                }
+              `}</style>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}

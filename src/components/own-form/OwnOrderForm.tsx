@@ -209,7 +209,9 @@ export default function OwnOrderForm({
   // Sends pixel_init to embed.js which initializes fbq first-party on the parent page.
   // Subsequent pixel events are relayed via sendPixelEvent (postMessage → fbq).
   useEffect(() => {
-    if (landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+    // ?notrack=1 in the page address: no pixel at all (for test orders on live products)
+    const noTracking = new URLSearchParams(window.location.search).get('notrack') === '1';
+    if (!noTracking && landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
       // Initialize fbq on this page (first-party cookies); PageView is fired right after init
       initInlinePixel(
         landingPage.fb_pixel_id,

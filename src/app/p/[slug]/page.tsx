@@ -8,6 +8,11 @@ import { DEMO_PAGE } from "@/lib/page-blocks-demo";
 // Served from cache and refreshed at most once a minute
 export const revalidate = 60;
 
+// No pages are generated at build time; each page is rendered on its first visit and then cached (ISR)
+export async function generateStaticParams() {
+  return [];
+}
+
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/i;
 
 async function getPage(slug: string) {

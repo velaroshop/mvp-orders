@@ -2162,6 +2162,10 @@ export default function AdminPage() {
                               trafficSource = "Google";
                             } else if (order.ttclid || order.trackingData?.utm_source === 'tiktok') {
                               trafficSource = "TikTok";
+                            } else if (order.trackingData?.utm_source === 'thank-you') {
+                              trafficSource = "Thank you";
+                            } else if (order.trackingData?.utm_source === 'reduxio-home') {
+                              trafficSource = "Homepage";
                             } else if (order.trackingData?.utm_source) {
                               trafficSource = order.trackingData.utm_source.charAt(0).toUpperCase() +
                                             order.trackingData.utm_source.slice(1);

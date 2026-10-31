@@ -559,11 +559,16 @@
     if (!cta || !cta.url) return '';
 
     const message = escapeHtml(cta.message).replace(/\n/g, '<br>');
+    // Remember the source for this tab so an order placed on a product page after the homepage
+    // is still tagged "thank-you" (embed.js reads this when the product URL has no UTM).
+    window.velaroRememberThankYouSource = function() {
+      try { sessionStorage.setItem('velaro_thank_you_src', JSON.stringify({ at: Date.now() })); } catch (e) {}
+    };
     return `
           <!-- CTA: see all products -->
           <div style="width: 100%; box-sizing: border-box; margin-top: 4px; padding: 18px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(148, 163, 184, 0.3); text-align: center;">
             <p style="font-size: 15px; line-height: 1.55; color: #e2e8f0; margin: 0 0 14px 0;">${message}</p>
-            <a href="${escapeHtml(cta.url)}" style="display: block; box-sizing: border-box; background: ${escapeHtml(cta.buttonColor)}; color: ${escapeHtml(cta.buttonTextColor)}; font-size: 18px; font-weight: 800; text-decoration: none; padding: 16px 12px; border-radius: 12px;">${escapeHtml(cta.buttonText)}</a>
+            <a href="${escapeHtml(cta.url)}" onclick="window.velaroRememberThankYouSource && window.velaroRememberThankYouSource()" style="display: block; box-sizing: border-box; background: ${escapeHtml(cta.buttonColor)}; color: ${escapeHtml(cta.buttonTextColor)}; font-size: 18px; font-weight: 800; text-decoration: none; padding: 16px 12px; border-radius: 12px;">${escapeHtml(cta.buttonText)}</a>
           </div>
     `;
   }

@@ -191,6 +191,18 @@
     var utmContent = params.get('utm_content');
     if (utmContent) tracking.utm_content = utmContent;
 
+    // Visitor came from the thank-you page CTA (remembered for this tab by thank-you-embed.js):
+    // only used when the URL carries no UTM / click id, so ad attribution is never overridden.
+    if (!utmSource && !fbclid && !params.get('gclid') && !params.get('ttclid')) {
+      try {
+        var remembered = JSON.parse(sessionStorage.getItem('velaro_thank_you_src') || 'null');
+        if (remembered && remembered.at && Date.now() - remembered.at < 6 * 60 * 60 * 1000) {
+          tracking.utm_source = 'thank-you';
+          tracking.utm_medium = 'postpurchase';
+        }
+      } catch (e) {}
+    }
+
     // Google Ads
     var gclid = params.get('gclid');
     if (gclid) tracking.gclid = gclid;

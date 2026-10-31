@@ -23,8 +23,52 @@ export const DEMO_PAGE = {
     },
     { type: "button", text: "Comandă acum", href: "#comanda", bg: "#ff6b35", color: "#ffffff" },
     { type: "html", html: "<p style='text-align:center;padding:12px;color:#52525b'>Bloc HTML liber</p>" },
+    {
+      type: "reviews",
+      title: "Ce spun clienții",
+      items: [
+        { name: "Maria P.", text: "Mi-a plăcut mult, **l-am recomandat** și vecinei.", rating: 5, verified: true },
+        { name: "Ion D.", text: "Livrare rapidă, plătit la curier.", rating: 4 },
+      ],
+    },
+    {
+      type: "faq",
+      title: "Întrebări frecvente",
+      openFirst: true,
+      items: [
+        { q: "Cum plătesc?", a: "Plătești la livrare, direct curierului." },
+        { q: "În cât timp ajunge coletul?", a: "În 1-3 zile lucrătoare." },
+      ],
+    },
+    {
+      type: "gallery",
+      images: [
+        { src: "https://placehold.co/800x600/0ea5e9/ffffff.png?text=1", alt: "Poza 1" },
+        { src: "https://placehold.co/800x600/22c55e/ffffff.png?text=2", alt: "Poza 2" },
+        { src: "https://placehold.co/800x600/a855f7/ffffff.png?text=3", alt: "Poza 3" },
+      ],
+    },
+    {
+      type: "before_after",
+      before: { src: "https://placehold.co/600x800/71717a/ffffff.png?text=Inainte", alt: "Înainte" },
+      after: { src: "https://placehold.co/600x800/16a34a/ffffff.png?text=Dupa", alt: "După" },
+    },
+    { type: "spacer", height: 16 },
     { type: "bogus", foo: 1 },
     { type: "button", text: "Link nesigur", href: "javascript:alert(1)" },
+    {
+      type: "footer",
+      logo: { src: "https://placehold.co/300x80/ffffff/18181b.png?text=LOGO", alt: "Logo", width: 150 },
+      company: "SC Exemplu SRL\nCUI RO123456 · J00/000/2020\nStr. Exemplu 1, București",
+      links: [
+        { label: "Termeni și condiții", href: "/termeni" },
+        { label: "Politica de confidențialitate", href: "/confidentialitate" },
+        { label: "Politica de retur", href: "/retur" },
+      ],
+      showAnpc: true,
+      badges: [{ src: "https://placehold.co/200x60/ffffff/18181b.png?text=ANPC", alt: "ANPC", href: "https://anpc.ro" }],
+      copyright: "© 2026 SC Exemplu SRL. Toate drepturile rezervate.",
+    },
     { type: "sticky_footer", text: "Comandă acum — plată la livrare", href: "#comanda", bg: "#ff6b35", color: "#ffffff" },
   ],
 };

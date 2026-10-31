@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PageBlock, TextSize } from "@/lib/page-blocks";
+import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -91,19 +91,193 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
     case "html":
       return <div dangerouslySetInnerHTML={{ __html: block.html }} />;
 
+    case "reviews":
+      return (
+        <section className="px-4 py-4">
+          {block.title && <h2 className="mb-3 text-center text-xl font-bold text-zinc-900">{block.title}</h2>}
+          <div className="space-y-3">
+            {block.items.map((review, i) => (
+              <figure key={i} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="mb-2 flex items-center gap-3">
+                  {review.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={review.avatar}
+                      alt=""
+                      width={44}
+                      height={44}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-11 w-11 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-bold text-zinc-900">{review.name}</div>
+                    {review.verified && <div className="text-xs text-zinc-600">Client verificat</div>}
+                  </div>
+                  <div className="ml-auto text-lg leading-none" aria-label={`${review.rating} din 5 stele`}>
+                    <span style={{ color: block.accent }}>{"★".repeat(review.rating)}</span>
+                    <span className="text-zinc-300">{"★".repeat(5 - review.rating)}</span>
+                  </div>
+                </div>
+                <blockquote className="text-base leading-snug text-zinc-800">{renderInline(review.text)}</blockquote>
+              </figure>
+            ))}
+          </div>
+        </section>
+      );
+
+    case "faq":
+      // Native <details>: an accordion with no JavaScript
+      return (
+        <section className="px-4 py-4">
+          {block.title && <h2 className="mb-3 text-center text-xl font-bold text-zinc-900">{block.title}</h2>}
+          <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
+            {block.items.map((item, i) => (
+              <details key={i} className="group p-4" open={block.openFirst && i === 0}>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
+                  <span>{item.q}</span>
+                  <span
+                    className="text-2xl leading-none transition-transform group-open:rotate-45"
+                    style={{ color: block.accent }}
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="mt-2 text-base leading-snug text-zinc-700">{renderInline(item.a)}</div>
+              </details>
+            ))}
+          </div>
+        </section>
+      );
+
+    case "video":
+      return (
+        <div className={block.rounded ? "px-4 py-2" : ""}>
+          <video
+            src={block.src}
+            poster={block.poster ?? undefined}
+            controls={!block.autoplay}
+            autoPlay={block.autoplay}
+            muted={block.autoplay}
+            loop={block.autoplay}
+            playsInline
+            preload={block.autoplay ? "auto" : "none"}
+            className={`block h-auto w-full bg-black ${block.rounded ? "rounded-xl" : ""}`}
+          />
+        </div>
+      );
+
+    case "gallery":
+      // Horizontal scroll-snap carousel with no JavaScript
+      return (
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {block.images.map((image, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={image.src}
+              alt={image.alt}
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-[82%] flex-none snap-center rounded-xl"
+            />
+          ))}
+        </div>
+      );
+
+    case "before_after":
+      return (
+        <div className="grid grid-cols-2 gap-2 px-4 py-2">
+          {[
+            { image: block.before, label: block.beforeLabel },
+            { image: block.after, label: block.afterLabel },
+          ].map(({ image, label }, i) => (
+            <figure key={i} className="relative overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image.src} alt={image.alt} loading="lazy" decoding="async" className="block h-auto w-full" />
+              <figcaption className="absolute left-2 top-2 rounded-full bg-black/75 px-3 py-1 text-sm font-bold text-white">
+                {label}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      );
+
+    case "spacer":
+      return <div style={{ height: block.height }} aria-hidden="true" />;
+
+    case "footer":
     case "sticky_footer":
       // Rendered separately, outside the page flow
       return null;
   }
 }
 
+function Footer({ block }: { block: Extract<PageBlock, { type: "footer" }> }) {
+  return (
+    <footer className="px-5 py-8 text-center text-sm" style={{ backgroundColor: block.bg, color: block.color }}>
+      <div className="mx-auto max-w-[560px] space-y-4">
+        {block.logo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={block.logo.src}
+            alt={block.logo.alt}
+            width={block.logo.width ?? undefined}
+            loading="lazy"
+            decoding="async"
+            className="mx-auto block h-auto max-w-[60%]"
+          />
+        )}
+        {block.company && <p className="whitespace-pre-line leading-relaxed">{block.company}</p>}
+        {block.links.length > 0 && (
+          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            {block.links.map((link, i) => (
+              <a key={i} href={link.href} className="underline underline-offset-2">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        )}
+        {block.showAnpc && (
+          <nav className="flex flex-col items-center gap-2">
+            {ANPC_LINKS.map((link) => (
+              <a key={link.href} href={link.href} className="underline underline-offset-2" rel="noopener" target="_blank">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        )}
+        {block.badges.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {block.badges.map((badge, i) => {
+              // eslint-disable-next-line @next/next/no-img-element
+              const img = <img src={badge.src} alt={badge.alt} loading="lazy" decoding="async" className="h-12 w-auto" />;
+              return badge.href ? (
+                <a key={i} href={badge.href} rel="noopener" target="_blank">
+                  {img}
+                </a>
+              ) : (
+                <span key={i}>{img}</span>
+              );
+            })}
+          </div>
+        )}
+        {block.copyright && <p className="text-xs">{block.copyright}</p>}
+      </div>
+    </footer>
+  );
+}
+
 export default function BlockRenderer({ blocks, background }: { blocks: PageBlock[]; background: string }) {
   const firstImageIndex = blocks.findIndex((b) => b.type === "image");
   const topbars = blocks.filter((b) => b.type === "topbar");
   const stickyFooter = blocks.find((b) => b.type === "sticky_footer");
+  const footers = blocks.filter((b): b is Extract<PageBlock, { type: "footer" }> => b.type === "footer");
   const flow = blocks
     .map((block, index) => ({ block, index }))
-    .filter(({ block }) => block.type !== "topbar" && block.type !== "sticky_footer");
+    .filter(({ block }) => block.type !== "topbar" && block.type !== "sticky_footer" && block.type !== "footer");
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
@@ -116,6 +290,10 @@ export default function BlockRenderer({ blocks, background }: { blocks: PageBloc
           <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} />
         ))}
       </div>
+
+      {footers.map((block, i) => (
+        <Footer key={`footer-${i}`} block={block} />
+      ))}
 
       {stickyFooter && stickyFooter.type === "sticky_footer" && (
         <>

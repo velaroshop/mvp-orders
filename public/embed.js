@@ -347,7 +347,57 @@
     }
   }
 
-  if (document.readyState === 'loading') {
+  // ─── Early init (opt-in via data-early on the script tag) ─────────────────────
+  // Creates each widget as soon as its container is parsed, instead of waiting for
+  // DOMContentLoaded (which on Shopify comes after the whole page and theme scripts).
+
+  var earlyIframes = [];
+  var earlyMessageBound = false;
+
+  function initPendingContainers() {
+    var pending = document.querySelectorAll('[id*="-widget-"]:not([data-velaro-init])');
+    pending.forEach(function(container) {
+      // The widget iframe's own id also contains "-widget-": never treat it as a container
+      if (container.tagName === 'IFRAME') return;
+      container.setAttribute('data-velaro-init', '1');
+      var parsed = parseContainerId(container.id);
+      if (!parsed) {
+        console.error('Widget: Invalid container ID format. Expected: {org-slug}-widget-{landing-page-slug}');
+        return;
+      }
+      earlyIframes.push(initializeWidget(container, parsed.lpSlug, parsed.orgSlug));
+    });
+
+    allIframes = earlyIframes;
+
+    if (!earlyMessageBound && earlyIframes.length > 0) {
+      earlyMessageBound = true;
+      window.addEventListener('message', function(event) {
+        handlePostMessage(event, earlyIframes);
+      });
+    }
+  }
+
+  function startEarly() {
+    initPendingContainers();
+    if (document.readyState !== 'loading') return;
+
+    var observer = null;
+    if (typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver(initPendingContainers);
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      initPendingContainers();
+      if (observer) observer.disconnect();
+    });
+  }
+
+  var earlyMode = !!(document.currentScript && document.currentScript.hasAttribute('data-early'));
+
+  if (earlyMode) {
+    startEarly();
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();

@@ -33,8 +33,11 @@ export default function OrderSummary({ block }: { block: OrderSummaryBlock }) {
     );
   }
 
-  const upsells = details.upsells ?? [];
+  // An offer accepted on this page is added to the lines and to the total (the API response predates it)
+  const accepted = ctx.accepted;
+  const upsells = [...(details.upsells ?? []), ...(accepted ? [accepted] : [])];
   const shipping = details.shippingCost ?? 0;
+  const total = (details.total ?? 0) + (accepted ? accepted.price * accepted.quantity : 0);
 
   return (
     <div className="px-4 py-2">
@@ -82,7 +85,7 @@ export default function OrderSummary({ block }: { block: OrderSummaryBlock }) {
             Total de plată:
           </span>
           <span className="text-lg font-extrabold" style={{ color: block.accent }}>
-            {money(details.total ?? 0)}
+            {money(total)}
           </span>
         </div>
       </div>

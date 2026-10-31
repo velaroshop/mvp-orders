@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
 import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 import OrderSummary from "@/components/thank-you/OrderSummary";
+import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
+import PhaseGate from "@/components/thank-you/PhaseGate";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -220,6 +222,9 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
     case "order_summary":
       return <OrderSummary block={block} />;
 
+    case "postsale_offer":
+      return <PostsaleOffer block={block} />;
+
     case "spacer":
       return <div style={{ height: block.height }} aria-hidden="true" />;
 
@@ -301,9 +306,17 @@ export default function BlockRenderer({ blocks, background }: { blocks: PageBloc
       ))}
 
       <div className="mx-auto w-full max-w-[560px]">
-        {flow.map(({ block, index }) => (
-          <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} />
-        ))}
+        {flow.map(({ block, index }) => {
+          const element = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} />;
+          // Thank-you page: blocks can be limited to the "offer" or "final" phase
+          return block.phase ? (
+            <PhaseGate key={index} phase={block.phase}>
+              {element}
+            </PhaseGate>
+          ) : (
+            element
+          );
+        })}
       </div>
 
       {footers.map((block, i) => (

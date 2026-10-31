@@ -75,7 +75,22 @@ export type FooterBlock = {
   color: string;
 };
 
-export type PageBlock =
+// Thank-you page only: the postsale offer (accept / decline / countdown), same flow as the Shopify embed
+export type PostsaleOfferBlock = {
+  type: "postsale_offer";
+  confirmedText: string;
+  headline: string;
+  timerLabel: string;
+  urgencyText: string;
+  acceptText: string;
+  declineText: string;
+  accent: string;
+};
+
+/** Thank-you page: show a block only while the offer is open ("offer") or after it is settled ("final") */
+export type BlockPhase = "offer" | "final";
+
+export type BlockVariant =
   | TopbarBlock
   | ImageBlock
   | TextBlock
@@ -90,8 +105,11 @@ export type PageBlock =
   | BeforeAfterBlock
   | SpacerBlock
   | OrderSummaryBlock
+  | PostsaleOfferBlock
   | FormBlock
   | FooterBlock;
+
+export type PageBlock = BlockVariant & { phase?: BlockPhase };
 
 export const ANPC_LINKS = [
   { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/" },
@@ -124,7 +142,12 @@ const size = (value: unknown, fallback: TextSize): TextSize =>
 function normalizeBlock(raw: unknown): PageBlock | null {
   if (!raw || typeof raw !== "object") return null;
   const b = raw as Record<string, unknown>;
+  const block = normalizeVariant(b);
+  if (!block) return null;
+  return b.phase === "offer" || b.phase === "final" ? { ...block, phase: b.phase } : block;
+}
 
+function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
   switch (b.type) {
     case "topbar":
       return { type: "topbar", text: str(b.text), bg: color(b.bg, "#111827"), color: color(b.color, "#ffffff") };
@@ -258,6 +281,18 @@ function normalizeBlock(raw: unknown): PageBlock | null {
         heading: str(b.heading, "Comanda ta"),
         bg: color(b.bg, "#13322c"),
         color: color(b.color, "#e2e8f0"),
+        accent: color(b.accent, "#22c55e"),
+      };
+
+    case "postsale_offer":
+      return {
+        type: "postsale_offer",
+        confirmedText: str(b.confirmedText, "COMANDA TA A FOST TRIMISĂ CU SUCCES!"),
+        headline: str(b.headline, "AI DEBLOCAT O OFERTĂ SPECIALĂ!"),
+        timerLabel: str(b.timerLabel, "OFERTA EXPIRĂ ÎN"),
+        urgencyText: str(b.urgencyText, "Această ofertă dispare când părăsești pagina!"),
+        acceptText: str(b.acceptText, "DA, ADAUGĂ LA COMANDĂ"),
+        declineText: str(b.declineText, "NU, MULȚUMESC"),
         accent: color(b.accent, "#22c55e"),
       };
 

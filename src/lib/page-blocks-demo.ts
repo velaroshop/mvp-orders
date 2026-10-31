@@ -22,7 +22,7 @@ export const DEMO_PAGE = {
       size: "lg",
     },
     { type: "button", text: "Comandă acum", href: "#comanda", bg: "#ff6b35", color: "#ffffff" },
-    { type: "form", landingSlug: "slimgel", org: "reduxio-srl" },
+    { type: "form", landingSlug: "slimgel", org: "reduxio-srl", thankYouPath: "/thank-you" },
     { type: "html", html: "<p style='text-align:center;padding:12px;color:#52525b'>Bloc HTML liber</p>" },
     {
       type: "reviews",

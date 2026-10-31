@@ -146,7 +146,8 @@ values (
  {
   "type": "form",
   "landingSlug": "goldfoil",
-  "org": "reduxio-srl"
+  "org": "reduxio-srl",
+  "thankYouPath": "/thank-you"
  },
  {
   "type": "text",

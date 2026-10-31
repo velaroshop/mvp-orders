@@ -59,7 +59,8 @@ export type BeforeAfterBlock = {
   afterLabel: string;
 };
 // Order form (the landing page configuration with this slug drives offers, prices, upsells, tracking)
-export type FormBlock = { type: "form"; landingSlug: string; org: string | null };
+// thankYouPath: own thank-you page on this site (for example "/thank-you"); empty = the store's thank-you page, as the iframe widget does
+export type FormBlock = { type: "form"; landingSlug: string; org: string | null; thankYouPath: string | null };
 // Thank-you page only: order details from the order in the URL (renders nothing elsewhere)
 export type OrderSummaryBlock = { type: "order_summary"; heading: string; bg: string; color: string; accent: string };
 export type SpacerBlock = { type: "spacer"; height: number };
@@ -272,7 +273,13 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
       const landingSlug = str(b.landingSlug).trim();
       if (!SLUG.test(landingSlug)) return null;
       const org = str(b.org).trim();
-      return { type: "form", landingSlug, org: SLUG.test(org) ? org : null };
+      const thankYouPath = str(b.thankYouPath).trim();
+      return {
+        type: "form",
+        landingSlug,
+        org: SLUG.test(org) ? org : null,
+        thankYouPath: /^\/[a-z0-9\-_/]*$/i.test(thankYouPath) ? thankYouPath : null,
+      };
     }
 
     case "order_summary":

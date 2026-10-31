@@ -86,7 +86,16 @@ interface LandingPage {
   };
 }
 
-export default function OwnOrderForm({ slug, org = null }: { slug: string; org?: string | null }) {
+export default function OwnOrderForm({
+  slug,
+  org = null,
+  thankYouPath = null,
+}: {
+  slug: string;
+  org?: string | null;
+  /** Own thank-you page on this site (for example "/thank-you"); null = the store's thank-you page, as the widget does */
+  thankYouPath?: string | null;
+}) {
 
   const [landingPage, setLandingPage] = useState<LandingPage | null>(null);
   const [productVariations, setProductVariations] = useState<ProductVariation[]>([]);
@@ -520,6 +529,10 @@ export default function OwnOrderForm({ slug, org = null }: { slug: string; org?:
 
   function redirectToThankYouPage() {
     setShowPostsaleOffer(false);
+    if (thankYouPath && createdOrderId) {
+      window.location.href = `${thankYouPath}?order=${createdOrderId}`;
+      return;
+    }
     if (landingPage?.stores?.url && createdOrderId) {
       const thankYouSlug = landingPage.thank_you_path || "thank-you";
       let storeUrl = landingPage.stores.url;
@@ -924,15 +937,20 @@ export default function OwnOrderForm({ slug, org = null }: { slug: string; org?:
       sendClientSidePurchaseEvent(orderId, getTotalPrice());
 
       // Redirect to thank you page immediately after tracking
-      if (landingPage.stores?.url) {
-        const thankYouSlug = landingPage.thank_you_path || "thank-you";
-        let storeUrl = landingPage.stores.url;
-        if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
-          storeUrl = `https://${storeUrl}`;
+      if (thankYouPath || landingPage.stores?.url) {
+        let thankYouUrl: string;
+        if (thankYouPath) {
+          thankYouUrl = `${thankYouPath}?order=${orderId}`;
+        } else {
+          const thankYouSlug = landingPage.thank_you_path || "thank-you";
+          let storeUrl = landingPage.stores!.url;
+          if (!storeUrl.startsWith('http://') && !storeUrl.startsWith('https://')) {
+            storeUrl = `https://${storeUrl}`;
+          }
+          storeUrl = storeUrl.replace(/\/$/, '');
+          // Add order ID to URL for thank you page to process
+          thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
         }
-        storeUrl = storeUrl.replace(/\/$/, '');
-        // Add order ID to URL for thank you page to process
-        const thankYouUrl = `${storeUrl}/${thankYouSlug}?order=${orderId}`;
 
         logEvent("redirect_sent", { orderId });
 

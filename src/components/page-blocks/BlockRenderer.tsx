@@ -215,7 +215,7 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
       // #comanda is the anchor used by the buttons ("href": "#comanda")
       return (
         <section id="comanda" className="scroll-mt-4">
-          <OwnOrderForm slug={block.landingSlug} org={block.org} />
+          <OwnOrderForm slug={block.landingSlug} org={block.org} thankYouPath={block.thankYouPath} />
         </section>
       );
 

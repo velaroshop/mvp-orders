@@ -116,10 +116,12 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
                     <div className="font-bold text-zinc-900">{review.name}</div>
                     {review.verified && <div className="text-xs text-zinc-600">Client verificat</div>}
                   </div>
-                  <div className="ml-auto text-lg leading-none" aria-label={`${review.rating} din 5 stele`}>
-                    <span style={{ color: block.accent }}>{"★".repeat(review.rating)}</span>
-                    <span className="text-zinc-300">{"★".repeat(5 - review.rating)}</span>
-                  </div>
+                  {block.showRating && (
+                    <div className="ml-auto text-lg leading-none" aria-label={`${review.rating} din 5 stele`}>
+                      <span style={{ color: block.accent }}>{"★".repeat(review.rating)}</span>
+                      <span className="text-zinc-300">{"★".repeat(5 - review.rating)}</span>
+                    </div>
+                  )}
                 </div>
                 <blockquote className="text-base leading-snug text-zinc-800">{renderInline(review.text)}</blockquote>
               </figure>

@@ -35,7 +35,7 @@ export type StickyFooterBlock = { type: "sticky_footer"; text: string; href: str
 export type HtmlBlock = { type: "html"; html: string };
 
 export type ReviewItem = { name: string; text: string; rating: number; avatar: string | null; verified: boolean };
-export type ReviewsBlock = { type: "reviews"; title: string; items: ReviewItem[]; accent: string };
+export type ReviewsBlock = { type: "reviews"; title: string; items: ReviewItem[]; accent: string; showRating: boolean };
 export type FaqBlock = {
   type: "faq";
   title: string;
@@ -196,7 +196,7 @@ function normalizeBlock(raw: unknown): PageBlock | null {
       }
       return items.length === 0
         ? null
-        : { type: "reviews", title: str(b.title), items, accent: color(b.accent, "#f59e0b") };
+        : { type: "reviews", title: str(b.title), items, accent: color(b.accent, "#f59e0b"), showRating: b.showRating !== false };
     }
 
     case "faq": {

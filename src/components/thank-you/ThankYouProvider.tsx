@@ -25,6 +25,14 @@ export interface PostsaleUpsell {
   productName?: string;
 }
 
+export interface ThankYouCta {
+  message: string;
+  buttonText: string;
+  buttonColor: string;
+  buttonTextColor: string;
+  url: string;
+}
+
 export interface ThankYouData {
   orderId: string;
   status: string;
@@ -33,6 +41,8 @@ export interface ThankYouData {
   queueExpiresAt?: string;
   postsaleUpsells?: PostsaleUpsell[];
   orderDetails?: ThankYouOrderDetails;
+  /** Present only when the order's landing page has the store button switched on */
+  thankYouCta?: ThankYouCta | null;
 }
 
 export interface AcceptedPostsale {

@@ -88,8 +88,15 @@ export type PostsaleOfferBlock = {
   accent: string;
 };
 
+// Thank-you page only: the "see all products" message + button from the store settings
+// (shown only when the order's landing page has the switch on; renders nothing otherwise)
+export type StoreCtaBlock = { type: "store_cta" };
+
 /** Thank-you page: show a block only while the offer is open ("offer") or after it is settled ("final") */
 export type BlockPhase = "offer" | "final";
+
+/** Thank-you page: show a block only when the store button is available ("cta") or when it is not ("no_cta") */
+export type BlockCondition = "cta" | "no_cta";
 
 export type BlockVariant =
   | TopbarBlock
@@ -107,10 +114,11 @@ export type BlockVariant =
   | SpacerBlock
   | OrderSummaryBlock
   | PostsaleOfferBlock
+  | StoreCtaBlock
   | FormBlock
   | FooterBlock;
 
-export type PageBlock = BlockVariant & { phase?: BlockPhase };
+export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition };
 
 export const ANPC_LINKS = [
   { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/" },
@@ -145,7 +153,11 @@ function normalizeBlock(raw: unknown): PageBlock | null {
   const b = raw as Record<string, unknown>;
   const block = normalizeVariant(b);
   if (!block) return null;
-  return b.phase === "offer" || b.phase === "final" ? { ...block, phase: b.phase } : block;
+  return {
+    ...block,
+    ...(b.phase === "offer" || b.phase === "final" ? { phase: b.phase } : {}),
+    ...(b.showWhen === "cta" || b.showWhen === "no_cta" ? { showWhen: b.showWhen } : {}),
+  };
 }
 
 function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
@@ -290,6 +302,9 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         color: color(b.color, "#e2e8f0"),
         accent: color(b.accent, "#22c55e"),
       };
+
+    case "store_cta":
+      return { type: "store_cta" };
 
     case "postsale_offer":
       return {

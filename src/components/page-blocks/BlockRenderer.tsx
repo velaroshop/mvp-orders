@@ -3,6 +3,7 @@ import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
 import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 import OrderSummary from "@/components/thank-you/OrderSummary";
 import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
+import StoreCta from "@/components/thank-you/StoreCta";
 import PhaseGate from "@/components/thank-you/PhaseGate";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
@@ -225,6 +226,9 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
     case "postsale_offer":
       return <PostsaleOffer block={block} />;
 
+    case "store_cta":
+      return <StoreCta />;
+
     case "spacer":
       return <div style={{ height: block.height }} aria-hidden="true" />;
 
@@ -308,9 +312,9 @@ export default function BlockRenderer({ blocks, background }: { blocks: PageBloc
       <div className="mx-auto w-full max-w-[560px]">
         {flow.map(({ block, index }) => {
           const element = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} />;
-          // Thank-you page: blocks can be limited to the "offer" or "final" phase
-          return block.phase ? (
-            <PhaseGate key={index} phase={block.phase}>
+          // Thank-you page: blocks can be limited to a phase and to the presence of the store button
+          return block.phase || block.showWhen ? (
+            <PhaseGate key={index} phase={block.phase} showWhen={block.showWhen}>
               {element}
             </PhaseGate>
           ) : (

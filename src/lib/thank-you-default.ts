@@ -9,6 +9,8 @@ export const DEFAULT_THANK_YOU = {
     // Phase "final": after the offer is accepted, declined or expired (or when there is no offer)
     { type: "text", text: "COMANDĂ FINALIZATĂ!", align: "center", size: "2xl", bold: true, color: "#22c55e", phase: "final" },
     { type: "order_summary", phase: "final" },
+    // Store button (message + "see all products"): replaces the plain message below when it is available
+    { type: "store_cta", phase: "final", showWhen: "cta" },
     {
       type: "text",
       text: "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare.",
@@ -16,6 +18,7 @@ export const DEFAULT_THANK_YOU = {
       size: "base",
       color: "#e2e8f0",
       phase: "final",
+      showWhen: "no_cta",
     },
   ],
 };

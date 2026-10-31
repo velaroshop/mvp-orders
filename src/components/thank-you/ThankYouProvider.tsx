@@ -76,6 +76,61 @@ export function useThankYou() {
 
 const RETRY_MESSAGE = "A apărut o eroare. Te rugăm să reîncarci pagina.";
 
+/** Editor preview: the same context with sample data, no requests. Shows the chosen phase. */
+export function ThankYouPreviewProvider({
+  phase,
+  withStoreCta,
+  children,
+}: {
+  phase: "offer" | "final";
+  withStoreCta: boolean;
+  children: ReactNode;
+}) {
+  const data: ThankYouData = {
+    orderId: "preview",
+    status: "queue",
+    customerName: "Client Exemplu",
+    showPostsale: phase === "offer",
+    queueExpiresAt: new Date(Date.now() + 180000).toISOString(),
+    postsaleUpsells: [
+      {
+        id: "preview-upsell",
+        title: "Produs ofertă exemplu",
+        description: "Descrierea ofertei apare aici.",
+        quantity: 1,
+        price: 24.9,
+        srp: 139,
+        productId: "preview-product",
+      },
+    ],
+    orderDetails: {
+      productName: "Produs exemplu",
+      productQuantity: 2,
+      subtotal: 89,
+      shippingCost: 15,
+      total: 104,
+      upsells: [],
+    },
+    thankYouCta: withStoreCta
+      ? {
+          message: "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare.\nDacă vrei, vezi și alte produse pe care le vindem.",
+          buttonText: "Vezi toate produsele",
+          buttonColor: "#ff6b35",
+          buttonTextColor: "#ffffff",
+          url: "#",
+        }
+      : null,
+  };
+  const noop = async () => {};
+  return (
+    <ThankYouContext.Provider
+      value={{ orderId: "preview", loading: false, error: null, data, phase, accepted: null, busy: false, acceptPostsale: noop, declinePostsale: noop }}
+    >
+      {children}
+    </ThankYouContext.Provider>
+  );
+}
+
 export default function ThankYouProvider({ orderId, children }: { orderId: string; children: ReactNode }) {
   const [state, setState] = useState<{ loading: boolean; error: string | null; data: ThankYouData | null; phase: ThankYouPhase }>({
     loading: true,

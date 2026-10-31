@@ -32,6 +32,7 @@ import {
   Calculator,
   Film,
   MapPin,
+  LayoutTemplate,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -44,6 +45,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/ads-dashboard":  <Megaphone className="w-4 h-4" />,
   "/admin/store":          <Store className="w-4 h-4" />,
   "/admin/landing-pages":  <FileText className="w-4 h-4" />,
+  "/admin/pages":          <LayoutTemplate className="w-4 h-4" />,
   "/admin/settings/team":  <UserCog className="w-4 h-4" />,
   "/admin/refunds":        <RotateCcw className="w-4 h-4" />,
   "/admin/activity-log":                    <Activity className="w-4 h-4" />,
@@ -72,6 +74,7 @@ const menuGroups = [
     items: [
       { name: "Produse", href: "/admin/products" },
       { name: "Landing Pages", href: "/admin/landing-pages" },
+      { name: "Pagini proprii", href: "/admin/pages", superadminOnly: true },
     ],
   },
   {

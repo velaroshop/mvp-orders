@@ -26,7 +26,17 @@ function renderInline(text: string): ReactNode[] {
   });
 }
 
-function Block({ block, index, firstImageIndex }: { block: PageBlock; index: number; firstImageIndex: number }) {
+function Block({
+  block,
+  index,
+  firstImageIndex,
+  preview,
+}: {
+  block: PageBlock;
+  index: number;
+  firstImageIndex: number;
+  preview?: boolean;
+}) {
   switch (block.type) {
     case "topbar":
       return (
@@ -213,6 +223,18 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
       );
 
     case "form":
+      // Editor preview: never load the real form (it would start the pixel and call the API)
+      if (preview) {
+        return (
+          <section id="comanda" className="px-4 py-3">
+            <div className="rounded-xl border-2 border-dashed border-zinc-400 bg-zinc-100 px-4 py-10 text-center text-sm text-zinc-600">
+              <div className="mb-1 text-2xl">🛒</div>
+              Formularul de comandă apare aici
+              <div className="mt-1 text-xs">landing page: {block.landingSlug || "—"}</div>
+            </div>
+          </section>
+        );
+      }
       // #comanda is the anchor used by the buttons ("href": "#comanda")
       return (
         <section id="comanda" className="scroll-mt-4">
@@ -294,7 +316,16 @@ function Footer({ block }: { block: Extract<PageBlock, { type: "footer" }> }) {
   );
 }
 
-export default function BlockRenderer({ blocks, background }: { blocks: PageBlock[]; background: string }) {
+export default function BlockRenderer({
+  blocks,
+  background,
+  preview = false,
+}: {
+  blocks: PageBlock[];
+  background: string;
+  /** Editor preview: replaces the order form with a placeholder */
+  preview?: boolean;
+}) {
   const firstImageIndex = blocks.findIndex((b) => b.type === "image");
   const topbars = blocks.filter((b) => b.type === "topbar");
   const stickyFooter = blocks.find((b) => b.type === "sticky_footer");
@@ -306,12 +337,12 @@ export default function BlockRenderer({ blocks, background }: { blocks: PageBloc
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
       {topbars.map((block, i) => (
-        <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} />
+        <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} preview={preview} />
       ))}
 
       <div className="mx-auto w-full max-w-[560px]">
         {flow.map(({ block, index }) => {
-          const element = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} />;
+          const element = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
           // Thank-you page: blocks can be limited to a phase and to the presence of the store button
           return block.phase || block.showWhen ? (
             <PhaseGate key={index} phase={block.phase} showWhen={block.showWhen}>

@@ -208,6 +208,7 @@ export async function PUT(
     if (body.clientSideTracking !== undefined) updateData.client_side_tracking = body.clientSideTracking;
     if (body.serverSideTracking !== undefined) updateData.server_side_tracking = body.serverSideTracking;
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
+    if (body.show_thank_you_cta !== undefined) updateData.show_thank_you_cta = !!body.show_thank_you_cta;
     if (body.variationsLabel !== undefined) updateData.variations_label = body.variationsLabel || null;
     if (body.discountType !== undefined) updateData.discount_type = body.discountType === "amount" ? "amount" : "percent";
 

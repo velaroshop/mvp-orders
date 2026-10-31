@@ -57,6 +57,73 @@ function isDevOrigin(origin: string | null): boolean {
   return origin !== null && DEV_ORIGINS.includes(origin);
 }
 
+const DEFAULT_CTA_MESSAGE =
+  "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare.\nDacă vrei, vezi și alte produse pe care le vindem. Plătești tot la livrare.";
+const DEFAULT_CTA_BUTTON_TEXT = "Vezi toate produsele";
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+/** Adds https:// when missing, accepts only http(s) and tags the link with utm params */
+function buildCtaUrl(raw: string | null | undefined): string | null {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    url.searchParams.set("utm_source", "thank-you");
+    url.searchParams.set("utm_medium", "postpurchase");
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Optional "see all products" block for the final thank-you state.
+ * Fault-tolerant on purpose: if anything fails (e.g. columns not migrated yet) the page just has no CTA.
+ */
+async function getThankYouCta(landingPageId: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("landing_pages")
+      .select(`
+        show_thank_you_cta,
+        stores(
+          url,
+          primary_color,
+          thank_you_cta_message,
+          thank_you_cta_button_text,
+          thank_you_cta_button_color,
+          thank_you_cta_button_text_color,
+          thank_you_cta_url
+        )
+      `)
+      .eq("id", landingPageId)
+      .single();
+
+    if (error || !data || !(data as any).show_thank_you_cta) return null;
+
+    const store = (data as any).stores;
+    if (!store) return null;
+
+    const url = buildCtaUrl(store.thank_you_cta_url || store.url);
+    if (!url) return null;
+
+    const pickColor = (value: string | null | undefined, fallback: string) =>
+      value && HEX_COLOR.test(value.trim()) ? value.trim() : fallback;
+
+    return {
+      message: (store.thank_you_cta_message || "").trim() || DEFAULT_CTA_MESSAGE,
+      buttonText: (store.thank_you_cta_button_text || "").trim() || DEFAULT_CTA_BUTTON_TEXT,
+      buttonColor: pickColor(store.thank_you_cta_button_color, pickColor(store.primary_color, "#22c55e")),
+      buttonTextColor: pickColor(store.thank_you_cta_button_text_color, "#ffffff"),
+      url,
+    };
+  } catch (err) {
+    console.error("[Thank You Verify] CTA lookup failed:", err);
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const origin = request.headers.get('origin');
 
@@ -219,6 +286,8 @@ export async function GET(request: Request) {
       .single();
     const orgPlan = (orgData as any)?.organizations?.plan || "pro";
 
+    const thankYouCta = await getThankYouCta((landingPage as any).id);
+
     // Build order details for confirmation display
     const acceptedUpsells = (order.upsells || []).map((u: any) => ({
       name: u.productName || u.title,
@@ -242,6 +311,7 @@ export async function GET(request: Request) {
         customerName: order.full_name,
         showPostsale: false,
         orderDetails,
+        thankYouCta,
       }, { headers });
     }
 
@@ -278,6 +348,7 @@ export async function GET(request: Request) {
         customerName: order.full_name,
         showPostsale: false,
         orderDetails,
+        thankYouCta,
       }, { headers });
     }
 
@@ -289,6 +360,7 @@ export async function GET(request: Request) {
         customerName: order.full_name,
         showPostsale: false,
         orderDetails,
+        thankYouCta,
       }, { headers });
     }
 
@@ -315,6 +387,7 @@ export async function GET(request: Request) {
       showPostsale: true,
       postsaleUpsells: formattedUpsells,
       orderDetails,
+      thankYouCta,
       storeColors: {
         primary: store.primary_color,
         accent: store.accent_color,

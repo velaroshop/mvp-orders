@@ -68,6 +68,11 @@ export async function PUT(
     if (body.backgroundColor !== undefined) updateData.background_color = body.backgroundColor;
     if (body.textOnDarkColor !== undefined) updateData.text_on_dark_color = body.textOnDarkColor;
     if (body.duplicateOrderDays !== undefined) updateData.duplicate_order_days = body.duplicateOrderDays;
+    if (body.thankYouCtaMessage !== undefined) updateData.thank_you_cta_message = body.thankYouCtaMessage || null;
+    if (body.thankYouCtaButtonText !== undefined) updateData.thank_you_cta_button_text = body.thankYouCtaButtonText || null;
+    if (body.thankYouCtaButtonColor !== undefined) updateData.thank_you_cta_button_color = body.thankYouCtaButtonColor || null;
+    if (body.thankYouCtaButtonTextColor !== undefined) updateData.thank_you_cta_button_text_color = body.thankYouCtaButtonTextColor || null;
+    if (body.thankYouCtaUrl !== undefined) updateData.thank_you_cta_url = body.thankYouCtaUrl || null;
 
     const { data: store, error } = await supabase
       .from("stores")

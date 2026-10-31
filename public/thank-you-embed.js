@@ -508,6 +508,8 @@
             </p>
           </div>
 
+          ${buildCtaHtml()}
+
         </div>
       </div>
 
@@ -524,6 +526,33 @@
     `;
 
     container.innerHTML = html;
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Optional "see all products" block (store settings, enabled per landing page).
+   * Only rendered when the API sends thankYouCta; plain text only, same-tab link.
+   */
+  function buildCtaHtml() {
+    const cta = orderData && orderData.thankYouCta;
+    if (!cta || !cta.url) return '';
+
+    const message = escapeHtml(cta.message).replace(/\n/g, '<br>');
+    return `
+          <!-- CTA: see all products -->
+          <div style="width: 100%; box-sizing: border-box; margin-top: 4px; padding: 18px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(148, 163, 184, 0.3); text-align: center;">
+            <p style="font-size: 15px; line-height: 1.55; color: #e2e8f0; margin: 0 0 14px 0;">${message}</p>
+            <a href="${escapeHtml(cta.url)}" style="display: block; box-sizing: border-box; background: ${escapeHtml(cta.buttonColor)}; color: ${escapeHtml(cta.buttonTextColor)}; font-size: 18px; font-weight: 800; text-decoration: none; padding: 16px 12px; border-radius: 12px;">${escapeHtml(cta.buttonText)}</a>
+          </div>
+    `;
   }
 
   /**

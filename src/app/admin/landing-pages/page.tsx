@@ -697,6 +697,37 @@ export default function LandingPagesPage() {
                                 </div>
                               </div>
 
+                            {/* Thank-you page CTA toggle */}
+                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
+                              <label
+                                className="flex items-center gap-2 cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!(page as any).show_thank_you_cta}
+                                  onChange={async (e) => {
+                                    const enabled = e.target.checked;
+                                    try {
+                                      const res = await fetch(`/api/landing-pages/${page.id}`, {
+                                        method: "PUT",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ show_thank_you_cta: enabled }),
+                                      });
+                                      if (!res.ok) throw new Error("Request failed");
+                                      setLandingPages(prev => prev.map(lp =>
+                                        lp.id === page.id ? { ...lp, show_thank_you_cta: enabled } as any : lp
+                                      ));
+                                    } catch (err) {
+                                      console.error("Failed to update thank-you CTA:", err);
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+                                />
+                                <span className="text-xs text-zinc-400">🛍️ Buton spre homepage pe pagina de mulțumire</span>
+                              </label>
+                            </div>
+
                             {/* Pricing Details */}
                             <div className="pt-3 border-t border-zinc-700/50">
                               <h4 className="text-xs font-semibold text-white mb-2 uppercase tracking-wide">

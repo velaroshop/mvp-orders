@@ -14,6 +14,11 @@ interface Store {
   background_color: string;
   text_on_dark_color: string;
   duplicate_order_days: number;
+  thank_you_cta_message: string | null;
+  thank_you_cta_button_text: string | null;
+  thank_you_cta_button_color: string | null;
+  thank_you_cta_button_text_color: string | null;
+  thank_you_cta_url: string | null;
 }
 
 export default function EditStorePage() {
@@ -108,6 +113,11 @@ export default function EditStorePage() {
           backgroundColor: formData.background_color,
           textOnDarkColor: formData.text_on_dark_color,
           duplicateOrderDays: formData.duplicate_order_days,
+          thankYouCtaMessage: formData.thank_you_cta_message || "",
+          thankYouCtaButtonText: formData.thank_you_cta_button_text || "",
+          thankYouCtaButtonColor: formData.thank_you_cta_button_color || "",
+          thankYouCtaButtonTextColor: formData.thank_you_cta_button_text_color || "",
+          thankYouCtaUrl: formData.thank_you_cta_url || "",
         }),
       });
 
@@ -434,6 +444,96 @@ export default function EditStorePage() {
             <p className="text-xs text-zinc-400 mt-4">
               Please allow a couple minutes for changes to take place & refresh your local cache (CMD/CTRL + SHIFT + R)
             </p>
+          </div>
+
+          {/* Thank-you page CTA */}
+          <div className="p-6 border-b border-zinc-700">
+            <h2 className="text-xl font-semibold text-white mb-1">
+              Pagina de mulțumire: buton spre toate produsele
+            </h2>
+            <p className="text-xs text-zinc-400 mb-4">
+              Apare sub informațiile de livrare, doar pe landing page-urile unde ai pornit comutatorul „Buton spre homepage".
+              Lasă câmpurile goale pentru valorile implicite.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">Mesaj</label>
+                <textarea
+                  value={formData.thank_you_cta_message || ""}
+                  onChange={(e) => setFormData({ ...formData, thank_you_cta_message: e.target.value })}
+                  rows={3}
+                  maxLength={400}
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  placeholder="Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Dacă vrei, vezi și alte produse pe care le vindem. Plătești tot la livrare."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">Text buton</label>
+                <input
+                  type="text"
+                  value={formData.thank_you_cta_button_text || ""}
+                  onChange={(e) => setFormData({ ...formData, thank_you_cta_button_text: e.target.value })}
+                  maxLength={40}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  placeholder="Vezi toate produsele"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">Adresa butonului</label>
+                <input
+                  type="text"
+                  value={formData.thank_you_cta_url || ""}
+                  onChange={(e) => setFormData({ ...formData, thank_you_cta_url: e.target.value })}
+                  className="w-full max-w-md px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                  placeholder={formData.url ? `Implicit: ${formData.url}` : "https://magazinul-tau.ro"}
+                />
+                <p className="text-xs text-zinc-400 mt-1">
+                  Dacă e gol, se folosește adresa magazinului de mai sus. Se adaugă automat ?utm_source=thank-you.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Culoare buton</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={formData.thank_you_cta_button_color || formData.primary_color}
+                      onChange={(e) => setFormData({ ...formData, thank_you_cta_button_color: e.target.value })}
+                      className="h-10 w-16 rounded border border-zinc-600 cursor-pointer bg-zinc-900"
+                    />
+                    <input
+                      type="text"
+                      value={formData.thank_you_cta_button_color || ""}
+                      onChange={(e) => setFormData({ ...formData, thank_you_cta_button_color: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                      placeholder={`Implicit: ${formData.primary_color}`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Culoare text buton</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={formData.thank_you_cta_button_text_color || "#ffffff"}
+                      onChange={(e) => setFormData({ ...formData, thank_you_cta_button_text_color: e.target.value })}
+                      className="h-10 w-16 rounded border border-zinc-600 cursor-pointer bg-zinc-900"
+                    />
+                    <input
+                      type="text"
+                      value={formData.thank_you_cta_button_text_color || ""}
+                      onChange={(e) => setFormData({ ...formData, thank_you_cta_button_text_color: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500"
+                      placeholder="Implicit: #ffffff"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Message */}

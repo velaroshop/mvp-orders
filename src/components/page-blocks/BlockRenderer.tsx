@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
 import OwnOrderForm from "@/components/own-form/OwnOrderForm";
+import OrderSummary from "@/components/thank-you/OrderSummary";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -215,6 +216,9 @@ function Block({ block, index, firstImageIndex }: { block: PageBlock; index: num
           <OwnOrderForm slug={block.landingSlug} org={block.org} />
         </section>
       );
+
+    case "order_summary":
+      return <OrderSummary block={block} />;
 
     case "spacer":
       return <div style={{ height: block.height }} aria-hidden="true" />;

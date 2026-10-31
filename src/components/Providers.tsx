@@ -7,9 +7,9 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Own public pages (/p/...) never use the session: skip the auth providers so visitors
+  // Own public pages (/p/..., /thank-you) never use the session: skip the auth providers so visitors
   // don't download that code or trigger a /api/auth/session request. Every other route is unchanged.
-  if (pathname?.startsWith("/p/")) {
+  if (pathname?.startsWith("/p/") || pathname === "/thank-you") {
     return <>{children}</>;
   }
 

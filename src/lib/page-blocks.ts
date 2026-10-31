@@ -60,6 +60,8 @@ export type BeforeAfterBlock = {
 };
 // Order form (the landing page configuration with this slug drives offers, prices, upsells, tracking)
 export type FormBlock = { type: "form"; landingSlug: string; org: string | null };
+// Thank-you page only: order details from the order in the URL (renders nothing elsewhere)
+export type OrderSummaryBlock = { type: "order_summary"; heading: string; bg: string; color: string; accent: string };
 export type SpacerBlock = { type: "spacer"; height: number };
 export type FooterBlock = {
   type: "footer";
@@ -87,6 +89,7 @@ export type PageBlock =
   | GalleryBlock
   | BeforeAfterBlock
   | SpacerBlock
+  | OrderSummaryBlock
   | FormBlock
   | FooterBlock;
 
@@ -248,6 +251,15 @@ function normalizeBlock(raw: unknown): PageBlock | null {
       const org = str(b.org).trim();
       return { type: "form", landingSlug, org: SLUG.test(org) ? org : null };
     }
+
+    case "order_summary":
+      return {
+        type: "order_summary",
+        heading: str(b.heading, "Comanda ta"),
+        bg: color(b.bg, "#13322c"),
+        color: color(b.color, "#e2e8f0"),
+        accent: color(b.accent, "#22c55e"),
+      };
 
     case "spacer":
       return { type: "spacer", height: typeof b.height === "number" ? Math.min(200, Math.max(4, Math.round(b.height))) : 24 };

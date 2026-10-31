@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
+import { uploadPageImage } from "@/lib/upload-page-image-client";
 
 type Obj = Record<string, unknown>;
 
@@ -18,7 +20,89 @@ function Label({ def }: { def: FieldDef }) {
   );
 }
 
-function FieldInput({ def, value, onChange }: { def: FieldDef; value: unknown; onChange: (value: unknown) => void }) {
+/** Image field: paste a URL or upload a file (resized and compressed on the server, stored in Supabase Storage). */
+function ImageField({
+  value,
+  maxWidth,
+  minWidth,
+  onChange,
+}: {
+  value: unknown;
+  maxWidth: number;
+  minWidth?: number;
+  onChange: (value: unknown, extras?: Record<string, unknown>) => void;
+}) {
+  const src = typeof value === "string" ? value : "";
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [tooSmall, setTooSmall] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setError(null);
+    setNote(null);
+    setTooSmall(null);
+    setUploading(true);
+    try {
+      const uploaded = await uploadPageImage(file, maxWidth);
+      onChange(uploaded.url, { width: uploaded.width, height: uploaded.height });
+      setNote(`Încărcat: ${uploaded.width}×${uploaded.height}px, ${Math.round(uploaded.bytes / 1024)} KB (original ${Math.round(uploaded.originalBytes / 1024)} KB)`);
+      if (minWidth && uploaded.width < minWidth) {
+        setTooSmall(`Imaginea are doar ${uploaded.width}px lățime (recomandat minim ${minWidth}px): poate arăta neclar pe telefon. Nu se mărește automat; încarcă o versiune mai mare.`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Încărcarea a eșuat");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={src}
+          placeholder="https://… sau încarcă un fișier"
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass}
+        />
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className={`${smallButton} shrink-0 whitespace-nowrap`}>
+          {uploading ? "Se încarcă…" : "Încarcă"}
+        </button>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = "";
+        }}
+      />
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      {note && <p className="text-xs text-emerald-400">{note}</p>}
+      {tooSmall && <p className="text-xs text-amber-400">{tooSmall}</p>}
+      {/^(https?:\/\/|\/)/i.test(src) && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-20 w-auto max-w-full rounded border border-zinc-700 bg-white object-contain" />
+      )}
+    </div>
+  );
+}
+
+function FieldInput({
+  def,
+  value,
+  onChange,
+}: {
+  def: FieldDef;
+  value: unknown;
+  onChange: (value: unknown, extras?: Record<string, unknown>) => void;
+}) {
   switch (def.kind) {
     case "text":
     case "url":
@@ -43,24 +127,8 @@ function FieldInput({ def, value, onChange }: { def: FieldDef; value: unknown; o
         />
       );
 
-    case "image": {
-      const src = typeof value === "string" ? value : "";
-      return (
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={src}
-            placeholder="https://…"
-            onChange={(e) => onChange(e.target.value)}
-            className={inputClass}
-          />
-          {/^(https?:\/\/|\/)/i.test(src) && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt="" className="h-20 w-auto max-w-full rounded border border-zinc-700 bg-white object-contain" />
-          )}
-        </div>
-      );
-    }
+    case "image":
+      return <ImageField value={value} maxWidth={def.maxWidth ?? 800} minWidth={def.minWidth} onChange={onChange} />;
 
     case "color": {
       const hex = typeof value === "string" ? value : "";
@@ -185,7 +253,19 @@ export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; v
       {fields.map((def) => (
         <div key={def.key}>
           <Label def={def} />
-          <FieldInput def={def} value={getPath(value, def.key)} onChange={(v) => onChange(setPath(value, def.key, v))} />
+          <FieldInput
+            def={def}
+            value={getPath(value, def.key)}
+            onChange={(v, extras) => {
+              let next = setPath(value, def.key, v);
+              // An uploaded image also fills in its size (image blocks reserve the space, so the page does not jump)
+              if (def.kind === "image" && def.dims && extras) {
+                if (def.dims.width && typeof extras.width === "number") next = setPath(next, def.dims.width, extras.width);
+                if (def.dims.height && typeof extras.height === "number") next = setPath(next, def.dims.height, extras.height);
+              }
+              onChange(next);
+            }}
+          />
         </div>
       ))}
     </div>

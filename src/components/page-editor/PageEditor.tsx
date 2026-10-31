@@ -289,7 +289,17 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               <h2 className="mb-4 text-lg font-semibold text-white">
                 {selectedDef.icon} {selectedDef.label}
               </h2>
-              {selectedDef.fields.length === 0 && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări: folosește datele din setările magazinului.</p>}
+              {selectedDef.note && (
+                <div className="mb-4 rounded-md border border-sky-800 bg-sky-900/20 p-3 text-sm text-sky-200">
+                  {selectedDef.note.text}
+                  {selectedDef.note.href && (
+                    <Link href={selectedDef.note.href} className="mt-2 block font-medium text-sky-300 underline hover:text-sky-200">
+                      {selectedDef.note.linkLabel ?? "Deschide"} →
+                    </Link>
+                  )}
+                </div>
+              )}
+              {selectedDef.fields.length === 0 && !selectedDef.note && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări.</p>}
               <FieldsPanel fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
               {kind === "thank_you" && (
                 <div className="mt-6 border-t border-zinc-700 pt-4">

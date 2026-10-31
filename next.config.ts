@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/superadmin/compress-image": ["./node_modules/@img/**/*"],
+    "/api/own-pages/upload-image": ["./node_modules/@img/**/*"],
   },
   images: {
     remotePatterns: [

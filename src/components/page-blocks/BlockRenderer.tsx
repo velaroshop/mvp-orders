@@ -5,6 +5,7 @@ import OrderSummary from "@/components/thank-you/OrderSummary";
 import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
 import StoreCta from "@/components/thank-you/StoreCta";
 import PhaseGate from "@/components/thank-you/PhaseGate";
+import StickyFooter from "@/components/page-blocks/StickyFooter";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -358,24 +359,7 @@ export default function BlockRenderer({
         <Footer key={`footer-${i}`} block={block} />
       ))}
 
-      {stickyFooter && stickyFooter.type === "sticky_footer" && (
-        <>
-          {/* Spacer so the fixed button never covers the end of the page */}
-          <div aria-hidden="true" className="h-24" />
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 bg-white/95 px-3 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.15)]"
-            style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
-          >
-            <a
-              href={stickyFooter.href}
-              className="mx-auto block max-w-[560px] rounded-xl px-6 py-4 text-center text-lg font-bold"
-              style={{ backgroundColor: stickyFooter.bg, color: stickyFooter.color }}
-            >
-              {stickyFooter.text}
-            </a>
-          </div>
-        </>
-      )}
+      {stickyFooter && stickyFooter.type === "sticky_footer" && <StickyFooter block={stickyFooter} />}
     </main>
   );
 }

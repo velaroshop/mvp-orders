@@ -6,7 +6,10 @@ export type PageKind = "landing" | "thank_you";
 type FieldBase = { key: string; label: string; help?: string };
 
 export type FieldDef =
-  | (FieldBase & { kind: "text" | "textarea" | "url" | "image"; placeholder?: string; rows?: number })
+  | (FieldBase & { kind: "text" | "textarea" | "url"; placeholder?: string; rows?: number })
+  // Image: can be uploaded (resized to maxWidth) or pasted as a URL; dims = keys that receive the uploaded size
+  // minWidth: below this width the uploaded image is flagged as possibly blurry on a phone (it is never enlarged)
+  | (FieldBase & { kind: "image"; maxWidth?: number; minWidth?: number; dims?: { width?: string; height?: string } })
   | (FieldBase & { kind: "color" })
   | (FieldBase & { kind: "number"; min?: number; max?: number })
   | (FieldBase & { kind: "toggle" })
@@ -19,6 +22,8 @@ export type BlockDef = {
   label: string;
   icon: string;
   description: string;
+  /** Explanation shown above the settings (optionally with a link to where the real setting lives) */
+  note?: { text: string; href?: string; linkLabel?: string };
   kinds: PageKind[];
   create: () => Record<string, unknown>;
   fields: FieldDef[];
@@ -58,10 +63,10 @@ export const BLOCK_DEFS: BlockDef[] = [
     kinds: ALL,
     create: () => ({ type: "image", src: "", alt: "", rounded: false }),
     fields: [
-      { kind: "image", key: "src", label: "Imagine" },
+      { kind: "image", key: "src", label: "Imagine", maxWidth: 800, minWidth: 500, dims: { width: "width", height: "height" } },
       { kind: "text", key: "alt", label: "Text alternativ", help: "Descrie imaginea (accesibilitate)" },
-      { kind: "number", key: "width", label: "Lățime originală (px)", min: 1, max: 10000, help: "Evită săltarea paginii la încărcare" },
-      { kind: "number", key: "height", label: "Înălțime originală (px)", min: 1, max: 10000 },
+      { kind: "number", key: "width", label: "Lățime (px)", min: 1, max: 10000, help: "Se completează singur la încărcare; evită săltarea paginii" },
+      { kind: "number", key: "height", label: "Înălțime (px)", min: 1, max: 10000 },
       { kind: "toggle", key: "rounded", label: "Colțuri rotunjite, cu margini" },
       { kind: "url", key: "href", label: "Link la apăsare (opțional)" },
     ],
@@ -164,7 +169,7 @@ export const BLOCK_DEFS: BlockDef[] = [
           { kind: "text", key: "name", label: "Nume" },
           { kind: "textarea", key: "text", label: "Text", rows: 3 },
           { kind: "number", key: "rating", label: "Stele (1-5)", min: 1, max: 5 },
-          { kind: "image", key: "avatar", label: "Poză (opțional)" },
+          { kind: "image", key: "avatar", label: "Poză (opțional)", maxWidth: 200 },
           { kind: "toggle", key: "verified", label: "Arată „Client verificat”", help: "Doar dacă recenzia chiar e verificată" },
         ],
       },
@@ -211,7 +216,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         addLabel: "Adaugă poză",
         newItem: () => ({ src: "", alt: "" }),
         fields: [
-          { kind: "image", key: "src", label: "Imagine" },
+          { kind: "image", key: "src", label: "Imagine", maxWidth: 800, minWidth: 500 },
           { kind: "text", key: "alt", label: "Text alternativ" },
         ],
       },
@@ -225,9 +230,9 @@ export const BLOCK_DEFS: BlockDef[] = [
     kinds: ALL,
     create: () => ({ type: "before_after", before: { src: "", alt: "" }, after: { src: "", alt: "" }, beforeLabel: "Înainte", afterLabel: "După" }),
     fields: [
-      { kind: "image", key: "before.src", label: "Poza „Înainte”" },
+      { kind: "image", key: "before.src", label: "Poza „Înainte”", maxWidth: 800, minWidth: 500 },
       { kind: "text", key: "before.alt", label: "Text alternativ „Înainte”" },
-      { kind: "image", key: "after.src", label: "Poza „După”" },
+      { kind: "image", key: "after.src", label: "Poza „După”", maxWidth: 800, minWidth: 500 },
       { kind: "text", key: "after.alt", label: "Text alternativ „După”" },
       { kind: "text", key: "beforeLabel", label: "Etichetă stânga" },
       { kind: "text", key: "afterLabel", label: "Etichetă dreapta" },
@@ -242,7 +247,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     create: () => ({ type: "video", src: "", poster: "", autoplay: false, rounded: false }),
     fields: [
       { kind: "url", key: "src", label: "Adresa fișierului video (mp4)" },
-      { kind: "image", key: "poster", label: "Imagine de copertă" },
+      { kind: "image", key: "poster", label: "Imagine de copertă", maxWidth: 800, minWidth: 500 },
       { kind: "toggle", key: "autoplay", label: "Pornește singur, mut, în buclă" },
       { kind: "toggle", key: "rounded", label: "Colțuri rotunjite, cu margini" },
     ],
@@ -296,7 +301,7 @@ export const BLOCK_DEFS: BlockDef[] = [
       color: "#d4d4d8",
     }),
     fields: [
-      { kind: "image", key: "logo.src", label: "Logo" },
+      { kind: "image", key: "logo.src", label: "Logo", maxWidth: 400, dims: { width: "logo.width" } },
       { kind: "text", key: "logo.alt", label: "Text alternativ logo" },
       { kind: "number", key: "logo.width", label: "Lățime logo (px)", min: 1, max: 10000 },
       { kind: "textarea", key: "company", label: "Date firmă și contact", rows: 4 },
@@ -321,7 +326,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         addLabel: "Adaugă siglă",
         newItem: () => ({ src: "", alt: "", href: "" }),
         fields: [
-          { kind: "image", key: "src", label: "Imagine" },
+          { kind: "image", key: "src", label: "Imagine", maxWidth: 400 },
           { kind: "text", key: "alt", label: "Text alternativ" },
           { kind: "url", key: "href", label: "Link (opțional)" },
         ],
@@ -377,6 +382,11 @@ export const BLOCK_DEFS: BlockDef[] = [
     label: "Buton spre magazin",
     icon: "🛍",
     description: "Mesaj și buton din setările magazinului",
+    note: {
+      text: "Mesajul, textul butonului, culorile și adresa nu se editează aici, ci în setările magazinului (se aplică tuturor paginilor). Blocul apare doar când comutatorul „Buton spre homepage pe pagina de mulțumire” e pornit pe landing page-ul comenzii. Cât timp apare, mesajul lui înlocuiește blocurile setate cu „Butonul spre magazin nu e activ”.",
+      href: "/admin/store",
+      linkLabel: "Deschide setările magazinului",
+    },
     kinds: THANK_YOU,
     create: () => ({ type: "store_cta", phase: "final", showWhen: "cta" }),
     fields: [],
@@ -401,6 +411,7 @@ export const THANK_YOU_VISIBILITY_FIELDS: FieldDef[] = [
     kind: "select",
     key: "showWhen",
     label: "Se afișează dacă",
+    help: "„Butonul spre magazin” = mesajul și butonul din setările magazinului, când comutatorul e pornit pe landing page-ul comenzii",
     options: [
       { value: "", label: "Oricând" },
       { value: "cta", label: "Butonul spre magazin e activ" },

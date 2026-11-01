@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseSlug, parseTitle } from "@/lib/own-page-input";
 import { legalBlocks } from "@/lib/own-page-starter";
+import { hasUsableDomain, NEEDS_DOMAIN_MESSAGE } from "@/lib/domain-gate";
 
 /** GET /api/legal-pages - legal pages of the active organization (superadmin only) */
 export async function GET() {
@@ -25,6 +26,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const guard = await requireSuperadmin();
   if (!guard.ok) return guard.response;
+
+  if (!(await hasUsableDomain(guard.organizationId))) return NextResponse.json({ error: NEEDS_DOMAIN_MESSAGE }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
   const slug = parseSlug(body.slug);

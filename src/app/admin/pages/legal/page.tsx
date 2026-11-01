@@ -20,6 +20,7 @@ export default function LegalPagesList() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [creating, setCreating] = useState(false);
+  const [hasDomain, setHasDomain] = useState<boolean | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,6 +37,10 @@ export default function LegalPagesList() {
 
   useEffect(() => {
     load();
+    fetch("/api/domains")
+      .then((res) => (res.ok ? res.json() : { domains: [] }))
+      .then((data) => setHasDomain((data.domains ?? []).some((d: { status: string }) => d.status === "verified" || d.status === "active")))
+      .catch(() => setHasDomain(null));
   }, [load]);
 
   async function create(e: React.FormEvent) {
@@ -77,7 +82,16 @@ export default function LegalPagesList() {
 
       {error && <div className="rounded-md border border-red-800 bg-red-900/20 p-3 text-sm text-red-400">{error}</div>}
 
-      <form onSubmit={create} className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+      {hasDomain === false && (
+        <div className="rounded-md border border-amber-800 bg-amber-900/20 p-4 text-sm text-amber-200">
+          <strong>Pasul 1: adaugă un domeniu.</strong> Paginile legale se afișează pe domeniile tale verificate. Până atunci nu poți crea pagini.{" "}
+          <Link href="/admin/pages/domains" className="font-medium underline hover:text-amber-100">
+            Deschide domeniile →
+          </Link>
+        </div>
+      )}
+
+      <form onSubmit={create} className={`flex flex-wrap items-end gap-3 rounded-lg border border-zinc-700 bg-zinc-800 p-4 ${hasDomain === false ? "pointer-events-none opacity-50" : ""}`}>
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-200">Titlu</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Termeni și condiții" className="w-64 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
@@ -86,7 +100,7 @@ export default function LegalPagesList() {
           <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /…)</label>
           <input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="termeni-si-conditii" required className="w-64 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
         </div>
-        <button type="submit" disabled={creating} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+        <button type="submit" disabled={creating || hasDomain === false} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
           {creating ? "Se creează…" : "Creează pagină legală"}
         </button>
       </form>

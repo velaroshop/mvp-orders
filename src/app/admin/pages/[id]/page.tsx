@@ -54,5 +54,5 @@ export default function EditOwnPage() {
   if (error) return <div className="rounded-md border border-red-800 bg-red-900/20 p-4 text-red-400">{error}</div>;
   if (!initial) return <p className="text-zinc-400">Se încarcă pagina…</p>;
 
-  return <PageEditor kind="landing" initial={initial} onSave={save} backHref="/admin/pages" backLabel="Pagini proprii" publicUrl={(slug, hostname) => (hostname ? `https://${hostname}/${slug}` : `/p/${slug}`)} domains={domains} />;
+  return <PageEditor kind="landing" initial={initial} onSave={save} backHref="/admin/pages" backLabel="Pagini proprii" publicUrl={(slug, hostname) => (hostname ? `https://${hostname}/${slug}` : "#")} domains={domains} />;
 }

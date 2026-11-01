@@ -2,7 +2,5 @@
 import { revalidatePath } from "next/cache";
 
 export function refreshPublicPages() {
-  revalidatePath("/p/[slug]", "page");
-  revalidatePath("/legal/[org]/[slug]", "page");
   revalidatePath("/sites/[host]/[[...path]]", "page");
 }

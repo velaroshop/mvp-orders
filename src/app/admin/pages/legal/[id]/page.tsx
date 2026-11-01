@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import PageEditor, { type EditorPageData, type SaveResult } from "@/components/page-editor/PageEditor";
 
 // Blocks that make sense on a legal page
@@ -11,9 +10,8 @@ const LEGAL_BLOCKS = ["rich_text", "text", "list", "image", "button", "spacer", 
 export default function EditLegalPage() {
   const { id } = useParams<{ id: string }>();
   const [initial, setInitial] = useState<EditorPageData | null>(null);
-  const { data: session } = useSession();
-  const user = session?.user as { activeOrganizationId?: string; organizations?: { id: string; slug?: string }[] } | undefined;
-  const orgSlug = user?.organizations?.find((o) => o.id === user.activeOrganizationId)?.slug || "";
+  // The page is served at /<slug> on every verified domain of the organization: "Vezi pagina" opens it on the first one
+  const [firstDomain, setFirstDomain] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,6 +33,13 @@ export default function EditLegalPage() {
         });
       })
       .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Eroare"));
+    fetch("/api/domains")
+      .then((res) => (res.ok ? res.json() : { domains: [] }))
+      .then((data) => {
+        const usable = (data.domains ?? []).find((d: { status: string }) => d.status === "verified" || d.status === "active");
+        if (!cancelled) setFirstDomain(usable?.hostname ?? "");
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -62,7 +67,7 @@ export default function EditLegalPage() {
       backLabel="Pagini legale"
       allowedBlocks={LEGAL_BLOCKS}
       slugPrefix="/"
-      publicUrl={(slug) => `/legal/${orgSlug}/${slug}`}
+      publicUrl={(slug) => (firstDomain ? `https://${firstDomain}/${slug}` : "#")}
     />
   );
 }

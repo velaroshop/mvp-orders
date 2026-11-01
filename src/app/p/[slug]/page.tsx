@@ -1,60 +1,27 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { supabaseAdmin } from "@/lib/supabase";
-import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import { DEMO_PAGE } from "@/lib/page-blocks-demo";
-import { loadFooterLibrary } from "@/lib/page-footers";
-import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
+import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 
-// Served from cache and refreshed at most once a minute
-export const revalidate = 60;
+// Own pages are served only on a customer's verified domain (see src/app/sites). This address on the application
+// domain no longer serves any page: it answers 404. Only the local development fixture "_demo" remains, used to check
+// how blocks render without a database.
 
-// No pages are generated at build time; each page is rendered on its first visit and then cached (ISR)
 export async function generateStaticParams() {
   return [];
 }
 
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/i;
-
-async function getPage(slug: string) {
-  // Local-only fixture to check rendering without a database
-  if (slug === "_demo" && process.env.NODE_ENV !== "production") return DEMO_PAGE;
-
-  if (!SLUG_RE.test(slug)) return null;
-
-  const { data, error } = await supabaseAdmin
-    .from("landing_page_content")
-    .select("title, background, blocks, organization_id")
-    .eq("slug", slug)
-    .is("domain_id", null)
-    .eq("status", "published")
-    .maybeSingle();
-
-  if (error) {
-    console.error("[Own Page] Failed to load page:", slug, error.message);
-    return null;
-  }
-  return data;
-}
+const isDemo = (slug: string) => slug === "_demo" && process.env.NODE_ENV !== "production";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getPage(slug);
-  return {
-    title: page?.title || "Pagină",
-    // Test phase: keep own pages out of search results
-    robots: { index: false, follow: false },
-  };
+  return { title: isDemo(slug) ? DEMO_PAGE.title : "Pagină", robots: { index: false, follow: false } };
 }
 
 export default async function OwnPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = await getPage(slug);
-  if (!page) notFound();
+  if (!isDemo(slug)) notFound();
 
-  const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
-  const organizationId = "organization_id" in page ? page.organization_id : null;
-  const footerLibrary = await loadFooterLibrary(organizationId, blocks);
-  return <BlockRenderer blocks={blocks} background={normalizePageBackground(page.background)} footerLibrary={footerLibrary} />;
+  return <BlockRenderer blocks={normalizeBlocks(DEMO_PAGE.blocks)} background={normalizePageBackground(DEMO_PAGE.background)} />;
 }

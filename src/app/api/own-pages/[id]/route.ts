@@ -91,6 +91,10 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     if (body.status !== "draft" && body.status !== "published") {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
+    // A page is reachable only on its domain: it cannot be published without one
+    if (body.status === "published" && !domainId) {
+      return NextResponse.json({ error: "Alege un domeniu verificat pentru pagină înainte de a o publica" }, { status: 400 });
+    }
     update.status = body.status;
   }
 

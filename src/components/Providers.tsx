@@ -9,7 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   // Own public pages (/p/..., /legal/..., /thank-you) and the editor preview frame never use the session: skip the auth providers so visitors
   // don't download that code or trigger a /api/auth/session request. Every other route is unchanged.
-  if (pathname?.startsWith("/p/") || pathname?.startsWith("/legal/") || pathname === "/thank-you" || pathname === "/page-preview") {
+  if (pathname?.startsWith("/p/") || pathname === "/thank-you" || pathname === "/page-preview") {
     return <>{children}</>;
   }
 

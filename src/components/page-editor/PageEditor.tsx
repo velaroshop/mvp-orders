@@ -119,6 +119,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     return () => window.removeEventListener("message", onMessage);
   }, [sendPreview]);
 
+  // A page is reachable only on its domain: without one it cannot be published
+  const needsDomain = kind === "landing" && domains !== undefined && !domainId;
   const available = BLOCK_DEFS.filter((d) => d.kinds.includes(kind) && (!allowedBlocks || allowedBlocks.includes(d.type)));
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const selectedDef = selected ? blockDef(selected.data.type) : undefined;
@@ -209,7 +211,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                   className="mr-1 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-2 text-sm text-white"
                   aria-label="Domeniu"
                 >
-                  <option value="">Domeniul aplicației (/p/…)</option>
+                  <option value="">Alege domeniul…</option>
                   {domains.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.hostname}
@@ -217,7 +219,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                   ))}
                 </select>
               )}
-              {domains && domainId ? "/" : slugPrefix}
+              {domains ? "/" : slugPrefix}
               <input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase())}
@@ -242,7 +244,13 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               Retrage
             </button>
           ) : (
-            <button type="button" disabled={saving} onClick={() => save("published")} className={`${buttonBase} bg-orange-600 text-white hover:bg-orange-700`}>
+            <button
+              type="button"
+              disabled={saving || needsDomain}
+              title={needsDomain ? "Alege un domeniu ca pagina să poată fi publicată" : undefined}
+              onClick={() => save("published")}
+              className={`${buttonBase} bg-orange-600 text-white hover:bg-orange-700`}
+            >
               Publică
             </button>
           ))}
@@ -257,6 +265,12 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
           </button>
         )}
       </div>
+
+      {needsDomain && (
+        <div className="rounded-md border border-amber-800 bg-amber-900/20 p-3 text-sm text-amber-200">
+          Pagina nu are domeniu, deci nu se afișează nicăieri. Alege un domeniu verificat în câmpul din bara de sus.
+        </div>
+      )}
 
       {message && (
         <div className={`rounded-md border p-3 text-sm ${message.type === "success" ? "border-emerald-800 bg-emerald-900/20 text-emerald-400" : "border-red-800 bg-red-900/20 text-red-400"}`}>

@@ -97,7 +97,8 @@ export default function LandingPagesPage() {
   const [salesModal, setSalesModal] = useState<{ pageId: string; pageName: string } | null>(null);
   // Own pages (superadmin only): the page linked to each landing page, and the "create page" dialog
   const [ownPages, setOwnPages] = useState<{ id: string; slug: string; landing_page_id: string | null }[]>([]);
-  const [createOwnPage, setCreateOwnPage] = useState<{ landingPageId: string; title: string; slug: string } | null>(null);
+  const [createOwnPage, setCreateOwnPage] = useState<{ landingPageId: string; title: string; slug: string; domainId: string } | null>(null);
+  const [usableDomains, setUsableDomains] = useState<{ id: string; hostname: string }[]>([]);
   const [creatingOwnPage, setCreatingOwnPage] = useState(false);
   const [createOwnPageError, setCreateOwnPageError] = useState<string | null>(null);
 
@@ -106,6 +107,10 @@ export default function LandingPagesPage() {
     fetch("/api/own-pages")
       .then((res) => (res.ok ? res.json() : { pages: [] }))
       .then((data) => setOwnPages(data.pages ?? []))
+      .catch(() => {});
+    fetch("/api/domains")
+      .then((res) => (res.ok ? res.json() : { domains: [] }))
+      .then((data) => setUsableDomains((data.domains ?? []).filter((d: { status: string }) => d.status === "verified" || d.status === "active")))
       .catch(() => {});
   }, [isSuperadmin]);
 
@@ -118,7 +123,7 @@ export default function LandingPagesPage() {
       const res = await fetch("/api/own-pages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: createOwnPage.slug, title: createOwnPage.title, landingPageId: createOwnPage.landingPageId }),
+        body: JSON.stringify({ slug: createOwnPage.slug, title: createOwnPage.title, landingPageId: createOwnPage.landingPageId, domainId: createOwnPage.domainId }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -680,12 +685,14 @@ export default function LandingPagesPage() {
                                       </Link>
                                     ) : (
                                       <button
+                                        disabled={usableDomains.length === 0}
+                                        title={usableDomains.length === 0 ? "Mai întâi adaugă și verifică un domeniu (Pagini proprii → Domenii)" : undefined}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setCreateOwnPageError(null);
-                                          setCreateOwnPage({ landingPageId: page.id, title: page.name, slug: page.slug.toLowerCase() });
+                                          setCreateOwnPage({ landingPageId: page.id, title: page.name, slug: page.slug.toLowerCase(), domainId: usableDomains[0]?.id ?? "" });
                                         }}
-                                        className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors"
+                                        className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                       >
                                         Creează pagină proprie
                                       </button>
@@ -1148,14 +1155,29 @@ export default function LandingPagesPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /p/…)</label>
+              <label className="mb-1 block text-sm font-medium text-zinc-200">Domeniu</label>
+              <select
+                value={createOwnPage.domainId}
+                onChange={(e) => setCreateOwnPage({ ...createOwnPage, domainId: e.target.value })}
+                required
+                className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
+              >
+                {usableDomains.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.hostname}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /…)</label>
               <input
                 value={createOwnPage.slug}
                 onChange={(e) => setCreateOwnPage({ ...createOwnPage, slug: e.target.value.toLowerCase() })}
                 required
                 className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
               />
-              <p className="mt-1 text-xs text-zinc-400">Litere mici, cifre și cratime. Adresa e unică pe tot sistemul.</p>
+              <p className="mt-1 text-xs text-zinc-400">Litere mici, cifre și cratime. Adresa e unică pe domeniu.</p>
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={creatingOwnPage} className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm font-medium disabled:opacity-50">

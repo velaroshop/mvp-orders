@@ -21,7 +21,11 @@ export default function OwnPagesList() {
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
-  const [domainNames, setDomainNames] = useState<Record<string, string>>({});
+  // Verified domains (the only places a page can live)
+  const [domains, setDomains] = useState<{ id: string; hostname: string }[]>([]);
+  const [domainsLoaded, setDomainsLoaded] = useState(false);
+  const [domainId, setDomainId] = useState("");
+  const domainNames = Object.fromEntries(domains.map((d) => [d.id, d.hostname]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,8 +44,13 @@ export default function OwnPagesList() {
     load();
     fetch("/api/domains")
       .then((res) => (res.ok ? res.json() : { domains: [] }))
-      .then((data) => setDomainNames(Object.fromEntries((data.domains ?? []).map((d: { id: string; hostname: string }) => [d.id, d.hostname]))))
-      .catch(() => {});
+      .then((data) => {
+        const usable = (data.domains ?? []).filter((d: { status: string }) => d.status === "verified" || d.status === "active");
+        setDomains(usable);
+        setDomainId((current) => current || usable[0]?.id || "");
+      })
+      .catch(() => {})
+      .finally(() => setDomainsLoaded(true));
   }, [load]);
 
   async function create(e: React.FormEvent) {
@@ -51,7 +60,7 @@ export default function OwnPagesList() {
     const res = await fetch("/api/own-pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, title }),
+      body: JSON.stringify({ slug, title, domainId }),
     });
     const data = await res.json().catch(() => ({}));
     setCreating(false);
@@ -63,12 +72,17 @@ export default function OwnPagesList() {
   }
 
   async function duplicate(page: PageRow) {
-    const input = window.prompt("Slug pentru copie (adresa /p/…):", `${page.slug}-2`);
+    const targetDomain = page.domain_id && domainNames[page.domain_id] ? page.domain_id : domains[0]?.id;
+    if (!targetDomain) {
+      setError("Mai întâi adaugă și verifică un domeniu.");
+      return;
+    }
+    const input = window.prompt(`Slug pentru copie (adresa ${domainNames[targetDomain]}/…):`, `${page.slug}-2`);
     if (!input) return;
     const res = await fetch("/api/own-pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: input.trim().toLowerCase(), title: `${page.title || page.slug} (copie)`, duplicateFrom: page.id }),
+      body: JSON.stringify({ slug: input.trim().toLowerCase(), title: `${page.title || page.slug} (copie)`, duplicateFrom: page.id, domainId: targetDomain }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -89,18 +103,37 @@ export default function OwnPagesList() {
     <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">Pagini proprii</h1>
-        <p className="mt-2 text-zinc-400">Pagini de vânzare construite din blocuri, servite la /p/slug. Doar pentru superadmin.</p>
+        <p className="mt-2 text-zinc-400">Pagini de vânzare construite din blocuri, servite pe domeniile tale verificate, la domeniu/slug. Doar pentru superadmin.</p>
       </div>
 
       {error && <div className="rounded-md border border-red-800 bg-red-900/20 p-3 text-sm text-red-400">{error}</div>}
 
-      <form onSubmit={create} className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+      {domainsLoaded && domains.length === 0 && (
+        <div className="rounded-md border border-amber-800 bg-amber-900/20 p-4 text-sm text-amber-200">
+          <strong>Pasul 1: adaugă un domeniu.</strong> Paginile se creează și se afișează doar pe un domeniu verificat și conectat. Până atunci nu poți crea pagini.{" "}
+          <Link href="/admin/pages/domains" className="font-medium underline hover:text-amber-100">
+            Deschide domeniile →
+          </Link>
+        </div>
+      )}
+
+      <form onSubmit={create} className={`flex flex-wrap items-end gap-3 rounded-lg border border-zinc-700 bg-zinc-800 p-4 ${domains.length === 0 ? "pointer-events-none opacity-50" : ""}`}>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-200">Domeniu</label>
+          <select value={domainId} onChange={(e) => setDomainId(e.target.value)} required className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white">
+            {domains.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.hostname}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-200">Titlu</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="SlimGel" className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /p/…)</label>
+          <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /…)</label>
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value.toLowerCase())}
@@ -109,7 +142,7 @@ export default function OwnPagesList() {
             className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
           />
         </div>
-        <button type="submit" disabled={creating} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+        <button type="submit" disabled={creating || domains.length === 0} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
           {creating ? "Se creează…" : "Creează pagină"}
         </button>
       </form>
@@ -134,7 +167,12 @@ export default function OwnPagesList() {
                 <tr key={page.id} className="hover:bg-zinc-700/40">
                   <td className="px-4 py-3">
                     <div className="font-medium text-white">{page.title || page.slug}</div>
-                    <div className="text-xs text-zinc-400">{page.domain_id && domainNames[page.domain_id] ? `${domainNames[page.domain_id]}/${page.slug}` : `/p/${page.slug}`}</div>
+                    <div className="text-xs text-zinc-400">{page.domain_id && domainNames[page.domain_id] ? (
+                        `${domainNames[page.domain_id]}/${page.slug}`
+                      ) : (
+                        <span className="text-amber-400">fără domeniu: nu se afișează nicăieri ({page.slug})</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${page.status === "published" ? "bg-emerald-900/50 text-emerald-300" : "bg-zinc-700 text-zinc-300"}`}>

@@ -30,6 +30,10 @@ interface PageEditorProps {
   backLabel: string;
   /** Public address of the saved page (landing pages only) */
   publicUrl?: (slug: string) => string;
+  /** Only these block types can be added (default: all that fit the page kind) */
+  allowedBlocks?: string[];
+  /** Address shown before the slug field */
+  slugPrefix?: string;
   /** Thank-you page: go back to the built-in default */
   onReset?: () => Promise<SaveResult>;
 }
@@ -49,7 +53,7 @@ function summary(data: Obj): string {
 const buttonBase = "rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 const iconButton = "rounded border border-zinc-600 px-1.5 py-0.5 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-30";
 
-export default function PageEditor({ kind, initial, onSave, backHref, backLabel, publicUrl, onReset }: PageEditorProps) {
+export default function PageEditor({ kind, initial, onSave, backHref, backLabel, publicUrl, allowedBlocks, slugPrefix = "/p/", onReset }: PageEditorProps) {
   const [title, setTitle] = useState(initial.title);
   const [slug, setSlug] = useState(initial.slug ?? "");
   const [background, setBackground] = useState(initial.background);
@@ -110,7 +114,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     return () => window.removeEventListener("message", onMessage);
   }, [sendPreview]);
 
-  const available = BLOCK_DEFS.filter((d) => d.kinds.includes(kind));
+  const available = BLOCK_DEFS.filter((d) => d.kinds.includes(kind) && (!allowedBlocks || allowedBlocks.includes(d.type)));
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const selectedDef = selected ? blockDef(selected.data.type) : undefined;
 
@@ -193,7 +197,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               className="min-w-[160px] flex-1 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
             />
             <div className="flex items-center gap-1 text-sm text-zinc-400">
-              /p/
+              {slugPrefix}
               <input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase())}

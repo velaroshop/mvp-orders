@@ -19,7 +19,6 @@ export default function OwnPagesList() {
   const [error, setError] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
-  const [template, setTemplate] = useState<"" | "legal">("");
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -46,7 +45,7 @@ export default function OwnPagesList() {
     const res = await fetch("/api/own-pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, title, template: template || undefined }),
+      body: JSON.stringify({ slug, title }),
     });
     const data = await res.json().catch(() => ({}));
     setCreating(false);
@@ -104,13 +103,6 @@ export default function OwnPagesList() {
             className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-200">Șablon</label>
-          <select value={template} onChange={(e) => setTemplate(e.target.value as "" | "legal")} className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white">
-            <option value="">Pagină goală</option>
-            <option value="legal">Pagină legală (text + footer)</option>
-          </select>
-        </div>
         <button type="submit" disabled={creating} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
           {creating ? "Se creează…" : "Creează pagină"}
         </button>
@@ -160,6 +152,14 @@ export default function OwnPagesList() {
             </tbody>
           </table>
         )}
+      </div>
+
+      <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+        <h2 className="text-lg font-semibold text-white">Pagini legale</h2>
+        <p className="mt-1 text-sm text-zinc-400">Termeni, confidențialitate, retur: se scriu o singură dată și se afișează pe toate domeniile organizației.</p>
+        <Link href="/admin/pages/legal" className="mt-3 inline-block rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">
+          Deschide paginile legale
+        </Link>
       </div>
 
       <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">

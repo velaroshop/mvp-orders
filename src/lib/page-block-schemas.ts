@@ -15,6 +15,8 @@ export type FieldDef =
   // keepRatioWith: another number field of the same block that follows this one proportionally (width <-> height)
   | (FieldBase & { kind: "number"; min?: number; max?: number; keepRatioWith?: string })
   | (FieldBase & { kind: "toggle" })
+  // Choice of Facebook reactions (up to max), shown with their icons
+  | (FieldBase & { kind: "reactions"; max: number })
   | (FieldBase & { kind: "select"; options: { value: string; label: string }[] })
   | (FieldBase & { kind: "strings"; addLabel: string })
   | (FieldBase & { kind: "items"; itemLabel: string; addLabel: string; fields: FieldDef[]; newItem: () => Record<string, unknown> });
@@ -236,6 +238,53 @@ export const BLOCK_DEFS: BlockDef[] = [
           { kind: "number", key: "rating", label: "Stele (1-5)", min: 1, max: 5 },
           { kind: "image", key: "avatar", label: "Poză (opțional)", maxWidth: 200 },
           { kind: "toggle", key: "verified", label: "Arată „Client verificat”", help: "Doar dacă recenzia chiar e verificată" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "fb_comments",
+    label: "Comentarii (stil Facebook)",
+    icon: "👍",
+    description: "Comentarii reale ale clienților, în stilul Facebook",
+    note: { text: "Folosește doar comentarii reale, de la clienți reali. Aspectul e de Facebook, dar conținutul trebuie să fie adevărat." },
+    kinds: ALL,
+    create: () => ({
+      type: "fb_comments",
+      title: "",
+      cardBg: "#ffffff",
+      bubbleBg: "#f0f2f5",
+      color: "#050505",
+      size: 15,
+      showActions: true,
+      items: [{ name: "Nume", text: "Comentariu", when: "2h", reactions: ["like"], count: 0, verified: false }],
+    }),
+    fields: [
+      { kind: "text", key: "title", label: "Titlu (opțional)" },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 13, max: 18 },
+      { kind: "toggle", key: "showActions", label: "Arată „Like · Reply”" },
+      { kind: "color", key: "cardBg", label: "Fundal card" },
+      { kind: "color", key: "bubbleBg", label: "Fundal comentariu" },
+      { kind: "color", key: "color", label: "Culoare text" },
+      {
+        kind: "items",
+        key: "items",
+        label: "Comentarii",
+        itemLabel: "Comentariul",
+        addLabel: "Adaugă comentariu",
+        newItem: () => ({ name: "", text: "", when: "2h", reactions: ["like"], count: 0, verified: false }),
+        fields: [
+          { kind: "image", key: "avatar", label: "Poză profil (opțional)", maxWidth: 96 },
+          { kind: "text", key: "name", label: "Nume" },
+          { kind: "textarea", key: "text", label: "Comentariu", rows: 3 },
+          { kind: "text", key: "when", label: "Când", placeholder: "2h", maxLength: 20 },
+          { kind: "number", key: "count", label: "Număr reacții", min: 0, max: 999999 },
+          { kind: "reactions", key: "reactions", label: "Reacții", max: 3, help: "Până la 3" },
+          { kind: "toggle", key: "verified", label: "Arată „Client verificat”", help: "Doar dacă e chiar așa" },
+          { kind: "text", key: "reply.name", label: "Răspuns: nume (opțional)", placeholder: "Numele magazinului" },
+          { kind: "textarea", key: "reply.text", label: "Răspuns: text", rows: 2, help: "Gol = fără răspuns" },
+          { kind: "text", key: "reply.when", label: "Răspuns: când", placeholder: "1h", maxLength: 20 },
+          { kind: "image", key: "reply.avatar", label: "Răspuns: poză (opțional)", maxWidth: 96 },
         ],
       },
     ],

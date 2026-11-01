@@ -6,6 +6,7 @@ import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
 import StoreCta from "@/components/thank-you/StoreCta";
 import PhaseGate from "@/components/thank-you/PhaseGate";
 import StickyFooter from "@/components/page-blocks/StickyFooter";
+import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import TopbarScroll from "@/components/page-blocks/TopbarScroll";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
@@ -164,6 +165,83 @@ function Block({
           </div>
         </section>
       );
+
+    case "fb_comments": {
+      const meta = "#65676b";
+      const avatarOf = (person: { name: string; avatar: string | null }, px: number) =>
+        person.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={person.avatar} alt="" width={px} height={px} loading="lazy" decoding="async" className="shrink-0 rounded-full object-cover" style={{ width: px, height: px }} />
+        ) : (
+          <svg viewBox="0 0 40 40" width={px} height={px} className="shrink-0 rounded-full" aria-hidden="true">
+            <rect width="40" height="40" fill="#e4e6eb" />
+            <circle cx="20" cy="15" r="7" fill="#bcc0c4" />
+            <path d="M6 40c0-9 6.5-14 14-14s14 5 14 14Z" fill="#bcc0c4" />
+          </svg>
+        );
+      return (
+        <section className="px-4 py-4">
+          {block.title && <h2 className="mb-3 text-center text-xl font-bold text-zinc-900">{block.title}</h2>}
+          <div className="space-y-4 rounded-xl border border-zinc-200 p-3 shadow-sm" style={{ backgroundColor: block.cardBg, color: block.color }}>
+            {block.items.map((c, i) => (
+              <div key={i} className="flex items-start gap-2">
+                {avatarOf(c, 36)}
+                <div className="min-w-0 flex-1">
+                  <div className="inline-block max-w-full rounded-2xl px-3 py-2 align-top" style={{ backgroundColor: block.bubbleBg, fontSize: block.size }}>
+                    {c.name && <div className="text-[0.87em] font-semibold leading-tight">{c.name}</div>}
+                    <div className="leading-snug">{renderInline(c.text)}</div>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 px-3 text-[13px] leading-5" style={{ color: meta }}>
+                    {c.when && <span>{c.when}</span>}
+                    {block.showActions && (
+                      <>
+                        <span className="font-semibold">Like</span>
+                        <span className="font-semibold">Reply</span>
+                      </>
+                    )}
+                    {c.verified && <span className="italic">Client verificat</span>}
+                    {(c.count > 0 || c.reactions.length > 0) && (
+                      <span className="flex items-center gap-1">
+                        {c.count > 0 && <span>{c.count}</span>}
+                        <span className="flex items-center">
+                          {c.reactions.map((reaction, j) => (
+                            <span key={reaction} className="rounded-full" style={{ marginLeft: j === 0 ? 0 : -3, boxShadow: `0 0 0 2px ${block.cardBg}`, zIndex: 3 - j, display: "inline-flex" }}>
+                              <FbReactionIcon type={reaction} size={16} />
+                            </span>
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                  {c.reply && (
+                    <div className="mt-2 flex items-start gap-2">
+                      {avatarOf(c.reply, 28)}
+                      <div className="min-w-0 flex-1">
+                        <div className="inline-block max-w-full rounded-2xl px-3 py-2" style={{ backgroundColor: block.bubbleBg, fontSize: block.size }}>
+                          {c.reply.name && <div className="text-[0.87em] font-semibold leading-tight">{c.reply.name}</div>}
+                          <div className="leading-snug">{renderInline(c.reply.text)}</div>
+                        </div>
+                        {(c.reply.when || block.showActions) && (
+                          <div className="mt-1 flex gap-3 px-3 text-[13px] leading-5" style={{ color: meta }}>
+                            {c.reply.when && <span>{c.reply.when}</span>}
+                            {block.showActions && (
+                              <>
+                                <span className="font-semibold">Like</span>
+                                <span className="font-semibold">Reply</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
 
     case "faq":
       // Native <details>: an accordion with no JavaScript

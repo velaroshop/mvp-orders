@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
+import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
+import { FB_REACTIONS } from "@/lib/page-blocks";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
@@ -167,6 +169,30 @@ function FieldInput({
           <span>Da</span>
         </label>
       );
+
+    case "reactions": {
+      const chosen = Array.isArray(value) ? (value as string[]) : [];
+      return (
+        <div className="flex flex-wrap gap-2">
+          {FB_REACTIONS.map((reaction) => {
+            const on = chosen.includes(reaction);
+            return (
+              <button
+                key={reaction}
+                type="button"
+                title={reaction}
+                aria-pressed={on}
+                disabled={!on && chosen.length >= def.max}
+                onClick={() => onChange(on ? chosen.filter((r) => r !== reaction) : [...chosen, reaction])}
+                className={`rounded-md border p-1.5 disabled:opacity-30 ${on ? "border-emerald-500 bg-zinc-700" : "border-zinc-600 bg-zinc-900 hover:bg-zinc-700"}`}
+              >
+                <FbReactionIcon type={reaction} size={22} />
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
 
     case "select":
       return (

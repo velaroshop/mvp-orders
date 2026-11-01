@@ -38,7 +38,8 @@ const toItems = (blocks: unknown[]): Item[] =>
   blocks.filter((b): b is Obj => !!b && typeof b === "object").map((data) => ({ id: newId(), data }));
 
 function summary(data: Obj): string {
-  const raw = [data.text, data.title, data.heading, data.headline, data.src, data.landingSlug, data.company, data.html]
+  const firstItem = Array.isArray(data.items) ? (data.items[0] as Obj | undefined) : undefined;
+  const raw = [data.text, data.title, data.heading, data.headline, data.src, data.landingSlug, data.company, data.html, firstItem?.text]
     .find((v) => typeof v === "string" && v.trim() !== "") as string | undefined;
   return raw ? raw.replace(/\s+/g, " ").slice(0, 38) : "";
 }

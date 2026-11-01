@@ -53,6 +53,29 @@ export type ButtonBlock = { type: "button"; text: string; href: string; bg: stri
 export type StickyFooterBlock = { type: "sticky_footer"; text: string; href: string; bg: string; color: string };
 export type HtmlBlock = { type: "html"; html: string };
 
+export const FB_REACTIONS = ["like", "love", "care", "haha", "wow", "sad", "angry"] as const;
+export type FbReaction = (typeof FB_REACTIONS)[number];
+export type FbCommentPerson = { name: string; text: string; when: string; avatar: string | null };
+export type FbComment = FbCommentPerson & {
+  reactions: FbReaction[];
+  count: number;
+  verified: boolean;
+  /** Optional answer under the comment (for example from the store) */
+  reply: FbCommentPerson | null;
+};
+export type FbCommentsBlock = {
+  type: "fb_comments";
+  title: string;
+  items: FbComment[];
+  /** Card, comment bubble and text colors; text size in px */
+  cardBg: string;
+  bubbleBg: string;
+  color: string;
+  size: number;
+  /** The static "Like · Reply" line under each comment */
+  showActions: boolean;
+};
+
 export type ReviewItem = { name: string; text: string; rating: number; avatar: string | null; verified: boolean };
 export type ReviewsBlock = { type: "reviews"; title: string; items: ReviewItem[]; accent: string; showRating: boolean };
 export type FaqBlock = {
@@ -127,6 +150,7 @@ export type BlockVariant =
   | StickyFooterBlock
   | HtmlBlock
   | ReviewsBlock
+  | FbCommentsBlock
   | FaqBlock
   | VideoBlock
   | GalleryBlock
@@ -286,6 +310,40 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
       return items.length === 0
         ? null
         : { type: "reviews", title: str(b.title), items, accent: color(b.accent, "#f59e0b"), showRating: b.showRating !== false };
+    }
+
+    case "fb_comments": {
+      const person = (raw: unknown): FbCommentPerson => {
+        const p = obj(raw);
+        return { name: str(p.name).trim().slice(0, 80), text: str(p.text).trim().slice(0, 1000), when: str(p.when).trim().slice(0, 20), avatar: imageSrc(p.avatar) };
+      };
+      const items: FbComment[] = [];
+      for (const raw of list(b.items)) {
+        const c = obj(raw);
+        const main = person(c);
+        if (!main.name && !main.text) continue;
+        const reactions = [...new Set(list(c.reactions))].filter((r): r is FbReaction => FB_REACTIONS.includes(r as FbReaction)).slice(0, 3);
+        const reply = person(c.reply);
+        items.push({
+          ...main,
+          reactions,
+          count: typeof c.count === "number" && Number.isFinite(c.count) ? Math.min(999999, Math.max(0, Math.round(c.count))) : 0,
+          verified: c.verified === true,
+          reply: reply.text ? reply : null,
+        });
+      }
+      return items.length === 0
+        ? null
+        : {
+            type: "fb_comments",
+            title: str(b.title),
+            items,
+            cardBg: color(b.cardBg, "#ffffff"),
+            bubbleBg: color(b.bubbleBg, "#f0f2f5"),
+            color: color(b.color, "#050505"),
+            size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(18, Math.max(13, Math.round(b.size))) : 15,
+            showActions: b.showActions !== false,
+          };
     }
 
     case "faq": {

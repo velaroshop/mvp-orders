@@ -9,6 +9,7 @@ import PhaseGate from "@/components/thank-you/PhaseGate";
 import StickyFooter from "@/components/page-blocks/StickyFooter";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import TopbarScroll from "@/components/page-blocks/TopbarScroll";
+import TopbarTimer from "@/components/page-blocks/TopbarTimer";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -69,6 +70,16 @@ function Block({
         </div>
       );
     }
+
+    case "topbar_timer":
+      return (
+        <div
+          className={`w-full px-3 py-2 text-center font-semibold ${block.sticky ? "sticky top-0 z-40" : ""}`}
+          style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size, borderRadius: `0 0 ${block.radius}px ${block.radius}px` }}
+        >
+          <TopbarTimer block={block} />
+        </div>
+      );
 
     case "image": {
       const img = (
@@ -442,7 +453,7 @@ export default function BlockRenderer({
   preview?: boolean;
 }) {
   const firstImageIndex = blocks.findIndex((b) => b.type === "image");
-  const topbars = blocks.filter((b) => b.type === "topbar");
+  const topbars = blocks.filter((b) => b.type === "topbar" || b.type === "topbar_timer");
   const stickyFooter = blocks.find((b) => b.type === "sticky_footer");
   const footers = blocks.flatMap((b): FooterBlock[] => {
     if (b.type === "footer") return [b];
@@ -454,13 +465,13 @@ export default function BlockRenderer({
   });
   const flow = blocks
     .map((block, index) => ({ block, index }))
-    .filter(({ block }) => block.type !== "topbar" && block.type !== "sticky_footer" && block.type !== "footer" && block.type !== "shared_footer");
+    .filter(({ block }) => block.type !== "topbar" && block.type !== "topbar_timer" && block.type !== "sticky_footer" && block.type !== "footer" && block.type !== "shared_footer");
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
       {/* A bar that stays on top would cover the form's heading when a button scrolls to it: leave room */}
-      {topbars.some((b) => b.type === "topbar" && b.sticky) && (
-        <style>{`#comanda{scroll-margin-top:${Math.ceil(Math.max(...topbars.map((b) => (b.type === "topbar" ? b.size : 0))) * 1.5 + 32)}px}`}</style>
+      {topbars.some((b) => b.sticky) && (
+        <style>{`#comanda{scroll-margin-top:${Math.ceil(Math.max(...topbars.map((b) => (b.type === "topbar_timer" ? b.size * 3 + 8 : b.size * 1.5))) + 32)}px}`}</style>
       )}
       {topbars.map((block, i) => (
         <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} preview={preview} />

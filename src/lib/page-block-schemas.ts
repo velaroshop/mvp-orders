@@ -118,6 +118,50 @@ export const BLOCK_DEFS: BlockDef[] = [
     ],
   },
   {
+    type: "topbar_timer",
+    label: "Bară cu timer",
+    icon: "⏱",
+    description: "Reducere, numele ofertei și numărătoare inversă până la miezul nopții",
+    note: { text: "Timerul numără până la miezul nopții (ora României) din ziua de azi plus numărul de zile ales, și o ia de la capăt în fiecare zi. Folosește-l doar când oferta chiar se încheie sau își schimbă prețul." },
+    kinds: ALL,
+    create: () => ({
+      type: "topbar_timer",
+      label: "REDUCERE",
+      discount: "-100 lei",
+      discountBg: "#16a34a",
+      discountColor: "#ffffff",
+      expiresLabel: "Oferta expiră în",
+      offerName: "OFERTĂ BLACK FRIDAY",
+      days: 0,
+      size: 14,
+      sticky: false,
+      radius: 12,
+      bg: "#111827",
+      color: "#ffffff",
+    }),
+    fields: [
+      { kind: "text", key: "offerName", label: "Numele ofertei", maxLength: 80 },
+      { kind: "text", key: "discount", label: "Reducerea", maxLength: 30, placeholder: "-100 lei", help: "Text liber, ex. -100 lei sau -20%" },
+      { kind: "color", key: "discountBg", label: "Fundalul reducerii" },
+      { kind: "color", key: "discountColor", label: "Culoarea textului reducerii" },
+      {
+        kind: "number",
+        key: "days",
+        label: "Zile până la expirare",
+        min: 0,
+        max: 60,
+        help: "0 = expiră în noaptea asta la 00:00, 1 = mâine noapte la 00:00, 2 = poimâine…",
+      },
+      { kind: "text", key: "label", label: "Text înaintea reducerii", maxLength: 40, placeholder: "REDUCERE" },
+      { kind: "text", key: "expiresLabel", label: "Text înaintea timerului", maxLength: 60, placeholder: "Oferta expiră în" },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 11, max: 20 },
+      { kind: "number", key: "radius", label: "Colțuri rotunjite jos (px)", min: 0, max: 24 },
+      { kind: "toggle", key: "sticky", label: "Rămâne sus la derulare (sticky)" },
+      { kind: "color", key: "bg", label: "Fundal" },
+      { kind: "color", key: "color", label: "Culoare text" },
+    ],
+  },
+  {
     type: "image",
     label: "Imagine",
     icon: "🖼",
@@ -571,7 +615,7 @@ export const SPACING_FIELDS: FieldDef[] = [
 ];
 
 /** Blocks rendered outside the flow: the spacing field does not apply to them */
-export const OUT_OF_FLOW_BLOCKS = ["topbar", "sticky_footer", "footer", "shared_footer"];
+export const OUT_OF_FLOW_BLOCKS = ["topbar", "topbar_timer", "sticky_footer", "footer", "shared_footer"];
 
 /** Extra fields for the thank-you page: when a block is shown */
 export const THANK_YOU_VISIBILITY_FIELDS: FieldDef[] = [

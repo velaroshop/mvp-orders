@@ -49,7 +49,7 @@ const toItems = (blocks: unknown[]): Item[] =>
 
 function summary(data: Obj): string {
   const firstItem = Array.isArray(data.items) ? (data.items[0] as Obj | undefined) : undefined;
-  const raw = [data.text, data.title, data.heading, data.headline, data.src, data.landingSlug, data.company, data.html, firstItem?.text]
+  const raw = [data.text, data.title, data.heading, data.headline, data.src, data.landingSlug, data.company, data.html, data.offerName, firstItem?.text]
     .find((v) => typeof v === "string" && v.trim() !== "") as string | undefined;
   return raw ? raw.replace(/\s+/g, " ").slice(0, 38) : "";
 }

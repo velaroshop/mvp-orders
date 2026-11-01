@@ -21,6 +21,26 @@ export type TopbarBlock = {
   bg: string;
   color: string;
 };
+/**
+ * Top bar with a discount badge, an offer name and a countdown. `days` = days from today until the offer ends:
+ * 0 = tonight at 00:00 (Romania time), 1 = tomorrow night at 00:00, and so on. The countdown restarts every day.
+ */
+export type TopbarTimerBlock = {
+  type: "topbar_timer";
+  label: string;
+  discount: string;
+  discountBg: string;
+  discountColor: string;
+  expiresLabel: string;
+  offerName: string;
+  days: number;
+  size: number;
+  sticky: boolean;
+  /** Radius in px of the bottom corners */
+  radius: number;
+  bg: string;
+  color: string;
+};
 export type ImageBlock = {
   type: "image";
   src: string;
@@ -158,6 +178,7 @@ export type BlockCondition = "cta" | "no_cta";
 
 export type BlockVariant =
   | TopbarBlock
+  | TopbarTimerBlock
   | ImageBlock
   | TextBlock
   | ListBlock
@@ -256,6 +277,26 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         bg: color(b.bg, "#111827"),
         color: color(b.color, "#ffffff"),
       };
+
+    case "topbar_timer": {
+      const bounded = (value: unknown, fallback: number, min: number, max: number) =>
+        typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+      return {
+        type: "topbar_timer",
+        label: str(b.label, "REDUCERE").slice(0, 40),
+        discount: str(b.discount).slice(0, 30),
+        discountBg: color(b.discountBg, "#16a34a"),
+        discountColor: color(b.discountColor, "#ffffff"),
+        expiresLabel: str(b.expiresLabel, "Oferta expiră în").slice(0, 60),
+        offerName: str(b.offerName).slice(0, 80),
+        days: bounded(b.days, 0, 0, 60),
+        size: bounded(b.size, 14, 11, 20),
+        sticky: b.sticky === true,
+        radius: bounded(b.radius, 0, 0, 24),
+        bg: color(b.bg, "#111827"),
+        color: color(b.color, "#ffffff"),
+      };
+    }
 
     case "image": {
       const src = str(b.src).trim();

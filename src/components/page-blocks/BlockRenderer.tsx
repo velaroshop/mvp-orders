@@ -289,17 +289,24 @@ function Block({
     case "gallery":
       // Horizontal scroll-snap carousel with no JavaScript
       return (
-        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {block.images.map((image, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <figure
               key={i}
-              src={image.src}
-              alt={image.alt}
-              loading="lazy"
-              decoding="async"
-              className="h-auto w-[82%] flex-none snap-center rounded-xl"
-            />
+              className="w-[82%] flex-none snap-center overflow-hidden rounded-xl"
+              style={image.caption && block.captionBox ? { backgroundColor: block.captionBg } : undefined}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image.src} alt={image.alt || image.caption} loading="lazy" decoding="async" className="block h-auto w-full" />
+              {image.caption && (
+                <figcaption
+                  className="overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1.5"
+                  style={{ color: block.captionColor, fontSize: block.captionSize, textAlign: block.captionAlign }}
+                >
+                  {image.caption}
+                </figcaption>
+              )}
+            </figure>
           ))}
         </div>
       );

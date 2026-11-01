@@ -302,6 +302,9 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               <h2 className="mb-4 text-lg font-semibold text-white">
                 {selectedDef.icon} {selectedDef.label}
               </h2>
+              <div className="mb-4">
+                <FieldsPanel fields={NAME_FIELDS} value={selected.data} onChange={updateSelected} />
+              </div>
               {selectedDef.note && (
                 <div className="mb-4 rounded-md border border-sky-800 bg-sky-900/20 p-3 text-sm text-sky-200">
                   {selectedDef.note.text}
@@ -314,9 +317,6 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               )}
               {selectedDef.fields.length === 0 && !selectedDef.note && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări.</p>}
               <FieldsPanel fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
-              <div className="mt-6 border-t border-zinc-700 pt-4">
-                <FieldsPanel fields={NAME_FIELDS} value={selected.data} onChange={updateSelected} />
-              </div>
               {!OUT_OF_FLOW_BLOCKS.includes(selectedDef.type) && (
                 <div className="mt-6 border-t border-zinc-700 pt-4">
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Spațiere</h3>

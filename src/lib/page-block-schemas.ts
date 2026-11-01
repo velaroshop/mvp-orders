@@ -320,7 +320,15 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "🎞",
     description: "Poze cu derulare orizontală",
     kinds: ALL,
-    create: () => ({ type: "gallery", images: [{ src: "", alt: "" }] }),
+    create: () => ({
+      type: "gallery",
+      images: [{ src: "", alt: "", caption: "" }],
+      captionColor: "#18181b",
+      captionSize: 14,
+      captionBox: false,
+      captionBg: "#f4f4f5",
+      captionAlign: "center",
+    }),
     fields: [
       {
         kind: "items",
@@ -328,12 +336,26 @@ export const BLOCK_DEFS: BlockDef[] = [
         label: "Poze",
         itemLabel: "Poza",
         addLabel: "Adaugă poză",
-        newItem: () => ({ src: "", alt: "" }),
+        newItem: () => ({ src: "", alt: "", caption: "" }),
         fields: [
           { kind: "image", key: "src", label: "Imagine", maxWidth: 800, minWidth: 500 },
-          { kind: "text", key: "alt", label: "Text alternativ" },
+          { kind: "text", key: "caption", label: "Text sub poză", maxLength: 40, help: "O singură linie, maximum 40 de caractere. Gol = fără text" },
+          { kind: "text", key: "alt", label: "Text alternativ", help: "Nu se vede pe pagină. Dacă e gol, se folosește textul de sub poză" },
         ],
       },
+      { kind: "color", key: "captionColor", label: "Text sub poză: culoare" },
+      { kind: "number", key: "captionSize", label: "Text sub poză: mărime (px)", min: 11, max: 20 },
+      {
+        kind: "select",
+        key: "captionAlign",
+        label: "Text sub poză: aliniere",
+        options: [
+          { value: "center", label: "Centrat" },
+          { value: "left", label: "Stânga" },
+        ],
+      },
+      { kind: "toggle", key: "captionBox", label: "Text sub poză: bandă de fundal", help: "Bandă lipită de poză, pe toată lățimea ei" },
+      { kind: "color", key: "captionBg", label: "Text sub poză: culoarea benzii", showIf: { key: "captionBox", equals: true } },
     ],
   },
   {

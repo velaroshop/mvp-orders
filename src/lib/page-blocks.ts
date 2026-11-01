@@ -93,7 +93,18 @@ export type VideoBlock = {
   radius: number;
   inset: number;
 };
-export type GalleryBlock = { type: "gallery"; images: { src: string; alt: string }[] };
+export const GALLERY_CAPTION_MAX = 40;
+export type GalleryBlock = {
+  type: "gallery";
+  images: { src: string; alt: string; caption: string }[];
+  /** One line under each photo; these settings are shared by the whole gallery */
+  captionColor: string;
+  captionSize: number;
+  /** A colored strip under the photo (same width as the photo) */
+  captionBox: boolean;
+  captionBg: string;
+  captionAlign: "center" | "left";
+};
 export type BeforeAfterBlock = {
   type: "before_after";
   before: { src: string; alt: string };
@@ -365,13 +376,23 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
     }
 
     case "gallery": {
-      const images: { src: string; alt: string }[] = [];
+      const images: { src: string; alt: string; caption: string }[] = [];
       for (const raw of list(b.images)) {
         const i = obj(raw);
         const src = imageSrc(i.src);
-        if (src) images.push({ src, alt: str(i.alt) });
+        if (src) images.push({ src, alt: str(i.alt), caption: str(i.caption).replace(/\s+/g, " ").trim().slice(0, GALLERY_CAPTION_MAX) });
       }
-      return images.length === 0 ? null : { type: "gallery", images };
+      return images.length === 0
+        ? null
+        : {
+            type: "gallery",
+            images,
+            captionColor: color(b.captionColor, "#18181b"),
+            captionSize: typeof b.captionSize === "number" && Number.isFinite(b.captionSize) ? Math.min(20, Math.max(11, Math.round(b.captionSize))) : 14,
+            captionBox: b.captionBox === true,
+            captionBg: color(b.captionBg, "#f4f4f5"),
+            captionAlign: b.captionAlign === "left" ? "left" : "center",
+          };
     }
 
     case "before_after": {

@@ -20,10 +20,6 @@ import Toast from "../components/Toast";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import CompactRevenueChart from "../components/CompactRevenueChart";
 
-// Temporary tool for testing Meta reporting of the own-page form: sends the Conversions API Purchase of a TEST order as a
-// test event. Set to false (or remove together with /api/orders/[id]/meta-test) when the testing is over.
-const SHOW_META_TEST_ACTION = true;
-
 export default function AdminPage() {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.activeRole;
@@ -2425,28 +2421,6 @@ export default function AdminPage() {
                                     className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-900/30 font-medium border-t border-zinc-600"
                                   >
                                     🧪 Mark as Test
-                                  </button>
-                                )}
-                                {SHOW_META_TEST_ACTION && isSuperadmin && order.status === "testing" && (
-                                  <button
-                                    onClick={async () => {
-                                      const code = window.prompt("Codul de test din Events Manager > Test Events (ex. TEST12345).\nSe trimite Purchase server-side ca eveniment de TEST, cu același event_id ca cel din browser:");
-                                      if (!code) return;
-                                      const res = await fetch(`/api/orders/${order.id}/meta-test`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ testEventCode: code.trim() }),
-                                      });
-                                      const data = await res.json().catch(() => ({}));
-                                      window.alert(
-                                        res.ok
-                                          ? `Trimis către Meta ca eveniment de test.\nevent_id: ${data.eventId}\nPrimite de Meta: ${data.eventsReceived ?? "?"}\nVerifică în Events Manager > Test Events.`
-                                          : `Nu s-a trimis: ${data.error || res.status}`,
-                                      );
-                                    }}
-                                    className="w-full text-left px-3 py-2 text-xs text-sky-400 hover:bg-sky-900/30 font-medium border-t border-zinc-600"
-                                  >
-                                    📡 Test Meta Purchase (CAPI)
                                   </button>
                                 )}
                                 {isSuperadmin && order.status === "testing" && (

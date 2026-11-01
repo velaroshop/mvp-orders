@@ -155,6 +155,14 @@ export default function OwnPagesList() {
       </div>
 
       <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+        <h2 className="text-lg font-semibold text-white">Domenii</h2>
+        <p className="mt-1 text-sm text-zinc-400">Domeniile pe care se vor afișa paginile proprii, cu verificarea proprietății.</p>
+        <Link href="/admin/pages/domains" className="mt-3 inline-block rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">
+          Deschide domeniile
+        </Link>
+      </div>
+
+      <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
         <h2 className="text-lg font-semibold text-white">Pagini legale</h2>
         <p className="mt-1 text-sm text-zinc-400">Termeni, confidențialitate, retur: se scriu o singură dată și se afișează pe toate domeniile organizației.</p>
         <Link href="/admin/pages/legal" className="mt-3 inline-block rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">

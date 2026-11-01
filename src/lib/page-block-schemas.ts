@@ -461,6 +461,14 @@ export const BLOCK_DEFS: BlockDef[] = [
 
 export const blockDef = (type: unknown): BlockDef | undefined => BLOCK_DEFS.find((d) => d.type === type);
 
+/** Shown for every block that sits in the page flow (not the top bar, sticky button or footer) */
+export const SPACING_FIELDS: FieldDef[] = [
+  { kind: "number", key: "spaceBelow", label: "Spațiu sub bloc (px)", min: 0, max: 80, help: "0 = fără spațiu. Util între două blocuri care ar trebui să respire" },
+];
+
+/** Blocks rendered outside the flow: the spacing field does not apply to them */
+export const OUT_OF_FLOW_BLOCKS = ["topbar", "sticky_footer", "footer"];
+
 /** Extra fields for the thank-you page: when a block is shown */
 export const THANK_YOU_VISIBILITY_FIELDS: FieldDef[] = [
   {

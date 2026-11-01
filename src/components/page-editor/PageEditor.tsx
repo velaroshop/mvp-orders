@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BLOCK_DEFS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
+import { BLOCK_DEFS, OUT_OF_FLOW_BLOCKS, SPACING_FIELDS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
 import { normalizeBlocks } from "@/lib/page-blocks";
 import { FieldsPanel } from "./FieldInputs";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
@@ -308,6 +308,12 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               )}
               {selectedDef.fields.length === 0 && !selectedDef.note && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări.</p>}
               <FieldsPanel fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
+              {!OUT_OF_FLOW_BLOCKS.includes(selectedDef.type) && (
+                <div className="mt-6 border-t border-zinc-700 pt-4">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Spațiere</h3>
+                  <FieldsPanel fields={SPACING_FIELDS} value={selected.data} onChange={updateSelected} />
+                </div>
+              )}
               {kind === "thank_you" && (
                 <div className="mt-6 border-t border-zinc-700 pt-4">
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Când se afișează</h3>

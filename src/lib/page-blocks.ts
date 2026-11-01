@@ -138,7 +138,8 @@ export type BlockVariant =
   | FormBlock
   | FooterBlock;
 
-export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition };
+/** spaceBelow: empty space in px under the block (only set when above 0, so older pages are unchanged) */
+export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition; spaceBelow?: number };
 
 export const ANPC_LINKS = [
   { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/" },
@@ -188,6 +189,7 @@ function normalizeBlock(raw: unknown): PageBlock | null {
     ...block,
     ...(b.phase === "offer" || b.phase === "final" ? { phase: b.phase } : {}),
     ...(b.showWhen === "cta" || b.showWhen === "no_cta" ? { showWhen: b.showWhen } : {}),
+    ...(typeof b.spaceBelow === "number" && b.spaceBelow >= 1 ? { spaceBelow: Math.min(80, Math.round(b.spaceBelow)) } : {}),
   };
 }
 

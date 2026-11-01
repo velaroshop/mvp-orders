@@ -368,7 +368,9 @@ export default function BlockRenderer({
 
       <div className="mx-auto w-full max-w-[560px]">
         {flow.map(({ block, index }) => {
-          const element = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
+          const inner = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
+          // Space under the block lives inside the phase gate, so a hidden block leaves no gap
+          const element = block.spaceBelow ? <div key={index} style={{ paddingBottom: block.spaceBelow }}>{inner}</div> : inner;
           // Thank-you page: blocks can be limited to a phase and to the presence of the store button
           return block.phase || block.showWhen ? (
             <PhaseGate key={index} phase={block.phase} showWhen={block.showWhen}>

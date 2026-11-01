@@ -26,7 +26,7 @@ async function getDomain(host: string) {
   if (!HOST_RE.test(host)) return null;
   const { data } = await supabaseAdmin
     .from("page_domains")
-    .select("id, organization_id, root_redirect")
+    .select("id, organization_id, root_redirect, favicon_url")
     .eq("hostname", host)
     .in("status", ["verified", "active"])
     .maybeSingle();
@@ -64,11 +64,19 @@ async function getPage(encodedHost: string, path: string[] | undefined) {
 
 type Params = { params: Promise<{ host: string; path?: string[] }> };
 
+// 1x1 transparent PNG: a domain without its own icon shows no icon at all, not the application's default one
+const NEUTRAL_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { host, path } = await params;
-  const page = await getPage(host, path);
-  // Test phase: keep own pages out of search results
-  return { title: page?.title || "Pagină", robots: { index: false, follow: false } };
+  const [page, domain] = await Promise.all([getPage(host, path), getDomain(decodeHost(host))]);
+  const icon = domain?.favicon_url || NEUTRAL_ICON;
+  return {
+    title: page?.title || "Pagină",
+    icons: { icon, apple: domain?.favicon_url || undefined },
+    // Test phase: keep own pages out of search results
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function SitePage({ params }: Params) {

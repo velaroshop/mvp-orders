@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase";
 import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
@@ -12,10 +13,18 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // Local-only order id to check rendering without a database
 const DEV_ORDER_ID = "00000000-0000-4000-8000-000000000000";
 
-export const metadata: Metadata = {
-  title: "Comanda ta",
-  robots: { index: false, follow: false },
-};
+// On a customer's domain the tab icon is the one set for that domain (Domains screen); elsewhere the default one stays
+export async function generateMetadata(): Promise<Metadata> {
+  const base: Metadata = { title: "Comanda ta", robots: { index: false, follow: false } };
+  try {
+    const host = ((await headers()).get("host") ?? "").toLowerCase().split(":")[0];
+    if (!host) return base;
+    const { data } = await supabaseAdmin.from("page_domains").select("favicon_url").eq("hostname", host).in("status", ["verified", "active"]).maybeSingle();
+    return data?.favicon_url ? { ...base, icons: { icon: data.favicon_url, apple: data.favicon_url } } : base;
+  } catch {
+    return base;
+  }
+}
 
 async function getThankYouPage(orderId: string) {
   if (orderId === DEV_ORDER_ID && process.env.NODE_ENV !== "production") return { ...DEFAULT_THANK_YOU, organization_id: null };

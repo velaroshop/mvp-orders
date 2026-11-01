@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 interface DomainRow {
@@ -10,6 +10,7 @@ interface DomainRow {
   verified_at: string | null;
   vercel_added: boolean;
   root_redirect: string | null;
+  favicon_url: string | null;
   pages_total: number;
   pages_published: number;
   record: { name: string; value: string };
@@ -91,6 +92,72 @@ function RootRedirect({ domain, onSaved }: { domain: DomainRow; onSaved: (value:
         {state !== "idle" && state !== "saving" && state !== "saved" && <span className="text-xs text-red-400">{state}</span>}
       </div>
       <p className="mt-1 text-xs text-zinc-400">Aici ajung și adresele care nu există sau nu sunt publicate. Gol = 404. Paginile se află la {domain.hostname}/numele-paginii.</p>
+    </div>
+  );
+}
+
+/** Browser tab icon of the domain: one square image, used by every page served on it */
+function FaviconField({ domain, onChange }: { domain: DomainRow; onChange: (url: string | null) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setBusy(true);
+    setError(null);
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`/api/domains/${domain.id}/favicon`, { method: "POST", body: form });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Încărcarea a eșuat");
+      return;
+    }
+    onChange(data.faviconUrl);
+  }
+
+  async function remove() {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/domains/${domain.id}/favicon`, { method: "DELETE" });
+    setBusy(false);
+    if (res.ok) onChange(null);
+    else setError("Nu am putut șterge pictograma.");
+  }
+
+  return (
+    <div className="border-t border-zinc-700 pt-3">
+      <div className="mb-1 text-xs text-zinc-400">Pictogramă (favicon): apare în fila browserului pe toate paginile acestui domeniu</div>
+      <div className="flex flex-wrap items-center gap-3">
+        {domain.favicon_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={domain.favicon_url} alt="" className="h-8 w-8 rounded border border-zinc-600 bg-white object-contain" />
+        ) : (
+          <span className="flex h-8 w-8 items-center justify-center rounded border border-dashed border-zinc-600 text-xs text-zinc-500">—</span>
+        )}
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50">
+          {busy ? "Se încarcă…" : domain.favicon_url ? "Schimbă" : "Încarcă"}
+        </button>
+        {domain.favicon_url && (
+          <button type="button" onClick={remove} disabled={busy} className="text-sm text-red-400 hover:text-red-300 disabled:opacity-50">
+            Șterge
+          </button>
+        )}
+        {error && <span className="text-xs text-red-400">{error}</span>}
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void upload(file);
+          e.target.value = "";
+        }}
+      />
+      <p className="mt-1 text-xs text-zinc-400">Imagine pătrată (PNG, JPG, WebP sau SVG), minim 64×64 px, recomandat 192×192 sau mai mare. Fără pictogramă nu se afișează nimic în fila browserului.</p>
     </div>
   );
 }
@@ -332,6 +399,9 @@ export default function DomainsPage() {
                     {messages[domain.id] && <span className="text-sm text-amber-300">{messages[domain.id]}</span>}
                   </div>
                 </div>
+              )}
+              {domain.status !== "pending" && (
+                <FaviconField domain={domain} onChange={(url) => setDomains((prev) => prev.map((d) => (d.id === domain.id ? { ...d, favicon_url: url } : d)))} />
               )}
               {domain.status !== "pending" && (
                 <RootRedirect

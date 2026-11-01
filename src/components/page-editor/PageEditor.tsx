@@ -7,6 +7,7 @@ import { normalizeBlocks } from "@/lib/page-blocks";
 import { buildFooterLibrary, EMPTY_FOOTER_LIBRARY, type FooterLibrary } from "@/lib/footer-library";
 import { loadFooters } from "@/lib/footer-library-client";
 import { FieldsPanel } from "./FieldInputs";
+import { insertPosition } from "@/lib/editor-insert";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
 type Obj = Record<string, unknown>;
@@ -129,7 +130,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     const def = blockDef(type);
     if (!def) return;
     const item: Item = { id: newId(), data: def.create() };
-    const at = selectedId ? items.findIndex((i) => i.id === selectedId) + 1 : items.length;
+    const at = insertPosition(items, selectedId, type);
     setItems((prev) => [...prev.slice(0, at), item, ...prev.slice(at)]);
     setSelectedId(item.id);
     if (addMenuRef.current) addMenuRef.current.open = false;

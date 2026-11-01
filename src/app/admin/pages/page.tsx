@@ -56,6 +56,22 @@ export default function OwnPagesList() {
     router.push(`/admin/pages/${data.page.id}`);
   }
 
+  async function duplicate(page: PageRow) {
+    const input = window.prompt("Slug pentru copie (adresa /p/…):", `${page.slug}-2`);
+    if (!input) return;
+    const res = await fetch("/api/own-pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: input.trim().toLowerCase(), title: `${page.title || page.slug} (copie)`, duplicateFrom: page.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Nu am putut duplica pagina.");
+      return;
+    }
+    router.push(`/admin/pages/${data.page.id}`);
+  }
+
   async function remove(page: PageRow) {
     if (!window.confirm(`Ștergi pagina „${page.title}” (/p/${page.slug})? Nu se poate anula.`)) return;
     const res = await fetch(`/api/own-pages/${page.id}`, { method: "DELETE" });
@@ -124,6 +140,9 @@ export default function OwnPagesList() {
                     <Link href={`/admin/pages/${page.id}`} className="mr-4 text-emerald-400 hover:text-emerald-300">
                       Editează
                     </Link>
+                    <button type="button" onClick={() => duplicate(page)} className="mr-4 text-zinc-300 hover:text-white">
+                      Duplică
+                    </button>
                     <button type="button" onClick={() => remove(page)} className="text-red-400 hover:text-red-300">
                       Șterge
                     </button>

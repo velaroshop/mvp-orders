@@ -95,6 +95,41 @@ export default function LandingPagesPage() {
   const [isCopyingUpsell, setIsCopyingUpsell] = useState(false);
   const [selectedCopyTargets, setSelectedCopyTargets] = useState<string[]>([]);
   const [salesModal, setSalesModal] = useState<{ pageId: string; pageName: string } | null>(null);
+  // Own pages (superadmin only): the page linked to each landing page, and the "create page" dialog
+  const [ownPages, setOwnPages] = useState<{ id: string; slug: string; landing_page_id: string | null }[]>([]);
+  const [createOwnPage, setCreateOwnPage] = useState<{ landingPageId: string; title: string; slug: string } | null>(null);
+  const [creatingOwnPage, setCreatingOwnPage] = useState(false);
+  const [createOwnPageError, setCreateOwnPageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSuperadmin) return;
+    fetch("/api/own-pages")
+      .then((res) => (res.ok ? res.json() : { pages: [] }))
+      .then((data) => setOwnPages(data.pages ?? []))
+      .catch(() => {});
+  }, [isSuperadmin]);
+
+  async function submitCreateOwnPage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!createOwnPage) return;
+    setCreatingOwnPage(true);
+    setCreateOwnPageError(null);
+    try {
+      const res = await fetch("/api/own-pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: createOwnPage.slug, title: createOwnPage.title, landingPageId: createOwnPage.landingPageId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCreateOwnPageError(data.error || "Nu am putut crea pagina.");
+        return;
+      }
+      router.push(`/admin/pages/${data.page.id}`);
+    } finally {
+      setCreatingOwnPage(false);
+    }
+  }
 
   useEffect(() => {
     fetchLandingPages();
@@ -632,6 +667,30 @@ export default function LandingPagesPage() {
                                 >
                                   Preview post-purchase
                                 </a>
+                                {isSuperadmin &&
+                                  (() => {
+                                    const own = ownPages.find((p) => p.landing_page_id === page.id);
+                                    return own ? (
+                                      <Link
+                                        href={`/admin/pages/${own.id}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors"
+                                      >
+                                        Pagină proprie: /p/{own.slug}
+                                      </Link>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCreateOwnPageError(null);
+                                          setCreateOwnPage({ landingPageId: page.id, title: page.name, slug: page.slug.toLowerCase() });
+                                        }}
+                                        className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors"
+                                      >
+                                        Creează pagină proprie
+                                      </button>
+                                    );
+                                  })()}
                                 <span className="text-zinc-600">|</span>
                                 <button
                                   onClick={(e) => {
@@ -1072,6 +1131,44 @@ export default function LandingPagesPage() {
       )}
 
       {/* Embed Code Modal */}
+      {createOwnPage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <form onSubmit={submitCreateOwnPage} className="bg-zinc-800 rounded-lg shadow-xl max-w-md w-full mx-4 border border-zinc-700 p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-white">Creează pagină proprie</h3>
+            <p className="text-sm text-zinc-300">
+              Pagina pornește cu o structură scurtă, iar formularul de comandă e legat de acest landing page. O poți edita apoi în editor și rămâne ciornă până o publici.
+            </p>
+            {createOwnPageError && <div className="rounded-md border border-red-800 bg-red-900/20 p-2 text-sm text-red-400">{createOwnPageError}</div>}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-200">Titlu</label>
+              <input
+                value={createOwnPage.title}
+                onChange={(e) => setCreateOwnPage({ ...createOwnPage, title: e.target.value })}
+                className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-200">Slug (adresa /p/…)</label>
+              <input
+                value={createOwnPage.slug}
+                onChange={(e) => setCreateOwnPage({ ...createOwnPage, slug: e.target.value.toLowerCase() })}
+                required
+                className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
+              />
+              <p className="mt-1 text-xs text-zinc-400">Litere mici, cifre și cratime. Adresa e unică pe tot sistemul.</p>
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" disabled={creatingOwnPage} className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm font-medium disabled:opacity-50">
+                {creatingOwnPage ? "Se creează…" : "Creează și deschide editorul"}
+              </button>
+              <button type="button" onClick={() => setCreateOwnPage(null)} className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-md hover:bg-zinc-600 text-sm font-medium">
+                Anulează
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {embedModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-zinc-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 border border-zinc-700">

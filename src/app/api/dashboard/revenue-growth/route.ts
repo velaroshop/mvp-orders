@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    // Lets callers that need per-day points (monthly comparison) avoid the hourly view on 1-day ranges
+    const forceDaily = searchParams.get("granularity") === "daily";
 
     // Build datetime range using Romania time (winter/summer aware)
     // This ensures "Today" shows orders from 00:00 to 23:59 Romania time
@@ -102,7 +104,9 @@ export async function GET(request: NextRequest) {
 
     // Determine granularity: hourly (1 day), daily (2-31 days), monthly (>31 days)
     let granularity: 'hourly' | 'daily' | 'monthly' = 'hourly';
-    if (diffDays > 31) {
+    if (forceDaily && diffDays <= 31) {
+      granularity = 'daily';
+    } else if (diffDays > 31) {
       granularity = 'monthly';
     } else if (diffDays > 1) {
       granularity = 'daily';

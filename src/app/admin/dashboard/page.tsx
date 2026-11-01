@@ -266,8 +266,8 @@ export default function DashboardPage() {
       setLastMonthLabel(`${monthNames[lastMonthDate.getMonth()]} ${lastMonthDate.getFullYear()}`);
 
       const [thisRes, lastRes] = await Promise.all([
-        fetch(`/api/dashboard/revenue-growth?startDate=${thisStart}&endDate=${thisEnd}`),
-        fetch(`/api/dashboard/revenue-growth?startDate=${lastStart}&endDate=${lastEnd}`),
+        fetch(`/api/dashboard/revenue-growth?startDate=${thisStart}&endDate=${thisEnd}&granularity=daily`),
+        fetch(`/api/dashboard/revenue-growth?startDate=${lastStart}&endDate=${lastEnd}&granularity=daily`),
       ]);
 
       if (thisRes.ok) {

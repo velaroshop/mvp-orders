@@ -6,6 +6,7 @@ import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
 import StoreCta from "@/components/thank-you/StoreCta";
 import PhaseGate from "@/components/thank-you/PhaseGate";
 import StickyFooter from "@/components/page-blocks/StickyFooter";
+import TopbarScroll from "@/components/page-blocks/TopbarScroll";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -43,15 +44,29 @@ function Block({
   preview?: boolean;
 }) {
   switch (block.type) {
-    case "topbar":
+    case "topbar": {
+      const messages = block.messages.length > 0 ? block.messages : block.text ? [block.text] : [];
+      const scrolling = block.mode === "scroll" && messages.length > 0;
+      const content = scrolling ? (
+        <TopbarScroll block={block} messages={messages} />
+      ) : (
+        <>{block.icon ? `${block.icon} ${block.text}` : block.text}</>
+      );
       return (
         <div
-          className="w-full px-3 py-2 text-center text-sm font-semibold"
-          style={{ backgroundColor: block.bg, color: block.color }}
+          className={`w-full px-3 py-2 text-center font-semibold ${block.sticky ? "sticky top-0 z-40" : ""}`}
+          style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size }}
         >
-          {block.text}
+          {block.href ? (
+            <a href={block.href} style={{ color: "inherit", textDecoration: "none" }}>
+              {content}
+            </a>
+          ) : (
+            content
+          )}
         </div>
       );
+    }
 
     case "image": {
       const img = (
@@ -343,6 +358,10 @@ export default function BlockRenderer({
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
+      {/* A bar that stays on top would cover the form's heading when a button scrolls to it: leave room */}
+      {topbars.some((b) => b.type === "topbar" && b.sticky) && (
+        <style>{`#comanda{scroll-margin-top:${Math.ceil(Math.max(...topbars.map((b) => (b.type === "topbar" ? b.size : 0))) * 1.5 + 32)}px}`}</style>
+      )}
       {topbars.map((block, i) => (
         <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} preview={preview} />
       ))}

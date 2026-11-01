@@ -4,7 +4,25 @@
 
 export type TextSize = "sm" | "base" | "lg" | "xl" | "2xl";
 
-export type TopbarBlock = { type: "topbar"; text: string; bg: string; color: string };
+export type TopbarSpeed = "slow" | "medium" | "fast";
+export type TopbarBlock = {
+  type: "topbar";
+  /** "fixed": one message ("text"). "scroll": several messages ("messages") that rotate or run as a marquee */
+  mode: "fixed" | "scroll";
+  text: string;
+  messages: string[];
+  effect: "rotate" | "marquee";
+  speed: TopbarSpeed;
+  /** Text size in px */
+  size: number;
+  /** Stays at the top of the screen while the page scrolls */
+  sticky: boolean;
+  /** Short emoji/symbol shown before each message */
+  icon: string;
+  href: string | null;
+  bg: string;
+  color: string;
+};
 export type ImageBlock = {
   type: "image";
   src: string;
@@ -178,7 +196,23 @@ function normalizeBlock(raw: unknown): PageBlock | null {
 function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
   switch (b.type) {
     case "topbar":
-      return { type: "topbar", text: str(b.text), bg: color(b.bg, "#111827"), color: color(b.color, "#ffffff") };
+      return {
+        type: "topbar",
+        // Bars saved before the scrolling option only have "text": they stay a fixed, non-sticky bar
+        mode: b.mode === "scroll" ? "scroll" : "fixed",
+        text: str(b.text),
+        messages: list(b.messages)
+          .filter((m): m is string => typeof m === "string" && m.trim() !== "")
+          .map((m) => m.slice(0, 200)),
+        effect: b.effect === "marquee" ? "marquee" : "rotate",
+        speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(20, Math.max(11, Math.round(b.size))) : 14,
+        sticky: b.sticky === true,
+        icon: str(b.icon).trim().slice(0, 8),
+        href: typeof b.href === "string" && SAFE_HREF.test(b.href.trim()) ? b.href.trim() : null,
+        bg: color(b.bg, "#111827"),
+        color: color(b.color, "#ffffff"),
+      };
 
     case "image": {
       const src = str(b.src).trim();

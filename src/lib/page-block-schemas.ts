@@ -3,7 +3,8 @@
 
 export type PageKind = "landing" | "thank_you";
 
-type FieldBase = { key: string; label: string; help?: string };
+// showIf: the field is shown only while another field of the same block has this value
+type FieldBase = { key: string; label: string; help?: string; showIf?: { key: string; equals: unknown } };
 
 export type FieldDef =
   | (FieldBase & { kind: "text" | "textarea" | "url"; placeholder?: string; rows?: number })
@@ -49,9 +50,65 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "▔",
     description: "Bandă îngustă, deasupra paginii",
     kinds: ALL,
-    create: () => ({ type: "topbar", text: "Plată la livrare · Livrare 1-3 zile", bg: "#202020", color: "#ffffff" }),
+    create: () => ({
+      type: "topbar",
+      mode: "fixed",
+      text: "Plată la livrare · Livrare 1-3 zile",
+      messages: [],
+      effect: "rotate",
+      speed: "medium",
+      size: 14,
+      sticky: false,
+      icon: "",
+      href: null,
+      bg: "#202020",
+      color: "#ffffff",
+    }),
     fields: [
-      { kind: "text", key: "text", label: "Text" },
+      {
+        kind: "select",
+        key: "mode",
+        label: "Mod",
+        options: [
+          { value: "fixed", label: "Fix (un singur mesaj)" },
+          { value: "scroll", label: "Derulant (mai multe mesaje)" },
+        ],
+      },
+      { kind: "text", key: "text", label: "Mesaj", showIf: { key: "mode", equals: "fixed" } },
+      {
+        kind: "strings",
+        key: "messages",
+        label: "Mesaje",
+        addLabel: "Adaugă mesaj",
+        help: "Se afișează în ordinea din listă. Trage de mâner ca să le muți",
+        showIf: { key: "mode", equals: "scroll" },
+      },
+      {
+        kind: "select",
+        key: "effect",
+        label: "Cum derulează",
+        help: "„Pe rând” se citește mai ușor pe telefon",
+        showIf: { key: "mode", equals: "scroll" },
+        options: [
+          { value: "rotate", label: "Pe rând (un mesaj, apoi următorul)" },
+          { value: "marquee", label: "Continuu, lateral" },
+        ],
+      },
+      {
+        kind: "select",
+        key: "speed",
+        label: "Viteză",
+        showIf: { key: "mode", equals: "scroll" },
+        options: [
+          { value: "slow", label: "Lent" },
+          { value: "medium", label: "Mediu" },
+          { value: "fast", label: "Rapid" },
+        ],
+      },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 11, max: 20 },
+      { kind: "toggle", key: "sticky", label: "Rămâne sus la derulare (sticky)" },
+      { kind: "text", key: "icon", label: "Pictogramă înainte de mesaj", placeholder: "🚚", help: "Opțional, un emoji sau un simbol" },
+      { kind: "url", key: "href", label: "Link la apăsare", placeholder: "#comanda", help: "Opțional. #comanda duce la formular" },
       { kind: "color", key: "bg", label: "Fundal" },
       { kind: "color", key: "color", label: "Culoare text" },
     ],

@@ -268,7 +268,9 @@ function FieldInput({
 export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; value: Obj; onChange: (next: Obj) => void }) {
   return (
     <div className="space-y-4">
-      {fields.map((def) => (
+      {fields
+        .filter((def) => !def.showIf || getPath(value, def.showIf.key) === def.showIf.equals)
+        .map((def) => (
         <div key={def.key}>
           <Label def={def} />
           <FieldInput

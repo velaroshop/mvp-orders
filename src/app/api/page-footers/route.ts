@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { refreshPublicPages } from "@/lib/revalidate-public";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { blockDef } from "@/lib/page-block-schemas";
@@ -81,6 +81,6 @@ export async function POST(request: NextRequest) {
     console.error("[Page Footers] create failed:", error.message);
     return NextResponse.json({ error: "Failed to create footer" }, { status: 500 });
   }
-  revalidatePath("/p/[slug]", "page");
+  refreshPublicPages();
   return NextResponse.json({ footer: data }, { status: 201 });
 }

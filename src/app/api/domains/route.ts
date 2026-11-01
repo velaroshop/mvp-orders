@@ -7,13 +7,14 @@ import { MAX_DOMAINS_PER_ORG, parseHostname, verificationRecord } from "@/lib/do
 // "*": keeps working before migration 095 (vercel_added) has been run
 const COLUMNS = "*";
 
-type Row = { id: string; hostname: string; status: string; verification_token: string; verified_at: string | null; created_at: string; vercel_added?: boolean };
+type Row = { id: string; hostname: string; status: string; verification_token: string; verified_at: string | null; created_at: string; vercel_added?: boolean; root_redirect?: string | null };
 const present = (row: Row) => ({
   id: row.id,
   hostname: row.hostname,
   status: row.status,
   verified_at: row.verified_at,
   vercel_added: row.vercel_added === true,
+  root_redirect: row.root_redirect ?? null,
   created_at: row.created_at,
   record: verificationRecord(row.hostname, row.verification_token),
 });

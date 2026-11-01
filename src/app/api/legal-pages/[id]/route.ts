@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
+import { refreshPublicPages } from "@/lib/revalidate-public";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseBackground, parseBlocksInput, parseSlug, parseTitle } from "@/lib/own-page-input";
 
@@ -9,8 +9,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** The public pages are cached: refresh them after a change (every organization's pages share this route) */
-const refresh = () => revalidatePath("/legal/[org]/[slug]", "page");
+const refresh = refreshPublicPages;
 
 /** GET /api/legal-pages/[id] */
 export async function GET(_request: NextRequest, { params }: Ctx) {
@@ -43,6 +42,10 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     const slug = parseSlug(body.slug);
     if (!slug) return NextResponse.json({ error: "Slug invalid" }, { status: 400 });
     update.slug = slug;
+  }
+  if (update.slug) {
+    const { data: clash } = await supabaseAdmin.from("landing_page_content").select("id").eq("organization_id", guard.organizationId).eq("slug", update.slug as string).not("domain_id", "is", null).limit(1);
+    if (clash?.length) return NextResponse.json({ error: "Acest slug e folosit de o pagină de vânzare pe un domeniu" }, { status: 409 });
   }
   if (body.blocks !== undefined) {
     const parsed = parseBlocksInput(body.blocks);

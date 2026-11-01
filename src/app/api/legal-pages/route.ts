@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
   if (!slug) return NextResponse.json({ error: "Slug invalid (litere mici, cifre și cratime, maxim 80)" }, { status: 400 });
   const title = parseTitle(body.title) || slug;
 
+  // On a domain, /<slug> is also where its sales pages live: the slug must not be used by one of them
+  const { data: clash } = await supabaseAdmin.from("landing_page_content").select("id").eq("organization_id", guard.organizationId).eq("slug", slug).not("domain_id", "is", null).limit(1);
+  if (clash?.length) return NextResponse.json({ error: "Acest slug e folosit de o pagină de vânzare pe un domeniu" }, { status: 409 });
+
   const { data, error } = await supabaseAdmin
     .from("legal_pages")
     .insert({ organization_id: guard.organizationId, slug, title, background: "#ffffff", blocks: legalBlocks(title), status: "draft" })

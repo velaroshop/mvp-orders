@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { refreshPublicPages } from "@/lib/revalidate-public";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseFooterContent, parseFooterName } from "@/lib/page-footers-input";
@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     console.error("[Page Footers] save failed:", error.message);
     return NextResponse.json({ error: "Failed to save footer" }, { status: 500 });
   }
-  revalidatePath("/p/[slug]", "page");
+  refreshPublicPages();
   return NextResponse.json({ footer: data });
 }
 
@@ -80,6 +80,6 @@ export async function DELETE(_request: NextRequest, { params }: Ctx) {
     const { data: next } = await supabaseAdmin.from("page_footers").select("id").eq("organization_id", guard.organizationId).order("created_at", { ascending: true }).limit(1).maybeSingle();
     if (next) await supabaseAdmin.from("page_footers").update({ is_default: true }).eq("id", next.id);
   }
-  revalidatePath("/p/[slug]", "page");
+  refreshPublicPages();
   return NextResponse.json({ success: true });
 }

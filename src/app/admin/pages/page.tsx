@@ -9,6 +9,7 @@ interface PageRow {
   slug: string;
   title: string;
   status: "draft" | "published";
+  domain_id: string | null;
   updated_at: string;
 }
 
@@ -20,6 +21,7 @@ export default function OwnPagesList() {
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
+  const [domainNames, setDomainNames] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,6 +38,10 @@ export default function OwnPagesList() {
 
   useEffect(() => {
     load();
+    fetch("/api/domains")
+      .then((res) => (res.ok ? res.json() : { domains: [] }))
+      .then((data) => setDomainNames(Object.fromEntries((data.domains ?? []).map((d: { id: string; hostname: string }) => [d.id, d.hostname]))))
+      .catch(() => {});
   }, [load]);
 
   async function create(e: React.FormEvent) {
@@ -128,7 +134,7 @@ export default function OwnPagesList() {
                 <tr key={page.id} className="hover:bg-zinc-700/40">
                   <td className="px-4 py-3">
                     <div className="font-medium text-white">{page.title || page.slug}</div>
-                    <div className="text-xs text-zinc-400">/p/{page.slug}</div>
+                    <div className="text-xs text-zinc-400">{page.domain_id && domainNames[page.domain_id] ? `${domainNames[page.domain_id]}/${page.slug}` : `/p/${page.slug}`}</div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${page.status === "published" ? "bg-emerald-900/50 text-emerald-300" : "bg-zinc-700 text-zinc-300"}`}>

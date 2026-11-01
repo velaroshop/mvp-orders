@@ -27,6 +27,7 @@ async function getPage(slug: string) {
     .from("landing_page_content")
     .select("title, background, blocks, organization_id")
     .eq("slug", slug)
+    .is("domain_id", null)
     .eq("status", "published")
     .maybeSingle();
 

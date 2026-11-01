@@ -8,6 +8,7 @@ export default function EditOwnPage() {
   const { id } = useParams<{ id: string }>();
   const [initial, setInitial] = useState<EditorPageData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [domains, setDomains] = useState<{ id: string; hostname: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,9 +26,16 @@ export default function EditOwnPage() {
           background: page.background ?? "#ffffff",
           blocks: Array.isArray(page.blocks) ? page.blocks : [],
           status: page.status,
+          domainId: page.domain_id ?? null,
         });
       })
       .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Eroare"));
+    fetch("/api/domains")
+      .then((res) => (res.ok ? res.json() : { domains: [] }))
+      .then((data) => {
+        if (!cancelled) setDomains((data.domains ?? []).filter((d: { status: string }) => d.status === "verified" || d.status === "active"));
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -37,7 +45,7 @@ export default function EditOwnPage() {
     const res = await fetch(`/api/own-pages/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: data.title, slug: data.slug, background: data.background, blocks: data.blocks, status: data.status }),
+      body: JSON.stringify({ title: data.title, slug: data.slug, background: data.background, blocks: data.blocks, status: data.status, domainId: data.domainId }),
     });
     const body = await res.json().catch(() => ({}));
     return res.ok ? { ok: true } : { ok: false, error: body.error || "Nu am putut salva." };
@@ -46,5 +54,5 @@ export default function EditOwnPage() {
   if (error) return <div className="rounded-md border border-red-800 bg-red-900/20 p-4 text-red-400">{error}</div>;
   if (!initial) return <p className="text-zinc-400">Se încarcă pagina…</p>;
 
-  return <PageEditor kind="landing" initial={initial} onSave={save} backHref="/admin/pages" backLabel="Pagini proprii" publicUrl={(slug) => `/p/${slug}`} />;
+  return <PageEditor kind="landing" initial={initial} onSave={save} backHref="/admin/pages" backLabel="Pagini proprii" publicUrl={(slug, hostname) => (hostname ? `https://${hostname}/${slug}` : `/p/${slug}`)} domains={domains} />;
 }

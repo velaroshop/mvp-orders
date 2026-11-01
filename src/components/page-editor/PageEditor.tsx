@@ -18,6 +18,8 @@ export interface EditorPageData {
   background: string;
   blocks: unknown[];
   status?: "draft" | "published";
+  /** Domain the page is served on (null = the application domain, at /p/slug) */
+  domainId?: string | null;
 }
 
 export type SaveResult = { ok: true; page?: Partial<EditorPageData> } | { ok: false; error: string };
@@ -28,8 +30,10 @@ interface PageEditorProps {
   onSave: (data: EditorPageData) => Promise<SaveResult>;
   backHref: string;
   backLabel: string;
-  /** Public address of the saved page (landing pages only) */
-  publicUrl?: (slug: string) => string;
+  /** Public address of the saved page (landing pages only); hostname = the chosen domain, if any */
+  publicUrl?: (slug: string, hostname?: string) => string;
+  /** Domains the page can be served on (verified ones). When given, a domain selector is shown */
+  domains?: { id: string; hostname: string }[];
   /** Only these block types can be added (default: all that fit the page kind) */
   allowedBlocks?: string[];
   /** Address shown before the slug field */
@@ -53,10 +57,11 @@ function summary(data: Obj): string {
 const buttonBase = "rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 const iconButton = "rounded border border-zinc-600 px-1.5 py-0.5 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-30";
 
-export default function PageEditor({ kind, initial, onSave, backHref, backLabel, publicUrl, allowedBlocks, slugPrefix = "/p/", onReset }: PageEditorProps) {
+export default function PageEditor({ kind, initial, onSave, backHref, backLabel, publicUrl, domains, allowedBlocks, slugPrefix = "/p/", onReset }: PageEditorProps) {
   const [title, setTitle] = useState(initial.title);
   const [slug, setSlug] = useState(initial.slug ?? "");
   const [background, setBackground] = useState(initial.background);
+  const [domainId, setDomainId] = useState<string | null>(initial.domainId ?? null);
   const [items, setItems] = useState<Item[]>(() => toItems(normalizeBlocks(initial.blocks)));
   const [status, setStatus] = useState<"draft" | "published">(initial.status ?? "draft");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -77,8 +82,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   }, []);
 
   const payload = useMemo(
-    () => ({ title, slug, background, blocks: items.map((i) => i.data) }),
-    [title, slug, background, items],
+    () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId } : {}) }),
+    [title, slug, background, items, domains, domainId],
   );
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(payload));
   const dirty = JSON.stringify(payload) !== savedSnapshot;
@@ -197,7 +202,22 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               className="min-w-[160px] flex-1 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
             />
             <div className="flex items-center gap-1 text-sm text-zinc-400">
-              {slugPrefix}
+              {domains && (
+                <select
+                  value={domainId ?? ""}
+                  onChange={(e) => setDomainId(e.target.value || null)}
+                  className="mr-1 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-2 text-sm text-white"
+                  aria-label="Domeniu"
+                >
+                  <option value="">Domeniul aplicației (/p/…)</option>
+                  {domains.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.hostname}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {domains && domainId ? "/" : slugPrefix}
               <input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase())}
@@ -227,7 +247,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
             </button>
           ))}
         {kind === "landing" && status === "published" && publicUrl && slug && (
-          <a href={publicUrl(slug)} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-400 hover:text-emerald-300">
+          <a href={publicUrl(slug, domains?.find((d) => d.id === domainId)?.hostname)} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-400 hover:text-emerald-300">
             Vezi pagina ↗
           </a>
         )}

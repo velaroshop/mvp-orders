@@ -9,6 +9,7 @@ interface DomainRow {
   status: "pending" | "verified" | "active";
   verified_at: string | null;
   vercel_added: boolean;
+  root_redirect: string | null;
   record: { name: string; value: string };
 }
 
@@ -48,6 +49,49 @@ function CopyValue({ label, value }: { label: string; value: string }) {
           {copied ? "Copiat" : "Copiază"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Where the bare address of the domain (comanda.firma.ro/) goes: usually the main site */
+function RootRedirect({ domain, onSaved }: { domain: DomainRow; onSaved: (value: string | null) => void }) {
+  const [value, setValue] = useState(domain.root_redirect ?? "");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | string>("idle");
+  const dirty = value.trim() !== (domain.root_redirect ?? "");
+
+  async function save() {
+    setState("saving");
+    const res = await fetch(`/api/domains/${domain.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rootRedirect: value }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setState(data.error || "Nu am putut salva.");
+      return;
+    }
+    onSaved(data.rootRedirect ?? null);
+    setValue(data.rootRedirect ?? "");
+    setState("saved");
+  }
+
+  return (
+    <div className="border-t border-zinc-700 pt-3">
+      <label className="mb-1 block text-xs text-zinc-400">Adresa de bază a domeniului ({domain.hostname}/) trimite la</label>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setState("idle");
+          }}
+          placeholder="https://reduxio.ro"
+          className="w-72 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-1.5 text-sm text-white"
+        />
+        <button type="button" onClick={save} disabled={!dirty || state === "saving"} className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50">
+          Salvează
+        </button>
+        {state === "saved" && <span className="text-xs text-emerald-300">Salvat</span>}
+        {state !== "idle" && state !== "saving" && state !== "saved" && <span className="text-xs text-red-400">{state}</span>}
+      </div>
+      <p className="mt-1 text-xs text-zinc-400">Gol = pagina nu există (404). Paginile se află la {domain.hostname}/numele-paginii.</p>
     </div>
   );
 }
@@ -230,7 +274,7 @@ export default function DomainsPage() {
                   </div>
                 </>
               ) : domain.status === "active" ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-sm text-emerald-300">Domeniul este conectat și activ: DNS-ul arată spre server, iar certificatul SSL e emis.</p>
                   <button type="button" onClick={() => checkConnection(domain)} disabled={busy === domain.id} className="text-xs text-zinc-400 underline hover:text-zinc-200 disabled:opacity-50">
                     {busy === domain.id ? "Se verifică…" : "Reverifică conexiunea"}
@@ -279,6 +323,13 @@ export default function DomainsPage() {
                     {messages[domain.id] && <span className="text-sm text-amber-300">{messages[domain.id]}</span>}
                   </div>
                 </div>
+              )}
+              {domain.status !== "pending" && (
+                <RootRedirect
+                  key={`${domain.id}-${domain.root_redirect ?? ""}`}
+                  domain={domain}
+                  onSaved={(value) => setDomains((prev) => prev.map((d) => (d.id === domain.id ? { ...d, root_redirect: value } : d)))}
+                />
               )}
             </div>
           ))}

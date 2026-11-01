@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { refreshPublicPages } from "@/lib/revalidate-public";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseBackground, parseBlocksInput, parseSlug, parseTitle } from "@/lib/own-page-input";
 
-const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, updated_at";
+const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, domain_id, updated_at";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -38,7 +38,7 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
 
   const { data: existing } = await supabaseAdmin
     .from("landing_page_content")
-    .select("id, slug")
+    .select("id, slug, domain_id")
     .eq("id", id)
     .eq("organization_id", guard.organizationId)
     .maybeSingle();
@@ -53,6 +53,32 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     const slug = parseSlug(body.slug);
     if (!slug) return NextResponse.json({ error: "Slug invalid" }, { status: 400 });
     update.slug = slug;
+  }
+
+  // The domain the page is served on (null = the application domain, at /p/slug). Only a verified domain of this organization.
+  let domainId: string | null = existing.domain_id ?? null;
+  if (body.domainId !== undefined) {
+    if (body.domainId === null || body.domainId === "") {
+      domainId = null;
+    } else {
+      const { data: domain } = await supabaseAdmin
+        .from("page_domains")
+        .select("id")
+        .eq("id", String(body.domainId))
+        .eq("organization_id", guard.organizationId)
+        .in("status", ["verified", "active"])
+        .maybeSingle();
+      if (!domain) return NextResponse.json({ error: "Domeniu invalid sau neverificat" }, { status: 400 });
+      domainId = domain.id;
+    }
+    update.domain_id = domainId;
+  }
+
+  // On a domain, /<slug> is also where the organization's legal pages live: the two must not share a slug
+  const finalSlug = (update.slug as string | undefined) ?? existing.slug;
+  if (domainId && (body.slug !== undefined || body.domainId !== undefined)) {
+    const { data: clash } = await supabaseAdmin.from("legal_pages").select("id").eq("organization_id", guard.organizationId).eq("slug", finalSlug).maybeSingle();
+    if (clash) return NextResponse.json({ error: "Există deja o pagină legală cu acest slug" }, { status: 409 });
   }
 
   if (body.blocks !== undefined) {
@@ -82,9 +108,8 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "Failed to save page" }, { status: 500 });
   }
 
-  // Refresh the cached public page (old and new address) so changes show immediately
-  revalidatePath(`/p/${existing.slug}`);
-  if (data.slug !== existing.slug) revalidatePath(`/p/${data.slug}`);
+  // Refresh the cached public pages so changes show immediately
+  refreshPublicPages();
 
   return NextResponse.json({ page: data });
 }
@@ -104,6 +129,6 @@ export async function DELETE(_request: NextRequest, { params }: Ctx) {
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: "Failed to delete page" }, { status: 500 });
-  if (data) revalidatePath(`/p/${data.slug}`);
+  if (data) refreshPublicPages();
   return NextResponse.json({ success: true });
 }

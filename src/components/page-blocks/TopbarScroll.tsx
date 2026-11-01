@@ -40,12 +40,11 @@ export default function TopbarScroll({ block, messages }: { block: TopbarBlock; 
     onTouchEnd: () => setPaused(false),
     onTouchCancel: () => setPaused(false),
   };
-  const label = (m: string) => (block.icon ? `${block.icon} ${m}` : m);
 
   if (block.effect === "marquee" && messages.length > 0) {
     const gap = block.size * 3;
     // Rough length of one full set of messages, to get a steady speed whatever the text length
-    const setWidth = messages.reduce((sum, m) => sum + (label(m).length * block.size * 0.55 + gap), 0);
+    const setWidth = messages.reduce((sum, m) => sum + (m.length * block.size * 0.55 + gap), 0);
     // The track is two identical halves that slide by exactly one half; each half must be wider than a phone screen
     const reps = Math.max(1, Math.ceil(700 / setWidth));
     const half = Array.from({ length: reps }, () => messages).flat();
@@ -65,7 +64,7 @@ export default function TopbarScroll({ block, messages }: { block: TopbarBlock; 
         <div className="vtb-track">
           {items.map((m, i) => (
             <span key={i} className="vtb-item" style={{ paddingRight: gap }} aria-hidden={i >= messages.length}>
-              {label(m)}
+              {m}
             </span>
           ))}
         </div>
@@ -82,7 +81,7 @@ export default function TopbarScroll({ block, messages }: { block: TopbarBlock; 
           style={{ gridArea: "1 / 1", opacity: i === (rotating ? active : 0) ? 1 : 0 }}
           aria-hidden={i !== (rotating ? active : 0)}
         >
-          {label(m)}
+          {m}
         </span>
       ))}
     </div>

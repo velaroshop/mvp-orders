@@ -17,8 +17,6 @@ export type TopbarBlock = {
   size: number;
   /** Stays at the top of the screen while the page scrolls */
   sticky: boolean;
-  /** Short emoji/symbol shown before each message */
-  icon: string;
   href: string | null;
   bg: string;
   color: string;
@@ -208,7 +206,6 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
         size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(20, Math.max(11, Math.round(b.size))) : 14,
         sticky: b.sticky === true,
-        icon: str(b.icon).trim().slice(0, 8),
         href: typeof b.href === "string" && SAFE_HREF.test(b.href.trim()) ? b.href.trim() : null,
         bg: color(b.bg, "#111827"),
         color: color(b.color, "#ffffff"),

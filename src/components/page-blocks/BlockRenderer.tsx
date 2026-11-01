@@ -50,7 +50,7 @@ function Block({
       const content = scrolling ? (
         <TopbarScroll block={block} messages={messages} />
       ) : (
-        <>{block.icon ? `${block.icon} ${block.text}` : block.text}</>
+        <>{block.text}</>
       );
       return (
         <div

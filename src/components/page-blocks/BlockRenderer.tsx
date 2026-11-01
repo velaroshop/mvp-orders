@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { ANPC_LINKS, type FooterBlock, type PageBlock, type TextSize } from "@/lib/page-blocks";
 import { EMPTY_FOOTER_LIBRARY, resolveFooter, type FooterLibrary } from "@/lib/footer-library";
-import LazyOwnOrderForm from "@/components/own-form/LazyOwnOrderForm";
+import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 import OrderSummary from "@/components/thank-you/OrderSummary";
 import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
 import StoreCta from "@/components/thank-you/StoreCta";
@@ -361,7 +361,7 @@ function Block({
       // #comanda is the anchor used by the buttons ("href": "#comanda")
       return (
         <section id="comanda" className="scroll-mt-4">
-          <LazyOwnOrderForm slug={block.landingSlug} org={block.org} thankYouPath={block.thankYouPath} />
+          <OwnOrderForm slug={block.landingSlug} org={block.org} thankYouPath={block.thankYouPath} />
         </section>
       );
 

@@ -3,14 +3,19 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
+// preload: false: the fonts are no longer downloaded up front on every page (the body text is set in Arial, so most pages
+// never use them); they are fetched only when an element actually uses one. This frees the connection for the CSS and
+// the page content on slow phones, which matters most on the public own pages.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

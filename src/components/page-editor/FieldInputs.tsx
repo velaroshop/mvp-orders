@@ -112,6 +112,7 @@ function FieldInput({
           type="text"
           value={typeof value === "string" ? value : ""}
           placeholder={def.placeholder}
+          maxLength={def.kind === "text" ? def.maxLength : undefined}
           onChange={(e) => onChange(e.target.value)}
           className={inputClass}
         />

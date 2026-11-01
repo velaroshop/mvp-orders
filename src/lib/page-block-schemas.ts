@@ -7,7 +7,7 @@ export type PageKind = "landing" | "thank_you";
 type FieldBase = { key: string; label: string; help?: string; showIf?: { key: string; equals: unknown } };
 
 export type FieldDef =
-  | (FieldBase & { kind: "text" | "textarea" | "url"; placeholder?: string; rows?: number })
+  | (FieldBase & { kind: "text" | "textarea" | "url"; placeholder?: string; rows?: number; maxLength?: number })
   // Image: can be uploaded (resized to maxWidth) or pasted as a URL; dims = keys that receive the uploaded size
   // minWidth: below this width the uploaded image is flagged as possibly blurry on a phone (it is never enlarged)
   | (FieldBase & { kind: "image"; maxWidth?: number; minWidth?: number; dims?: { width?: string; height?: string } })
@@ -460,6 +460,12 @@ export const BLOCK_DEFS: BlockDef[] = [
 ];
 
 export const blockDef = (type: unknown): BlockDef | undefined => BLOCK_DEFS.find((d) => d.type === type);
+
+/** Name given to a block, only to recognise it in the editor's list (never shown on the page) */
+export const BLOCK_LABEL_MAX = 30;
+export const NAME_FIELDS: FieldDef[] = [
+  { kind: "text", key: "label", label: "Nume în listă", maxLength: BLOCK_LABEL_MAX, placeholder: "ex: Beneficii, Poze înainte/după", help: "Doar pentru tine, nu apare pe pagină" },
+];
 
 /** Shown for every block that sits in the page flow (not the top bar, sticky button or footer) */
 export const SPACING_FIELDS: FieldDef[] = [

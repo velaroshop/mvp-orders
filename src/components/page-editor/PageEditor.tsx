@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BLOCK_DEFS, OUT_OF_FLOW_BLOCKS, SPACING_FIELDS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
+import { BLOCK_DEFS, NAME_FIELDS, OUT_OF_FLOW_BLOCKS, SPACING_FIELDS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
 import { normalizeBlocks } from "@/lib/page-blocks";
 import { FieldsPanel } from "./FieldInputs";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
@@ -265,10 +265,15 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                         className={`flex items-center gap-1.5 rounded-md border px-1.5 py-1.5 ${active ? "border-emerald-500 bg-zinc-700" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-700/60"}`}
                       >
                         {handle}
-                        <button type="button" onClick={() => setSelectedId(item.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(item.id)}
+                          title={typeof item.data.label === "string" && item.data.label ? item.data.label : undefined}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
                           <span className="w-5 text-center text-zinc-300">{def?.icon ?? "?"}</span>
                           <span className="min-w-0">
-                            <span className="block truncate text-sm text-white">{def?.label ?? String(item.data.type)}</span>
+                            <span className="block truncate text-sm text-white">{(typeof item.data.label === "string" && item.data.label) || def?.label || String(item.data.type)}</span>
                             <span className="block truncate text-xs text-zinc-400">{summary(item.data)}</span>
                           </span>
                         </button>
@@ -308,6 +313,9 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               )}
               {selectedDef.fields.length === 0 && !selectedDef.note && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări.</p>}
               <FieldsPanel fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
+              <div className="mt-6 border-t border-zinc-700 pt-4">
+                <FieldsPanel fields={NAME_FIELDS} value={selected.data} onChange={updateSelected} />
+              </div>
               {!OUT_OF_FLOW_BLOCKS.includes(selectedDef.type) && (
                 <div className="mt-6 border-t border-zinc-700 pt-4">
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Spațiere</h3>

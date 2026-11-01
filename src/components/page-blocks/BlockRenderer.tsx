@@ -8,6 +8,7 @@ import StoreCta from "@/components/thank-you/StoreCta";
 import PhaseGate from "@/components/thank-you/PhaseGate";
 import StickyFooter from "@/components/page-blocks/StickyFooter";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
+import AutoplayVideo from "@/components/page-blocks/AutoplayVideo";
 import TopbarScroll from "@/components/page-blocks/TopbarScroll";
 import TopbarTimer from "@/components/page-blocks/TopbarTimer";
 
@@ -90,7 +91,8 @@ function Block({
           width={block.width ?? undefined}
           height={block.height ?? undefined}
           loading={index === firstImageIndex ? "eager" : "lazy"}
-          fetchPriority={index === firstImageIndex ? "high" : "auto"}
+          // Images below the first screen must not compete with the main image and the CSS for the connection
+          fetchPriority={index === firstImageIndex ? "high" : "low"}
           decoding="async"
           className="block h-auto w-full"
           style={block.radius > 0 ? { borderRadius: block.radius } : undefined}
@@ -287,18 +289,21 @@ function Block({
     case "video":
       return (
         <div style={insetStyle(block.inset)}>
-          <video
-            src={block.src}
-            poster={block.poster ?? undefined}
-            controls={!block.autoplay}
-            autoPlay={block.autoplay}
-            muted={block.autoplay}
-            loop={block.autoplay}
-            playsInline
-            preload={block.autoplay ? "auto" : "none"}
-            className="block h-auto w-full bg-black"
-            style={block.radius > 0 ? { borderRadius: block.radius } : undefined}
-          />
+          {block.autoplay ? (
+            <AutoplayVideo block={block} />
+          ) : (
+            <video
+              src={block.src}
+              poster={block.poster ?? undefined}
+              width={block.width ?? undefined}
+              height={block.height ?? undefined}
+              controls
+              playsInline
+              preload="none"
+              className="block h-auto w-full bg-black"
+              style={{ ...(block.width && block.height ? { aspectRatio: `${block.width} / ${block.height}` } : {}), ...(block.radius > 0 ? { borderRadius: block.radius } : {}) }}
+            />
+          )}
         </div>
       );
 

@@ -111,6 +111,9 @@ export type VideoBlock = {
   type: "video";
   src: string;
   poster: string | null;
+  /** Size of the cover image: reserves the space (no layout jump) before anything has loaded */
+  width: number | null;
+  height: number | null;
   autoplay: boolean;
   radius: number;
   inset: number;
@@ -428,7 +431,15 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
     case "video": {
       const src = imageSrc(b.src);
       if (!src) return null;
-      return { type: "video", src, poster: imageSrc(b.poster), autoplay: b.autoplay === true, ...radiusAndInset(b) };
+      return {
+        type: "video",
+        src,
+        poster: imageSrc(b.poster),
+        width: dimension(b.width),
+        height: dimension(b.height),
+        autoplay: b.autoplay === true,
+        ...radiusAndInset(b),
+      };
     }
 
     case "gallery": {

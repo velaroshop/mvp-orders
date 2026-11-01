@@ -11,6 +11,8 @@ export type FieldDef =
   // Image: can be uploaded (resized to maxWidth) or pasted as a URL; dims = keys that receive the uploaded size
   // minWidth: below this width the uploaded image is flagged as possibly blurry on a phone (it is never enlarged)
   | (FieldBase & { kind: "image"; maxWidth?: number; minWidth?: number; dims?: { width?: string; height?: string } })
+  // MP4 video: pasted as a URL or uploaded (stored as it is, max 4 MB)
+  | (FieldBase & { kind: "video" })
   | (FieldBase & { kind: "color" })
   // keepRatioWith: another number field of the same block that follows this one proportionally (width <-> height)
   | (FieldBase & { kind: "number"; min?: number; max?: number; keepRatioWith?: string })
@@ -441,10 +443,13 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "▶",
     description: "Fișier video (mp4)",
     kinds: ALL,
+    note: {
+      text: "Video MP4 (H.264), fără sunet, sub 4 MB, de preferat pătrat sau 4:5, cam 480–720 px. Pornirea automată poate fi oprită de telefon (economisire energie): de aceea imaginea de copertă contează, ea se vede mereu până pornește video-ul.",
+    },
     create: () => ({ type: "video", src: "", poster: "", autoplay: false, radius: 0, inset: 0 }),
     fields: [
-      { kind: "url", key: "src", label: "Adresa fișierului video (mp4)" },
-      { kind: "image", key: "poster", label: "Imagine de copertă", maxWidth: 800, minWidth: 500 },
+      { kind: "video", key: "src", label: "Fișier video (MP4)" },
+      { kind: "image", key: "poster", label: "Imagine de copertă (primul cadru)", maxWidth: 800, dims: { width: "width", height: "height" }, help: "Obligatorie pentru pornirea automată" },
       { kind: "toggle", key: "autoplay", label: "Pornește singur, mut, în buclă" },
       { kind: "number", key: "radius", label: "Rotunjirea colțurilor (px)", min: 0, max: 48 },
       { kind: "number", key: "inset", label: "Margini laterale (px)", min: 0, max: 32 },

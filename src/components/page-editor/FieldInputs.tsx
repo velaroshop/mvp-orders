@@ -6,6 +6,7 @@ import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import { FB_REACTIONS } from "@/lib/page-blocks";
 import { loadFooters, type FooterRow } from "@/lib/footer-library-client";
+import { uploadPageVideo } from "@/lib/upload-page-video-client";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
@@ -101,6 +102,55 @@ function ImageField({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" className="h-20 w-auto max-w-full rounded border border-zinc-700 bg-white object-contain" />
       )}
+    </div>
+  );
+}
+
+/** Video field: paste the address of an MP4 or upload one (kept as it is, up to 4 MB). */
+function VideoField({ value, onChange }: { value: unknown; onChange: (value: unknown) => void }) {
+  const src = typeof value === "string" ? value : "";
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setError(null);
+    setNote(null);
+    setUploading(true);
+    try {
+      const uploaded = await uploadPageVideo(file);
+      onChange(uploaded.url);
+      setNote(`Încărcat: ${Math.round(uploaded.bytes / 1024)} KB`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Încărcarea a eșuat");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input type="text" value={src} placeholder="https://….mp4 sau încarcă un fișier" onChange={(e) => onChange(e.target.value)} className={inputClass} />
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className={`${smallButton} shrink-0 whitespace-nowrap`}>
+          {uploading ? "Se încarcă…" : "Încarcă"}
+        </button>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="video/mp4"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = "";
+        }}
+      />
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      {note && <p className="text-xs text-emerald-400">{note}</p>}
+      {/^(https?:\/\/|\/)/i.test(src) && <video src={src} muted playsInline controls preload="metadata" className="h-24 w-auto max-w-full rounded border border-zinc-700 bg-black" />}
     </div>
   );
 }
@@ -208,6 +258,9 @@ function FieldInput({
           <span>Da</span>
         </label>
       );
+
+    case "video":
+      return <VideoField value={value} onChange={onChange} />;
 
     case "richtext":
       return <RichTextField value={typeof value === "string" ? value : ""} onChange={onChange} />;

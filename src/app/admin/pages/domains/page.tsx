@@ -18,9 +18,6 @@ interface ConnectionInfo {
   vercelChallenge: { type: string; domain: string; value: string } | null;
 }
 
-// While false, the page tells the owner NOT to create the DNS record yet: the server does not route custom domains to
-// the own pages yet (a domain pointed here would show the application itself). Set to true once host routing is live.
-const ROUTING_READY = false;
 
 const STATUS_LABEL = { pending: "Neverificat", verified: "Verificat", active: "Activ" } as const;
 const STATUS_STYLE = {
@@ -91,7 +88,7 @@ function RootRedirect({ domain, onSaved }: { domain: DomainRow; onSaved: (value:
         {state === "saved" && <span className="text-xs text-emerald-300">Salvat</span>}
         {state !== "idle" && state !== "saving" && state !== "saved" && <span className="text-xs text-red-400">{state}</span>}
       </div>
-      <p className="mt-1 text-xs text-zinc-400">Gol = pagina nu există (404). Paginile se află la {domain.hostname}/numele-paginii.</p>
+      <p className="mt-1 text-xs text-zinc-400">Aici ajung și adresele care nu există sau nu sunt publicate. Gol = 404. Paginile se află la {domain.hostname}/numele-paginii.</p>
     </div>
   );
 }
@@ -300,11 +297,6 @@ export default function DomainsPage() {
                         <CopyValue label="Nume (host)" value={connections[domain.id].dns!.name} />
                         <CopyValue label="Valoare" value={connections[domain.id].dns!.value} />
                       </div>
-                      {!ROUTING_READY && (
-                        <p className="rounded-md border border-amber-800 bg-amber-900/20 p-2 text-xs text-amber-300">
-                          Nu crea încă acest record. Serverul nu afișează încă paginile proprii pe domenii externe: un domeniu îndreptat acum spre server ar arăta aplicația însăși. Îți spunem când poți.
-                        </p>
-                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-zinc-400">Se încarcă recordul DNS recomandat…</p>

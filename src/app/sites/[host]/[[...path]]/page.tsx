@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase";
 import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
@@ -8,7 +8,8 @@ import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 
 // Pages served on a customer's own domain: the middleware rewrites comanda.client.ro/<slug> to /sites/comanda~client~ro/<slug>.
 // The domain gives the organization; /<slug> is the domain's sales page with that slug, or else one of the organization's
-// legal pages. Cached, refreshed at most once a minute (and right away after a save).
+// legal pages. A slug that does not exist (or is not published) goes to the domain's base address when one is set
+// (Domains screen), otherwise it is a 404. Cached, refreshed at most once a minute (and right away after a save).
 export const revalidate = 60;
 
 export async function generateStaticParams() {
@@ -18,18 +19,26 @@ export async function generateStaticParams() {
 const HOST_RE = /^[a-z0-9.-]{3,253}$/;
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/i;
 
-async function getPage(encodedHost: string, path: string[] | undefined) {
-  // The middleware writes the hostname with "~" in place of dots (a dot would make the path look like a file)
-  const host = encodedHost.replaceAll("~", ".");
-  if (!HOST_RE.test(host) || !path || path.length !== 1 || !SLUG_RE.test(path[0])) return null;
-  const slug = path[0].toLowerCase();
+// The middleware writes the hostname with "~" in place of dots (a dot would make the path look like a file)
+const decodeHost = (encodedHost: string) => encodedHost.replaceAll("~", ".");
 
-  const { data: domain } = await supabaseAdmin
+async function getDomain(host: string) {
+  if (!HOST_RE.test(host)) return null;
+  const { data } = await supabaseAdmin
     .from("page_domains")
-    .select("id, organization_id")
+    .select("id, organization_id, root_redirect")
     .eq("hostname", host)
     .in("status", ["verified", "active"])
     .maybeSingle();
+  return data;
+}
+
+async function getPage(encodedHost: string, path: string[] | undefined) {
+  const host = decodeHost(encodedHost);
+  if (!path || path.length !== 1 || !SLUG_RE.test(path[0])) return null;
+  const slug = path[0].toLowerCase();
+
+  const domain = await getDomain(host);
   if (!domain) return null;
 
   const { data: sales, error } = await supabaseAdmin
@@ -65,7 +74,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function SitePage({ params }: Params) {
   const { host, path } = await params;
   const page = await getPage(host, path);
-  if (!page) notFound();
+  if (!page) {
+    // Unknown or unpublished slug: back to the domain's base address (temporary redirect), if one is set
+    const domain = await getDomain(decodeHost(host));
+    if (domain?.root_redirect) redirect(domain.root_redirect);
+    notFound();
+  }
 
   const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
   const footerLibrary = await loadFooterLibrary(page.organization_id, blocks);

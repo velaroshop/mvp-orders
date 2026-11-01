@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import { DEFAULT_THANK_YOU } from "@/lib/thank-you-default";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
+import { loadFooterLibrary } from "@/lib/page-footers";
 import ThankYouProvider from "@/components/thank-you/ThankYouProvider";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 async function getThankYouPage(orderId: string) {
-  if (orderId === DEV_ORDER_ID && process.env.NODE_ENV !== "production") return DEFAULT_THANK_YOU;
+  if (orderId === DEV_ORDER_ID && process.env.NODE_ENV !== "production") return { ...DEFAULT_THANK_YOU, organization_id: null };
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
@@ -32,7 +33,7 @@ async function getThankYouPage(orderId: string) {
     .maybeSingle();
 
   // Table missing or no saved page for this organization: built-in default
-  return page ?? DEFAULT_THANK_YOU;
+  return { ...(page ?? DEFAULT_THANK_YOU), organization_id: order.organization_id as string | null };
 }
 
 export default async function ThankYouPage({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
@@ -42,9 +43,12 @@ export default async function ThankYouPage({ searchParams }: { searchParams: Pro
   const page = await getThankYouPage(order);
   if (!page) notFound();
 
+  const blocks = normalizeBlocks(page.blocks);
+  const footerLibrary = await loadFooterLibrary(page.organization_id, blocks);
+
   return (
     <ThankYouProvider orderId={order}>
-      <BlockRenderer blocks={normalizeBlocks(page.blocks)} background={normalizePageBackground(page.background)} />
+      <BlockRenderer blocks={blocks} background={normalizePageBackground(page.background)} footerLibrary={footerLibrary} />
     </ThankYouProvider>
   );
 }

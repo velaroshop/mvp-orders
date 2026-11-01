@@ -118,6 +118,8 @@ export type FormBlock = { type: "form"; landingSlug: string; org: string | null;
 // Thank-you page only: order details from the order in the URL (renders nothing elsewhere)
 export type OrderSummaryBlock = { type: "order_summary"; heading: string; bg: string; color: string; accent: string };
 export type SpacerBlock = { type: "spacer"; height: number };
+/** Footer chosen from the organization's footer library; footerId null = the organization's default footer */
+export type SharedFooterBlock = { type: "shared_footer"; footerId: string | null };
 export type FooterBlock = {
   type: "footer";
   logo: { src: string; alt: string; width: number | null } | null;
@@ -159,6 +161,7 @@ export type BlockVariant =
   | ListBlock
   | ButtonBlock
   | StickyFooterBlock
+  | SharedFooterBlock
   | HtmlBlock
   | ReviewsBlock
   | FbCommentsBlock
@@ -188,6 +191,7 @@ const TEXT_SIZES: TextSize[] = ["sm", "base", "lg", "xl", "2xl"];
 const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★" };
 
 const MAX_ITEMS = 30;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/i;
 const imageSrc = (value: unknown): string | null =>
   typeof value === "string" && /^(https?:\/\/|\/(?!\/))/i.test(value.trim()) ? value.trim() : null;
@@ -449,6 +453,9 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
 
     case "spacer":
       return { type: "spacer", height: typeof b.height === "number" ? Math.min(200, Math.max(4, Math.round(b.height))) : 24 };
+
+    case "shared_footer":
+      return { type: "shared_footer", footerId: typeof b.footerId === "string" && UUID.test(b.footerId) ? b.footerId : null };
 
     case "footer": {
       const logoRaw = obj(b.logo);

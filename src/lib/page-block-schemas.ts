@@ -15,6 +15,8 @@ export type FieldDef =
   // keepRatioWith: another number field of the same block that follows this one proportionally (width <-> height)
   | (FieldBase & { kind: "number"; min?: number; max?: number; keepRatioWith?: string })
   | (FieldBase & { kind: "toggle" })
+  // Choice among the organization's footers ("" = the default footer)
+  | (FieldBase & { kind: "footerPicker" })
   // Choice of Facebook reactions (up to max), shown with their icons
   | (FieldBase & { kind: "reactions"; max: number })
   | (FieldBase & { kind: "select"; options: { value: string; label: string }[] })
@@ -421,8 +423,18 @@ export const BLOCK_DEFS: BlockDef[] = [
     ],
   },
   {
+    type: "shared_footer",
+    label: "Footer comun",
+    icon: "▁",
+    description: "Un footer din biblioteca de footere",
+    note: { text: "Conținutul se editează în biblioteca de footere, nu aici. Un footer folosit pe mai multe pagini se schimbă o singură dată.", href: "/admin/pages/footers", linkLabel: "Deschide footerele" },
+    kinds: ALL,
+    create: () => ({ type: "shared_footer", footerId: null }),
+    fields: [{ kind: "footerPicker", key: "footerId", label: "Footer" }],
+  },
+  {
     type: "footer",
-    label: "Footer",
+    label: "Footer (doar această pagină)",
     icon: "▁",
     description: "Logo, date firmă, linkuri legale, ANPC",
     kinds: ALL,
@@ -544,7 +556,7 @@ export const SPACING_FIELDS: FieldDef[] = [
 ];
 
 /** Blocks rendered outside the flow: the spacing field does not apply to them */
-export const OUT_OF_FLOW_BLOCKS = ["topbar", "sticky_footer", "footer"];
+export const OUT_OF_FLOW_BLOCKS = ["topbar", "sticky_footer", "footer", "shared_footer"];
 
 /** Extra fields for the thank-you page: when a block is shown */
 export const THANK_YOU_VISIBILITY_FIELDS: FieldDef[] = [

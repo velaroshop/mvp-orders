@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BLOCK_DEFS, NAME_FIELDS, OUT_OF_FLOW_BLOCKS, SPACING_FIELDS, THANK_YOU_VISIBILITY_FIELDS, blockDef, type PageKind } from "@/lib/page-block-schemas";
 import { normalizeBlocks } from "@/lib/page-blocks";
+import { buildFooterLibrary, EMPTY_FOOTER_LIBRARY, type FooterLibrary } from "@/lib/footer-library";
+import { loadFooters } from "@/lib/footer-library-client";
 import { FieldsPanel } from "./FieldInputs";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
@@ -60,6 +62,15 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [previewCta, setPreviewCta] = useState(true);
   const addMenuRef = useRef<HTMLDetailsElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [footerLibrary, setFooterLibrary] = useState<FooterLibrary>(EMPTY_FOOTER_LIBRARY);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadFooters().then((rows) => !cancelled && setFooterLibrary(buildFooterLibrary(rows)));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const payload = useMemo(
     () => ({ title, slug, background, blocks: items.map((i) => i.data) }),
@@ -82,10 +93,10 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   // Live preview: the page being edited is sent to the preview frame (same origin) on every change
   const sendPreview = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
-      { type: "velaro-preview", kind, blocks: payload.blocks, background, phase: previewPhase, withStoreCta: previewCta },
+      { type: "velaro-preview", kind, blocks: payload.blocks, background, phase: previewPhase, withStoreCta: previewCta, footerLibrary },
       window.location.origin,
     );
-  }, [kind, payload.blocks, background, previewPhase, previewCta]);
+  }, [kind, payload.blocks, background, previewPhase, previewCta, footerLibrary]);
 
   useEffect(() => {
     sendPreview();

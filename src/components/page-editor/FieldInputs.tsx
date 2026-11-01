@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import { FB_REACTIONS } from "@/lib/page-blocks";
+import { loadFooters, type FooterRow } from "@/lib/footer-library-client";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
@@ -97,6 +98,37 @@ function ImageField({
   );
 }
 
+/** Choice among the organization's footers; "" = whichever footer is the default */
+function FooterPicker({ value, onChange }: { value: unknown; onChange: (value: unknown) => void }) {
+  const [footers, setFooters] = useState<FooterRow[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadFooters().then((rows) => !cancelled && setFooters(rows));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const current = typeof value === "string" ? value : "";
+  const defaultName = footers?.find((f) => f.is_default)?.name;
+  const missing = current !== "" && footers !== null && !footers.some((f) => f.id === current);
+  return (
+    <div className="space-y-1">
+      <select value={current} onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)} className={inputClass}>
+        <option value="">Footerul implicit{defaultName ? ` (${defaultName})` : ""}</option>
+        {(footers ?? []).map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.name}
+          </option>
+        ))}
+        {missing && <option value={current}>(footer șters)</option>}
+      </select>
+      {footers !== null && footers.length === 0 && <p className="text-xs text-amber-400">Nu ai încă niciun footer. Creează unul în biblioteca de footere.</p>}
+      {missing && <p className="text-xs text-amber-400">Footerul ales nu mai există: se folosește footerul implicit.</p>}
+    </div>
+  );
+}
+
 function FieldInput({
   def,
   value,
@@ -169,6 +201,9 @@ function FieldInput({
           <span>Da</span>
         </label>
       );
+
+    case "footerPicker":
+      return <FooterPicker value={value} onChange={onChange} />;
 
     case "reactions": {
       const chosen = Array.isArray(value) ? (value as string[]) : [];

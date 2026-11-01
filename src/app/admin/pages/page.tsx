@@ -155,6 +155,14 @@ export default function OwnPagesList() {
       </div>
 
       <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+        <h2 className="text-lg font-semibold text-white">Footere</h2>
+        <p className="mt-1 text-sm text-zinc-400">Footerele se fac o singură dată și se aleg pe fiecare pagină, cu blocul „Footer comun”.</p>
+        <Link href="/admin/pages/footers" className="mt-3 inline-block rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">
+          Deschide footerele
+        </Link>
+      </div>
+
+      <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
         <h2 className="text-lg font-semibold text-white">Pagina de mulțumire</h2>
         <p className="mt-1 text-sm text-zinc-400">O singură pagină, la /thank-you, folosită după orice comandă făcută pe paginile proprii.</p>
         <Link href="/admin/pages/thank-you" className="mt-3 inline-block rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">

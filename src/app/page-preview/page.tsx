@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { normalizeBlocks, normalizePageBackground, type PageBlock } from "@/lib/page-blocks";
+import { EMPTY_FOOTER_LIBRARY, type FooterLibrary } from "@/lib/footer-library";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import { ThankYouPreviewProvider } from "@/components/thank-you/ThankYouProvider";
 
@@ -15,10 +16,11 @@ type PreviewMessage = {
   background: unknown;
   phase: "offer" | "final";
   withStoreCta: boolean;
+  footerLibrary?: FooterLibrary;
 };
 
 export default function PagePreview() {
-  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean } | null>(null);
+  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean; footerLibrary: FooterLibrary } | null>(null);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -31,6 +33,7 @@ export default function PagePreview() {
         kind: data.kind,
         phase: data.phase,
         withStoreCta: data.withStoreCta,
+        footerLibrary: data.footerLibrary ?? EMPTY_FOOTER_LIBRARY,
       });
     }
     window.addEventListener("message", onMessage);
@@ -40,7 +43,7 @@ export default function PagePreview() {
 
   if (!state) return <div className="p-6 text-center text-sm text-zinc-500">Se încarcă previzualizarea…</div>;
 
-  const page = <BlockRenderer blocks={state.blocks} background={state.background} preview />;
+  const page = <BlockRenderer blocks={state.blocks} background={state.background} footerLibrary={state.footerLibrary} preview />;
   return state.kind === "thank_you" ? (
     <ThankYouPreviewProvider phase={state.phase} withStoreCta={state.withStoreCta}>
       {page}

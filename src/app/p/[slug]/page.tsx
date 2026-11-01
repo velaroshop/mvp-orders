@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import { DEMO_PAGE } from "@/lib/page-blocks-demo";
+import { loadFooterLibrary } from "@/lib/page-footers";
 
 // Served from cache and refreshed at most once a minute
 export const revalidate = 60;
@@ -23,7 +24,7 @@ async function getPage(slug: string) {
 
   const { data, error } = await supabaseAdmin
     .from("landing_page_content")
-    .select("title, background, blocks")
+    .select("title, background, blocks, organization_id")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -50,5 +51,8 @@ export default async function OwnPage({ params }: { params: Promise<{ slug: stri
   const page = await getPage(slug);
   if (!page) notFound();
 
-  return <BlockRenderer blocks={normalizeBlocks(page.blocks)} background={normalizePageBackground(page.background)} />;
+  const blocks = normalizeBlocks(page.blocks);
+  const organizationId = "organization_id" in page ? page.organization_id : null;
+  const footerLibrary = await loadFooterLibrary(organizationId, blocks);
+  return <BlockRenderer blocks={blocks} background={normalizePageBackground(page.background)} footerLibrary={footerLibrary} />;
 }

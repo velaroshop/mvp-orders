@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { ANPC_LINKS, type PageBlock, type TextSize } from "@/lib/page-blocks";
+import { ANPC_LINKS, type FooterBlock, type PageBlock, type TextSize } from "@/lib/page-blocks";
+import { EMPTY_FOOTER_LIBRARY, resolveFooter, type FooterLibrary } from "@/lib/footer-library";
 import OwnOrderForm from "@/components/own-form/OwnOrderForm";
 import OrderSummary from "@/components/thank-you/OrderSummary";
 import PostsaleOffer from "@/components/thank-you/PostsaleOffer";
@@ -368,7 +369,7 @@ function Block({
   }
 }
 
-function Footer({ block }: { block: Extract<PageBlock, { type: "footer" }> }) {
+function Footer({ block }: { block: FooterBlock }) {
   return (
     <footer className="px-5 py-8 text-center text-sm" style={{ backgroundColor: block.bg, color: block.color }}>
       <div className="mx-auto max-w-[560px] space-y-4">
@@ -427,19 +428,29 @@ export default function BlockRenderer({
   blocks,
   background,
   preview = false,
+  footerLibrary = EMPTY_FOOTER_LIBRARY,
 }: {
   blocks: PageBlock[];
   background: string;
+  /** Footers of the organization, for "shared_footer" blocks */
+  footerLibrary?: FooterLibrary;
   /** Editor preview: replaces the order form with a placeholder */
   preview?: boolean;
 }) {
   const firstImageIndex = blocks.findIndex((b) => b.type === "image");
   const topbars = blocks.filter((b) => b.type === "topbar");
   const stickyFooter = blocks.find((b) => b.type === "sticky_footer");
-  const footers = blocks.filter((b): b is Extract<PageBlock, { type: "footer" }> => b.type === "footer");
+  const footers = blocks.flatMap((b): FooterBlock[] => {
+    if (b.type === "footer") return [b];
+    if (b.type === "shared_footer") {
+      const footer = resolveFooter(b.footerId, footerLibrary);
+      return footer ? [footer] : [];
+    }
+    return [];
+  });
   const flow = blocks
     .map((block, index) => ({ block, index }))
-    .filter(({ block }) => block.type !== "topbar" && block.type !== "sticky_footer" && block.type !== "footer");
+    .filter(({ block }) => block.type !== "topbar" && block.type !== "sticky_footer" && block.type !== "footer" && block.type !== "shared_footer");
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>

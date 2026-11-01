@@ -327,7 +327,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                 </div>
               )}
               {selectedDef.fields.length === 0 && !selectedDef.note && <p className="mb-4 text-sm text-zinc-400">Acest bloc nu are setări.</p>}
-              <FieldsPanel fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
+              <FieldsPanel key={selected.id} fields={selectedDef.fields} value={selected.data} onChange={updateSelected} />
               {!OUT_OF_FLOW_BLOCKS.includes(selectedDef.type) && (
                 <div className="mt-6 border-t border-zinc-700 pt-4">
                   <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Spațiere</h3>

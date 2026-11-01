@@ -1,3 +1,4 @@
+import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
 import { normalizeBlocks, normalizePageBackground, type PageBlock } from "@/lib/page-blocks";
 
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,79}$/;
@@ -9,7 +10,7 @@ export function parseBlocksInput(raw: unknown): { ok: true; blocks: PageBlock[] 
   if (!Array.isArray(raw)) return { ok: false, error: "blocks must be an array" };
   if (raw.length > MAX_BLOCKS) return { ok: false, error: `Too many blocks (max ${MAX_BLOCKS})` };
   if (JSON.stringify(raw).length > MAX_JSON_BYTES) return { ok: false, error: "Page content is too large" };
-  return { ok: true, blocks: normalizeBlocks(raw) };
+  return { ok: true, blocks: sanitizeBlocks(normalizeBlocks(raw)) };
 }
 
 export const parseBackground = (raw: unknown): string => normalizePageBackground(raw);

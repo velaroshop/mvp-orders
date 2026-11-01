@@ -15,6 +15,8 @@ export type FieldDef =
   // keepRatioWith: another number field of the same block that follows this one proportionally (width <-> height)
   | (FieldBase & { kind: "number"; min?: number; max?: number; keepRatioWith?: string })
   | (FieldBase & { kind: "toggle" })
+  // Formatted text editor (headings, bold, lists, links); the value is HTML
+  | (FieldBase & { kind: "richtext" })
   // Choice among the organization's footers ("" = the default footer)
   | (FieldBase & { kind: "footerPicker" })
   // Choice of Facebook reactions (up to max), shown with their icons
@@ -213,6 +215,19 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "text", key: "text", label: "Text buton" },
       { kind: "url", key: "href", label: "Link", help: "#comanda duce la formular" },
       { kind: "color", key: "bg", label: "Fundal" },
+      { kind: "color", key: "color", label: "Culoare text" },
+    ],
+  },
+  {
+    type: "rich_text",
+    label: "Text formatat",
+    icon: "📄",
+    description: "Text lung cu titluri, liste și linkuri (pagini legale)",
+    kinds: ALL,
+    create: () => ({ type: "rich_text", html: "<p></p>", color: "#18181b", size: 16 }),
+    fields: [
+      { kind: "richtext", key: "html", label: "Conținut", help: "Poți lipi text copiat din altă pagină: formatarea simplă se păstrează" },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 13, max: 22 },
       { kind: "color", key: "color", label: "Culoare text" },
     ],
   },

@@ -5,6 +5,7 @@ import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import { DEFAULT_THANK_YOU } from "@/lib/thank-you-default";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import { loadFooterLibrary } from "@/lib/page-footers";
+import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
 import ThankYouProvider from "@/components/thank-you/ThankYouProvider";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,7 +44,7 @@ export default async function ThankYouPage({ searchParams }: { searchParams: Pro
   const page = await getThankYouPage(order);
   if (!page) notFound();
 
-  const blocks = normalizeBlocks(page.blocks);
+  const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
   const footerLibrary = await loadFooterLibrary(page.organization_id, blocks);
 
   return (

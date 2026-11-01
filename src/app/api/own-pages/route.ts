@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseSlug, parseTitle } from "@/lib/own-page-input";
-import { starterBlocks } from "@/lib/own-page-starter";
+import { legalBlocks, starterBlocks } from "@/lib/own-page-starter";
 
 /** GET /api/own-pages - own pages of the active organization (superadmin only) */
 export async function GET() {
@@ -26,6 +26,7 @@ export async function GET() {
  * POST /api/own-pages - create a draft page. Body: { slug, title?, landingPageId?, duplicateFrom? }
  * - landingPageId: the page starts with a short structure and the order form wired to that landing page
  * - duplicateFrom: id of an own page whose title, background and blocks are copied
+ * - template "legal": a legal page (formatted text + footer)
  * - neither: an empty page
  */
 export async function POST(request: NextRequest) {
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
     if (!source) return NextResponse.json({ error: "Page to duplicate not found" }, { status: 404 });
     blocks = Array.isArray(source.blocks) ? source.blocks : [];
     background = source.background || background;
+  } else if (body.template === "legal") {
+    blocks = legalBlocks(title);
   } else if (landingInfo) {
     const { data: org } = await supabaseAdmin.from("organizations").select("slug").eq("id", guard.organizationId).maybeSingle();
     blocks = starterBlocks({ title, landingSlug: landingInfo.slug, orgSlug: org?.slug ?? "" });

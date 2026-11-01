@@ -52,6 +52,8 @@ export type ListBlock = {
 export type ButtonBlock = { type: "button"; text: string; href: string; bg: string; color: string };
 export type StickyFooterBlock = { type: "sticky_footer"; text: string; href: string; bg: string; color: string };
 export type HtmlBlock = { type: "html"; html: string };
+/** Formatted text (legal pages, long texts). html is cleaned on the server (see sanitize-rich-text.ts) */
+export type RichTextBlock = { type: "rich_text"; html: string; color: string; size: number };
 
 export const FB_REACTIONS = ["like", "love", "care", "haha", "wow", "sad", "angry"] as const;
 export type FbReaction = (typeof FB_REACTIONS)[number];
@@ -163,6 +165,7 @@ export type BlockVariant =
   | StickyFooterBlock
   | SharedFooterBlock
   | HtmlBlock
+  | RichTextBlock
   | ReviewsBlock
   | FbCommentsBlock
   | FaqBlock
@@ -311,6 +314,14 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
 
     case "html":
       return { type: "html", html: str(b.html) };
+
+    case "rich_text":
+      return {
+        type: "rich_text",
+        html: str(b.html).slice(0, 200_000),
+        color: color(b.color, "#18181b"),
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(22, Math.max(13, Math.round(b.size))) : 16,
+      };
 
     case "reviews": {
       const items: ReviewItem[] = [];

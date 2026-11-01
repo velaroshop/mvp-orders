@@ -12,3 +12,12 @@ export function starterBlocks(input: { title: string; landingSlug: string; orgSl
     { type: "shared_footer", footerId: null },
   ];
 }
+
+/** Legal page (terms, privacy, returns...): the text goes in one formatted-text block, footer from the library */
+export function legalBlocks(title: string): Record<string, unknown>[] {
+  const safeTitle = title.replace(/[<>&"]/g, "");
+  return [
+    { type: "rich_text", html: `<h1>${safeTitle}</h1><p>Scrie sau lipește aici textul paginii.</p>`, color: "#18181b", size: 16, label: "Text" },
+    { type: "shared_footer", footerId: null },
+  ];
+}

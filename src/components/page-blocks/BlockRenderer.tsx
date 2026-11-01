@@ -129,6 +129,10 @@ function Block({
     case "html":
       return <div dangerouslySetInnerHTML={{ __html: block.html }} />;
 
+    case "rich_text":
+      // The html was cleaned on save and again before rendering the public page (sanitize-rich-text.ts)
+      return <div className="vlr-rich px-4 py-3" style={{ color: block.color, fontSize: block.size }} dangerouslySetInnerHTML={{ __html: block.html }} />;
+
     case "reviews":
       return (
         <section className="px-4 py-4">

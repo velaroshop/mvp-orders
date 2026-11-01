@@ -5,6 +5,7 @@ import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import { DEMO_PAGE } from "@/lib/page-blocks-demo";
 import { loadFooterLibrary } from "@/lib/page-footers";
+import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
 
 // Served from cache and refreshed at most once a minute
 export const revalidate = 60;
@@ -51,7 +52,7 @@ export default async function OwnPage({ params }: { params: Promise<{ slug: stri
   const page = await getPage(slug);
   if (!page) notFound();
 
-  const blocks = normalizeBlocks(page.blocks);
+  const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
   const organizationId = "organization_id" in page ? page.organization_id : null;
   const footerLibrary = await loadFooterLibrary(organizationId, blocks);
   return <BlockRenderer blocks={blocks} background={normalizePageBackground(page.background)} footerLibrary={footerLibrary} />;

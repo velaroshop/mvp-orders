@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
@@ -9,6 +10,12 @@ import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 
 type Obj = Record<string, unknown>;
+
+// Loaded only when a rich text block is opened, so the editor stays light for every other block
+const RichTextField = dynamic(() => import("./RichTextField"), {
+  ssr: false,
+  loading: () => <div className="h-[260px] rounded-md border border-zinc-600 bg-zinc-900" />,
+});
 
 const inputClass =
   "w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500";
@@ -201,6 +208,9 @@ function FieldInput({
           <span>Da</span>
         </label>
       );
+
+    case "richtext":
+      return <RichTextField value={typeof value === "string" ? value : ""} onChange={onChange} />;
 
     case "footerPicker":
       return <FooterPicker value={value} onChange={onChange} />;

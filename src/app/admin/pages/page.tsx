@@ -19,6 +19,7 @@ export default function OwnPagesList() {
   const [error, setError] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
+  const [template, setTemplate] = useState<"" | "legal">("");
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -45,7 +46,7 @@ export default function OwnPagesList() {
     const res = await fetch("/api/own-pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, title }),
+      body: JSON.stringify({ slug, title, template: template || undefined }),
     });
     const data = await res.json().catch(() => ({}));
     setCreating(false);
@@ -102,6 +103,13 @@ export default function OwnPagesList() {
             required
             className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-200">Șablon</label>
+          <select value={template} onChange={(e) => setTemplate(e.target.value as "" | "legal")} className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white">
+            <option value="">Pagină goală</option>
+            <option value="legal">Pagină legală (text + footer)</option>
+          </select>
         </div>
         <button type="submit" disabled={creating} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
           {creating ? "Se creează…" : "Creează pagină"}

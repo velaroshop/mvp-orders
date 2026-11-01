@@ -133,9 +133,13 @@ export async function GET(
       return productStatus === "active";
     });
 
+    // The Meta Conversions API token is used only on the server (order finalization, cron); it must never be sent to visitors
+    const publicLandingPage = { ...landingPage };
+    delete publicLandingPage.fb_conversion_token;
+
     return NextResponse.json({
       landingPage: {
-        ...landingPage,
+        ...publicLandingPage,
         // Ensure numeric fields are numbers (Supabase returns DECIMAL as string)
         srp: parseFloat(landingPage.srp),
         price_1: parseFloat(landingPage.price_1),

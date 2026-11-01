@@ -15,6 +15,8 @@ const present = (row: Row) => ({
   verified_at: row.verified_at,
   vercel_added: row.vercel_added === true,
   root_redirect: row.root_redirect ?? null,
+  pages_total: 0,
+  pages_published: 0,
   created_at: row.created_at,
   record: verificationRecord(row.hostname, row.verification_token),
 });
@@ -29,7 +31,13 @@ export async function GET() {
     console.error("[Domains] list failed:", error.message);
     return NextResponse.json({ error: "Failed to load domains" }, { status: 500 });
   }
-  return NextResponse.json({ domains: (data as Row[] | null ?? []).map(present), limit: MAX_DOMAINS_PER_ORG });
+  // How many pages live on each domain (shown before a domain is deleted: those pages would be left without one)
+  const { data: pages } = await supabaseAdmin.from("landing_page_content").select("domain_id, status").eq("organization_id", guard.organizationId).not("domain_id", "is", null);
+  const domains = (data as Row[] | null ?? []).map(present).map((d) => {
+    const own = (pages ?? []).filter((p) => p.domain_id === d.id);
+    return { ...d, pages_total: own.length, pages_published: own.filter((p) => p.status === "published").length };
+  });
+  return NextResponse.json({ domains, limit: MAX_DOMAINS_PER_ORG });
 }
 
 /** POST /api/domains - add a domain (starts "pending" until the TXT record is verified). Body: { hostname } */

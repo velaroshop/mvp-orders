@@ -10,6 +10,8 @@ interface DomainRow {
   verified_at: string | null;
   vercel_added: boolean;
   root_redirect: string | null;
+  pages_total: number;
+  pages_published: number;
   record: { name: string; value: string };
 }
 
@@ -198,7 +200,22 @@ export default function DomainsPage() {
   }
 
   async function remove(domain: DomainRow) {
-    if (!window.confirm(`Ștergi domeniul ${domain.hostname}? Nu se poate anula.`)) return;
+    const usable = domains.filter((d) => d.status !== "pending");
+    const isLast = domain.status !== "pending" && usable.length === 1;
+    const parts = [`Ștergi domeniul ${domain.hostname}?`];
+    if (domain.pages_total > 0) {
+      parts.push(
+        `${domain.pages_total} ${domain.pages_total === 1 ? "pagină folosește" : "pagini folosesc"} acest domeniu${domain.pages_published > 0 ? ` (${domain.pages_published} publicate)` : ""}. Ele rămân, dar fără domeniu, deci nu se vor mai afișa nicăieri până le alegi alt domeniu din editor.`,
+      );
+    }
+    if (isLast) {
+      parts.push("E singurul tău domeniu verificat: după ștergere nu vei mai putea crea sau publica pagini până nu adaugi altul. Paginile legale nu se vor mai afișa nicăieri.");
+    }
+    if (domain.status !== "pending") {
+      parts.push(`Șterge și recordul CNAME al lui ${domain.hostname} din DNS (la furnizorul tău DNS), ca să nu rămână îndreptat spre server.`);
+    }
+    parts.push("Nu se poate anula.");
+    if (!window.confirm(parts.join("\n\n"))) return;
     const res = await fetch(`/api/domains/${domain.id}`, { method: "DELETE" });
     if (res.ok) setDomains((prev) => prev.filter((d) => d.id !== domain.id));
     else setError("Nu am putut șterge domeniul.");

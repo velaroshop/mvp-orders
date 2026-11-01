@@ -8,8 +8,18 @@ interface DomainRow {
   hostname: string;
   status: "pending" | "verified" | "active";
   verified_at: string | null;
+  vercel_added: boolean;
   record: { name: string; value: string };
 }
+
+interface ConnectionInfo {
+  dns: { type: "A" | "CNAME"; name: string; value: string } | null;
+  vercelChallenge: { type: string; domain: string; value: string } | null;
+}
+
+// While false, the page tells the owner NOT to create the DNS record yet: the server does not route custom domains to
+// the own pages yet (a domain pointed here would show the application itself). Set to true once host routing is live.
+const ROUTING_READY = false;
 
 const STATUS_LABEL = { pending: "Neverificat", verified: "Verificat", active: "Activ" } as const;
 const STATUS_STYLE = {
@@ -51,6 +61,8 @@ export default function DomainsPage() {
   const [adding, setAdding] = useState(false);
   const [checking, setChecking] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [connections, setConnections] = useState<Record<string, ConnectionInfo>>({});
+  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,6 +108,52 @@ export default function DomainsPage() {
     } else {
       setMessages((m) => ({ ...m, [domain.id]: data.message || data.error || "Nu am putut verifica domeniul." }));
     }
+  }
+
+  // Connected but not active yet: read the current state (and the DNS record to create) when the page opens
+  useEffect(() => {
+    domains
+      .filter((d) => d.vercel_added && d.status === "verified" && !connections[d.id])
+      .forEach((d) => {
+        fetch(`/api/domains/${d.id}/status`, { method: "POST" })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) return;
+            setConnections((c) => ({ ...c, [d.id]: { dns: data.dns ?? null, vercelChallenge: data.vercelChallenge ?? null } }));
+            if (data.active) setDomains((prev) => prev.map((x) => (x.id === d.id ? { ...x, status: "active" } : x)));
+          })
+          .catch(() => {});
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domains]);
+
+  async function connect(domain: DomainRow) {
+    setBusy(domain.id);
+    setMessages((m) => ({ ...m, [domain.id]: "" }));
+    const res = await fetch(`/api/domains/${domain.id}/connect`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) {
+      setMessages((m) => ({ ...m, [domain.id]: data.error || "Nu am putut conecta domeniul." }));
+      return;
+    }
+    setDomains((prev) => prev.map((d) => (d.id === domain.id ? { ...d, vercel_added: true } : d)));
+    setConnections((c) => ({ ...c, [domain.id]: { dns: data.dns ?? null, vercelChallenge: data.vercelChallenge ?? null } }));
+  }
+
+  async function checkConnection(domain: DomainRow) {
+    setBusy(domain.id);
+    setMessages((m) => ({ ...m, [domain.id]: "" }));
+    const res = await fetch(`/api/domains/${domain.id}/status`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) {
+      setMessages((m) => ({ ...m, [domain.id]: data.error || "Nu am putut verifica conexiunea." }));
+      return;
+    }
+    setConnections((c) => ({ ...c, [domain.id]: { dns: data.dns ?? null, vercelChallenge: data.vercelChallenge ?? null } }));
+    if (data.active) setDomains((prev) => prev.map((d) => (d.id === domain.id ? { ...d, status: "active" } : d)));
+    else setMessages((m) => ({ ...m, [domain.id]: "Încă nu e gata: DNS-ul nu arată spre server sau certificatul SSL nu s-a emis. Poate dura de la câteva minute la câteva ore." }));
   }
 
   async function remove(domain: DomainRow) {
@@ -171,12 +229,56 @@ export default function DomainsPage() {
                     {messages[domain.id] && <span className="text-sm text-amber-300">{messages[domain.id]}</span>}
                   </div>
                 </>
+              ) : domain.status === "active" ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-emerald-300">Domeniul este conectat și activ: DNS-ul arată spre server, iar certificatul SSL e emis.</p>
+                  <button type="button" onClick={() => checkConnection(domain)} disabled={busy === domain.id} className="text-xs text-zinc-400 underline hover:text-zinc-200 disabled:opacity-50">
+                    {busy === domain.id ? "Se verifică…" : "Reverifică conexiunea"}
+                  </button>
+                </div>
+              ) : !domain.vercel_added ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-zinc-300">Domeniul e verificat: ai dovedit că e al tău. Pasul 2: conectează-l la serverul care afișează paginile.</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => connect(domain)} disabled={busy === domain.id} className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50">
+                      {busy === domain.id ? "Se conectează…" : "Conectează la server"}
+                    </button>
+                    {messages[domain.id] && <span className="text-sm text-amber-300">{messages[domain.id]}</span>}
+                  </div>
+                </div>
               ) : (
-                <p className="text-sm text-zinc-300">
-                  {domain.status === "verified"
-                    ? "Domeniul e verificat: ai dovedit că e al tău. Următorul pas, conectarea domeniului la serverul care afișează paginile, urmează."
-                    : "Domeniul este activ."}
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-zinc-300">Domeniul e adăugat la server. Pasul 3: DNS-ul trebuie să arate spre server, cu recordul de mai jos.</p>
+                  {connections[domain.id]?.dns ? (
+                    <div className="space-y-2">
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <CopyValue label="Tip" value={connections[domain.id].dns!.type} />
+                        <CopyValue label="Nume (host)" value={connections[domain.id].dns!.name} />
+                        <CopyValue label="Valoare" value={connections[domain.id].dns!.value} />
+                      </div>
+                      {!ROUTING_READY && (
+                        <p className="rounded-md border border-amber-800 bg-amber-900/20 p-2 text-xs text-amber-300">
+                          Nu crea încă acest record. Serverul nu afișează încă paginile proprii pe domenii externe: un domeniu îndreptat acum spre server ar arăta aplicația însăși. Îți spunem când poți.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-400">Se încarcă recordul DNS recomandat…</p>
+                  )}
+                  {connections[domain.id]?.vercelChallenge && (
+                    <div className="space-y-2 rounded-md border border-zinc-600 p-3">
+                      <p className="text-xs text-zinc-300">Serverul cere și o verificare suplimentară (domeniul a mai fost folosit în alt cont). Creează acest record, apoi apasă „Verifică conexiunea”:</p>
+                      <CopyValue label={`Tip ${connections[domain.id].vercelChallenge!.type} · nume`} value={connections[domain.id].vercelChallenge!.domain} />
+                      <CopyValue label="Valoare" value={connections[domain.id].vercelChallenge!.value} />
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => checkConnection(domain)} disabled={busy === domain.id} className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50">
+                      {busy === domain.id ? "Se verifică…" : "Verifică conexiunea"}
+                    </button>
+                    {messages[domain.id] && <span className="text-sm text-amber-300">{messages[domain.id]}</span>}
+                  </div>
+                </div>
               )}
             </div>
           ))}

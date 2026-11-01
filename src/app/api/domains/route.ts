@@ -4,14 +4,16 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { MAX_DOMAINS_PER_ORG, parseHostname, verificationRecord } from "@/lib/domain-input";
 
-const COLUMNS = "id, hostname, status, verification_token, verified_at, created_at";
+// "*": keeps working before migration 095 (vercel_added) has been run
+const COLUMNS = "*";
 
-type Row = { id: string; hostname: string; status: string; verification_token: string; verified_at: string | null; created_at: string };
+type Row = { id: string; hostname: string; status: string; verification_token: string; verified_at: string | null; created_at: string; vercel_added?: boolean };
 const present = (row: Row) => ({
   id: row.id,
   hostname: row.hostname,
   status: row.status,
   verified_at: row.verified_at,
+  vercel_added: row.vercel_added === true,
   created_at: row.created_at,
   record: verificationRecord(row.hostname, row.verification_token),
 });

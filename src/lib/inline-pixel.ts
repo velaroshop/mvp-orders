@@ -39,11 +39,14 @@ export function initInlinePixel(pixelId: string, testCode?: string | null, onLoa
   initialized = true;
   testEventCode = testCode || null;
 
+  // With a test event code, even the first PageView is a test event (it must not reach the real data)
+  const trackPageView = (fbq: Fbq) => (testEventCode ? fbq("track", "PageView", {}, { test_event_code: testEventCode }) : fbq("track", "PageView"));
+
   // Another pixel snippet already on the page: reuse it
   const pw = pixelWindow();
   if (pw.fbq) {
     pw.fbq("init", pixelId);
-    pw.fbq("track", "PageView");
+    trackPageView(pw.fbq);
     onLoaded?.();
     return;
   }
@@ -63,7 +66,7 @@ export function initInlinePixel(pixelId: string, testCode?: string | null, onLoa
   pw.fbq = fbq;
 
   fbq("init", pixelId);
-  fbq("track", "PageView");
+  trackPageView(fbq);
 
   const script = document.createElement("script");
   script.async = true;

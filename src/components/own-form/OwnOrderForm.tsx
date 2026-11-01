@@ -212,10 +212,14 @@ export default function OwnOrderForm({
     // ?notrack=1 in the page address: no pixel at all (for test orders on live products)
     const noTracking = new URLSearchParams(window.location.search).get('notrack') === '1';
     if (!noTracking && landingPage?.client_side_tracking && landingPage?.fb_pixel_id) {
+      // ?mtest=CODE in the page address: every pixel event of this visit (PageView included) is sent as a TEST event with that
+      // code (Events Manager > Test Events), without touching the organization-wide test mode. Letters and digits only.
+      const urlTestCode = new URLSearchParams(window.location.search).get('mtest');
+      const testCode = urlTestCode && /^[A-Za-z0-9_-]{3,40}$/.test(urlTestCode) ? urlTestCode : undefined;
       // Initialize fbq on this page (first-party cookies); PageView is fired right after init
       initInlinePixel(
         landingPage.fb_pixel_id,
-        landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined,
+        testCode ?? (landingPage.meta_test_mode ? landingPage.meta_test_event_code : undefined),
         () => setTrackingData(prev => ({ ...prev, ...readMetaCookies() })),
       );
 

@@ -5,6 +5,7 @@ import { normalizeBlocks, normalizePageBackground } from "@/lib/page-blocks";
 import { loadFooterLibrary } from "@/lib/page-footers";
 import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
+import PageTracker from "@/components/page-blocks/PageTracker";
 
 // Pages served on a customer's own domain: the middleware rewrites comanda.client.ro/<slug> to /sites/comanda~client~ro/<slug>.
 // The domain gives the organization; /<slug> is the domain's sales page with that slug, or else one of the organization's
@@ -46,7 +47,7 @@ async function getPage(encodedHost: string, path: string[] | undefined) {
   if (bare) {
     const { data: home } = await supabaseAdmin
       .from("landing_page_content")
-      .select("title, background, blocks, layout")
+      .select("id, title, background, blocks, layout")
       .eq("organization_id", domain.organization_id)
       .eq("domain_id", domain.id)
       .eq("is_home", true)
@@ -58,7 +59,7 @@ async function getPage(encodedHost: string, path: string[] | undefined) {
 
   const { data: sales, error } = await supabaseAdmin
     .from("landing_page_content")
-    .select("title, background, blocks, layout")
+    .select("id, title, background, blocks, layout")
     .eq("organization_id", domain.organization_id)
     .eq("domain_id", domain.id)
     .eq("slug", slug)
@@ -74,7 +75,7 @@ async function getPage(encodedHost: string, path: string[] | undefined) {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return legal ? { ...legal, layout: "narrow", organization_id: domain.organization_id as string } : null;
+  return legal ? { ...legal, id: null, layout: "narrow", organization_id: domain.organization_id as string } : null;
 }
 
 type Params = { params: Promise<{ host: string; path?: string[] }> };
@@ -107,11 +108,15 @@ export default async function SitePage({ params }: Params) {
   const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
   const footerLibrary = await loadFooterLibrary(page.organization_id, blocks);
   return (
-    <BlockRenderer
-      blocks={blocks}
-      background={normalizePageBackground(page.background)}
-      footerLibrary={footerLibrary}
-      layout={page.layout === "wide" ? "wide" : "narrow"}
-    />
+    <>
+      <BlockRenderer
+        blocks={blocks}
+        background={normalizePageBackground(page.background)}
+        footerLibrary={footerLibrary}
+        layout={page.layout === "wide" ? "wide" : "narrow"}
+      />
+      {/* Visit counter for the statistics screen; legal pages are not counted */}
+      {page.id && <PageTracker pageId={page.id} />}
+    </>
   );
 }

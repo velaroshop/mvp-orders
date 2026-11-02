@@ -6,6 +6,7 @@
 import { FormEvent, useState, useEffect, useRef } from "react";
 import type { OfferCode } from "@/lib/types";
 import { initInlinePixel, trackInlinePixel, readMetaCookies } from "@/lib/inline-pixel";
+import { newSessionId } from "@/lib/session-id";
 
 interface Upsell {
   id: string;
@@ -124,11 +125,7 @@ export default function OwnOrderForm({
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
 
   // Unique session ID for correlating widget events in logs
-  const sessionId = useRef<string>(
-    typeof crypto !== "undefined"
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2)
-  );
+  const sessionId = useRef<string>(newSessionId());
 
 
   // Partial order tracking

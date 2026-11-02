@@ -3,6 +3,7 @@
 import { FormEvent, useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
+import { newSessionId } from "@/lib/session-id";
 
 interface Upsell {
   id: string;
@@ -115,11 +116,7 @@ function WidgetFormContent() {
   const [selectedOffer, setSelectedOffer] = useState<OfferCode>("offer_1");
 
   // Unique session ID for correlating widget events in logs
-  const sessionId = useRef<string>(
-    typeof crypto !== "undefined"
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2)
-  );
+  const sessionId = useRef<string>(newSessionId());
 
 
   // Partial order tracking

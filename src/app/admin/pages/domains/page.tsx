@@ -162,6 +162,156 @@ function FaviconField({ domain, onChange }: { domain: DomainRow; onChange: (url:
   );
 }
 
+interface RedirectRow {
+  id: string;
+  from_path: string;
+  to_url: string;
+  status_code: number;
+}
+
+const CODE_LABEL: Record<number, string> = { 301: "301 permanent", 302: "302 temporar", 307: "307 temporar", 308: "308 permanent" };
+
+/** Old address -> new address rules of a domain (for example when a site moves here from another platform) */
+function RedirectsPanel({ domain }: { domain: DomainRow }) {
+  const [open, setOpen] = useState(false);
+  const [rules, setRules] = useState<RedirectRow[] | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [code, setCode] = useState(302);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/domains/${domain.id}/redirects`);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) setRules(data.redirects ?? []);
+    else setError(data.error || "Nu am putut încărca redirecturile.");
+  }, [domain.id]);
+
+  useEffect(() => {
+    if (open && rules === null) load();
+  }, [open, rules, load]);
+
+  async function post(body: Record<string, unknown>) {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/domains/${domain.id}/redirects`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error || "Nu am putut salva.");
+      return false;
+    }
+    await load();
+    return true;
+  }
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    if (await post({ from_path: from, to_url: to, status_code: code })) {
+      setFrom("");
+      setTo("");
+    }
+  }
+
+  async function remove(rule: RedirectRow) {
+    const res = await fetch(`/api/domains/${domain.id}/redirects/${rule.id}`, { method: "DELETE" });
+    if (res.ok) setRules((prev) => (prev ?? []).filter((r) => r.id !== rule.id));
+    else setError("Nu am putut șterge regula.");
+  }
+
+  async function changeCode(rule: RedirectRow, next: number) {
+    const res = await fetch(`/api/domains/${domain.id}/redirects/${rule.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status_code: next }) });
+    if (res.ok) setRules((prev) => (prev ?? []).map((r) => (r.id === rule.id ? { ...r, status_code: next } : r)));
+    else setError("Nu am putut schimba tipul.");
+  }
+
+  return (
+    <div className="border-t border-zinc-700 pt-3">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="text-sm font-medium text-zinc-200 hover:text-white">
+        {open ? "▾" : "▸"} Redirecturi{rules ? ` (${rules.length})` : ""}
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3">
+          <p className="text-xs text-zinc-400">
+            Trimit adresele vechi spre cele noi, pe {domain.hostname}. Se aplică în maximum un minut. <code>*</code> la final prinde tot ce urmează (<code>/products/*</code> → <code>/*</code>); regula exactă are prioritate. Parametrii din adresă (fbclid, utm) se păstrează.
+            „Temporar" (302) e prudent până verifici; trece apoi pe „permanent" (301).
+          </p>
+          {error && <div className="rounded-md border border-red-800 bg-red-900/20 p-2 text-xs text-red-400">{error}</div>}
+
+          <form onSubmit={add} className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs text-zinc-400">Adresa veche</label>
+              <input value={from} onChange={(e) => setFrom(e.target.value)} required placeholder="/products/slimgel sau /pages/*" className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-400">Adresa nouă</label>
+              <input value={to} onChange={(e) => setTo(e.target.value)} required placeholder="/slimgel, /* sau https://…" className="w-56 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-400">Tip</label>
+              <select value={code} onChange={(e) => setCode(Number(e.target.value))} className="rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1.5 text-sm text-white">
+                {[302, 301, 307, 308].map((c) => (
+                  <option key={c} value={c}>
+                    {CODE_LABEL[c]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" disabled={busy} className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+              Adaugă
+            </button>
+            <button type="button" disabled={busy} onClick={() => post({ preset: "shopify" })} className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50">
+              Adaugă redirecturile Shopify uzuale
+            </button>
+          </form>
+
+          {rules === null ? (
+            <p className="text-xs text-zinc-400">Se încarcă…</p>
+          ) : rules.length === 0 ? (
+            <p className="text-xs text-zinc-400">Nu există redirecturi pe acest domeniu.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="text-left text-zinc-400">
+                <tr>
+                  <th className="py-1 pr-2">De la</th>
+                  <th className="py-1 pr-2">Către</th>
+                  <th className="py-1 pr-2">Tip</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-700">
+                {rules.map((rule) => (
+                  <tr key={rule.id}>
+                    <td className="py-1.5 pr-2 font-mono text-zinc-200">{rule.from_path}</td>
+                    <td className="max-w-[260px] truncate py-1.5 pr-2 font-mono text-zinc-200" title={rule.to_url}>
+                      {rule.to_url}
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      <select value={rule.status_code} onChange={(e) => changeCode(rule, Number(e.target.value))} className="rounded border border-zinc-600 bg-zinc-900 px-1 py-0.5 text-xs text-white">
+                        {[301, 302, 307, 308].map((c) => (
+                          <option key={c} value={c}>
+                            {CODE_LABEL[c]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-1.5 text-right">
+                      <button type="button" onClick={() => remove(rule)} className="text-red-400 hover:text-red-300">
+                        Șterge
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DomainsPage() {
   const [domains, setDomains] = useState<DomainRow[]>([]);
   const [limit, setLimit] = useState(5);
@@ -403,6 +553,7 @@ export default function DomainsPage() {
               {domain.status !== "pending" && (
                 <FaviconField domain={domain} onChange={(url) => setDomains((prev) => prev.map((d) => (d.id === domain.id ? { ...d, favicon_url: url } : d)))} />
               )}
+              {domain.status !== "pending" && <RedirectsPanel domain={domain} />}
               {domain.status !== "pending" && (
                 <RootRedirect
                   key={`${domain.id}-${domain.root_redirect ?? ""}`}

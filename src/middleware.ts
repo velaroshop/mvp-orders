@@ -3,6 +3,7 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server
 import { hasRoutePermission } from "./lib/permissions";
 import type { UserRole } from "./lib/types";
 import { createClient } from "@supabase/supabase-js";
+import { matchRedirect } from "./lib/redirect-rules";
 
 const authMiddleware = withAuth(
   async function middleware(req) {
@@ -66,7 +67,7 @@ const authMiddleware = withAuth(
 // which serves that domain's pages. Any other hostname goes through exactly as before. This runs only for page routes
 // (see the matcher): never for /api, /widget, /thank-you, /_next or files, so the order form and its API are untouched.
 
-type DomainInfo = { rootRedirect: string | null } | null;
+type DomainInfo = { rootRedirect: string | null; redirects: { from_path: string; to_url: string; status_code: number }[] } | null;
 const domainCache = new Map<string, { value: DomainInfo; expires: number }>();
 
 /** Hostnames of this application itself: never looked up, never rewritten */
@@ -91,12 +92,18 @@ async function lookupDomain(host: string): Promise<DomainInfo> {
   });
   const { data, error } = await supabase
     .from("page_domains")
-    .select("root_redirect")
+    .select("id, root_redirect")
     .eq("hostname", host)
     .in("status", ["verified", "active"])
     .maybeSingle();
+  // The redirect rules of the domain (Domains screen). If they cannot be read, the domain simply works without them.
+  let redirects: { from_path: string; to_url: string; status_code: number }[] = [];
+  if (data && !error) {
+    const rules = await supabase.from("domain_redirects").select("from_path, to_url, status_code").eq("domain_id", data.id);
+    if (!rules.error && rules.data) redirects = rules.data;
+  }
   // On a lookup error nothing is rewritten (and nothing is cached for long): the request continues as usual
-  const value: DomainInfo = error || !data ? null : { rootRedirect: data.root_redirect ?? null };
+  const value: DomainInfo = error || !data ? null : { rootRedirect: data.root_redirect ?? null, redirects };
   domainCache.set(host, { value, expires: Date.now() + (error ? 5_000 : value ? 60_000 : 30_000) });
   return value;
 }
@@ -111,6 +118,22 @@ async function handleCustomHost(req: NextRequest, host: string): Promise<NextRes
 
   const pathname = req.nextUrl.pathname.replace(/\/+$/, "") || "/";
   if (BLOCKED_ON_CUSTOM.some((prefix) => isUnder(pathname, prefix))) return new NextResponse("Not found", { status: 404 });
+
+  // Redirect rules of the domain (old address -> new address), checked before any page; the query string travels along
+  if (domain.redirects.length > 0) {
+    const hit = matchRedirect(domain.redirects, pathname, req.nextUrl.search);
+    if (hit) {
+      if (hit.location.startsWith("/")) {
+        // Same domain: keep the host the visitor used
+        const target = req.nextUrl.clone();
+        const [path, query] = hit.location.split("?");
+        target.pathname = path;
+        target.search = query ? `?${query}` : "";
+        return NextResponse.redirect(target, hit.status);
+      }
+      return NextResponse.redirect(new URL(hit.location), hit.status);
+    }
+  }
 
   // The bare address goes to the same route (without a path): it shows the domain's homepage, or else redirects to the
   // domain's base address (Domains screen) / answers 404, decided there, where the database is available and cached

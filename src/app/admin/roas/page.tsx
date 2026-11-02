@@ -20,11 +20,21 @@ interface RoasDataRow {
   metaPurchaseValue: number;
 }
 
+interface ProductRoasRow {
+  id: string;
+  name: string;
+  adSpend: number;
+  revenue: number;
+  roas: number;
+  orders: number;
+}
+
 interface RoasResponse {
   product: { id: string; name: string; sku: string };
   month: string;
   includeUpsells: boolean;
   data: RoasDataRow[];
+  byProduct?: ProductRoasRow[];
   totals: {
     adSpend: number;
     revenue: number;
@@ -67,6 +77,14 @@ function getRoasBgColor(roas: number | null): string {
   if (roas < 3.5)  return "bg-orange-900/20";
   if (roas < 5)    return "bg-emerald-900/20";
   return "bg-amber-900/30";
+}
+
+function getRoasBarColor(roas: number | null): string {
+  if (roas === null) return "bg-zinc-600";
+  if (roas < 2.5)  return "bg-red-500";
+  if (roas < 3.5)  return "bg-orange-500";
+  if (roas < 5)    return "bg-emerald-500";
+  return "bg-gradient-to-r from-amber-500 to-yellow-400";
 }
 
 function getRoasBadge(roas: number | null): { text: string; className: string } | null {
@@ -777,6 +795,39 @@ export default function RoasPage() {
 
           {showReport && roasData && roasData.data.length > 0 && (
             <>
+              {roasData.product.id === "all" && roasData.byProduct && roasData.byProduct.length > 0 && (() => {
+                const barScale = Math.max(5, ...roasData.byProduct.map((p) => p.roas));
+                return (
+                  <div className="card p-4">
+                    <h3 className="section-title mb-3">ROAS pe produs</h3>
+                    <div className="space-y-3">
+                      {roasData.byProduct.map((p) => {
+                        const badge = getRoasBadge(p.roas);
+                        return (
+                          <div key={p.id} className="grid grid-cols-1 sm:grid-cols-[minmax(0,14rem)_1fr_auto] gap-x-4 gap-y-1 items-center">
+                            <span className="text-white text-sm font-medium truncate" title={p.name}>{p.name}</span>
+                            <div className="h-5 bg-zinc-800 rounded overflow-hidden">
+                              <div
+                                className={`h-full rounded ${getRoasBarColor(p.roas)}`}
+                                style={{ width: `${Math.max((p.roas / barScale) * 100, 2)}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 sm:justify-end text-xs text-zinc-400">
+                              <span className={`font-bold text-base ${getRoasColor(p.roas)}`}>{formatRoas(p.roas)}</span>
+                              {badge && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.className}`}>{badge.text}</span>
+                              )}
+                              <span>Chelt. {formatCurrency(p.adSpend)}</span>
+                              <span>Venit {formatCurrency(p.revenue)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="card overflow-x-auto">
                 <table className="table-dark">
                   <thead>

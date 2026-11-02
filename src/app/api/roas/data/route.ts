@@ -26,6 +26,15 @@ interface RoasDataRow {
   metaPurchaseValue: number;
 }
 
+interface ProductRoasRow {
+  id: string;
+  name: string;
+  adSpend: number;
+  revenue: number;
+  roas: number;
+  orders: number;
+}
+
 /**
  * GET /api/roas/data - Get ROAS data for a product and month
  * Query params:
@@ -186,6 +195,19 @@ export async function GET(request: NextRequest) {
 
     const orders = allOrders;
 
+    // Use order.total directly (consistent with Dashboard KPI)
+    // order.total already includes: subtotal + upsells + shipping
+    // When includeUpsells is false, subtract upsell values from total
+    const getOrderRevenue = (order: any): number => {
+      let orderRevenue = order.total || 0;
+      if (!includeUpsells && order.upsells && Array.isArray(order.upsells)) {
+        order.upsells.forEach((upsell: any) => {
+          orderRevenue -= (upsell.price || 0) * (upsell.quantity || 1);
+        });
+      }
+      return orderRevenue;
+    };
+
     // Group orders by date (Romania time)
     const ordersByDate: Map<
       string,
@@ -201,15 +223,7 @@ export async function GET(request: NextRequest) {
         productsSold: 0,
       };
 
-      // Use order.total directly (consistent with Dashboard KPI)
-      // order.total already includes: subtotal + upsells + shipping
-      // When includeUpsells is false, subtract upsell values from total
-      let orderRevenue = order.total || 0;
-      if (!includeUpsells && order.upsells && Array.isArray(order.upsells)) {
-        order.upsells.forEach((upsell: any) => {
-          orderRevenue -= (upsell.price || 0) * (upsell.quantity || 1);
-        });
-      }
+      const orderRevenue = getOrderRevenue(order);
 
       existing.revenue += orderRevenue;
       existing.count += 1;
@@ -268,6 +282,61 @@ export async function GET(request: NextRequest) {
     const totalRoas = totals.adSpend > 0 ? totals.revenue / totals.adSpend : null;
     const avgOrderValue = totals.orders > 0 ? totals.revenue / totals.orders : 0;
 
+    // Per-product breakdown (only for "all"): same rules as the single-product view,
+    // i.e. revenue counts only on days where that product has ad spend
+    let byProduct: ProductRoasRow[] | undefined;
+    if (isAllProducts) {
+      const { data: orgProducts } = await supabase
+        .from("products")
+        .select("id, name, sku")
+        .eq("organization_id", organizationId);
+
+      const spendByProduct = new Map<string, { adSpend: number; dates: Set<string> }>();
+      (adSpendData || []).forEach((row: any) => {
+        const entry = spendByProduct.get(row.product_id) || { adSpend: 0, dates: new Set<string>() };
+        entry.adSpend += parseFloat(row.amount_spent) || 0;
+        entry.dates.add(row.date);
+        spendByProduct.set(row.product_id, entry);
+      });
+
+      const ordersBySkuDate = new Map<string, Map<string, { revenue: number; count: number }>>();
+      orders.forEach((order: any) => {
+        if (!order.product_sku) return;
+        const dateKey = bucharestDateKey(new Date(order.created_at));
+        const byDate = ordersBySkuDate.get(order.product_sku) || new Map();
+        const entry = byDate.get(dateKey) || { revenue: 0, count: 0 };
+        entry.revenue += getOrderRevenue(order);
+        entry.count += 1;
+        byDate.set(dateKey, entry);
+        ordersBySkuDate.set(order.product_sku, byDate);
+      });
+
+      byProduct = (orgProducts || [])
+        .filter((p: any) => (spendByProduct.get(p.id)?.adSpend || 0) > 0)
+        .map((p: any) => {
+          const spend = spendByProduct.get(p.id)!;
+          const byDate = (p.sku && ordersBySkuDate.get(p.sku)) || new Map<string, { revenue: number; count: number }>();
+          let revenue = 0;
+          let orderCount = 0;
+          spend.dates.forEach((date) => {
+            const entry = byDate.get(date);
+            if (entry) {
+              revenue += entry.revenue;
+              orderCount += entry.count;
+            }
+          });
+          return {
+            id: p.id,
+            name: p.name,
+            adSpend: spend.adSpend,
+            revenue,
+            roas: revenue / spend.adSpend,
+            orders: orderCount,
+          };
+        })
+        .sort((a, b) => b.roas - a.roas);
+    }
+
     return NextResponse.json({
       product: {
         id: product.id,
@@ -277,6 +346,7 @@ export async function GET(request: NextRequest) {
       month,
       includeUpsells,
       data: roasData,
+      byProduct,
       totals: {
         ...totals,
         roas: totalRoas,

@@ -195,3 +195,71 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 @media (min-width: 768px) {
   .vlr-products { gap: 20px; grid-template-columns: repeat(var(--cols-desktop, 4), minmax(0, 1fr)); }
 }
+
+/* Attention animation of the fixed bottom button (sticky_footer block). Only transform/opacity, so nothing reflows. */
+.vlr-sticky-pulse { animation: vlr-sticky-pulse var(--vlr-sticky-time, 1.6s) ease-in-out infinite; }
+.vlr-sticky-shine { position: relative; overflow: hidden; }
+.vlr-sticky-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: translateX(-130%) skewX(-20deg);
+  animation: vlr-sticky-shine var(--vlr-sticky-time, 3.2s) ease-in-out infinite;
+  pointer-events: none;
+}
+.vlr-sticky-ring { position: relative; }
+.vlr-sticky-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--vlr-ring, #16a34a);
+  border-radius: inherit;
+  opacity: 0;
+  animation: vlr-sticky-ring var(--vlr-sticky-time, 2s) ease-out infinite;
+  pointer-events: none;
+}
+.vlr-sticky-bounce { animation: vlr-sticky-bounce var(--vlr-sticky-time, 2.6s) ease-in-out infinite; }
+.vlr-sticky-arrow-icon { animation: vlr-sticky-arrow var(--vlr-sticky-time, 1.2s) ease-in-out infinite; }
+.vlr-sticky-ring.vlr-sticky-slow { --vlr-sticky-time: 2.8s; }
+.vlr-sticky-ring.vlr-sticky-fast { --vlr-sticky-time: 1.4s; }
+.vlr-sticky-bounce.vlr-sticky-slow { --vlr-sticky-time: 3.5s; }
+.vlr-sticky-bounce.vlr-sticky-fast { --vlr-sticky-time: 1.8s; }
+.vlr-sticky-slow .vlr-sticky-arrow-icon { --vlr-sticky-time: 1.8s; }
+.vlr-sticky-fast .vlr-sticky-arrow-icon { --vlr-sticky-time: 0.8s; }
+.vlr-sticky-pulse.vlr-sticky-slow { --vlr-sticky-time: 2.4s; }
+.vlr-sticky-pulse.vlr-sticky-fast { --vlr-sticky-time: 1.1s; }
+.vlr-sticky-shine.vlr-sticky-slow { --vlr-sticky-time: 4.5s; }
+.vlr-sticky-shine.vlr-sticky-fast { --vlr-sticky-time: 2.2s; }
+/* Paused while the button is slid away (the order form or the footer is on screen) */
+[data-sticky-footer][data-hidden="true"] .vlr-sticky-pulse,
+[data-sticky-footer][data-hidden="true"] .vlr-sticky-bounce,
+[data-sticky-footer][data-hidden="true"] .vlr-sticky-arrow-icon,
+[data-sticky-footer][data-hidden="true"] .vlr-sticky-ring::after,
+[data-sticky-footer][data-hidden="true"] .vlr-sticky-shine::after { animation-play-state: paused; }
+@keyframes vlr-sticky-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes vlr-sticky-shine {
+  0%, 55% { transform: translateX(-130%) skewX(-20deg); }
+  100% { transform: translateX(380%) skewX(-20deg); }
+}
+@keyframes vlr-sticky-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  70%, 100% { transform: scale(1.06, 1.32); opacity: 0; }
+}
+@keyframes vlr-sticky-bounce {
+  0%, 40%, 100% { transform: translateY(0); }
+  10% { transform: translateY(-9px); }
+  20% { transform: translateY(0); }
+  28% { transform: translateY(-4px); }
+}
+@keyframes vlr-sticky-arrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vlr-sticky-pulse, .vlr-sticky-bounce, .vlr-sticky-arrow-icon, .vlr-sticky-shine::after, .vlr-sticky-ring::after { animation: none; }
+}

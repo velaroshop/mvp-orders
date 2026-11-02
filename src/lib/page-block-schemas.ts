@@ -320,12 +320,37 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "⬓",
     description: "Rămâne lipit jos pe ecran",
     kinds: LANDING,
-    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff" }),
+    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff", animation: "none", speed: "medium" }),
     fields: [
       { kind: "text", key: "text", label: "Text buton" },
       { kind: "url", key: "href", label: "Link", help: "#comanda duce la formular" },
       { kind: "color", key: "bg", label: "Fundal" },
       { kind: "color", key: "color", label: "Culoare text" },
+      {
+        kind: "select",
+        key: "animation",
+        label: "Animație",
+        help: "Atrage privirea spre buton. Se oprește pe telefoanele cu „reduce animațiile” activat.",
+        options: [
+          { value: "none", label: "Fără" },
+          { value: "pulse", label: "Pulsare (se mărește ușor și revine)" },
+          { value: "shine", label: "Strălucire (o dungă de lumină trece peste buton)" },
+          { value: "ring", label: "Inel (un contur se extinde în jurul butonului)" },
+          { value: "bounce", label: "Săritură (butonul sare ușor, apoi pauză)" },
+          { value: "arrow", label: "Săgeată (o săgeată → se mișcă lângă text)" },
+        ],
+      },
+      {
+        kind: "select",
+        key: "speed",
+        label: "Viteză animație",
+        help: "Se aplică doar dacă ai ales o animație.",
+        options: [
+          { value: "slow", label: "Lent" },
+          { value: "medium", label: "Mediu" },
+          { value: "fast", label: "Rapid" },
+        ],
+      },
     ],
   },
   {

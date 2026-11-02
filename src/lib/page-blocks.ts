@@ -101,7 +101,19 @@ export type ListBlock = {
   size: TextSize;
 };
 export type ButtonBlock = { type: "button"; text: string; href: string; bg: string; color: string };
-export type StickyFooterBlock = { type: "sticky_footer"; text: string; href: string; bg: string; color: string };
+/** Attention animation of the fixed bottom button: none, a soft pulse, a light streak, an expanding ring, a small hop or a moving arrow */
+export type StickyAnimation = "none" | "pulse" | "shine" | "ring" | "bounce" | "arrow";
+const STICKY_ANIMATIONS: readonly string[] = ["pulse", "shine", "ring", "bounce", "arrow"];
+export type StickySpeed = "slow" | "medium" | "fast";
+export type StickyFooterBlock = {
+  type: "sticky_footer";
+  text: string;
+  href: string;
+  bg: string;
+  color: string;
+  animation: StickyAnimation;
+  speed: StickySpeed;
+};
 export type HtmlBlock = { type: "html"; html: string };
 /** Formatted text (legal pages, long texts). html is cleaned on the server (see sanitize-rich-text.ts) */
 export type RichTextBlock = { type: "rich_text"; html: string; color: string; size: number };
@@ -425,6 +437,8 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         href: href(b.href, "#"),
         bg: color(b.bg, "#16a34a"),
         color: color(b.color, "#ffffff"),
+        animation: typeof b.animation === "string" && STICKY_ANIMATIONS.includes(b.animation) ? (b.animation as StickyAnimation) : "none",
+        speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
       };
 
     case "html":

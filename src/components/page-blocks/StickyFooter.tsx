@@ -44,10 +44,17 @@ export default function StickyFooter({ block }: { block: StickyFooterBlock }) {
         <a
           href={block.href}
           tabIndex={hidden ? -1 : 0}
-          className="mx-auto block max-w-[560px] rounded-xl px-6 py-4 text-center text-lg font-bold"
-          style={{ backgroundColor: block.bg, color: block.color }}
+          className={`mx-auto block max-w-[560px] rounded-xl px-6 py-4 text-center text-lg font-bold${
+            block.animation === "none" ? "" : ` vlr-sticky-${block.animation} vlr-sticky-${block.speed}`
+          }`}
+          style={{ backgroundColor: block.bg, color: block.color, ["--vlr-ring" as string]: block.bg }}
         >
           {block.text}
+          {block.animation === "arrow" && (
+            <span aria-hidden="true" className="vlr-sticky-arrow-icon ml-2 inline-block">
+              →
+            </span>
+          )}
         </a>
       </div>
     </>

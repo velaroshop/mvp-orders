@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { getPath, setPath, type FieldDef } from "@/lib/page-block-schemas";
 import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import { FB_REACTIONS } from "@/lib/page-blocks";
+import { useSession } from "next-auth/react";
 import { loadFooters, type FooterRow } from "@/lib/footer-library-client";
+import { loadLandingPages, type LandingRow } from "@/lib/landing-picker-client";
 import { uploadPageVideo } from "@/lib/upload-page-video-client";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
@@ -155,6 +157,51 @@ function VideoField({ value, onChange }: { value: unknown; onChange: (value: unk
   );
 }
 
+/**
+ * Choice among the organization's landing pages (instead of typing the slug): fills the slug and the organization slug.
+ * A landing page whose product is in testing is marked, so a test offer is not wired to a real page by mistake.
+ */
+function LandingPicker({ value, onChange }: { value: unknown; onChange: (value: unknown, extras?: Record<string, unknown>) => void }) {
+  const { data: session } = useSession();
+  const user = session?.user as { activeOrganizationId?: string; organizations?: { id: string; slug?: string }[] } | undefined;
+  const orgSlug = user?.organizations?.find((o) => o.id === user.activeOrganizationId)?.slug ?? "";
+  const [pages, setPages] = useState<LandingRow[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadLandingPages().then((rows) => !cancelled && setPages(rows));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const current = typeof value === "string" ? value : "";
+  const selected = pages?.find((p) => p.slug === current);
+  const unknown = current !== "" && pages !== null && !selected;
+  return (
+    <div className="space-y-1">
+      <select
+        value={current}
+        onChange={(e) => onChange(e.target.value, { org: orgSlug })}
+        className={inputClass}
+      >
+        <option value="">Alege landing page-ul…</option>
+        {(pages ?? []).map((p) => (
+          <option key={p.id} value={p.slug}>
+            {p.name} ({p.slug}){p.productName ? ` — ${p.productName}` : ""}
+            {p.productStatus === "testing" ? " 🧪 test" : ""}
+          </option>
+        ))}
+        {unknown && <option value={current}>{current} (necunoscut)</option>}
+      </select>
+      {selected?.productStatus === "testing" && <p className="text-xs text-amber-400">Produsul acestui landing page e în modul testing: comenzile sunt comenzi de test, nu se trimit la Helpship.</p>}
+      {selected && selected.status !== "published" && <p className="text-xs text-amber-400">Landing page-ul nu e publicat (stare: {selected.status}).</p>}
+      {unknown && <p className="text-xs text-red-400">Acest slug nu e printre landing page-urile organizației active: formularul nu se va încărca dacă e scris greșit.</p>}
+      {pages !== null && pages.length === 0 && <p className="text-xs text-amber-400">Nu am găsit landing page-uri (sau nu ai acces la lista lor).</p>}
+      {orgSlug && <p className="text-xs text-zinc-400">Organizație: {orgSlug}</p>}
+    </div>
+  );
+}
+
 /** Choice among the organization's footers; "" = whichever footer is the default */
 function FooterPicker({ value, onChange }: { value: unknown; onChange: (value: unknown) => void }) {
   const [footers, setFooters] = useState<FooterRow[] | null>(null);
@@ -264,6 +311,9 @@ function FieldInput({
 
     case "richtext":
       return <RichTextField value={typeof value === "string" ? value : ""} onChange={onChange} />;
+
+    case "landingPicker":
+      return <LandingPicker value={value} onChange={onChange} />;
 
     case "footerPicker":
       return <FooterPicker value={value} onChange={onChange} />;
@@ -412,6 +462,8 @@ export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; v
                 }
               }
               // An uploaded image also fills in its size (image blocks reserve the space, so the page does not jump)
+              // A landing page choice also fills the organization slug of the block
+              if (def.kind === "landingPicker" && extras && typeof extras.org === "string") next = setPath(next, def.orgKey, extras.org);
               if (def.kind === "image" && def.dims && extras) {
                 if (def.dims.width && typeof extras.width === "number") next = setPath(next, def.dims.width, extras.width);
                 if (def.dims.height && typeof extras.height === "number") next = setPath(next, def.dims.height, extras.height);

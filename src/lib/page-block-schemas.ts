@@ -19,6 +19,8 @@ export type FieldDef =
   | (FieldBase & { kind: "toggle" })
   // Formatted text editor (headings, bold, lists, links); the value is HTML
   | (FieldBase & { kind: "richtext" })
+  // Choice among the organization's landing pages: sets this key (the slug) and, in orgKey, the organization slug
+  | (FieldBase & { kind: "landingPicker"; orgKey: string })
   // Choice among the organization's footers ("" = the default footer)
   | (FieldBase & { kind: "footerPicker" })
   // Choice of Facebook reactions (up to max), shown with their icons
@@ -543,9 +545,16 @@ export const BLOCK_DEFS: BlockDef[] = [
     kinds: LANDING,
     create: () => ({ type: "form", landingSlug: "", org: "", thankYouPath: "/thank-you" }),
     fields: [
-      { kind: "text", key: "landingSlug", label: "Slug landing page (comanda)", help: "Landing page-ul din admin care dă ofertele, prețurile și produsul" },
-      { kind: "text", key: "org", label: "Slug organizație (opțional)", placeholder: "reduxio-srl" },
-      { kind: "text", key: "thankYouPath", label: "Pagina de mulțumire", help: "/thank-you = pagina proprie. Gol = pagina din Shopify" },
+      { kind: "landingPicker", key: "landingSlug", orgKey: "org", label: "Landing page (comanda)", help: "Dă ofertele, prețurile și produsul" },
+      {
+        kind: "select",
+        key: "thankYouPath",
+        label: "Pagina de mulțumire",
+        options: [
+          { value: "/thank-you", label: "Pagina proprie de mulțumire (recomandat)" },
+          { value: "", label: "Pagina din Shopify" },
+        ],
+      },
     ],
   },
   {

@@ -209,6 +209,7 @@ export default function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/admin/refunds" && pathname.startsWith("/admin/refunds/settings")) return false;
+    if (href === "/admin/pages" && pathname.startsWith("/admin/pages/stats")) return false;
     if (href === "/admin/superadmin") return pathname === "/admin/superadmin";
     return pathname.startsWith(href);
   };
@@ -287,6 +288,24 @@ export default function Sidebar() {
                       </span>
                     )}
                   </Link>
+
+                  {/* Own pages statistics sub-item (the parent item is superadmin only) */}
+                  {item.href === "/admin/pages" && (
+                    <Link
+                      href="/admin/pages/stats"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`
+                        flex items-center gap-2 pl-9 pr-2.5 py-1.5 rounded-lg text-[12px] ml-1 mt-0.5 transition-all duration-150
+                        ${pathname.startsWith("/admin/pages/stats")
+                          ? "bg-indigo-600 text-white"
+                          : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800/70"
+                        }
+                      `}
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                      <span className="font-medium">Statistici</span>
+                    </Link>
+                  )}
 
                   {/* Refund Settings sub-item */}
                   {item.href === "/admin/refunds" && (

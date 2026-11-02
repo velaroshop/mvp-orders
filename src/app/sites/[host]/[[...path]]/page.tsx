@@ -9,7 +9,8 @@ import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 // Pages served on a customer's own domain: the middleware rewrites comanda.client.ro/<slug> to /sites/comanda~client~ro/<slug>.
 // The domain gives the organization; /<slug> is the domain's sales page with that slug, or else one of the organization's
 // legal pages. A slug that does not exist (or is not published) goes to the domain's base address when one is set
-// (Domains screen), otherwise it is a 404. Cached, refreshed at most once a minute (and right away after a save).
+// (Domains screen), otherwise it is a 404. The bare address of the domain (no path) shows the page marked as its homepage;
+// without one it behaves like an unknown slug. Cached, refreshed at most once a minute (and right away after a save).
 export const revalidate = 60;
 
 export async function generateStaticParams() {
@@ -35,15 +36,29 @@ async function getDomain(host: string) {
 
 async function getPage(encodedHost: string, path: string[] | undefined) {
   const host = decodeHost(encodedHost);
-  if (!path || path.length !== 1 || !SLUG_RE.test(path[0])) return null;
-  const slug = path[0].toLowerCase();
+  const bare = !path || path.length === 0;
+  if (!bare && (path.length !== 1 || !SLUG_RE.test(path[0]))) return null;
 
   const domain = await getDomain(host);
   if (!domain) return null;
 
+  // The homepage of the domain: the published page marked as home
+  if (bare) {
+    const { data: home } = await supabaseAdmin
+      .from("landing_page_content")
+      .select("title, background, blocks, layout")
+      .eq("organization_id", domain.organization_id)
+      .eq("domain_id", domain.id)
+      .eq("is_home", true)
+      .eq("status", "published")
+      .maybeSingle();
+    return home ? { ...home, organization_id: domain.organization_id as string } : null;
+  }
+  const slug = path![0].toLowerCase();
+
   const { data: sales, error } = await supabaseAdmin
     .from("landing_page_content")
-    .select("title, background, blocks")
+    .select("title, background, blocks, layout")
     .eq("organization_id", domain.organization_id)
     .eq("domain_id", domain.id)
     .eq("slug", slug)
@@ -59,7 +74,7 @@ async function getPage(encodedHost: string, path: string[] | undefined) {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return legal ? { ...legal, organization_id: domain.organization_id as string } : null;
+  return legal ? { ...legal, layout: "narrow", organization_id: domain.organization_id as string } : null;
 }
 
 type Params = { params: Promise<{ host: string; path?: string[] }> };
@@ -83,7 +98,7 @@ export default async function SitePage({ params }: Params) {
   const { host, path } = await params;
   const page = await getPage(host, path);
   if (!page) {
-    // Unknown or unpublished slug: back to the domain's base address (temporary redirect), if one is set
+    // Unknown or unpublished slug, or a domain without a homepage: to the domain's base address (temporary redirect), if one is set
     const domain = await getDomain(decodeHost(host));
     if (domain?.root_redirect) redirect(domain.root_redirect);
     notFound();
@@ -91,5 +106,12 @@ export default async function SitePage({ params }: Params) {
 
   const blocks = sanitizeBlocks(normalizeBlocks(page.blocks));
   const footerLibrary = await loadFooterLibrary(page.organization_id, blocks);
-  return <BlockRenderer blocks={blocks} background={normalizePageBackground(page.background)} footerLibrary={footerLibrary} />;
+  return (
+    <BlockRenderer
+      blocks={blocks}
+      background={normalizePageBackground(page.background)}
+      footerLibrary={footerLibrary}
+      layout={page.layout === "wide" ? "wide" : "narrow"}
+    />
+  );
 }

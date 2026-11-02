@@ -82,6 +82,52 @@ function Block({
         </div>
       );
 
+    case "products":
+      return (
+        <section className="px-3 py-4" style={{ backgroundColor: block.bg, color: block.color }}>
+          {block.title && <h2 className="mb-3 text-center text-xl font-bold sm:text-2xl">{block.title}</h2>}
+          <div className="vlr-products" style={{ "--cols-mobile": block.columnsMobile, "--cols-desktop": block.columnsDesktop } as CSSProperties}>
+            {block.items.map((card, i) => (
+              <a key={i} href={card.href} className="flex flex-col overflow-hidden border border-zinc-200 bg-white text-inherit no-underline" style={{ borderRadius: block.radius }}>
+                <div className="relative w-full overflow-hidden bg-zinc-100" style={{ aspectRatio: block.ratio }}>
+                  {card.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      width={card.width ?? undefined}
+                      height={card.height ?? undefined}
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
+                  {card.badge && (
+                    <span className="absolute left-2 top-2 rounded px-2 py-0.5 text-xs font-bold leading-tight" style={{ backgroundColor: card.badgeBg, color: card.badgeColor }}>
+                      {card.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
+                  <div className="text-sm font-semibold leading-snug sm:text-base" style={{ color: block.color }}>
+                    {card.title}
+                  </div>
+                  {(card.price || card.oldPrice) && (
+                    <div className="flex flex-wrap items-baseline gap-x-2 text-sm sm:text-base" style={{ color: block.color }}>
+                      {card.price && <span className="font-bold">{card.price}</span>}
+                      {card.oldPrice && <span className="text-xs line-through opacity-60 sm:text-sm">{card.oldPrice}</span>}
+                    </div>
+                  )}
+                  <span className="mt-auto block rounded-lg px-3 py-2 text-center text-sm font-semibold" style={{ backgroundColor: block.buttonBg, color: block.buttonColor }}>
+                    {block.buttonLabel}
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+
     case "image": {
       const img = (
         // eslint-disable-next-line @next/next/no-img-element
@@ -99,7 +145,11 @@ function Block({
         />
       );
       const wrapped = block.href ? <a href={block.href}>{img}</a> : img;
-      return <div style={insetStyle(block.inset)}>{wrapped}</div>;
+      return (
+        <div style={insetStyle(block.inset)}>
+          {block.maxWidth ? <div className="mx-auto w-full" style={{ maxWidth: block.maxWidth }}>{wrapped}</div> : wrapped}
+        </div>
+      );
     }
 
     case "text":
@@ -449,11 +499,14 @@ export default function BlockRenderer({
   background,
   preview = false,
   footerLibrary = EMPTY_FOOTER_LIBRARY,
+  layout = "narrow",
 }: {
   blocks: PageBlock[];
   background: string;
   /** Footers of the organization, for "shared_footer" blocks */
   footerLibrary?: FooterLibrary;
+  /** "narrow": phone-style column (560 px); "wide": up to 1200 px (homepages with a product grid) */
+  layout?: "narrow" | "wide";
   /** Editor preview: replaces the order form with a placeholder */
   preview?: boolean;
 }) {
@@ -482,7 +535,7 @@ export default function BlockRenderer({
         <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} preview={preview} />
       ))}
 
-      <div className="mx-auto w-full max-w-[560px]">
+      <div className={`mx-auto w-full ${layout === "wide" ? "max-w-[1200px]" : "max-w-[560px]"}`}>
         {flow.map(({ block, index }) => {
           const inner = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
           // Space under the block lives inside the phase gate, so a hidden block leaves no gap

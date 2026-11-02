@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { parseBackground, parseBlocksInput, parseSlug, parseTitle } from "@/lib/own-page-input";
 
-const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, domain_id, updated_at";
+const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, domain_id, is_home, layout, updated_at";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -73,6 +73,32 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
     }
     update.domain_id = domainId;
   }
+
+  // Page width: "narrow" (phone-style column) or "wide" (homepages with product grids)
+  if (body.layout !== undefined) {
+    if (body.layout !== "narrow" && body.layout !== "wide") return NextResponse.json({ error: "Lățime invalidă" }, { status: 400 });
+    update.layout = body.layout;
+  }
+
+  // Homepage of the domain (domain/): one per domain, and only a page that has a domain
+  if (body.isHome !== undefined) {
+    if (body.isHome === true) {
+      if (!domainId) return NextResponse.json({ error: "Alege un domeniu înainte de a marca pagina de pornire" }, { status: 400 });
+      const { error: clearError } = await supabaseAdmin
+        .from("landing_page_content")
+        .update({ is_home: false })
+        .eq("organization_id", guard.organizationId)
+        .eq("domain_id", domainId)
+        .eq("is_home", true)
+        .neq("id", id);
+      if (clearError) return NextResponse.json({ error: "Nu am putut schimba pagina de pornire" }, { status: 500 });
+      update.is_home = true;
+    } else {
+      update.is_home = false;
+    }
+  }
+  // A page moved to another domain (or to none) cannot stay the homepage of the old one
+  if (body.domainId !== undefined && domainId !== (existing.domain_id ?? null) && body.isHome === undefined) update.is_home = false;
 
   // On a domain, /<slug> is also where the organization's legal pages live: the two must not share a slug
   const finalSlug = (update.slug as string | undefined) ?? existing.slug;

@@ -17,10 +17,11 @@ type PreviewMessage = {
   phase: "offer" | "final";
   withStoreCta: boolean;
   footerLibrary?: FooterLibrary;
+  layout?: "narrow" | "wide";
 };
 
 export default function PagePreview() {
-  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean; footerLibrary: FooterLibrary } | null>(null);
+  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean; footerLibrary: FooterLibrary; layout: "narrow" | "wide" } | null>(null);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -34,6 +35,7 @@ export default function PagePreview() {
         phase: data.phase,
         withStoreCta: data.withStoreCta,
         footerLibrary: data.footerLibrary ?? EMPTY_FOOTER_LIBRARY,
+        layout: data.layout === "wide" ? "wide" : "narrow",
       });
     }
     window.addEventListener("message", onMessage);
@@ -43,7 +45,7 @@ export default function PagePreview() {
 
   if (!state) return <div className="p-6 text-center text-sm text-zinc-500">Se încarcă previzualizarea…</div>;
 
-  const page = <BlockRenderer blocks={state.blocks} background={state.background} footerLibrary={state.footerLibrary} preview />;
+  const page = <BlockRenderer blocks={state.blocks} background={state.background} footerLibrary={state.footerLibrary} layout={state.layout} preview />;
   return state.kind === "thank_you" ? (
     <ThankYouPreviewProvider phase={state.phase} withStoreCta={state.withStoreCta}>
       {page}

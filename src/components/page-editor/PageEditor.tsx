@@ -21,6 +21,10 @@ export interface EditorPageData {
   status?: "draft" | "published";
   /** Domain the page is served on (null = the application domain, at /p/slug) */
   domainId?: string | null;
+  /** The page served at the bare address of its domain */
+  isHome?: boolean;
+  /** Page width: "narrow" (phone-style column) or "wide" (homepages) */
+  layout?: "narrow" | "wide";
 }
 
 export type SaveResult = { ok: true; page?: Partial<EditorPageData> } | { ok: false; error: string };
@@ -63,6 +67,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [slug, setSlug] = useState(initial.slug ?? "");
   const [background, setBackground] = useState(initial.background);
   const [domainId, setDomainId] = useState<string | null>(initial.domainId ?? null);
+  const [isHome, setIsHome] = useState<boolean>(initial.isHome ?? false);
+  const [layout, setLayout] = useState<"narrow" | "wide">(initial.layout ?? "narrow");
   const [items, setItems] = useState<Item[]>(() => toItems(normalizeBlocks(initial.blocks)));
   const [status, setStatus] = useState<"draft" | "published">(initial.status ?? "draft");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -83,8 +89,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   }, []);
 
   const payload = useMemo(
-    () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId } : {}) }),
-    [title, slug, background, items, domains, domainId],
+    () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId, isHome: isHome && !!domainId, layout } : {}) }),
+    [title, slug, background, items, domains, domainId, isHome, layout],
   );
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(payload));
   const dirty = JSON.stringify(payload) !== savedSnapshot;
@@ -103,10 +109,10 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   // Live preview: the page being edited is sent to the preview frame (same origin) on every change
   const sendPreview = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
-      { type: "velaro-preview", kind, blocks: payload.blocks, background, phase: previewPhase, withStoreCta: previewCta, footerLibrary },
+      { type: "velaro-preview", kind, blocks: payload.blocks, background, layout, phase: previewPhase, withStoreCta: previewCta, footerLibrary },
       window.location.origin,
     );
-  }, [kind, payload.blocks, background, previewPhase, previewCta, footerLibrary]);
+  }, [kind, payload.blocks, background, layout, previewPhase, previewCta, footerLibrary]);
 
   useEffect(() => {
     sendPreview();
@@ -208,7 +214,11 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
               {domains && (
                 <select
                   value={domainId ?? ""}
-                  onChange={(e) => setDomainId(e.target.value || null)}
+                  onChange={(e) => {
+                    setDomainId(e.target.value || null);
+                    // The homepage mark belongs to the old domain
+                    setIsHome(false);
+                  }}
                   className="mr-1 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-2 text-sm text-white"
                   aria-label="Domeniu"
                 >
@@ -393,6 +403,27 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                 />
                 <input value={background} onChange={(e) => setBackground(e.target.value)} className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
               </div>
+              {domains && (
+                <div className="mt-5 space-y-4 border-t border-zinc-700 pt-4">
+                  <div>
+                    <div className="mb-1 text-sm font-medium text-zinc-200">Lățimea paginii</div>
+                    <select value={layout} onChange={(e) => setLayout(e.target.value as "narrow" | "wide")} className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white">
+                      <option value="narrow">Îngustă (coloană ca pe telefon, 560 px)</option>
+                      <option value="wide">Largă (până la 1200 px, pentru pagina de pornire)</option>
+                    </select>
+                    <p className="mt-1 text-xs text-zinc-400">Pe telefon arată la fel. Diferența se vede pe desktop.</p>
+                  </div>
+                  <label className="flex items-start gap-2 text-sm text-zinc-200">
+                    <input type="checkbox" checked={isHome && !!domainId} disabled={!domainId} onChange={(e) => setIsHome(e.target.checked)} className="mt-0.5 h-4 w-4" />
+                    <span>
+                      Pagina de pornire a domeniului
+                      <span className="block text-xs text-zinc-400">
+                        {domainId ? "Se afișează la adresa domeniului (fără slug). Pe un domeniu poate fi o singură pagină de pornire: bifarea o înlocuiește pe cea veche." : "Alege mai întâi un domeniu în bara de sus."}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              )}
               <p className="mt-4 text-sm text-zinc-400">Alege un bloc din listă ca să-i modifici setările.</p>
             </>
           )}

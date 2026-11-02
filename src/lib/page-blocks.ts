@@ -41,6 +41,35 @@ export type TopbarTimerBlock = {
   bg: string;
   color: string;
 };
+/** Product card of the "products" grid: everything is typed by hand (price included) */
+export type ProductCard = {
+  image: string | null;
+  width: number | null;
+  height: number | null;
+  title: string;
+  price: string;
+  oldPrice: string;
+  badge: string;
+  badgeBg: string;
+  badgeColor: string;
+  href: string;
+};
+/** Grid of product cards (homepage). Two columns on a phone by default. */
+export type ProductsBlock = {
+  type: "products";
+  title: string;
+  items: ProductCard[];
+  columnsMobile: number;
+  columnsDesktop: number;
+  /** CSS aspect-ratio of the card images, e.g. "1 / 1" */
+  ratio: string;
+  buttonLabel: string;
+  buttonBg: string;
+  buttonColor: string;
+  bg: string;
+  color: string;
+  radius: number;
+};
 export type ImageBlock = {
   type: "image";
   src: string;
@@ -51,6 +80,8 @@ export type ImageBlock = {
   radius: number;
   /** Side margin in px around the image (0 = edge to edge) */
   inset: number;
+  /** Widest the image may get, in px, centered (null = the whole width of the page). For tall images on wide pages. */
+  maxWidth: number | null;
   href: string | null;
 };
 export type TextBlock = {
@@ -182,6 +213,7 @@ export type BlockCondition = "cta" | "no_cta";
 export type BlockVariant =
   | TopbarBlock
   | TopbarTimerBlock
+  | ProductsBlock
   | ImageBlock
   | TextBlock
   | ListBlock
@@ -301,6 +333,44 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
       };
     }
 
+    case "products": {
+      const items: ProductCard[] = [];
+      for (const raw of list(b.items)) {
+        const c = obj(raw);
+        const title = str(c.title).trim().slice(0, 120);
+        if (!title) continue;
+        items.push({
+          image: imageSrc(c.image),
+          width: dimension(c.width),
+          height: dimension(c.height),
+          title,
+          price: str(c.price).trim().slice(0, 30),
+          oldPrice: str(c.oldPrice).trim().slice(0, 30),
+          badge: str(c.badge).trim().slice(0, 30),
+          badgeBg: color(c.badgeBg, "#e9ff0e"),
+          badgeColor: color(c.badgeColor, "#000000"),
+          href: href(c.href, "#"),
+        });
+      }
+      const ratio = ["1 / 1", "4 / 5", "3 / 4"].includes(str(b.ratio)) ? str(b.ratio) : "1 / 1";
+      const cols = (value: unknown, fallback: number, min: number, max: number) =>
+        typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+      return {
+        type: "products",
+        title: str(b.title).slice(0, 120),
+        items,
+        columnsMobile: cols(b.columnsMobile, 2, 1, 2),
+        columnsDesktop: cols(b.columnsDesktop, 4, 2, 4),
+        ratio,
+        buttonLabel: str(b.buttonLabel, "Vezi produsul").slice(0, 40),
+        buttonBg: color(b.buttonBg, "#ff7a00"),
+        buttonColor: color(b.buttonColor, "#ffffff"),
+        bg: color(b.bg, "#ffffff"),
+        color: color(b.color, "#1a1a1a"),
+        radius: cols(b.radius, 12, 0, 24),
+      };
+    }
+
     case "image": {
       const src = str(b.src).trim();
       if (!/^(https?:\/\/|\/)/i.test(src)) return null;
@@ -311,6 +381,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         width: dimension(b.width),
         height: dimension(b.height),
         ...radiusAndInset(b),
+        maxWidth: typeof b.maxWidth === "number" && Number.isFinite(b.maxWidth) && b.maxWidth >= 100 ? Math.min(1200, Math.round(b.maxWidth)) : null,
         href: typeof b.href === "string" && SAFE_HREF.test(b.href.trim()) ? b.href.trim() : null,
       };
     }

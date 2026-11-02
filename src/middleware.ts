@@ -112,14 +112,11 @@ async function handleCustomHost(req: NextRequest, host: string): Promise<NextRes
   const pathname = req.nextUrl.pathname.replace(/\/+$/, "") || "/";
   if (BLOCKED_ON_CUSTOM.some((prefix) => isUnder(pathname, prefix))) return new NextResponse("Not found", { status: 404 });
 
-  if (pathname === "/") {
-    if (domain.rootRedirect) return NextResponse.redirect(domain.rootRedirect, 302);
-    return new NextResponse("Not found", { status: 404 });
-  }
-
+  // The bare address goes to the same route (without a path): it shows the domain's homepage, or else redirects to the
+  // domain's base address (Domains screen) / answers 404, decided there, where the database is available and cached
   const url = req.nextUrl.clone();
   // Dots become "~" so the internal path has no file extension (those paths skip this middleware, see the matcher)
-  url.pathname = `/sites/${host.replaceAll(".", "~")}${pathname}`;
+  url.pathname = `/sites/${host.replaceAll(".", "~")}${pathname === "/" ? "" : pathname}`;
   return NextResponse.rewrite(url);
 }
 

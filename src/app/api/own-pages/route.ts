@@ -12,7 +12,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("landing_page_content")
-    .select("id, slug, title, status, landing_page_id, domain_id, updated_at")
+    .select("id, slug, title, status, landing_page_id, domain_id, is_home, layout, updated_at")
     .eq("organization_id", guard.organizationId)
     .order("updated_at", { ascending: false });
 

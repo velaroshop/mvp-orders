@@ -601,7 +601,7 @@ export const BLOCK_DEFS: BlockDef[] = [
           { kind: "url", key: "href", label: "Adresă" },
         ],
       },
-      { kind: "toggle", key: "showAnpc", label: "Arată linkurile ANPC (SAL și SOL)" },
+      { kind: "toggle", key: "showAnpc", label: "Arată pictogramele ANPC (SAL și SOL)" },
       {
         kind: "items",
         key: "badges",

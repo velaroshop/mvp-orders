@@ -465,10 +465,11 @@ function Footer({ block }: { block: FooterBlock }) {
           </nav>
         )}
         {block.showAnpc && (
-          <nav className="flex flex-col items-center gap-2">
+          <nav className="flex flex-wrap items-center justify-center gap-3">
             {ANPC_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className="underline underline-offset-2" rel="noopener" target="_blank">
-                {link.label}
+              <a key={link.href} href={link.href} rel="nofollow noopener" target="_blank">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={link.src} alt={link.label} width={170} height={42} loading="lazy" decoding="async" className="h-auto w-[170px]" />
               </a>
             ))}
           </nav>

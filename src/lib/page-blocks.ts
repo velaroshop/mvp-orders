@@ -240,8 +240,8 @@ export type BlockVariant =
 export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition; spaceBelow?: number; label?: string };
 
 export const ANPC_LINKS = [
-  { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/" },
-  { label: "Soluționarea online a litigiilor", href: "https://ec.europa.eu/consumers/odr" },
+  { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/", src: "/anpc/sal.webp" },
+  { label: "Soluționarea online a litigiilor", href: "https://ec.europa.eu/consumers/odr", src: "/anpc/sol.webp" },
 ];
 
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;

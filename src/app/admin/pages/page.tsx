@@ -104,6 +104,9 @@ export default function OwnPagesList() {
       <div>
         <h1 className="text-3xl font-bold text-white">Pagini proprii</h1>
         <p className="mt-2 text-zinc-400">Pagini de vânzare construite din blocuri, servite pe domeniile tale verificate, la domeniu/slug. Doar pentru superadmin.</p>
+        <Link href="/admin/pages/stats" className="mt-2 inline-block text-sm font-medium text-sky-300 underline hover:text-sky-200">
+          Statistici (vizite, formular, comenzi) →
+        </Link>
       </div>
 
       {error && <div className="rounded-md border border-red-800 bg-red-900/20 p-3 text-sm text-red-400">{error}</div>}

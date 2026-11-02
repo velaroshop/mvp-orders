@@ -18,6 +18,8 @@ export default function PageTracker({ pageId }: { pageId: string }) {
       const sid = newSessionId();
       const startedAt = Date.now();
       let formSeen = false;
+      let formStarted = false;
+      let ordered = false;
       let formMs: number | null = null;
       let maxScroll = 0;
       let jsErrors = 0;
@@ -59,6 +61,8 @@ export default function PageTracker({ pageId }: { pageId: string }) {
           w: window.innerWidth,
           fcp: fcp(),
           ...(formSeen ? { form: true, fm: formMs } : {}),
+          ...(formStarted ? { st: true } : {}),
+          ...(ordered ? { ord: true } : {}),
         });
       };
 
@@ -89,6 +93,23 @@ export default function PageTracker({ pageId }: { pageId: string }) {
         observer.observe(form);
       }
 
+      // The visitor touched a field of the order form (phone, name...): started filling it
+      const onFocus = (event: FocusEvent) => {
+        if (formStarted || !(event.target instanceof HTMLElement) || !event.target.closest("#comanda")) return;
+        if (!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return;
+        formStarted = true;
+        if (opened) send({ st: true });
+      };
+      document.addEventListener("focusin", onFocus);
+
+      // The order form announces a sent order (the page is left right after, sendBeacon still goes through)
+      const onOrdered = () => {
+        ordered = true;
+        formStarted = true;
+        send({ ord: true, st: true });
+      };
+      window.addEventListener("velaro:ordered", onOrdered);
+
       // Seen, scroll, time on page, speed and errors: sent whenever the page goes to the background (also the last chance on phones)
       const report = () => {
         if (!opened) return;
@@ -98,6 +119,8 @@ export default function PageTracker({ pageId }: { pageId: string }) {
           fcp: fcp(),
           err: jsErrors,
           ...(formSeen ? { form: true, fm: formMs } : {}),
+          ...(formStarted ? { st: true } : {}),
+          ...(ordered ? { ord: true } : {}),
         });
       };
       const onHidden = () => {
@@ -118,6 +141,8 @@ export default function PageTracker({ pageId }: { pageId: string }) {
       return () => {
         window.removeEventListener("error", onError);
         window.removeEventListener("scroll", onScroll);
+        document.removeEventListener("focusin", onFocus);
+        window.removeEventListener("velaro:ordered", onOrdered);
         document.removeEventListener("visibilitychange", onHidden);
         window.removeEventListener("pagehide", report);
         observer?.disconnect();

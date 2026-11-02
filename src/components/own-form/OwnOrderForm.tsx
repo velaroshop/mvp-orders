@@ -928,6 +928,12 @@ export default function OwnOrderForm({
       setCreatedOrderId(orderId);
 
       logEvent("submit_success", { orderId });
+      // Tells the visit counter of the page (if any) that this visit ended in an order
+      try {
+        window.dispatchEvent(new Event("velaro:ordered"));
+      } catch {
+        // never affects the order
+      }
 
       // Show processing popup
       setShowSuccessPopup(true);

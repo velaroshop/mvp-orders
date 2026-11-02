@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.form === true) row.form_seen = true;
+    if (body.st === true) row.form_started = true;
+    if (body.ord === true) row.ordered = true;
     const scroll = whole(body.sc, 0, 100);
     if (scroll !== null) row.max_scroll = scroll;
     const seconds = whole(body.t, 0, 86400);

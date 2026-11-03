@@ -53,6 +53,7 @@ interface LandingPage {
   shipping_price?: number;
   post_purchase_status?: boolean;
   whatsapp_confirmation_enabled?: boolean;
+  sales_page_url?: string | null;
   products?: {
     id: string;
     name: string;
@@ -644,8 +645,19 @@ export default function LandingPagesPage() {
                                   rel="noopener noreferrer"
                                   className="btn btn-primary btn-sm"
                                 >
-                                  Vezi formular
+                                  Formular
                                 </Link>
+                                {page.sales_page_url && (
+                                  <a
+                                    href={page.sales_page_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={page.sales_page_url}
+                                    className="btn btn-secondary btn-sm"
+                                  >
+                                    Vezi LP
+                                  </a>
+                                )}
                                 <button
                                   onClick={() => {
                                     setEmbedModalOpen(page.id);
@@ -653,7 +665,7 @@ export default function LandingPagesPage() {
                                   }}
                                   className="btn btn-secondary btn-sm"
                                 >
-                                  Cod embed formular
+                                  Embed formular
                                 </button>
                                 <button
                                   onClick={() => {
@@ -662,7 +674,7 @@ export default function LandingPagesPage() {
                                   }}
                                   className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors"
                                 >
-                                  Cod embed post-purchase
+                                  Embed post-purchase
                                 </button>
                                 <a
                                   href={`/thank-you-preview?preview=${page.id}`}
@@ -681,7 +693,7 @@ export default function LandingPagesPage() {
                                         onClick={(e) => e.stopPropagation()}
                                         className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors"
                                       >
-                                        Pagină proprie: /p/{own.slug}
+                                        Pagină proprie
                                       </Link>
                                     ) : (
                                       <button
@@ -694,7 +706,7 @@ export default function LandingPagesPage() {
                                         }}
                                         className="px-3 py-1.5 bg-sky-500/10 text-sky-300 border border-sky-500/30 rounded text-xs font-medium hover:bg-sky-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                       >
-                                        Creează pagină proprie
+                                        + Pagină proprie
                                       </button>
                                     );
                                   })()}
@@ -706,13 +718,13 @@ export default function LandingPagesPage() {
                                   }}
                                   className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-xs font-medium hover:bg-emerald-500/20 transition-colors"
                                 >
-                                  Analiză vânzări
+                                  Vânzări
                                 </button>
                                 <button
                                   onClick={() => toggleRowExpansion(page.id)}
                                   className="px-3 py-1.5 text-zinc-400 hover:text-zinc-300 text-xs transition-colors"
                                 >
-                                  Ascunde detalii
+                                  Ascunde
                                 </button>
                               </div>
                               <div className="flex items-center gap-2">
@@ -1436,6 +1448,11 @@ export default function LandingPagesPage() {
                       maxHeight={editUpsellModal.type === "postsale" ? 800 : 400}
                       quality={0.7}
                     />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {editUpsellModal.type === "postsale"
+                        ? "Se afișează întreagă (fără tăiere), la ~370 px lățime pe telefon. Recomandat 1:1 sau 4:3, minim 740 px lățime. Se redimensionează automat la maxim 800 px."
+                        : "Miniatură mică, se redimensionează automat la maxim 400 px. Recomandat 1:1."}
+                    </p>
                   </div>
 
                   {/* Display Order and Active */}

@@ -47,6 +47,7 @@ interface LandingPage {
   server_side_tracking: boolean;
   default_offer?: string;
   variations_label?: string;
+  sales_page_url?: string | null;
   discount_type?: "percent" | "amount";
 }
 
@@ -255,6 +256,7 @@ export default function EditLandingPagePage() {
           clientSideTracking: formData.client_side_tracking,
           serverSideTracking: formData.server_side_tracking,
           variationsLabel: formData.variations_label || "",
+          salesPageUrl: formData.sales_page_url || "",
           discountType: formData.discount_type || "percent",
         }),
       });
@@ -569,6 +571,22 @@ export default function EditLandingPagePage() {
                     Ultima parte din URL-ul paginii. ex: "produs" → www.magazin.ro/produs
                   </p>
                 )}
+              </div>
+
+              {/* Sales page URL */}
+              <div>
+                <label className="label">URL pagină de vânzare</label>
+                <input
+                  type="text"
+                  value={formData.sales_page_url || ""}
+                  onChange={(e) => setFormData({ ...formData, sales_page_url: e.target.value })}
+                  className="input"
+                  placeholder="https://magazin.ro/products/produs"
+                  maxLength={500}
+                />
+                <p className="text-xs text-zinc-500 mt-1">
+                  Opțional. Dacă îl completezi, în lista de pagini apare butonul „Vezi LP”.
+                </p>
               </div>
 
               {/* Thank You Path */}

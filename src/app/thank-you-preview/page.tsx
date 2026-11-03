@@ -30,17 +30,10 @@ function PreviewContent() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f8f9fa",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <div id="preview-thank-you" style={{ width: "100%", maxWidth: 600 }} />
+    // Plain full-width block, like a theme page: the embed script breaks out of its container with 100vw / left 50%,
+    // which only lines up when the container starts at the left edge of the window (no centering, no padding)
+    <div style={{ minHeight: "100vh", background: "#f8f9fa" }}>
+      <div id="preview-thank-you" style={{ width: "100%" }} />
     </div>
   );
 }

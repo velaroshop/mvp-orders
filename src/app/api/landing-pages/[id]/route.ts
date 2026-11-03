@@ -210,6 +210,21 @@ export async function PUT(
     if (body.form_variant !== undefined) updateData.form_variant = body.form_variant;
     if (body.show_thank_you_cta !== undefined) updateData.show_thank_you_cta = !!body.show_thank_you_cta;
     if (body.variationsLabel !== undefined) updateData.variations_label = body.variationsLabel || null;
+    if (body.salesPageUrl !== undefined) {
+      const raw = String(body.salesPageUrl || "").trim();
+      if (!raw) {
+        updateData.sales_page_url = null;
+      } else {
+        const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+        try {
+          const parsed = new URL(withProtocol);
+          if (!parsed.hostname.includes(".")) throw new Error("host");
+          updateData.sales_page_url = parsed.toString().slice(0, 500);
+        } catch {
+          return NextResponse.json({ error: "URL-ul paginii de vânzare nu este valid" }, { status: 400 });
+        }
+      }
+    }
     if (body.discountType !== undefined) updateData.discount_type = body.discountType === "amount" ? "amount" : "percent";
 
     const { data: landingPage, error } = await supabase

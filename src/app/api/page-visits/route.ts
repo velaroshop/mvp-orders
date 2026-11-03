@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
     if (formMs !== null) row.form_ms = formMs;
     const errors = whole(body.err, 0, 1000);
     if (errors !== null) row.js_errors = errors;
+    const errorText = text(body.em, 200);
+    if (errorText) row.js_error = errorText;
 
     const { error } = await supabaseAdmin.from("page_visits").upsert(row, { onConflict: "session_id" });
     if (error) console.error("[Page Visits] save failed:", error.message);

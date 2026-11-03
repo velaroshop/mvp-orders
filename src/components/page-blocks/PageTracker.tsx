@@ -23,6 +23,7 @@ export default function PageTracker({ pageId }: { pageId: string }) {
       let formMs: number | null = null;
       let maxScroll = 0;
       let jsErrors = 0;
+      let firstError: string | null = null;
       let opened = false;
 
       const send = (extra: Record<string, unknown>) => {
@@ -66,8 +67,16 @@ export default function PageTracker({ pageId }: { pageId: string }) {
         });
       };
 
-      const onError = () => {
+      // Counts the errors and keeps the first one as short text: message and where it happened (file without query string, line)
+      const onError = (event: ErrorEvent) => {
         jsErrors += 1;
+        if (firstError) return;
+        try {
+          const file = event.filename ? event.filename.split(/[?#]/)[0].replace(/^https?:\/\/[^/]+/, "") : "";
+          firstError = `${event.message || "error"}${file ? ` @ ${file}:${event.lineno || 0}` : ""}`.slice(0, 200);
+        } catch {
+          firstError = "error";
+        }
       };
       window.addEventListener("error", onError);
 
@@ -118,6 +127,7 @@ export default function PageTracker({ pageId }: { pageId: string }) {
           t: Math.round((Date.now() - startedAt) / 1000),
           fcp: fcp(),
           err: jsErrors,
+          ...(firstError ? { em: firstError } : {}),
           ...(formSeen ? { form: true, fm: formMs } : {}),
           ...(formStarted ? { st: true } : {}),
           ...(ordered ? { ord: true } : {}),

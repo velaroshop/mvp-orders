@@ -19,6 +19,7 @@ interface Stats {
   byCampaign: Row[];
   byDevice: Row[];
   byHour: (Counts & { hour: number })[];
+  errors: { message: string; count: number; browsers: string[] }[];
   speed: { fcpMedianMs: number | null; formMedianMs: number | null; timeMedianS: number | null; scrollMedian: number | null; visitsWithErrors: number };
   truncated: boolean;
 }
@@ -213,6 +214,23 @@ export default function PagesStatsPage() {
           <Table title="Pe sursă" rows={stats.bySource} firstColumn="Sursă" />
           <Table title="Pe campanie / reclamă" rows={stats.byCampaign} firstColumn="Sursă / campanie / reclamă" />
           <Table title="Pe dispozitiv" rows={stats.byDevice} firstColumn="Dispozitiv · sistem · browser" />
+
+          {stats.errors.length > 0 && (
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+              <h2 className="mb-1 text-lg font-semibold text-white">Erori JavaScript</h2>
+              <p className="mb-3 text-xs text-zinc-400">Prima eroare a fiecărei vizite. „Script error” fără detalii vine de obicei din browserul aplicațiilor (Facebook, Instagram) sau din extensii, nu din pagină.</p>
+              <div className="space-y-2">
+                {stats.errors.map((e) => (
+                  <div key={e.message} className="rounded border border-zinc-700 bg-zinc-900 p-3 text-sm">
+                    <div className="break-words font-mono text-xs text-zinc-200">{e.message}</div>
+                    <div className="mt-1 text-xs text-zinc-400">
+                      {e.count} {e.count === 1 ? "vizită" : "vizite"} · {e.browsers.join(", ")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
             <h2 className="mb-3 text-lg font-semibold text-white">Vizite pe ore (ora României)</h2>

@@ -28,6 +28,7 @@ type Visit = {
   fcp_ms: number | null;
   form_ms: number | null;
   js_errors: number;
+  js_error: string | null;
 };
 
 type Counts = { visits: number; formSeen: number; started: number; ordered: number };
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
   for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
     let query = supabaseAdmin
       .from("page_visits")
-      .select("created_at, slug, utm_source, utm_campaign, utm_content, referrer_host, device, os, browser, in_app, form_seen, form_started, ordered, max_scroll, time_s, fcp_ms, form_ms, js_errors")
+      .select("created_at, slug, utm_source, utm_campaign, utm_content, referrer_host, device, os, browser, in_app, form_seen, form_started, ordered, max_scroll, time_s, fcp_ms, form_ms, js_errors, js_error")
       .eq("organization_id", guard.organizationId)
       .gte("created_at", startIso)
       .lte("created_at", endIso)
@@ -108,6 +109,20 @@ export async function GET(request: NextRequest) {
   const times = all.map((v) => v.time_s).filter((n): n is number => n !== null);
   const scrolls = all.map((v) => v.max_scroll).filter((n): n is number => n !== null);
 
+  // JS errors: same message grouped, with how many visits and on which browsers
+  const errorMap = new Map<string, { count: number; browsers: Set<string> }>();
+  for (const v of all) {
+    if (v.js_errors === 0) continue;
+    const key = v.js_error || "(mesaj necunoscut)";
+    const entry = errorMap.get(key) ?? { count: 0, browsers: new Set<string>() };
+    entry.count += 1;
+    entry.browsers.add([v.os ?? "?", v.in_app ? `${v.browser} (aplicație)` : v.browser ?? "?"].join(" · "));
+    errorMap.set(key, entry);
+  }
+  const errors = [...errorMap.entries()]
+    .map(([message, e]) => ({ message, count: e.count, browsers: [...e.browsers].slice(0, 4) }))
+    .sort((a, b) => b.count - a.count);
+
   return NextResponse.json({
     total,
     byPage: group(all, (v) => v.slug),
@@ -123,6 +138,7 @@ export async function GET(request: NextRequest) {
       scrollMedian: median(scrolls),
       visitsWithErrors: all.filter((v) => v.js_errors > 0).length,
     },
+    errors,
     truncated: all.length >= MAX_ROWS,
   });
 }

@@ -492,6 +492,11 @@ export default function AddUpsellPage() {
                   maxHeight={formData.type === "postsale" ? 800 : 400}
                   quality={0.7}
                 />
+                <p className="text-xs text-zinc-500 mt-1">
+                  {formData.type === "postsale"
+                    ? "Se afișează întreagă (fără tăiere), la ~370 px lățime pe telefon. Recomandat 1:1 sau 4:3, minim 740 px lățime. Se redimensionează automat la maxim 800 px."
+                    : "Miniatură mică, se redimensionează automat la maxim 400 px. Recomandat 1:1."}
+                </p>
               </div>
 
               {/* Display Order */}

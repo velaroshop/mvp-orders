@@ -12,11 +12,66 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-type OutputFormat = "webm" | "webp";
+type OutputFormat = "mp4" | "webp";
+
+// The video block of the own pages accepts MP4 files up to 4 MB
+const MP4_LIMIT_BYTES = 4 * 1024 * 1024;
+const ACCEPTED_EXTENSIONS = ["mp4", "mov", "webm", "gif", "webp", "apng"];
+
+const DEFAULTS: Record<OutputFormat, { scale: string; fps: number; crf: number }> = {
+  webp: { scale: "640", fps: 15, crf: 40 },
+  mp4: { scale: "480", fps: 12, crf: 32 },
+};
+
+const extensionOf = (name: string) => name.split(".").pop()?.toLowerCase() || "";
+
+/**
+ * ffmpeg.wasm cannot read animated WebP (it takes the first frame only), so the frames are decoded by the browser
+ * (ImageDecoder: Chrome, Edge) and handed over as a numbered PNG sequence with the duration of every frame.
+ * Returns the input arguments for ffmpeg and the first frame file.
+ */
+async function writeWebpFrames(ffmpeg: FFmpeg, file: File, written: string[]) {
+  const ImageDecoderClass = (window as unknown as { ImageDecoder?: new (init: { data: BufferSource; type: string }) => any }).ImageDecoder;
+  if (!ImageDecoderClass) throw new Error("Acest browser nu poate citi WebP animat. Folosește Chrome sau Edge.");
+  const decoder = new ImageDecoderClass({ data: await file.arrayBuffer(), type: "image/webp" });
+  await decoder.tracks.ready;
+  const count: number = decoder.tracks.selectedTrack.frameCount;
+  if (count < 2) throw new Error("Acest WebP nu este animat (are un singur cadru).");
+
+  let canvas: HTMLCanvasElement | null = null;
+  let list = "";
+  for (let i = 0; i < count; i++) {
+    const { image } = await decoder.decode({ frameIndex: i });
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.width = image.displayWidth;
+      canvas.height = image.displayHeight;
+    }
+    const ctx = canvas.getContext("2d")!;
+    // Transparent areas become white, as on the pages
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0);
+    const seconds = Math.max(0.01, (image.duration ?? 100000) / 1_000_000);
+    image.close();
+    const png = await new Promise<Blob>((resolve, reject) => canvas!.toBlob((b) => (b ? resolve(b) : reject(new Error("Nu am putut citi un cadru"))), "image/png"));
+    const name = `frame${String(i).padStart(4, "0")}.png`;
+    await ffmpeg.writeFile(name, new Uint8Array(await png.arrayBuffer()));
+    written.push(name);
+    list += `file '${name}'\nduration ${seconds.toFixed(3)}\n`;
+  }
+  decoder.close();
+  // The concat demuxer ignores the duration of the last entry unless the file is repeated
+  list += `file 'frame${String(count - 1).padStart(4, "0")}.png'\n`;
+  await ffmpeg.writeFile("frames.txt", list);
+  written.push("frames.txt");
+  return { inputArgs: ["-f", "concat", "-safe", "0", "-i", "frames.txt"], firstFrame: "frame0000.png" };
+}
 
 interface ConvertedFile {
   name: string;
   originalSize: number;
+  originalLabel: string;
   convertedSize: number;
   url: string;
   format: OutputFormat;
@@ -38,9 +93,9 @@ export default function VideoConvertPage() {
 
   // Settings
   const [outputFormat, setOutputFormat] = useState<OutputFormat>("webp");
-  const [crf, setCrf] = useState(40);
-  const [scale, setScale] = useState("640");
-  const [fps, setFps] = useState(15);
+  const [crf, setCrf] = useState(DEFAULTS.webp.crf);
+  const [scale, setScale] = useState(DEFAULTS.webp.scale);
+  const [fps, setFps] = useState(DEFAULTS.webp.fps);
 
   const ffmpegRef = useRef<FFmpeg | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,9 +136,21 @@ export default function VideoConvertPage() {
     setIsConverting(true);
     try {
       const ffmpeg = await loadFFmpeg();
-      const inputExt = file.name.split(".").pop()?.toLowerCase() || "mp4";
-      const inputFile = `input.${inputExt}`;
-      await ffmpeg.writeFile(inputFile, await fetchFile(file));
+      const inputExt = extensionOf(file.name) || "mp4";
+      const written: string[] = [];
+      let inputArgs: string[];
+      let firstFrameInput: string[];
+      if (inputExt === "webp") {
+        const frames = await writeWebpFrames(ffmpeg, file, written);
+        inputArgs = frames.inputArgs;
+        firstFrameInput = ["-i", frames.firstFrame];
+      } else {
+        const inputFile = `input.${inputExt}`;
+        await ffmpeg.writeFile(inputFile, await fetchFile(file));
+        written.push(inputFile);
+        inputArgs = ["-i", inputFile];
+        firstFrameInput = inputArgs;
+      }
 
       let outputFile: string;
       let mimeType: string;
@@ -95,7 +162,7 @@ export default function VideoConvertPage() {
         outputFile = "output.webp";
         mimeType = "image/webp";
         await ffmpeg.exec([
-          "-i", inputFile,
+          ...inputArgs,
           "-c:v", "libwebp",
           "-loop", "0",
           "-quality", String(webpQuality),
@@ -105,19 +172,20 @@ export default function VideoConvertPage() {
           outputFile,
         ]);
       } else {
-        // WebM — smaller files, needs <video> tag
-        // VP8 has no pure CRF mode; map slider to bitrate range 600k→40k
-        const bitrate = Math.round(600 * Math.pow(40 / 600, (crf - 20) / (55 - 20)));
-        outputFile = "output.webm";
-        mimeType = "video/webm";
+        // MP4 (H.264, no sound) — plays everywhere in a <video> tag; this is what the video block of the own pages takes
+        outputFile = "output.mp4";
+        mimeType = "video/mp4";
         await ffmpeg.exec([
-          "-i", inputFile,
-          "-c:v", "libvpx",
-          "-b:v", `${bitrate}k`,
+          ...inputArgs,
+          "-c:v", "libx264",
+          "-preset", "fast",
+          "-crf", String(crf),
+          "-profile:v", "main",
+          "-level", "3.1",
+          "-pix_fmt", "yuv420p",
           "-vf", `scale=${scale}:-2,fps=${fps.toString()}`,
           "-an",
-          "-cpu-used", "5",
-          "-threads", "1",
+          "-movflags", "+faststart",
           outputFile,
         ]);
       }
@@ -128,12 +196,12 @@ export default function VideoConvertPage() {
         { type: mimeType }
       );
       const url = URL.createObjectURL(blob);
-      const ext = outputFormat === "webp" ? ".webp" : ".webm";
+      const ext = outputFormat === "webp" ? ".webp" : ".mp4";
 
       // Extract first frame as static WebP — same quality mapping as animated WebP
       const frameQuality = Math.round(90 - ((crf - 20) / 35) * 70);
       await ffmpeg.exec([
-        "-i", inputFile,
+        ...firstFrameInput,
         "-vframes", "1",
         "-vf", `scale=${scale}:-2`,
         "-c:v", "webp",
@@ -148,9 +216,19 @@ export default function VideoConvertPage() {
       const frameUrl = URL.createObjectURL(frameBlob);
       const baseName = file.name.replace(/\.[^.]+$/, "");
 
+      // Free the memory of the in-browser file system (frames can be many)
+      for (const name of [...written, outputFile, "firstframe.webp"]) {
+        try {
+          await ffmpeg.deleteFile(name);
+        } catch {
+          // already gone
+        }
+      }
+
       setResult({
         name: baseName + ext,
         originalSize: file.size,
+        originalLabel: inputExt.toUpperCase(),
         convertedSize: blob.size,
         url,
         format: outputFormat,
@@ -169,15 +247,23 @@ export default function VideoConvertPage() {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    const f = Array.from(e.dataTransfer.files).find(f =>
-      f.type.startsWith("video/") || f.name.endsWith(".mp4") || f.name.endsWith(".mov") || f.name.endsWith(".webm")
-    );
+    const f = Array.from(e.dataTransfer.files).find((f) => ACCEPTED_EXTENSIONS.includes(extensionOf(f.name)));
     if (f) { setFile(f); setResult(null); setError(null); }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (f) { setFile(f); setResult(null); setError(null); }
+  }
+
+  // Each format starts from its own recommended settings
+  function switchFormat(format: OutputFormat) {
+    if (format === outputFormat) return;
+    setOutputFormat(format);
+    setScale(DEFAULTS[format].scale);
+    setFps(DEFAULTS[format].fps);
+    setCrf(DEFAULTS[format].crf);
+    setResult(null);
   }
 
   const savings = result ? ((1 - result.convertedSize / result.originalSize) * 100) : 0;
@@ -189,14 +275,14 @@ export default function VideoConvertPage() {
       <div>
         <h1 className="page-title">Convertor Video</h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Convertește MP4/MOV în WebP animat (pentru upsell-uri) sau WebM (pentru video embed).
+          Convertește MP4, MOV, WebM, GIF sau WebP animat în WebP animat (pentru upsell-uri) sau în MP4 mic, fără sunet (pentru blocul „Video” din paginile proprii).
         </p>
       </div>
 
       {/* Format toggle */}
       <div className="card p-1 flex gap-1">
         <button
-          onClick={() => { setOutputFormat("webp"); setResult(null); }}
+          onClick={() => switchFormat("webp")}
           className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
             outputFormat === "webp"
               ? "bg-indigo-600 text-white"
@@ -207,15 +293,15 @@ export default function VideoConvertPage() {
           <span className="block text-[10px] font-normal opacity-70">funcționează în &lt;img&gt; · upsell-uri</span>
         </button>
         <button
-          onClick={() => { setOutputFormat("webm"); setResult(null); }}
+          onClick={() => switchFormat("mp4")}
           className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-            outputFormat === "webm"
+            outputFormat === "mp4"
               ? "bg-indigo-600 text-white"
               : "text-zinc-400 hover:text-white"
           }`}
         >
-          WebM video
-          <span className="block text-[10px] font-normal opacity-70">necesită tag &lt;video&gt; · fișier mai mic</span>
+          MP4 video
+          <span className="block text-[10px] font-normal opacity-70">blocul „Video” · fișier mic, fără sunet</span>
         </button>
       </div>
 
@@ -236,7 +322,7 @@ export default function VideoConvertPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+          accept="video/mp4,video/quicktime,video/webm,image/gif,image/webp,.mp4,.mov,.webm,.gif,.webp,.apng"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -251,7 +337,7 @@ export default function VideoConvertPage() {
             <svg className="w-10 h-10 mx-auto text-zinc-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
-            <p className="text-zinc-300 font-medium">Trage un fișier MP4 / MOV / WebM aici</p>
+            <p className="text-zinc-300 font-medium">Trage un fișier MP4 / MOV / WebM / GIF / WebP animat aici</p>
             <p className="text-zinc-400 text-sm mt-1">sau click pentru a selecta</p>
           </div>
         )}
@@ -299,7 +385,7 @@ export default function VideoConvertPage() {
             <input
               type="range"
               min={20}
-              max={55}
+              max={outputFormat === "mp4" ? 45 : 55}
               value={crf}
               onChange={(e) => setCrf(Number(e.target.value))}
               className="w-full mt-2 accent-indigo-500"
@@ -314,7 +400,7 @@ export default function VideoConvertPage() {
         <p className="text-xs text-zinc-400">
           {outputFormat === "webp"
             ? "Pentru 4-5 sec la 100–400 KB: lățime 480–640px, FPS 8–15, calitate 35–45. WebP animat e mai mare decât WebM dar funcționează direct în upsell-uri."
-            : "Pentru 4-5 sec la 50–200 KB: lățime 480–640px, FPS 8–15, calitate 38–45. Audio este eliminat automat."}
+            : "Pentru 4-5 sec sub 300 KB: lățime 480px, FPS 10–12, calitate 30–34 (mai mare = mai mic ca fișier). Blocul „Video” acceptă maximum 4 MB. Sunetul este eliminat automat."}
         </p>
       </div>
 
@@ -328,7 +414,7 @@ export default function VideoConvertPage() {
           ? "Se încarcă ffmpeg.wasm (~30MB, o singură dată)..."
           : isConverting
           ? `Se convertește... ${convertProgress}%`
-          : `Convertește în ${outputFormat === "webp" ? "WebP animat" : "WebM"}`}
+          : `Convertește în ${outputFormat === "webp" ? "WebP animat" : "MP4"}`}
       </button>
 
       {/* Progress bar */}
@@ -360,18 +446,24 @@ export default function VideoConvertPage() {
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="bg-zinc-800/60 rounded-lg p-3">
-              <p className="text-zinc-400 text-xs mb-1">Original (MP4)</p>
+              <p className="text-zinc-400 text-xs mb-1">Original ({result.originalLabel})</p>
               <p className="text-white font-semibold">{formatBytes(result.originalSize)}</p>
             </div>
             <div className="bg-zinc-800/60 rounded-lg p-3">
               <p className="text-zinc-400 text-xs mb-1">
-                Convertit ({result.format === "webp" ? "WebP animat" : "WebM"})
+                Convertit ({result.format === "webp" ? "WebP animat" : "MP4"})
               </p>
               <p className="text-white font-semibold">{formatBytes(result.convertedSize)}</p>
             </div>
           </div>
 
-          {/* Preview: WebP as <img>, WebM as <video> */}
+          {result.format === "mp4" && result.convertedSize > MP4_LIMIT_BYTES && (
+            <div className="p-3 bg-red-950/60 border border-red-700/60 rounded-lg text-sm text-red-400">
+              Prea mare pentru încărcare în blocul „Video” (maximum 4 MB). Coboară lățimea, FPS-ul sau mărește valoarea calității și convertește din nou.
+            </div>
+          )}
+
+          {/* Preview: WebP as <img>, MP4 as <video> */}
           {result.format === "webp" ? (
             <img
               src={result.url}

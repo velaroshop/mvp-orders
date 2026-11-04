@@ -8,6 +8,7 @@ import { FB_REACTIONS } from "@/lib/page-blocks";
 import { useSession } from "next-auth/react";
 import { loadFooters, type FooterRow } from "@/lib/footer-library-client";
 import { loadLandingPages, type LandingRow } from "@/lib/landing-picker-client";
+import { loadLegalPages, type LegalRow } from "@/lib/legal-picker-client";
 import { uploadPageVideo } from "@/lib/upload-page-video-client";
 import { uploadPageImage } from "@/lib/upload-page-image-client";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
@@ -233,6 +234,68 @@ function FooterPicker({ value, onChange }: { value: unknown; onChange: (value: u
   );
 }
 
+const OTHER_LINK = "__other";
+
+/**
+ * Address of a footer link: choice among the legal pages (fills "/<slug>" and, when the link text is empty or still the title
+ * of a legal page, the link text), or "Alt link…" for an address typed by hand. The address is stored as plain text, as before.
+ */
+function LegalLinkPicker({ value, onChange }: { value: unknown; onChange: (value: unknown, extras?: Record<string, unknown>) => void }) {
+  const [pages, setPages] = useState<LegalRow[] | null>(null);
+  const [custom, setCustom] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    loadLegalPages().then((rows) => !cancelled && setPages(rows));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const current = typeof value === "string" ? value : "";
+  const match = pages?.find((p) => `/${p.slug}` === current);
+  // Until the list is loaded (or when it is empty) the address stays a plain text field
+  const manual = pages === null || pages.length === 0 || custom || (current !== "" && !match);
+  const selectValue = manual ? OTHER_LINK : (match ? current : "");
+  return (
+    <div className="space-y-1">
+      {pages !== null && pages.length > 0 && (
+        <select
+          value={selectValue}
+          onChange={(e) => {
+            if (e.target.value === OTHER_LINK) {
+              setCustom(true);
+              if (match) onChange("");
+              return;
+            }
+            setCustom(false);
+            const page = pages.find((p) => `/${p.slug}` === e.target.value);
+            onChange(e.target.value, page ? { label: page.title, titles: pages.map((p) => p.title) } : undefined);
+          }}
+          className={inputClass}
+        >
+          <option value="">Alege pagina legală…</option>
+          {pages.map((p) => (
+            <option key={p.id} value={`/${p.slug}`}>
+              {p.title} (/{p.slug}){p.status !== "published" ? " — draft" : ""}
+            </option>
+          ))}
+          <option value={OTHER_LINK}>Alt link…</option>
+        </select>
+      )}
+      {manual && (
+        <input
+          type="text"
+          value={current}
+          placeholder="https://… sau /pagina sau #ancora"
+          onChange={(e) => onChange(e.target.value)}
+          className={inputClass}
+        />
+      )}
+      {match && match.status !== "published" && <p className="text-xs text-amber-400">Pagina legală nu e publicată: linkul nu se va deschide până o publici.</p>}
+    </div>
+  );
+}
+
 function FieldInput({
   def,
   value,
@@ -317,6 +380,9 @@ function FieldInput({
 
     case "footerPicker":
       return <FooterPicker value={value} onChange={onChange} />;
+
+    case "legalLink":
+      return <LegalLinkPicker value={value} onChange={onChange} />;
 
     case "reactions": {
       const chosen = Array.isArray(value) ? (value as string[]) : [];
@@ -464,6 +530,12 @@ export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; v
               // An uploaded image also fills in its size (image blocks reserve the space, so the page does not jump)
               // A landing page choice also fills the organization slug of the block
               if (def.kind === "landingPicker" && extras && typeof extras.org === "string") next = setPath(next, def.orgKey, extras.org);
+              // A legal page choice also fills the link text, unless the text was typed by hand
+              if (def.kind === "legalLink" && extras && typeof extras.label === "string") {
+                const text = getPath(value, def.labelKey);
+                const titles = Array.isArray(extras.titles) ? (extras.titles as string[]) : [];
+                if (typeof text !== "string" || text.trim() === "" || titles.includes(text)) next = setPath(next, def.labelKey, extras.label);
+              }
               if (def.kind === "image" && def.dims && extras) {
                 if (def.dims.width && typeof extras.width === "number") next = setPath(next, def.dims.width, extras.width);
                 if (def.dims.height && typeof extras.height === "number") next = setPath(next, def.dims.height, extras.height);

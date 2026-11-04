@@ -23,6 +23,8 @@ export type FieldDef =
   | (FieldBase & { kind: "landingPicker"; orgKey: string })
   // Choice among the organization's footers ("" = the default footer)
   | (FieldBase & { kind: "footerPicker" })
+  // Address of a footer link: one of the legal pages ("/<slug>") or any other link typed by hand; also fills the link text (labelKey)
+  | (FieldBase & { kind: "legalLink"; labelKey: string })
   // Choice of Facebook reactions (up to max), shown with their icons
   | (FieldBase & { kind: "reactions"; max: number })
   | (FieldBase & { kind: "select"; options: { value: string; label: string }[] })
@@ -623,7 +625,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         newItem: () => ({ label: "", href: "" }),
         fields: [
           { kind: "text", key: "label", label: "Text" },
-          { kind: "url", key: "href", label: "Adresă" },
+          { kind: "legalLink", key: "href", labelKey: "label", label: "Adresă" },
         ],
       },
       { kind: "toggle", key: "showAnpc", label: "Arată pictogramele ANPC (SAL și SOL)" },

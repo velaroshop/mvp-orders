@@ -537,7 +537,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     note: {
       text: "Video MP4 (H.264), fără sunet, sub 4 MB, de preferat pătrat sau 4:5, cam 480–720 px. Pornirea automată poate fi oprită de telefon (economisire energie): de aceea imaginea de copertă contează, ea se vede mereu până pornește video-ul.",
     },
-    create: () => ({ type: "video", src: "", poster: "", autoplay: false, radius: 0, inset: 0 }),
+    create: () => ({ type: "video", src: "", poster: "", autoplay: true, radius: 0, inset: 0 }),
     fields: [
       { kind: "video", key: "src", label: "Fișier video (MP4)" },
       { kind: "image", key: "poster", label: "Imagine de copertă (primul cadru)", maxWidth: 800, dims: { width: "width", height: "height" }, help: "Obligatorie pentru pornirea automată" },

@@ -11,6 +11,7 @@ import FbReactionIcon from "@/components/page-blocks/FbReactionIcon";
 import AutoplayVideo from "@/components/page-blocks/AutoplayVideo";
 import TopbarScroll from "@/components/page-blocks/TopbarScroll";
 import TopbarTimer from "@/components/page-blocks/TopbarTimer";
+import RefundFormEmbed from "@/components/page-blocks/RefundFormEmbed";
 
 // Server component on purpose: no client JavaScript, so own pages stay as light as possible.
 
@@ -428,6 +429,9 @@ function Block({
 
     case "store_cta":
       return <StoreCta />;
+
+    case "refund_form":
+      return <RefundFormEmbed org={block.org} />;
 
     case "spacer":
       return <div style={{ height: block.height }} aria-hidden="true" />;

@@ -585,6 +585,17 @@ export const BLOCK_DEFS: BlockDef[] = [
     ],
   },
   {
+    type: "refund_form",
+    label: "Formular retur",
+    icon: "↩",
+    description: "Formularul de returnare produse",
+    kinds: LANDING,
+    create: () => ({ type: "refund_form", org: "" }),
+    fields: [
+      { kind: "text", key: "org", label: "Organizație (slug)", help: "ex. reduxio-srl", placeholder: "reduxio-srl", maxLength: 60 },
+    ],
+  },
+  {
     type: "shared_footer",
     label: "Footer comun",
     icon: "▁",

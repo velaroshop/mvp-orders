@@ -186,6 +186,8 @@ export type FormBlock = { type: "form"; landingSlug: string; org: string | null;
 // Thank-you page only: order details from the order in the URL (renders nothing elsewhere)
 export type OrderSummaryBlock = { type: "order_summary"; heading: string; bg: string; color: string; accent: string };
 export type SpacerBlock = { type: "spacer"; height: number };
+// The product return form (widget of the organization with this slug, same as the one embedded in the Shopify page)
+export type RefundFormBlock = { type: "refund_form"; org: string };
 /** Footer chosen from the organization's footer library; footerId null = the organization's default footer */
 export type SharedFooterBlock = { type: "shared_footer"; footerId: string | null };
 export type FooterBlock = {
@@ -241,6 +243,7 @@ export type BlockVariant =
   | GalleryBlock
   | BeforeAfterBlock
   | SpacerBlock
+  | RefundFormBlock
   | OrderSummaryBlock
   | PostsaleOfferBlock
   | StoreCtaBlock
@@ -601,6 +604,11 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
 
     case "spacer":
       return { type: "spacer", height: typeof b.height === "number" ? Math.min(200, Math.max(4, Math.round(b.height))) : 24 };
+
+    case "refund_form": {
+      const org = str(b.org).trim();
+      return /^[a-z0-9-]{1,60}$/.test(org) ? { type: "refund_form", org } : null;
+    }
 
     case "shared_footer":
       return { type: "shared_footer", footerId: typeof b.footerId === "string" && UUID.test(b.footerId) ? b.footerId : null };

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { newSessionId } from "@/lib/session-id";
+import { isNoiseError } from "@/lib/js-error-noise";
 
 /**
  * Anonymous visit counter of an own page: reports that the page was opened (with the source and screen width), then, as the
@@ -69,6 +70,8 @@ export default function PageTracker({ pageId }: { pageId: string }) {
 
       // Counts the errors and keeps the first one as short text: message and where it happened (file without query string, line)
       const onError = (event: ErrorEvent) => {
+        // Errors of other people's code (in-app browsers, extensions) say nothing about the page
+        if (isNoiseError(event.message, event.filename)) return;
         jsErrors += 1;
         if (firstError) return;
         try {

@@ -102,6 +102,55 @@ const PRESETS = [
   { id: "30", label: "Ultimele 30 de zile", days: 29 },
 ] as const;
 
+const BAR_AREA = 104; // px available for the tallest bar
+
+/** Visits per hour (blue) with the orders of that hour (green) inside the bar; the numbers are readable without hovering. */
+function HoursChart({ hours }: { hours: (Counts & { hour: number })[] }) {
+  const maxVisits = Math.max(1, ...hours.map((h) => h.visits));
+  const busiest = hours.reduce((best, h) => (h.visits > best.visits ? h : best), hours[0] ?? { hour: 0, visits: 0, formSeen: 0, started: 0, ordered: 0 });
+  const bestOrders = hours.reduce((best, h) => (h.ordered > best.ordered ? h : best), hours[0] ?? busiest);
+  const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00`;
+  return (
+    <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+      <h2 className="text-lg font-semibold text-white">Vizite și comenzi pe ore (ora României)</h2>
+      <div className="mb-3 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-300">
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-sm bg-sky-500" /> Vizite</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Comenzi</span>
+        {busiest.visits > 0 && <span className="text-zinc-400">Cea mai aglomerată oră: <strong className="text-white">{hourLabel(busiest.hour)}</strong> ({busiest.visits} vizite)</span>}
+        {bestOrders.ordered > 0 && <span className="text-zinc-400">Cele mai multe comenzi: <strong className="text-emerald-400">{hourLabel(bestOrders.hour)}</strong> ({bestOrders.ordered})</span>}
+      </div>
+      <div className="flex items-end gap-0.5 sm:gap-1">
+        {hours.map((h) => {
+          const barHeight = h.visits > 0 ? Math.max(3, Math.round((h.visits / maxVisits) * BAR_AREA)) : 0;
+          const orderHeight = h.ordered > 0 ? Math.max(3, Math.round((h.ordered / maxVisits) * BAR_AREA)) : 0;
+          return (
+            <div
+              key={h.hour}
+              className="flex min-w-0 flex-1 flex-col items-center justify-end"
+              style={{ height: BAR_AREA + 20 }}
+              title={`${hourLabel(h.hour)} – ${h.visits} vizite, ${h.formSeen} au văzut formularul, ${h.started} au început formularul, ${h.ordered} comenzi`}
+            >
+              {h.visits > 0 && <span className="mb-0.5 text-[10px] font-medium leading-none text-sky-300">{h.visits}</span>}
+              <div className="relative w-full overflow-hidden rounded-t bg-sky-500" style={{ height: barHeight }}>
+                {orderHeight > 0 && <div className="absolute inset-x-0 bottom-0 bg-emerald-500" style={{ height: orderHeight }} />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex gap-0.5 sm:gap-1">
+        {hours.map((h) => (
+          <div key={h.hour} className="min-w-0 flex-1 text-center">
+            <div className={`text-[9px] text-zinc-400 sm:text-[10px] ${h.hour % 3 === 0 ? "" : "max-sm:invisible"}`}>{h.hour}</div>
+            <div className="h-3 text-[10px] font-semibold leading-3 text-emerald-400">{h.ordered > 0 ? h.ordered : ""}</div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-1 text-[11px] text-zinc-400">Cifra albastră de deasupra barei = vizite. Cifra verde de sub oră = comenzi.</p>
+    </div>
+  );
+}
+
 export default function PagesStatsPage() {
   const today = useMemo(() => bucharestDateKey(new Date()), []);
   const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("7");
@@ -141,7 +190,6 @@ export default function PagesStatsPage() {
   }, [load]);
 
   const hours = stats?.byHour ?? [];
-  const maxHour = Math.max(1, ...hours.map((h) => h.visits));
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -232,23 +280,7 @@ export default function PagesStatsPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
-            <h2 className="mb-3 text-lg font-semibold text-white">Vizite pe ore (ora României)</h2>
-            <div className="flex h-32 items-end gap-1">
-              {hours.map((h) => (
-                <div key={h.hour} className="flex h-full flex-1 flex-col items-center justify-end" title={`${h.hour}:00 – ${h.visits} vizite, ${h.ordered} comenzi`}>
-                  <div className="w-full rounded-t bg-sky-500" style={{ height: `${(h.visits / maxHour) * 100}%`, minHeight: h.visits > 0 ? 2 : 0 }} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-1 flex gap-1 text-[10px] text-zinc-400">
-              {hours.map((h) => (
-                <div key={h.hour} className="flex-1 text-center">
-                  {h.hour % 3 === 0 ? h.hour : ""}
-                </div>
-              ))}
-            </div>
-          </div>
+          <HoursChart hours={hours} />
         </div>
       )}
     </div>

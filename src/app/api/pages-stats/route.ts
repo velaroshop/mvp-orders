@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso, toBucharestParts } from "@/lib/romania-time";
+import { isNoiseError } from "@/lib/js-error-noise";
 
 export const dynamic = "force-dynamic";
 
@@ -110,9 +111,11 @@ export async function GET(request: NextRequest) {
   const scrolls = all.map((v) => v.max_scroll).filter((n): n is number => n !== null);
 
   // JS errors: same message grouped, with how many visits and on which browsers
+  // (errors that only come from the Facebook / Instagram in-app browser or from other people's scripts are left out, see js-error-noise.ts)
+  const realErrors = (v: Visit) => v.js_errors > 0 && !isNoiseError(v.js_error);
   const errorMap = new Map<string, { count: number; browsers: Set<string> }>();
   for (const v of all) {
-    if (v.js_errors === 0) continue;
+    if (!realErrors(v)) continue;
     const key = v.js_error || "(mesaj necunoscut)";
     const entry = errorMap.get(key) ?? { count: 0, browsers: new Set<string>() };
     entry.count += 1;
@@ -136,7 +139,7 @@ export async function GET(request: NextRequest) {
       formMedianMs: median(formMs),
       timeMedianS: median(times),
       scrollMedian: median(scrolls),
-      visitsWithErrors: all.filter((v) => v.js_errors > 0).length,
+      visitsWithErrors: all.filter(realErrors).length,
     },
     errors,
     truncated: all.length >= MAX_ROWS,

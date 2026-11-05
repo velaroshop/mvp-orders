@@ -88,6 +88,7 @@ export default function LandingPagesPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editUpsellModal, setEditUpsellModal] = useState<Upsell | null>(null);
+  const [editUpsellFree, setEditUpsellFree] = useState(false);
   const [isEditingUpsell, setIsEditingUpsell] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [deleteUpsellModal, setDeleteUpsellModal] = useState<Upsell | null>(null);
@@ -292,6 +293,7 @@ export default function LandingPagesPage() {
   }
 
   function openEditUpsellModal(upsell: Upsell) {
+    setEditUpsellFree(upsell.type === "presale" && Number(upsell.price) === 0);
     setEditUpsellModal({ ...upsell });
     if (products.length === 0) {
       fetchProducts();
@@ -943,8 +945,8 @@ export default function LandingPagesPage() {
                                                 Cant: {upsell.quantity}
                                               </p>
                                               <p className="text-xs text-emerald-400 font-medium">
-                                                {formatPrice(upsell.price)} RON/buc
-                                                {upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
+                                                {Number(upsell.price) === 0 ? "GRATIS" : `${formatPrice(upsell.price)} RON/buc`}
+                                                {Number(upsell.price) !== 0 && upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
                                               </p>
                                               <p className="text-xs text-zinc-400">
                                                 SRP {formatPrice(upsell.srp)} RON
@@ -1066,8 +1068,8 @@ export default function LandingPagesPage() {
                                                 Cant: {upsell.quantity}
                                               </p>
                                               <p className="text-xs text-emerald-400 font-medium">
-                                                {formatPrice(upsell.price)} RON/buc
-                                                {upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
+                                                {Number(upsell.price) === 0 ? "GRATIS" : `${formatPrice(upsell.price)} RON/buc`}
+                                                {Number(upsell.price) !== 0 && upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
                                               </p>
                                               <p className="text-xs text-zinc-400">
                                                 SRP {formatPrice(upsell.srp)} RON
@@ -1432,14 +1434,28 @@ export default function LandingPagesPage() {
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
                         Preț pe bucată (RON) *
                       </label>
+                      {editUpsellModal.type === "presale" && (
+                        <label className="flex items-center gap-2 mb-2 text-sm text-zinc-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editUpsellFree}
+                            onChange={(e) => {
+                              setEditUpsellFree(e.target.checked);
+                              if (e.target.checked) setEditUpsellModal({ ...editUpsellModal, price: 0 });
+                            }}
+                          />
+                          Ofertă gratuită (se afișează GRATIS)
+                        </label>
+                      )}
                       <input
                         type="number"
                         step="0.01"
                         min="0"
-                        value={editUpsellModal.price}
+                        disabled={editUpsellFree && editUpsellModal.type === "presale"}
+                        value={Number.isNaN(editUpsellModal.price) ? "" : editUpsellModal.price}
                         onChange={(e) => setEditUpsellModal({ ...editUpsellModal, price: parseFloat(e.target.value) })}
                         required
-                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:opacity-50"
                       />
                       <p className="text-xs text-zinc-500 mt-1">Clientul plătește prețul pe bucată × cantitatea.</p>
                     </div>

@@ -23,3 +23,8 @@ export function offerUnitNote(price: number, quantity: number): string | null {
 export function offerPerPieceNote(price: number, quantity: number): string | null {
   return Math.max(1, Number(quantity) || 1) > 1 ? `${(Number(price) || 0).toFixed(2)} Lei / buc.` : null;
 }
+
+/** A free offer (price 0): the presale card shows "GRATIS" instead of a price */
+export function isFreeOffer(price: number): boolean {
+  return Number(price) === 0;
+}

@@ -452,17 +452,31 @@ export default function AddUpsellPage() {
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Preț pe bucată *
                 </label>
+                {formData.type === "presale" && (
+                  <label className="flex items-center gap-2 mb-2 text-xs text-zinc-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.price === "0"}
+                      onChange={(e) => {
+                        setFormData({ ...formData, price: e.target.checked ? "0" : "" });
+                        setErrors({ ...errors, price: "" });
+                      }}
+                    />
+                    Ofertă gratuită (se afișează GRATIS, prețul devine 0)
+                  </label>
+                )}
                 <input
                   type="number"
                   step="0.01"
                   min="0"
+                  disabled={formData.type === "presale" && formData.price === "0"}
                   value={formData.price}
                   onChange={(e) => {
                     setFormData({ ...formData, price: e.target.value });
                     setErrors({ ...errors, price: "" });
                   }}
                   placeholder="0.00"
-                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm ${
+                  className={`w-full px-3 py-2 bg-zinc-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder:text-zinc-500 text-sm disabled:opacity-50 ${
                     errors.price ? "border-red-500 bg-red-950/20" : "border-zinc-700"
                   }`}
                 />

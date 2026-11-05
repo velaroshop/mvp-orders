@@ -214,7 +214,11 @@
     countdown = Math.max(0, Math.floor((expiresAt - now) / 1000));
 
     // Calculate discount percentage
-    const discountPercent = Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100);
+    // price is per piece; the offer costs price x quantity and srp is the list price of the whole offer
+    const offerPieces = Math.max(1, Number(upsell.quantity) || 1);
+    const offerTotal = upsell.price * offerPieces;
+    const discountPercent = upsell.srp > offerTotal ? Math.round(((upsell.srp - offerTotal) / upsell.srp) * 100) : 0;
+    const offerUnitNote = offerPieces > 1 ? `${offerPieces} buc. × ${upsell.price.toFixed(2)} Lei` : '';
 
     // Generate sparkle particles
     let particlesHtml = '';
@@ -263,9 +267,9 @@
               <img src="${upsell.mediaUrl}" alt="${upsell.title}" style="position: relative; width: 100%; height: auto; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
 
               <!-- Discount badge on image - GREEN -->
-              <div style="position: absolute; top: -10px; right: -10px; background: linear-gradient(135deg, #22c55e, #15803d); color: white; border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.5); animation: bounce 1s ease-in-out infinite;">
+              ${discountPercent > 0 ? `<div style="position: absolute; top: -10px; right: -10px; background: linear-gradient(135deg, #22c55e, #15803d); color: white; border-radius: 50%; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.5); animation: bounce 1s ease-in-out infinite;">
                 <span style="font-size: 20px; line-height: 1;">-${discountPercent}%</span>
-              </div>
+              </div>` : ''}
             </div>
           ` : ''}
 
@@ -286,8 +290,9 @@
             <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
               <span style="font-size: 18px; color: #94a3b8; opacity: 0.8;">${upsell.srp.toFixed(2)} LEI</span>
               <span style="font-size: 16px; color: #64748b;">→</span>
-              <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);">${upsell.price.toFixed(2)} LEI</span>
+              <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);">${offerTotal.toFixed(2)} LEI</span>
             </div>
+            ${offerUnitNote ? `<p style="font-size: 13px; color: #94a3b8; margin: 4px 0 0 0;">${offerUnitNote}</p>` : ''}
           </div>
 
           <!-- URGENCY MESSAGE -->

@@ -7,6 +7,7 @@ import { FormEvent, useState, useEffect, useRef } from "react";
 import type { OfferCode } from "@/lib/types";
 import { initInlinePixel, trackInlinePixel, readMetaCookies } from "@/lib/inline-pixel";
 import { newSessionId } from "@/lib/session-id";
+import { offerTotal, offerDiscountPercent, offerUnitNote } from "@/lib/upsell-offer";
 
 interface Upsell {
   id: string;
@@ -594,7 +595,7 @@ export default function OwnOrderForm({
   function getUpsellsTotal() {
     return presaleUpsells
       .filter(upsell => selectedUpsells.has(upsell.id))
-      .reduce((total, upsell) => total + upsell.price, 0);
+      .reduce((total, upsell) => total + offerTotal(upsell.price, upsell.quantity), 0);
   }
 
   function getOfferQuantity(): number {
@@ -1840,7 +1841,8 @@ export default function OwnOrderForm({
               <div className="space-y-2">
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
-                  const discount = upsell.srp > upsell.price ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
+                  const discount = offerDiscountPercent(upsell.srp, upsell.price, upsell.quantity);
+                  const unitNote = offerUnitNote(upsell.price, upsell.quantity);
 
                   return (
                     <button
@@ -1915,9 +1917,14 @@ export default function OwnOrderForm({
                                   className="font-bold text-base sm:text-lg"
                                   style={{ color: accentColor }}
                                 >
-                                  {upsell.price.toFixed(2)} Lei
+                                  {offerTotal(upsell.price, upsell.quantity).toFixed(2)} Lei
                                 </span>
-                                {upsell.srp > upsell.price && (
+                                {unitNote && (
+                                  <span className="text-xs sm:text-sm" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
+                                    {' '}({unitNote})
+                                  </span>
+                                )}
+                                {upsell.srp > offerTotal(upsell.price, upsell.quantity) && (
                                   isV3 ? (
                                     <span className="text-sm sm:text-base" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#52525b' }}>
                                       {' '}(redus de la{' '}
@@ -2224,6 +2231,7 @@ export default function OwnOrderForm({
                       </div>
                     )}
                     {/* DISCOUNT BADGE - Overlapping image */}
+                    {offerDiscountPercent(postsaleUpsells[0].srp, postsaleUpsells[0].price, postsaleUpsells[0].quantity) > 0 && (
                     <div
                       className="absolute -top-3 -right-3 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shadow-xl border-2 border-white"
                       style={{
@@ -2232,9 +2240,10 @@ export default function OwnOrderForm({
                       }}
                     >
                       <span className="text-white font-black text-lg sm:text-xl leading-none text-center">
-                        -{Math.round(((postsaleUpsells[0].srp - postsaleUpsells[0].price) / postsaleUpsells[0].srp) * 100)}%
+                        -{offerDiscountPercent(postsaleUpsells[0].srp, postsaleUpsells[0].price, postsaleUpsells[0].quantity)}%
                       </span>
                     </div>
+                    )}
                   </div>
                 </div>
 
@@ -2272,10 +2281,13 @@ export default function OwnOrderForm({
                       style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
                     >
                       <span className="text-white text-2xl sm:text-3xl font-black">
-                        {postsaleUpsells[0].price.toFixed(2)} Lei
+                        {offerTotal(postsaleUpsells[0].price, postsaleUpsells[0].quantity).toFixed(2)} Lei
                       </span>
                     </div>
                   </div>
+                  {offerUnitNote(postsaleUpsells[0].price, postsaleUpsells[0].quantity) && (
+                    <p className="mt-1 text-zinc-400 text-xs sm:text-sm">{offerUnitNote(postsaleUpsells[0].price, postsaleUpsells[0].quantity)}</p>
+                  )}
                 </div>
 
                 {/* URGENCY MESSAGE */}

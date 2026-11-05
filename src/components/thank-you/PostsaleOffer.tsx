@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PostsaleOfferBlock } from "@/lib/page-blocks";
 import { useThankYou } from "./ThankYouProvider";
+import { offerTotal, offerDiscountPercent, offerUnitNote } from "@/lib/upsell-offer";
 
 const GOLD = "#FFD700";
 
@@ -38,7 +39,8 @@ export default function PostsaleOffer({ block }: { block: PostsaleOfferBlock }) 
 
   if (!ctx || !upsell) return null;
 
-  const discount = upsell.srp > 0 ? Math.round(((upsell.srp - upsell.price) / upsell.srp) * 100) : 0;
+  const discount = offerDiscountPercent(upsell.srp, upsell.price, upsell.quantity);
+  const unitNote = offerUnitNote(upsell.price, upsell.quantity);
   const disabled = ctx.busy;
 
   return (
@@ -106,9 +108,10 @@ export default function PostsaleOffer({ block }: { block: PostsaleOfferBlock }) 
             →
           </span>
           <span className="text-[32px] font-black" style={{ color: block.accent, textShadow: `0 0 20px ${block.accent}80` }}>
-            {upsell.price.toFixed(2)} LEI
+            {offerTotal(upsell.price, upsell.quantity).toFixed(2)} LEI
           </span>
         </div>
+        {unitNote && <p className="-mt-2 mb-4 text-center text-xs text-slate-400">{unitNote}</p>}
 
         {block.urgencyText && <p className="mb-5 text-center text-sm font-semibold text-amber-400">{block.urgencyText}</p>}
 

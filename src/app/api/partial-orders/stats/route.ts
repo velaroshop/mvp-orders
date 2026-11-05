@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
-import { bucharestDateKey, bucharestDayStartIso } from "@/lib/romania-time";
+import { parsePartialPeriod, partialPeriodRange } from "@/lib/partial-period";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 
 const STATUSES = ["pending", "accepted", "refused", "unanswered", "call_later", "duplicate"] as const;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -23,28 +23,29 @@ export async function GET() {
       return NextResponse.json({ error: "No organization" }, { status: 400 });
     }
 
-    // "Today" starts at midnight Romania time
-    const todayStart = bucharestDayStartIso(bucharestDateKey(new Date()));
+    const { searchParams } = new URL(request.url);
+    const period = parsePartialPeriod(searchParams.get("period"), "today");
+    const { start, end } = partialPeriodRange(period);
 
-    // Fetch all today's partials with their status in one query
-    const { data: todayRows } = await supabaseAdmin
-      .from("partial_orders")
-      .select("status")
-      .eq("organization_id", activeOrganizationId)
-      .gte("created_at", todayStart);
+    // One count per status: a long period holds far more rows than a single query returns
+    const countFor = async (status?: string) => {
+      let query = supabaseAdmin
+        .from("partial_orders")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", activeOrganizationId);
+      if (start) query = query.gte("created_at", start);
+      if (end) query = query.lte("created_at", end);
+      if (status) query = query.eq("status", status);
+      const { count } = await query;
+      return count ?? 0;
+    };
 
-    const todayTotal = todayRows?.length ?? 0;
-
-    // Count per status
-    const statusCounts: Record<string, number> = {};
-    for (const s of STATUSES) statusCounts[s] = 0;
-    for (const row of todayRows ?? []) {
-      if (row.status in statusCounts) statusCounts[row.status]++;
-    }
+    const [total, ...counts] = await Promise.all([countFor(), ...STATUSES.map((s) => countFor(s))]);
 
     return NextResponse.json({
-      todayTotal,
-      statusBreakdown: STATUSES.map((s) => ({ status: s, count: statusCounts[s] })),
+      period,
+      total,
+      statusBreakdown: STATUSES.map((s, i) => ({ status: s, count: counts[i] })),
     });
   } catch (error) {
     console.error("Error fetching partial stats:", error);

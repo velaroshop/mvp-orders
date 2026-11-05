@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PartialPeriodFilter from "./PartialPeriodFilter";
+import { PARTIAL_PERIODS, type PartialPeriod } from "@/lib/partial-period";
 
 interface AgentStat {
   id: string;
@@ -9,10 +11,18 @@ interface AgentStat {
   converted: number;
 }
 
+interface ReturnRate {
+  final: number;
+  returned: number;
+  rate: number;
+}
+
 interface ConversionStats {
   totalPartials: number;
   totalConverted: number;
   conversionRate: number;
+  revenue: number;
+  returns: { partial: ReturnRate; direct: ReturnRate } | null;
   agentBreakdown: AgentStat[];
   period: string;
 }
@@ -21,32 +31,28 @@ interface PartialConversionCardProps {
   isOwner: boolean;
 }
 
-const PERIOD_OPTIONS = [
-  { value: "30", label: "30 zile" },
-  { value: "90", label: "90 zile" },
-  { value: "all", label: "Tot" },
-];
-
 export default function PartialConversionCard({ isOwner }: PartialConversionCardProps) {
   const [stats, setStats] = useState<ConversionStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("30");
+  const [period, setPeriod] = useState<PartialPeriod>("30");
 
   useEffect(() => {
-    fetchStats();
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/partial-orders/conversion-stats?period=${period}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setStats(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
 
-  async function fetchStats() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/partial-orders/conversion-stats?period=${period}`);
-      if (res.ok) setStats(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const periodLabel = PERIOD_OPTIONS.find((o) => o.value === period)?.label || "";
+  const periodLabel = PARTIAL_PERIODS.find((o) => o.value === period)?.label || "";
 
   return (
     <div className="card p-5 space-y-5">
@@ -56,22 +62,7 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
           <h3 className="text-sm font-semibold text-white">Rată de conversie parțiale</h3>
           <p className="text-xs text-zinc-500 mt-0.5">Parțiale convertite în comenzi</p>
         </div>
-        {/* Period selector */}
-        <div className="flex items-center gap-1">
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setPeriod(opt.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-                period === opt.value
-                  ? "bg-indigo-600 text-white"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <PartialPeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {loading ? (
@@ -90,7 +81,7 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
               </p>
               <p className="text-xs text-zinc-500 mt-1.5">
                 {stats.totalConverted} convertite din {stats.totalPartials} parțiale
-                {period !== "all" && ` · ultimele ${period} zile`}
+                {period !== "all" && ` · ${periodLabel.toLowerCase()}`}
               </p>
             </div>
 
@@ -110,6 +101,11 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
                 <p className="text-xl font-bold text-white">{stats.totalPartials}</p>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wide mt-0.5">Total</p>
               </div>
+              <div className="w-px bg-zinc-800" />
+              <div>
+                <p className="text-xl font-bold text-emerald-400">{stats.revenue.toFixed(0)} <span className="text-xs font-semibold text-zinc-400">RON</span></p>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-wide mt-0.5">Valoare comenzi</p>
+              </div>
             </div>
           </div>
 
@@ -126,6 +122,40 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
               <span className="text-[10px] text-zinc-600">100%</span>
             </div>
           </div>
+
+          {/* Return rate — only over long periods, parcels of the last weeks have no final status yet */}
+          {stats.returns && (
+            <div className="border-t border-zinc-800 pt-4 space-y-3">
+              <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">
+                Rată de retur
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-2xl font-bold text-white leading-none">
+                    {stats.returns.partial.rate}
+                    <span className="text-lg text-zinc-400">%</span>
+                  </p>
+                  <p className="text-xs text-zinc-300 mt-1.5">Comenzi din parțiale</p>
+                  <p className="text-[10px] text-zinc-400">
+                    {stats.returns.partial.returned} returnate din {stats.returns.partial.final} colete finalizate
+                  </p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-zinc-400 leading-none">
+                    {stats.returns.direct.rate}
+                    <span className="text-lg text-zinc-400">%</span>
+                  </p>
+                  <p className="text-xs text-zinc-300 mt-1.5">Comenzi directe</p>
+                  <p className="text-[10px] text-zinc-400">
+                    {stats.returns.direct.returned} returnate din {stats.returns.direct.final} colete finalizate
+                  </p>
+                </div>
+              </div>
+              <p className="text-[10px] text-zinc-400">
+                * Doar coletele livrate sau returnate; cele aflate încă în livrare nu intră în calcul.
+              </p>
+            </div>
+          )}
 
           {/* Agent breakdown — owner only */}
           {isOwner && stats.agentBreakdown.length > 0 && (

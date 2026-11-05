@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PartialPeriodFilter from "./PartialPeriodFilter";
+import type { PartialPeriod } from "@/lib/partial-period";
 
 interface StatusRow {
   status: string;
@@ -8,7 +10,7 @@ interface StatusRow {
 }
 
 interface PartialStats {
-  todayTotal: number;
+  total: number;
   statusBreakdown: StatusRow[];
 }
 
@@ -21,23 +23,54 @@ const STATUS_META: Record<string, { label: string; color: string; barColor: stri
   duplicate:  { label: "Duplicate",    color: "text-yellow-400", barColor: "from-yellow-600 to-yellow-400" },
 };
 
+const CAPTURED_LABEL: Record<PartialPeriod, string> = {
+  today: "parțiale capturate astăzi",
+  yesterday: "parțiale capturate ieri",
+  "3": "parțiale capturate în ultimele 3 zile",
+  "7": "parțiale capturate în ultimele 7 zile",
+  "30": "parțiale capturate în ultimele 30 de zile",
+  all: "parțiale capturate în total",
+};
+
+const EMPTY_LABEL: Record<PartialPeriod, string> = {
+  today: "Nicio parțială azi încă.",
+  yesterday: "Nicio parțială ieri.",
+  "3": "Nicio parțială în această perioadă.",
+  "7": "Nicio parțială în această perioadă.",
+  "30": "Nicio parțială în această perioadă.",
+  all: "Nicio parțială.",
+};
+
 export default function PartialStatsCard() {
   const [stats, setStats] = useState<PartialStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<PartialPeriod>("today");
 
   useEffect(() => {
-    fetch("/api/partial-orders/stats")
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/partial-orders/stats?period=${period}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, []);
+      .then((data) => {
+        if (!cancelled) setStats(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [period]);
 
   return (
     <div className="card p-5 space-y-5">
       {/* Header */}
-      <div>
-        <h3 className="text-sm font-semibold text-white">Parțiale azi</h3>
-        <p className="text-xs text-zinc-500 mt-0.5">Distribuție pe statusuri</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Parțiale</h3>
+          <p className="text-xs text-zinc-500 mt-0.5">Distribuție pe statusuri</p>
+        </div>
+        <PartialPeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {loading ? (
@@ -48,8 +81,8 @@ export default function PartialStatsCard() {
         <>
           {/* Big total */}
           <div>
-            <p className="text-5xl font-bold text-white leading-none">{stats.todayTotal}</p>
-            <p className="text-xs text-zinc-500 mt-1.5">parțiale capturate astăzi</p>
+            <p className="text-5xl font-bold text-white leading-none">{stats.total}</p>
+            <p className="text-xs text-zinc-500 mt-1.5">{CAPTURED_LABEL[period]}</p>
           </div>
 
           {/* Status breakdown */}
@@ -57,7 +90,7 @@ export default function PartialStatsCard() {
             {stats.statusBreakdown.map(({ status, count }) => {
               const meta = STATUS_META[status];
               if (!meta) return null;
-              const pct = stats.todayTotal > 0 ? (count / stats.todayTotal) * 100 : 0;
+              const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
 
               return (
                 <div key={status}>
@@ -81,8 +114,8 @@ export default function PartialStatsCard() {
             })}
           </div>
 
-          {stats.todayTotal === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-2">Nicio parțială azi încă.</p>
+          {stats.total === 0 && (
+            <p className="text-zinc-500 text-sm text-center py-2">{EMPTY_LABEL[period]}</p>
           )}
         </>
       ) : (

@@ -452,19 +452,6 @@ export default function AddUpsellPage() {
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Preț pe bucată *
                 </label>
-                {formData.type === "presale" && (
-                  <label className="flex items-center gap-2 mb-2 text-xs text-zinc-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.price === "0"}
-                      onChange={(e) => {
-                        setFormData({ ...formData, price: e.target.checked ? "0" : "" });
-                        setErrors({ ...errors, price: "" });
-                      }}
-                    />
-                    Ofertă gratuită (se afișează GRATIS, prețul devine 0)
-                  </label>
-                )}
                 <input
                   type="number"
                   step="0.01"
@@ -486,6 +473,19 @@ export default function AddUpsellPage() {
                 <p className="text-xs text-zinc-500 mt-1">Clientul plătește prețul pe bucată × cantitatea.</p>
               </div>
             </div>
+            {formData.type === "presale" && (
+              <label className="flex items-center gap-2 mt-3 text-xs text-zinc-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.price === "0"}
+                  onChange={(e) => {
+                    setFormData({ ...formData, price: e.target.checked ? "0" : "" });
+                    setErrors({ ...errors, price: "" });
+                  }}
+                />
+                Ofertă gratuită (se afișează GRATIS, prețul devine 0)
+              </label>
+            )}
           </div>
 
           {/* Media & Settings */}

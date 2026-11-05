@@ -1434,19 +1434,6 @@ export default function LandingPagesPage() {
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
                         Preț pe bucată (RON) *
                       </label>
-                      {editUpsellModal.type === "presale" && (
-                        <label className="flex items-center gap-2 mb-2 text-sm text-zinc-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={editUpsellFree}
-                            onChange={(e) => {
-                              setEditUpsellFree(e.target.checked);
-                              if (e.target.checked) setEditUpsellModal({ ...editUpsellModal, price: 0 });
-                            }}
-                          />
-                          Ofertă gratuită (se afișează GRATIS)
-                        </label>
-                      )}
                       <input
                         type="number"
                         step="0.01"
@@ -1460,6 +1447,19 @@ export default function LandingPagesPage() {
                       <p className="text-xs text-zinc-500 mt-1">Clientul plătește prețul pe bucată × cantitatea.</p>
                     </div>
                   </div>
+                  {editUpsellModal.type === "presale" && (
+                    <label className="flex items-center gap-2 mt-3 text-sm text-zinc-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editUpsellFree}
+                        onChange={(e) => {
+                          setEditUpsellFree(e.target.checked);
+                          if (e.target.checked) setEditUpsellModal({ ...editUpsellModal, price: 0 });
+                        }}
+                      />
+                      Ofertă gratuită (se afișează GRATIS)
+                    </label>
+                  )}
 
                   {/* Media URL */}
                   <div>

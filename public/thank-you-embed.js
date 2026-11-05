@@ -275,7 +275,7 @@
 
           <!-- OFFER TITLE -->
           <h2 style="font-size: 20px; font-weight: 700; color: white; text-align: center; margin: 0 0 8px 0; line-height: 1.3;">
-            ${upsell.title}
+            ${offerPieces > 1 ? `<span style="font-size: 26px; font-weight: 900; color: #22c55e;">${offerPieces}× </span>` : ''}${upsell.title}
           </h2>
 
           <!-- OFFER DESCRIPTION -->
@@ -292,7 +292,7 @@
               <span style="font-size: 16px; color: #64748b;">→</span>
               <span style="font-size: 32px; font-weight: 900; color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);">${offerTotal.toFixed(2)} LEI</span>
             </div>
-            ${offerUnitNote ? `<p style="font-size: 13px; color: #94a3b8; margin: 4px 0 0 0;">${offerUnitNote}</p>` : ''}
+            ${offerUnitNote ? `<div style="margin-top: 8px;"><span style="display: inline-block; padding: 5px 14px; border-radius: 999px; border: 1px solid rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.12); color: #4ade80; font-size: 16px; font-weight: 800;">${offerUnitNote}</span></div>` : ''}
           </div>
 
           <!-- URGENCY MESSAGE -->

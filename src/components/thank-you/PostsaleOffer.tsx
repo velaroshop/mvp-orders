@@ -96,7 +96,14 @@ export default function PostsaleOffer({ block }: { block: PostsaleOfferBlock }) 
           </div>
         )}
 
-        <h2 className="mb-2 text-center text-xl font-bold leading-snug text-white">{upsell.title}</h2>
+        <h2 className="mb-2 text-center text-xl font-bold leading-snug text-white">
+          {upsell.quantity > 1 && (
+            <span className="mr-1 text-2xl font-black" style={{ color: block.accent }}>
+              {upsell.quantity}×
+            </span>
+          )}
+          {upsell.title}
+        </h2>
 
         {upsell.description && (
           <p className="mb-4 px-2 text-center text-sm leading-relaxed text-slate-300">{upsell.description}</p>
@@ -111,7 +118,16 @@ export default function PostsaleOffer({ block }: { block: PostsaleOfferBlock }) 
             {offerTotal(upsell.price, upsell.quantity).toFixed(2)} LEI
           </span>
         </div>
-        {unitNote && <p className="-mt-2 mb-4 text-center text-xs text-slate-400">{unitNote}</p>}
+        {unitNote && (
+          <div className="-mt-1 mb-4 flex justify-center">
+            <span
+              className="rounded-full border px-3.5 py-1 text-base font-extrabold"
+              style={{ color: block.accent, borderColor: `${block.accent}80`, backgroundColor: `${block.accent}1f` }}
+            >
+              {unitNote}
+            </span>
+          </div>
+        )}
 
         {block.urgencyText && <p className="mb-5 text-center text-sm font-semibold text-amber-400">{block.urgencyText}</p>}
 

@@ -92,7 +92,7 @@ export async function GET() {
       fetchAll<any>((f, t) =>
         supabaseAdmin
           .from("orders")
-          .select("created_at, status, tracking_status, offer_code, product_name, product_quantity, total, upsells, landing_key")
+          .select("created_at, status, tracking_status, offer_code, product_name, product_quantity, total, upsells, landing_key, source")
           .eq("organization_id", organizationId)
           .neq("status", "testing")
           .gte("created_at", bucharestDayStartIso(matureFrom))
@@ -103,7 +103,7 @@ export async function GET() {
       fetchAll<any>((f, t) =>
         supabaseAdmin
           .from("orders")
-          .select("created_at, product_name, landing_key")
+          .select("created_at, product_name, landing_key, source")
           .eq("organization_id", organizationId)
           .neq("status", "testing")
           .gte("created_at", bucharestDayStartIso(start7))
@@ -125,7 +125,10 @@ export async function GET() {
 
     // Mature orders per product
     const matureByProduct = new Map<string, OrderForThreshold[]>();
+    // Orders entered manually from partial orders are left out: Meta never sees them, they return more
+    // often and their share changes over time, so they would make CPA and thresholds incomparable.
     for (const o of matureOrders) {
+      if (o.source === "partial") continue;
       const lp = lpBySlug.get(o.landing_key);
       const qty = o.product_quantity || (lp && Number(lp[`quantity_${o.offer_code}`])) || 1;
       const name = productNameOf(o);
@@ -143,9 +146,16 @@ export async function GET() {
     // Recent placed orders per product, split into the 3-day and 7-day windows
     const orders3 = new Map<string, number>();
     const orders7 = new Map<string, number>();
+    const partials3 = new Map<string, number>();
+    const partials7 = new Map<string, number>();
     for (const o of recentOrders) {
       const name = productNameOf(o);
       const day = bucharestDateKey(new Date(o.created_at));
+      if (o.source === "partial") {
+        partials7.set(name, (partials7.get(name) || 0) + 1);
+        if (day >= start3) partials3.set(name, (partials3.get(name) || 0) + 1);
+        continue;
+      }
       orders7.set(name, (orders7.get(name) || 0) + 1);
       if (day >= start3) orders3.set(name, (orders3.get(name) || 0) + 1);
     }
@@ -195,6 +205,8 @@ export async function GET() {
         lowSample: t.placed > 0 && t.placed < params.minOrdersThreshold,
         w3,
         w7,
+        partials3: partials3.get(name) || 0,
+        partials7: partials7.get(name) || 0,
         detail: {
           matureOrders: t.placed,
           offerMix: t.mix,

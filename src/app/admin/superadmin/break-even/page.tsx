@@ -22,6 +22,8 @@ interface Row {
   lowSample: boolean;
   w3: Window;
   w7: Window;
+  partials3: number;
+  partials7: number;
   detail: {
     matureOrders: number;
     offerMix: Record<string, number>;
@@ -70,14 +72,16 @@ function fmtDate(d: string) {
   return `${day}.${m}.${y}`;
 }
 
-function cpaCell(w: Window, row: Row) {
-  if (w.cpa == null) return <span className="text-zinc-400">{w.spend > 0 ? `${f1(w.spend)} / 0` : "—"}</span>;
+function cpaCell(w: Window, row: Row, partials: number) {
+  const extra = partials > 0 ? <span className="block text-[11px] text-zinc-400 font-normal">+{partials} parțiale</span> : null;
+  if (w.cpa == null) return <span className="text-zinc-400">{w.spend > 0 ? `${f1(w.spend)} / 0` : "—"}{extra}</span>;
   let color = "text-zinc-200";
   if (row.stopAbove != null && w.cpa > row.stopAbove) color = "text-red-400";
   else if (row.scaleBelow != null && w.cpa < row.scaleBelow) color = "text-emerald-400";
   return (
     <span className={`font-semibold ${color}`}>
       {f1(w.cpa)} <span className="text-zinc-400 font-normal text-xs">({w.orders})</span>
+      {extra}
     </span>
   );
 }
@@ -204,8 +208,8 @@ export default function BreakEvenPage() {
                         {row.product}
                       </span>
                     </td>
-                    <td className="p-3 text-right">{cpaCell(row.w3, row)}</td>
-                    <td className="p-3 text-right">{cpaCell(row.w7, row)}</td>
+                    <td className="p-3 text-right">{cpaCell(row.w3, row, row.partials3)}</td>
+                    <td className="p-3 text-right">{cpaCell(row.w7, row, row.partials7)}</td>
                     <td className="p-3 text-right text-zinc-200">
                       {f1(row.cpaMax)}
                       {row.lowSample && <span title="Sub 30 de comenzi mature: prag nesigur" className="ml-1 text-amber-400">⚠</span>}
@@ -237,7 +241,7 @@ export default function BreakEvenPage() {
       {data && (
         <p className="text-xs text-zinc-400">
           CPA 3z: {fmtDate(data.periods.start3)}–{fmtDate(data.periods.lastDay)}, CPA 7z: {fmtDate(data.periods.start7)}–{fmtDate(data.periods.lastDay)}
-          (între paranteze: comenzi plasate). Pragurile vin din comenzile {fmtDate(data.periods.matureFrom)}–{fmtDate(data.periods.matureTo)},
+          (între paranteze: comenzi directe plasate; comenzile introduse manual din parțiale nu intră în calcul, sunt doar menționate). Pragurile vin din comenzile {fmtDate(data.periods.matureFrom)}–{fmtDate(data.periods.matureTo)},
           cu statusul de livrare final. Oprește = 1,5× CPA maxim, scalează = 0,7×.
         </p>
       )}

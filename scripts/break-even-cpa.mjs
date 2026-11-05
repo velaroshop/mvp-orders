@@ -159,7 +159,7 @@ async function main() {
   const from = new Date(Date.now() - (p.maturity + p.window) * day).toISOString();
 
   const [orders, lps, products, settings] = await Promise.all([
-    fetchAll(sb, "orders", "created_at,status,tracking_status,offer_code,product_name,product_quantity,total,upsells,landing_key",
+    fetchAll(sb, "orders", "created_at,status,tracking_status,offer_code,product_name,product_quantity,total,upsells,landing_key,source",
       (q) => q.eq("organization_id", orgId).neq("status", "testing").gte("created_at", from).lt("created_at", to)),
     fetchAll(sb, "landing_pages", "slug,product_id,quantity_offer_1,quantity_offer_2,quantity_offer_3", (q) => q.eq("organization_id", orgId)),
     fetchAll(sb, "products", "id,name,import_price", (q) => q.eq("organization_id", orgId)),
@@ -171,10 +171,12 @@ async function main() {
   if (st && n(st.courier_cost) + n(st.packaging_cost) > 0 && n(st.courier_cost) + n(st.packaging_cost) !== p.courierPack)
     console.warn(`! Aplicația are curier+ambalare = ${n(st.courier_cost) + n(st.packaging_cost)} lei, scriptul folosește ${p.courierPack} (--courierPack).`);
 
+  // comenzile introduse manual din parțiale nu intră în calcul (Meta nu le vede, se întorc mai des)
+  const directOrders = orders.filter((o) => o.source !== "partial");
   const lpBySlug = Object.fromEntries(lps.map((l) => [l.slug, l]));
   const prodById = Object.fromEntries(products.map((x) => [x.id, x]));
   const groups = {};
-  for (const o of orders) {
+  for (const o of directOrders) {
     const lp = lpBySlug[o.landing_key];
     const prod = lp?.product_id ? prodById[lp.product_id] : null;
     const name = o.product_name || prod?.name || o.landing_key || "necunoscut";

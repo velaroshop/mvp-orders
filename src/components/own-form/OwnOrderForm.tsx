@@ -92,9 +92,12 @@ export default function OwnOrderForm({
   slug,
   org = null,
   thankYouPath = null,
+  variant = 3,
 }: {
   slug: string;
   org?: string | null;
+  /** Form layout chosen in the page block: 1 = offers below, 2 = offers on top, 3 = offers on top + new delivery fields */
+  variant?: 1 | 2 | 3;
   /** Own thank-you page on this site (for example "/thank-you"); null = the store's thank-you page, as the widget does */
   thankYouPath?: string | null;
 }) {
@@ -1112,8 +1115,8 @@ export default function OwnOrderForm({
   };
 
   // V3 = V2 layout (offers on top) + redesigned delivery fields
-  const isV3 = true;
-  const isV2 = true;
+  const isV3 = variant === 3;
+  const isV2 = variant === 2 || isV3;
   const labelClass = isV3
     ? "block text-lg sm:text-xl font-bold text-zinc-900 mb-1.5"
     : "block text-base sm:text-lg font-medium text-zinc-900 mb-1";

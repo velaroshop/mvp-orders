@@ -417,7 +417,7 @@ function Block({
       // #comanda is the anchor used by the buttons ("href": "#comanda")
       return (
         <section id="comanda" className="scroll-mt-4">
-          <OwnOrderForm slug={block.landingSlug} org={block.org} thankYouPath={block.thankYouPath} />
+          <OwnOrderForm slug={block.landingSlug} org={block.org} thankYouPath={block.thankYouPath} variant={block.variant} />
         </section>
       );
 

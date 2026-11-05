@@ -568,11 +568,21 @@ export const BLOCK_DEFS: BlockDef[] = [
     type: "form",
     label: "Formular de comandă",
     icon: "🛒",
-    description: "Formularul V3, direct în pagină",
+    description: "Formularul de comandă, direct în pagină",
     kinds: LANDING,
-    create: () => ({ type: "form", landingSlug: "", org: "", thankYouPath: "/thank-you" }),
+    create: () => ({ type: "form", landingSlug: "", org: "", thankYouPath: "/thank-you", variant: 3 }),
     fields: [
       { kind: "landingPicker", key: "landingSlug", orgKey: "org", label: "Landing page (comanda)", help: "Dă ofertele, prețurile și produsul" },
+      {
+        kind: "select",
+        key: "variant",
+        label: "Varianta formularului",
+        options: [
+          { value: "1", label: "V1 — Oferte jos (clasic)" },
+          { value: "2", label: "V2 — Oferte sus" },
+          { value: "3", label: "V3 — Oferte sus extra (câmpuri noi, etichete mari)" },
+        ],
+      },
       {
         kind: "select",
         key: "thankYouPath",

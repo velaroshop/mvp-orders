@@ -411,7 +411,7 @@ function FieldInput({
     case "select":
       return (
         <select
-          value={typeof value === "string" ? value : ""}
+          value={typeof value === "string" || typeof value === "number" ? String(value) : ""}
           onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)}
           className={inputClass}
         >

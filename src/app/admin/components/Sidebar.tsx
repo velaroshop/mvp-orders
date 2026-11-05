@@ -34,6 +34,7 @@ import {
   MapPin,
   LayoutTemplate,
   Gauge,
+  Wallet,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -45,6 +46,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/roas":           <TrendingUp className="w-4 h-4" />,
   "/admin/ads-dashboard":  <Megaphone className="w-4 h-4" />,
   "/admin/superadmin/break-even": <Gauge className="w-4 h-4" />,
+  "/admin/superadmin/profit": <Wallet className="w-4 h-4" />,
   "/admin/store":          <Store className="w-4 h-4" />,
   "/admin/landing-pages":  <FileText className="w-4 h-4" />,
   "/admin/pages":          <LayoutTemplate className="w-4 h-4" />,
@@ -85,6 +87,7 @@ const menuGroups = [
       { name: "ROAS", href: "/admin/roas" },
       { name: "Ads", href: "/admin/ads-dashboard", superadminOnly: true },
       { name: "CPA Break-even", href: "/admin/superadmin/break-even", superadminOnly: true },
+      { name: "Profit net", href: "/admin/superadmin/profit", superadminOnly: true },
     ],
   },
   {

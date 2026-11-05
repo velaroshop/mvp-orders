@@ -102,8 +102,6 @@ const menuGroups = [
     items: [
       { name: "Convertor Imagini", href: "/admin/superadmin/image-compress" },
       { name: "Convertor Video", href: "/admin/superadmin/video-convert" },
-      { name: "Calculator Profit", href: "/admin/superadmin/roas-calculator" },
-      { name: "Hartă Retururi", href: "/admin/superadmin/returns-map", superadminOnly: true },
     ],
   },
   {

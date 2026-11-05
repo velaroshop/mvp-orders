@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getRoleDisplayName } from "@/lib/permissions";
-import { getMotivationalMessage, getGreeting } from "@/app/admin/lib/motivationalMessages";
+import { getGreeting } from "@/app/admin/lib/motivationalMessages";
 import type { UserRole } from "@/lib/types";
 
 type HelpshipEnvironment = "development" | "production";
@@ -11,7 +11,6 @@ type HelpshipEnvironment = "development" | "production";
 export default function Topbar() {
   const { data: session } = useSession();
   const [helpshipEnvironment, setHelpshipEnvironment] = useState<HelpshipEnvironment | null>(null);
-  const [motivationalMessage] = useState(() => getMotivationalMessage());
 
   useEffect(() => {
     async function fetchEnvironment() {
@@ -47,13 +46,10 @@ export default function Topbar() {
           )}
         </div>
 
-        {/* Center — greeting + motivational message */}
+        {/* Center — greeting (the random motivational message is not shown for now, see admin/lib/motivationalMessages.ts) */}
         <div className="flex-1 flex flex-col items-center justify-center gap-0.5 min-w-0">
           <p className="text-[13px] font-semibold text-white leading-tight text-center">
             {getGreeting(userName)}
-          </p>
-          <p className="text-[11px] text-green-400 leading-snug italic text-center max-w-sm line-clamp-2 px-2">
-            {motivationalMessage}
           </p>
         </div>
 

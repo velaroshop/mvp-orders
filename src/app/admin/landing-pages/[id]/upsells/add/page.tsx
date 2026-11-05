@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
@@ -84,6 +84,24 @@ export default function AddUpsellPage() {
     fetchProducts();
     fetchLandingPages();
   }, []);
+
+  // A new upsell goes last in its list, unless the order was typed in by hand
+  const orderTouched = useRef(false);
+  useEffect(() => {
+    if (!formData.landing_page_id) return;
+    let cancelled = false;
+    fetch(`/api/upsells?landing_page_id=${formData.landing_page_id}&type=${formData.type}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data || orderTouched.current) return;
+        const orders = (data.upsells || []).map((u: { display_order: number }) => Number(u.display_order) || 0);
+        setFormData((prev) => ({ ...prev, display_order: orders.length ? Math.max(...orders) + 1 : 0 }));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.landing_page_id, formData.type]);
 
   async function fetchProducts() {
     try {
@@ -524,7 +542,10 @@ export default function AddUpsellPage() {
                   type="number"
                   min="0"
                   value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    orderTouched.current = true;
+                    setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 });
+                  }}
                   className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white text-sm"
                 />
                 <p className="text-xs text-zinc-500 mt-1">

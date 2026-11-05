@@ -7,6 +7,7 @@ import Link from "next/link";
 import ImageUploadInput from "@/app/admin/components/ImageUploadInput";
 import SalesAnalysisModal from "@/app/admin/components/SalesAnalysisModal";
 import WhatsAppIcon from "@/app/admin/components/WhatsAppIcon";
+import { SortableList, SortableRow, arrayMove } from "@/components/page-editor/SortableList";
 
 interface Upsell {
   id: string;
@@ -289,6 +290,36 @@ export default function LandingPagesPage() {
       alert(err instanceof Error ? err.message : "Failed to update upsell");
     } finally {
       setIsEditingUpsell(false);
+    }
+  }
+
+  /** Drag and drop in the presale list: the new order is saved as display_order 0, 1, 2... (only rows whose number changed) */
+  async function handleMovePresaleUpsell(landingPageId: string, from: number, to: number) {
+    const all = upsellsByLandingPage[landingPageId] || [];
+    const presale = all.filter((u) => u.type === "presale");
+    const moved = arrayMove(presale, from, to).map((u, i) => ({ ...u, display_order: i }));
+    const changed = moved.filter((u) => presale.find((p) => p.id === u.id)?.display_order !== u.display_order);
+
+    // Show the new order right away, put the old one back if saving fails
+    setUpsellsByLandingPage((prev) => ({
+      ...prev,
+      [landingPageId]: [...moved, ...all.filter((u) => u.type !== "presale")],
+    }));
+    try {
+      const results = await Promise.all(
+        changed.map((u) =>
+          fetch(`/api/upsells/${u.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ display_order: u.display_order }),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) throw new Error("Failed to save order");
+    } catch (err) {
+      console.error("Error saving upsell order:", err);
+      alert("Nu am putut salva ordinea. Reîncarc lista.");
+      fetchAllUpsells();
     }
   }
 
@@ -916,9 +947,16 @@ export default function LandingPagesPage() {
                                     );
                                   }
                                   return (
+                                    <SortableList
+                                      ids={presaleUpsells.map((u) => u.id)}
+                                      onMove={(from, to) => handleMovePresaleUpsell(page.id, from, to)}
+                                    >
                                     <div className="space-y-2">
                                       {presaleUpsells.map((upsell) => (
-                                        <div key={upsell.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
+                                        <SortableRow key={upsell.id} id={upsell.id} as="div">
+                                        {(handle) => (
+                                        <div className="flex items-center justify-between gap-2 p-2 bg-zinc-900/50 rounded border border-zinc-700/30">
+                                          {handle}
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                               <p className="text-sm font-medium text-white">{upsell.title}</p>
@@ -1007,8 +1045,11 @@ export default function LandingPagesPage() {
                                             </button>
                                           </div>
                                         </div>
+                                        )}
+                                        </SortableRow>
                                       ))}
                                     </div>
+                                    </SortableList>
                                   );
                                 })()}
                               </div>

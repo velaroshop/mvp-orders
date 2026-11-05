@@ -943,7 +943,11 @@ export default function LandingPagesPage() {
                                                 Cant: {upsell.quantity}
                                               </p>
                                               <p className="text-xs text-emerald-400 font-medium">
-                                                {formatPrice(upsell.price)} RON
+                                                {formatPrice(upsell.price)} RON/buc
+                                                {upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
+                                              </p>
+                                              <p className="text-xs text-zinc-400">
+                                                SRP {formatPrice(upsell.srp)} RON
                                               </p>
                                             </div>
                                           </div>
@@ -1062,7 +1066,11 @@ export default function LandingPagesPage() {
                                                 Cant: {upsell.quantity}
                                               </p>
                                               <p className="text-xs text-emerald-400 font-medium">
-                                                {formatPrice(upsell.price)} RON
+                                                {formatPrice(upsell.price)} RON/buc
+                                                {upsell.quantity > 1 && ` · total ${formatPrice(upsell.price * upsell.quantity)} RON`}
+                                              </p>
+                                              <p className="text-xs text-zinc-400">
+                                                SRP {formatPrice(upsell.srp)} RON
                                               </p>
                                             </div>
                                           </div>
@@ -1407,7 +1415,7 @@ export default function LandingPagesPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        SRP (RON) *
+                        SRP ofertă (RON) *
                       </label>
                       <input
                         type="number"
@@ -1418,10 +1426,11 @@ export default function LandingPagesPage() {
                         required
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
+                      <p className="text-xs text-zinc-500 mt-1">Se afișează tăiat, așa cum îl scrii: nu se înmulțește cu cantitatea.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Preț (RON) *
+                        Preț pe bucată (RON) *
                       </label>
                       <input
                         type="number"
@@ -1432,6 +1441,7 @@ export default function LandingPagesPage() {
                         required
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
+                      <p className="text-xs text-zinc-500 mt-1">Clientul plătește prețul pe bucată × cantitatea.</p>
                     </div>
                   </div>
 

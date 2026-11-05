@@ -300,10 +300,10 @@ export async function GET(request: NextRequest) {
           }
 
           if (type === "presale") {
-            upsellsByProduct[productName].presale += quantity;
+            upsellsByProduct[productName].presale += 1; // one bought offer, whatever number of pieces it holds
             upsellsByProduct[productName].presaleRevenue += revenue;
           } else if (type === "postsale") {
-            upsellsByProduct[productName].postsale += quantity;
+            upsellsByProduct[productName].postsale += 1;
             upsellsByProduct[productName].postsaleRevenue += revenue;
           }
         });

@@ -425,7 +425,7 @@ export default function AddUpsellPage() {
               {/* SRP */}
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  SRP (Suggested Retail Price) *
+                  SRP ofertă (preț de listă pentru toată oferta) *
                 </label>
                 <input
                   type="number"
@@ -444,12 +444,13 @@ export default function AddUpsellPage() {
                 {errors.srp && (
                   <p className="text-xs text-red-400 mt-1">{errors.srp}</p>
                 )}
+                <p className="text-xs text-zinc-500 mt-1">Se afișează tăiat, așa cum îl scrii: nu se înmulțește cu cantitatea.</p>
               </div>
 
               {/* Price */}
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Price (Sale Price) *
+                  Preț pe bucată *
                 </label>
                 <input
                   type="number"
@@ -468,6 +469,7 @@ export default function AddUpsellPage() {
                 {errors.price && (
                   <p className="text-xs text-red-400 mt-1">{errors.price}</p>
                 )}
+                <p className="text-xs text-zinc-500 mt-1">Clientul plătește prețul pe bucată × cantitatea.</p>
               </div>
             </div>
           </div>

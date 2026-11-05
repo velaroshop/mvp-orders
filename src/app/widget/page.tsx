@@ -4,7 +4,7 @@ import { FormEvent, useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OfferCode } from "@/lib/types";
 import { newSessionId } from "@/lib/session-id";
-import { offerTotal, offerDiscountPercent, offerUnitNote } from "@/lib/upsell-offer";
+import { offerTotal, offerDiscountPercent, offerUnitNote, offerPerPieceNote } from "@/lib/upsell-offer";
 
 interface Upsell {
   id: string;
@@ -1932,7 +1932,7 @@ function WidgetFormContent() {
                 {presaleUpsells.map((upsell) => {
                   const isSelected = selectedUpsells.has(upsell.id);
                   const discount = offerDiscountPercent(upsell.srp, upsell.price, upsell.quantity);
-                  const unitNote = offerUnitNote(upsell.price, upsell.quantity);
+                  const perPieceNote = offerPerPieceNote(upsell.price, upsell.quantity);
 
                   return (
                     <button
@@ -2002,16 +2002,18 @@ function WidgetFormContent() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <h3 className="text-sm sm:text-base leading-tight" style={{ color: isSelected ? textOnDarkColor : '#18181b' }}>
-                                Adaugă <span className="font-bold">{upsell.title}</span> pentru doar{' '}
+                                Adaugă{' '}
+                                {upsell.quantity > 1 && <span className="font-extrabold text-base sm:text-lg">{upsell.quantity}× </span>}
+                                <span className="font-bold">{upsell.title}</span> pentru doar{' '}
                                 <span
                                   className="font-bold text-base sm:text-lg"
                                   style={{ color: accentColor }}
                                 >
                                   {offerTotal(upsell.price, upsell.quantity).toFixed(2)} Lei
                                 </span>
-                                {unitNote && (
-                                  <span className="text-xs sm:text-sm" style={{ color: isSelected ? `${textOnDarkColor}99` : '#71717a' }}>
-                                    {' '}({unitNote})
+                                {perPieceNote && (
+                                  <span className="text-xs sm:text-sm font-bold" style={{ color: isSelected ? `${textOnDarkColor}cc` : '#3f3f46' }}>
+                                    {' '}({perPieceNote})
                                   </span>
                                 )}
                                 {upsell.srp > offerTotal(upsell.price, upsell.quantity) && (

@@ -18,3 +18,8 @@ export function offerUnitNote(price: number, quantity: number): string | null {
   const pieces = Math.max(1, Number(quantity) || 1);
   return pieces > 1 ? `${pieces} buc. × ${(Number(price) || 0).toFixed(2)} Lei` : null;
 }
+
+/** "12.45 Lei / buc.", only for offers with more than one piece (the pieces themselves are shown as "3×" before the name) */
+export function offerPerPieceNote(price: number, quantity: number): string | null {
+  return Math.max(1, Number(quantity) || 1) > 1 ? `${(Number(price) || 0).toFixed(2)} Lei / buc.` : null;
+}

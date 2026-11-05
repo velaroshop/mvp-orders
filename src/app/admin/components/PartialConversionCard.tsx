@@ -21,7 +21,6 @@ interface ConversionStats {
   totalPartials: number;
   totalConverted: number;
   conversionRate: number;
-  revenue: number;
   returns: { partial: ReturnRate; direct: ReturnRate } | null;
   agentBreakdown: AgentStat[];
   period: string;
@@ -101,11 +100,6 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
                 <p className="text-xl font-bold text-white">{stats.totalPartials}</p>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wide mt-0.5">Total</p>
               </div>
-              <div className="w-px bg-zinc-800" />
-              <div>
-                <p className="text-xl font-bold text-emerald-400">{stats.revenue.toFixed(0)} <span className="text-xs font-semibold text-zinc-400">RON</span></p>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-wide mt-0.5">Valoare comenzi</p>
-              </div>
             </div>
           </div>
 
@@ -121,6 +115,7 @@ export default function PartialConversionCard({ isOwner }: PartialConversionCard
               <span className="text-[10px] text-zinc-600">0%</span>
               <span className="text-[10px] text-zinc-600">100%</span>
             </div>
+            <p className="text-xs text-zinc-400 mt-2">Parțialele mai vechi de 30 de zile se șterg, deci „Tot” înseamnă de fapt ultimele ~30 de zile.</p>
           </div>
 
           {/* Return rate — only over long periods, parcels of the last weeks have no final status yet */}

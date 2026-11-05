@@ -5,7 +5,7 @@
 export interface BreakEvenParams {
   vat: number;         // VAT applied to AOV: net = AOV / (1 + vat)
   courierPack: number; // courier + packaging per shipped order (no VAT)
-  returnBack: number;  // courier lost on the way back for a refused parcel
+  returnBack: number;  // courier paid on the way back for a refused parcel (0: returns cost nothing)
   upsellCost: number;  // product cost of the upsell, per order that has one
   stopMult: number;
   scaleMult: number;
@@ -17,7 +17,7 @@ export interface BreakEvenParams {
 export const DEFAULT_PARAMS: BreakEvenParams = {
   vat: 0.21,
   courierPack: 15,
-  returnBack: 15,
+  returnBack: 0,
   upsellCost: 5,
   stopMult: 1.5,
   scaleMult: 0.7,

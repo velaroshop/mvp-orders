@@ -18,7 +18,7 @@ const DEFAULTS = {
   maturity: 30,      // ignoră comenzile mai noi de atâtea zile (statusul de livrare/retur nu e încă final)
   vat: 0.21,         // TVA aplicat la AOV: venit net = AOV / (1 + vat)
   courierPack: 15,   // lei/comandă livrată: curier + ambalare (fără TVA)
-  returnBack: 15,    // lei: curier retur (drumul înapoi) pierdut la refuz, în plus față de dus
+  returnBack: 0,     // lei: curier retur (drumul înapoi) plătit la refuz; 0 = returul nu costă nimic
   upsellCost: 5,     // lei/comandă cu upsell (cost produs upsell)
   minOrders: 30,     // sub acest număr de comenzi plasate => prag nesigur
   stopMult: 1.5,

@@ -265,7 +265,7 @@ function DetailBlock({ row, data }: { row: Row; data: Payload }) {
       <p>
         <span className="text-zinc-400">Cost / comandă livrată:</span> {f2(d.productCost)} produs ({f2(d.unitCost)} × {f2(d.avgQty)}) + {f2(p.courierPack)} curier și ambalare + {f2(p.upsellCost * d.upsellShare)} upsell = {f2(d.costDelivered)} lei
       </p>
-      <p><span className="text-zinc-400">Profit / comandă livrată:</span> {f2(d.profitDelivered)} lei · pierdere pe retur {f2(d.returnLoss)} lei (dus + întors, produsul se recuperează)</p>
+      <p><span className="text-zinc-400">Profit / comandă livrată:</span> {f2(d.profitDelivered)} lei · pierdere pe retur {f2(d.returnLoss)} lei (curierul de dus; returul nu costă, produsul se recuperează)</p>
       <p>
         <span className="text-zinc-400">CPA maxim</span> = {f2(d.profitDelivered)} × {pct(d.confRate)} × (1 − {pct(d.retRate)}) − {f2(d.returnLoss)} × {pct(d.confRate)} × {pct(d.retRate)} = <span className="text-white font-semibold">{f2(row.cpaMax)} lei</span>
       </p>

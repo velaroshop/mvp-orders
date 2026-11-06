@@ -401,12 +401,16 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "⬓",
     description: "Rămâne lipit jos pe ecran",
     kinds: LANDING,
-    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff", animation: "none", speed: "medium" }),
+    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff", animation: "none", speed: "medium", barBg: "#ffffff", text2: "", size: 18, size2: 13 }),
     fields: [
       { kind: "text", key: "text", label: "Text buton" },
+      { kind: "number", key: "size", label: "Mărime text principal (px)", min: 11, max: 32 },
+      { kind: "text", key: "text2", label: "Text a doua linie (opțional)", maxLength: 120, placeholder: "Plata la livrare", help: "Apare sub textul principal, mai mic. Lasă gol pentru un buton cu o singură linie" },
+      { kind: "number", key: "size2", label: "Mărime text a doua linie (px)", min: 10, max: 24, help: "Se aplică doar dacă ai completat a doua linie" },
       { kind: "url", key: "href", label: "Link", help: "#comanda duce la formular" },
       { kind: "color", key: "bg", label: "Fundal" },
       { kind: "color", key: "color", label: "Culoare text" },
+      { kind: "color", key: "barBg", label: "Fundal bară (în jurul butonului)", help: "Implicit alb" },
       {
         kind: "select",
         key: "animation",

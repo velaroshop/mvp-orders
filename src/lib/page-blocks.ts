@@ -118,6 +118,13 @@ export type StickyFooterBlock = {
   color: string;
   animation: StickyAnimation;
   speed: StickySpeed;
+  /** Background of the bar around the button (white by default) */
+  barBg: string;
+  /** Optional second line under the main text */
+  text2: string;
+  /** Text sizes in px */
+  size: number;
+  size2: number;
 };
 /** Full-width colored strip (edge to edge) with text, optional gradient, optional link and optional attention animation */
 export type BandAnimation = "none" | "pulse" | "shine" | "arrow";
@@ -491,6 +498,10 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         color: color(b.color, "#ffffff"),
         animation: typeof b.animation === "string" && STICKY_ANIMATIONS.includes(b.animation) ? (b.animation as StickyAnimation) : "none",
         speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
+        barBg: color(b.barBg, "#ffffff"),
+        text2: str(b.text2).slice(0, 120),
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(32, Math.max(11, Math.round(b.size))) : 18,
+        size2: typeof b.size2 === "number" && Number.isFinite(b.size2) ? Math.min(24, Math.max(10, Math.round(b.size2))) : 13,
       };
 
     case "html":

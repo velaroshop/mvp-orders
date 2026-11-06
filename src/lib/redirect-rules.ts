@@ -19,6 +19,8 @@ export function normalizeFromPath(raw: unknown): string | null {
   const wildcard = path.endsWith("/*");
   if (wildcard) path = path.slice(0, -2);
   path = path.replace(/\/+$/, "");
+  // "/*" alone: every path of the domain (only usable towards another address, see validateRule)
+  if (wildcard && !path) return "/*";
   if (!path || path.includes("*") || !/^\/[a-z0-9\-_.~%/]*$/.test(path) || path.length > 200) return null;
   return wildcard ? `${path}/*` : path;
 }
@@ -35,7 +37,9 @@ export function normalizeToUrl(raw: unknown, wildcard: boolean): string | null {
   }
   try {
     const url = new URL(value);
-    if (url.protocol !== "https:" || value.includes("*")) return null;
+    // A wildcard rule may end an https destination with "*" (https://reduxio.ro/*): the matched rest of the path goes there
+    const starOk = wildcard && value.endsWith("*") && value.split("*").length === 2;
+    if (url.protocol !== "https:" || (value.includes("*") && !starOk)) return null;
     return url.toString();
   } catch {
     return null;
@@ -75,7 +79,12 @@ export function validateRule(input: { from_path?: unknown; to_url?: unknown; sta
   const from = normalizeFromPath(input.from_path);
   if (!from) return { ok: false, error: "Adresa veche e invalidă. Folosește litere mici, cifre, - _ și /, de exemplu /products/slimgel sau /pages/*" };
   const base = from.endsWith("/*") ? from.slice(0, -2) : from;
-  if (base === "" || from === "/") return { ok: false, error: "Adresa de bază a domeniului (/) se setează din Domenii și din pagina de pornire, nu aici" };
+  const catchAll = from === "/*";
+  // The catch-all must lead to another address: on the same domain it would loop
+  if (catchAll && !String(input.to_url ?? "").trim().toLowerCase().startsWith("https://")) {
+    return { ok: false, error: "Regula /* (toate adresele) trebuie să ducă la o adresă https completă, de exemplu https://reduxio.ro/*" };
+  }
+  if ((base === "" && !catchAll) || from === "/") return { ok: false, error: "Adresa de bază a domeniului (/) se setează din Domenii și din pagina de pornire, nu aici" };
   if (RESERVED.some((prefix) => isUnder(base, prefix))) return { ok: false, error: "Această adresă aparține aplicației și nu poate fi redirecționată" };
 
   const to = normalizeToUrl(input.to_url, from.endsWith("/*"));

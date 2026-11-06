@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
 
 interface PageRow {
   id: string;
@@ -25,6 +26,9 @@ export default function OwnPagesList() {
   const [domains, setDomains] = useState<{ id: string; hostname: string }[]>([]);
   const [domainsLoaded, setDomainsLoaded] = useState(false);
   const [domainId, setDomainId] = useState("");
+  const [deleting, setDeleting] = useState<PageRow | null>(null);
+  const [deleteWord, setDeleteWord] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const domainNames = Object.fromEntries(domains.map((d) => [d.id, d.hostname]));
 
   const load = useCallback(async () => {
@@ -92,12 +96,25 @@ export default function OwnPagesList() {
     router.push(`/admin/pages/${data.page.id}`);
   }
 
-  async function remove(page: PageRow) {
-    if (!window.confirm(`Ștergi pagina „${page.title}” (/p/${page.slug})? Nu se poate anula.`)) return;
-    const res = await fetch(`/api/own-pages/${page.id}`, { method: "DELETE" });
-    if (res.ok) setPages((prev) => prev.filter((p) => p.id !== page.id));
+  async function confirmRemove() {
+    if (!deleting || deleteWord.trim().toUpperCase() !== "STERGE") return;
+    setDeleteBusy(true);
+    const res = await fetch(`/api/own-pages/${deleting.id}`, { method: "DELETE" });
+    setDeleteBusy(false);
+    if (res.ok) setPages((prev) => prev.filter((p) => p.id !== deleting.id));
     else setError("Nu am putut șterge pagina.");
+    setDeleting(null);
+    setDeleteWord("");
   }
+
+  function closeDelete() {
+    if (deleteBusy) return;
+    setDeleting(null);
+    setDeleteWord("");
+  }
+
+  const dateFmt = new Intl.DateTimeFormat("ro-RO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const iconBtn = "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors";
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -166,36 +183,67 @@ export default function OwnPagesList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-700">
-              {pages.map((page) => (
-                <tr key={page.id} className="hover:bg-zinc-700/40">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-white">{page.title || page.slug}</div>
-                    <div className="text-xs text-zinc-400">{page.domain_id && domainNames[page.domain_id] ? (
-                        `${domainNames[page.domain_id]}/${page.slug}`
-                      ) : (
-                        <span className="text-amber-400">fără domeniu: nu se afișează nicăieri ({page.slug})</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${page.status === "published" ? "bg-emerald-900/50 text-emerald-300" : "bg-zinc-700 text-zinc-300"}`}>
-                      {page.status === "published" ? "Publicat" : "Ciornă"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-300">{new Date(page.updated_at).toLocaleString("ro-RO")}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/pages/${page.id}`} className="mr-4 text-emerald-400 hover:text-emerald-300">
-                      Editează
-                    </Link>
-                    <button type="button" onClick={() => duplicate(page)} className="mr-4 text-zinc-300 hover:text-white">
-                      Duplică
-                    </button>
-                    <button type="button" onClick={() => remove(page)} className="text-red-400 hover:text-red-300">
-                      Șterge
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {pages.map((page) => {
+                const host = page.domain_id ? domainNames[page.domain_id] : undefined;
+                const url = host ? `https://${host}/${page.slug}` : null;
+                const published = page.status === "published";
+                return (
+                  <tr key={page.id} className={`hover:bg-zinc-700/40 ${published ? "" : "opacity-80"}`}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2 font-medium text-white">
+                        <span className={`h-2 w-2 shrink-0 rounded-full ${published ? "bg-emerald-400" : "bg-zinc-400"}`} />
+                        {page.title || page.slug}
+                      </div>
+                      <div className="mt-0.5 pl-4 text-xs text-zinc-300">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">
+                            {host}/{page.slug}
+                          </a>
+                        ) : (
+                          <span className="text-amber-400">fără domeniu: nu se afișează nicăieri ({page.slug})</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${published ? "bg-emerald-900/50 text-emerald-300" : "bg-zinc-700 text-zinc-300"}`}>
+                        {published ? "Publicat" : "Ciornă"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-zinc-300">{dateFmt.format(new Date(page.updated_at))}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-1">
+                        {url && published ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" title="Vizualizează pagina" aria-label="Vizualizează pagina" className={`${iconBtn} text-sky-300 hover:bg-zinc-700 hover:text-sky-200`}>
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span title={url ? "Publică întâi pagina" : "Pagina nu are domeniu"} className={`${iconBtn} cursor-not-allowed text-zinc-400 opacity-50`}>
+                            <ExternalLink className="h-4 w-4" />
+                          </span>
+                        )}
+                        <Link href={`/admin/pages/${page.id}`} title="Editează" aria-label="Editează" className={`${iconBtn} text-emerald-400 hover:bg-zinc-700 hover:text-emerald-300`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                        <button type="button" onClick={() => duplicate(page)} title="Duplică" aria-label="Duplică" className={`${iconBtn} text-zinc-300 hover:bg-zinc-700 hover:text-white`}>
+                          <Copy className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleting(page);
+                            setDeleteWord("");
+                          }}
+                          title="Șterge"
+                          aria-label="Șterge"
+                          className={`${iconBtn} text-red-400 hover:bg-zinc-700 hover:text-red-300`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -232,6 +280,36 @@ export default function OwnPagesList() {
           Editează pagina de mulțumire
         </Link>
       </div>
+
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={closeDelete}>
+          <div className="w-full max-w-md rounded-lg border border-zinc-600 bg-zinc-800 p-5" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white">Ștergi pagina „{deleting.title || deleting.slug}”?</h2>
+            <p className="mt-2 text-sm text-zinc-300">Nu se poate anula. Scrie <strong className="text-white">STERGE</strong> ca să confirmi.</p>
+            <input
+              autoFocus
+              value={deleteWord}
+              onChange={(e) => setDeleteWord(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmRemove()}
+              placeholder="STERGE"
+              className="mt-3 w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={closeDelete} className="rounded-md border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700">
+                Anulează
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemove}
+                disabled={deleteBusy || deleteWord.trim().toUpperCase() !== "STERGE"}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {deleteBusy ? "Se șterge…" : "Șterge definitiv"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

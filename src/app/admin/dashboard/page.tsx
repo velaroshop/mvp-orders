@@ -28,6 +28,7 @@ interface ProductStockAnalysis {
   daysInPeriod: number;
   currentStock?: number | null;
   daysUntilStockout?: number | null;
+  stockValue?: number | null;
 }
 
 interface DashboardStats {
@@ -330,7 +331,7 @@ export default function DashboardPage() {
 
   const cardCls = "bg-zinc-800/60 rounded-xl border border-zinc-700/60 shadow-sm";
   const inputCls = "w-full max-w-full min-w-0 px-3 py-1.5 text-sm bg-zinc-900 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white";
-  const labelCls = "block text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-1.5";
+  const labelCls = "block text-[11px] font-medium text-zinc-300 uppercase tracking-widest mb-1.5";
 
   return (
     <div className="max-w-7xl mx-auto space-y-5">
@@ -595,7 +596,7 @@ export default function DashboardPage() {
                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       stockAnalysisPeriod === period
                         ? "bg-indigo-600 text-white"
-                        : "bg-zinc-700/60 text-zinc-400 hover:bg-zinc-700"
+                        : "bg-zinc-700/60 text-zinc-300 hover:bg-zinc-700"
                     }`}
                   >
                     {period}z
@@ -608,39 +609,47 @@ export default function DashboardPage() {
           {stockAnalysisLoading ? (
             <p className="text-sm text-zinc-400 py-8 text-center">Se încarcă...</p>
           ) : stockAnalysisData ? (
-            <div className="bg-zinc-900/50 rounded-lg p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-zinc-400 truncate">{stockAnalysisData.name}</p>
-                <div className="text-right">
-                  <p className="text-[10px] text-zinc-400">Vândut total</p>
-                  <p className="text-xl font-bold text-emerald-400">{stockAnalysisData.totalSold}</p>
+            <div className="bg-zinc-900/50 rounded-lg p-3 space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-zinc-200 truncate">{stockAnalysisData.name}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-[11px] text-zinc-300">Vândut total</p>
+                  <p className="text-xl font-bold text-emerald-400 leading-tight">{stockAnalysisData.totalSold}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-zinc-800 rounded-lg p-3">
-                  <p className="text-[10px] text-zinc-400 mb-0.5">Medie zilnică</p>
-                  <p className="text-base font-semibold text-white">{stockAnalysisData.dailyAverage.toFixed(2)}</p>
-                  <p className="text-[10px] text-zinc-600">buc/zi</p>
+                <div className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <p className="text-[11px] text-zinc-300">Medie zilnică</p>
+                  <p className="text-base font-semibold text-white">
+                    {stockAnalysisData.dailyAverage.toFixed(2)} <span className="text-xs font-normal text-zinc-300">buc/zi</span>
+                  </p>
                 </div>
-                <div className="bg-zinc-800 rounded-lg p-3">
-                  <p className="text-[10px] text-zinc-400 mb-0.5">Estimat / săpt</p>
-                  <p className="text-base font-semibold text-white">{(stockAnalysisData.dailyAverage * 7).toFixed(0)}</p>
-                  <p className="text-[10px] text-zinc-600">buc/săptămână</p>
+                <div className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <p className="text-[11px] text-zinc-300">Estimat / săpt</p>
+                  <p className="text-base font-semibold text-white">
+                    {(stockAnalysisData.dailyAverage * 7).toFixed(0)} <span className="text-xs font-normal text-zinc-300">buc/săpt</span>
+                  </p>
                 </div>
               </div>
 
               {stockAnalysisData.currentStock !== null && stockAnalysisData.currentStock !== undefined ? (
-                <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-lg px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] text-zinc-400">Stoc curent</p>
-                      <p className="text-xl font-bold text-white">{stockAnalysisData.currentStock}</p>
-                      <p className="text-[10px] text-zinc-600">buc disponibile</p>
+                      <p className="text-[11px] text-zinc-300">Stoc curent</p>
+                      <p className="text-xl font-bold text-white leading-tight">
+                        {stockAnalysisData.currentStock} <span className="text-xs font-normal text-zinc-300">buc disponibile</span>
+                      </p>
+                      {stockAnalysisData.stockValue !== null && stockAnalysisData.stockValue !== undefined && (
+                        <p className="text-xs text-zinc-300 mt-0.5">
+                          Valoare stoc: <span className="font-semibold text-white">{stockAnalysisData.stockValue.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} Lei</span>
+                        </p>
+                      )}
                     </div>
                     {stockAnalysisData.daysUntilStockout !== null && stockAnalysisData.daysUntilStockout !== undefined && (
-                      <div className="text-right">
-                        <p className="text-[10px] text-zinc-400">Zile rămase</p>
-                        <p className={`text-xl font-bold ${
+                      <div className="text-right shrink-0">
+                        <p className="text-[11px] text-zinc-300">Zile rămase</p>
+                        <p className={`text-xl font-bold leading-tight ${
                           stockAnalysisData.daysUntilStockout <= 7 ? 'text-red-400'
                           : stockAnalysisData.daysUntilStockout <= 14 ? 'text-yellow-400'
                           : 'text-emerald-400'

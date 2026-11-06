@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     // Get product SKU from database to fetch stock from HelpShip
     const { data: product } = await supabase
       .from("products")
-      .select("sku")
+      .select("sku, import_price")
       .eq("organization_id", organizationId)
       .eq("name", productName)
       .eq("status", "active")
@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
 
     let currentStock: number | null = null;
     let daysUntilStockout: number | null = null;
+    let stockValue: number | null = null;
 
     // Fetch current stock from HelpShip if product has SKU
     if (product?.sku) {
@@ -99,6 +100,11 @@ export async function GET(request: NextRequest) {
         const helpshipClient = new HelpshipClient(credentials);
 
         currentStock = await helpshipClient.getProductStock(product.sku);
+
+        const importPrice = Number(product.import_price);
+        if (currentStock !== null && importPrice > 0) {
+          stockValue = currentStock * importPrice;
+        }
 
         // Calculate how many days the stock will last
         if (currentStock !== null && dailyAverage > 0) {
@@ -117,6 +123,7 @@ export async function GET(request: NextRequest) {
       daysInPeriod: days,
       currentStock,
       daysUntilStockout,
+      stockValue,
     });
   } catch (error) {
     console.error("Error in GET /api/dashboard/stock-analysis:", error);

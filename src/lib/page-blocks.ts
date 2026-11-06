@@ -278,7 +278,8 @@ export type BlockVariant =
 
 /** spaceBelow: empty space in px under the block (only set when above 0, so older pages are unchanged) */
 /** label: name given in the editor, to recognise the block in the list (never rendered) */
-export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition; spaceBelow?: number; label?: string };
+/** hidden: switched off in the editor; kept in the page with all its settings, but not shown to visitors (only set when true) */
+export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition; spaceBelow?: number; label?: string; hidden?: boolean };
 
 export const ANPC_LINKS = [
   { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/", src: "/anpc/sal.webp" },
@@ -330,6 +331,7 @@ function normalizeBlock(raw: unknown): PageBlock | null {
     ...block,
     ...(b.phase === "offer" || b.phase === "final" ? { phase: b.phase } : {}),
     ...(b.showWhen === "cta" || b.showWhen === "no_cta" ? { showWhen: b.showWhen } : {}),
+    ...(b.hidden === true ? { hidden: true } : {}),
     ...(typeof b.label === "string" && b.label.trim() ? { label: b.label.trim().slice(0, 30) } : {}),
     ...(typeof b.spaceBelow === "number" && b.spaceBelow >= 1 ? { spaceBelow: Math.min(80, Math.round(b.spaceBelow)) } : {}),
   };

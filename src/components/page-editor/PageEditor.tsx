@@ -167,6 +167,15 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     setSelectedId((cur) => (cur === id ? null : cur));
   };
 
+  const toggleHidden = (id: string) =>
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const { hidden: _hidden, ...rest } = i.data;
+        return { ...i, data: i.data.hidden === true ? rest : { ...rest, hidden: true } };
+      }),
+    );
+
   const updateSelected = (data: Obj) => setItems((prev) => prev.map((i) => (i.id === selectedId ? { ...i, data } : i)));
 
   const save = async (nextStatus?: "draft" | "published") => {
@@ -323,7 +332,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                   <SortableRow key={item.id} id={item.id}>
                     {(handle) => (
                       <div
-                        className={`flex items-center gap-1.5 rounded-md border px-1.5 py-1.5 ${active ? "border-emerald-500 bg-zinc-700" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-700/60"}`}
+                        className={`flex items-center gap-1.5 rounded-md border px-1.5 py-1.5 ${item.data.hidden === true ? "opacity-60" : ""} ${active ? "border-emerald-500 bg-zinc-700" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-700/60"}`}
                       >
                         {handle}
                         <button
@@ -335,8 +344,17 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                           <span className="w-5 text-center text-zinc-300">{def?.icon ?? "?"}</span>
                           <span className="min-w-0">
                             <span className="block truncate text-sm text-white">{(typeof item.data.label === "string" && item.data.label) || def?.label || String(item.data.type)}</span>
-                            <span className="block truncate text-xs text-zinc-400">{summary(item.data)}</span>
+                            <span className="block truncate text-xs text-zinc-400">{item.data.hidden === true ? "Ascuns · " : ""}{summary(item.data)}</span>
                           </span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${iconButton} ${item.data.hidden === true ? "border-amber-600 text-amber-300" : ""}`}
+                          onClick={() => toggleHidden(item.id)}
+                          title={item.data.hidden === true ? "Ascuns: apasă ca să-l arăți din nou" : "Ascunde blocul (rămâne în pagină, dar nu se vede)"}
+                          aria-label={item.data.hidden === true ? "Arată blocul" : "Ascunde blocul"}
+                        >
+                          {item.data.hidden === true ? "🙈" : "👁"}
                         </button>
                         {active && (
                           <div className="flex gap-1">

@@ -552,7 +552,7 @@ function Footer({ block }: { block: FooterBlock }) {
 }
 
 export default function BlockRenderer({
-  blocks,
+  blocks: allBlocks,
   background,
   preview = false,
   footerLibrary = EMPTY_FOOTER_LIBRARY,
@@ -567,6 +567,9 @@ export default function BlockRenderer({
   /** Editor preview: replaces the order form with a placeholder */
   preview?: boolean;
 }) {
+  // Hidden blocks are not rendered for visitors; the editor preview keeps the ones that sit in the page flow, dimmed
+  const isFlowType = (b: PageBlock) => b.type !== "topbar" && b.type !== "topbar_timer" && b.type !== "sticky_footer" && b.type !== "footer" && b.type !== "shared_footer";
+  const blocks = allBlocks.filter((b) => !b.hidden || (preview && isFlowType(b)));
   const firstImageIndex = blocks.findIndex((b) => b.type === "image");
   const topbars = blocks.filter((b) => b.type === "topbar" || b.type === "topbar_timer");
   const stickyFooter = blocks.find((b) => b.type === "sticky_footer");
@@ -585,7 +588,8 @@ export default function BlockRenderer({
   // Bands run edge to edge, so they sit outside the centered column: the flow is cut into column segments around them
   const segments: { items: React.ReactNode[]; band?: React.ReactNode }[] = [];
   for (const { block, index } of flow) {
-    const inner = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
+    const innerBlock = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
+    const inner = block.hidden ? <div key={index} style={{ opacity: 0.3 }} title="Bloc ascuns: nu se vede pe pagina publică">{innerBlock}</div> : innerBlock;
     // Space under the block lives inside the phase gate, so a hidden block leaves no gap
     const element = block.spaceBelow ? <div key={index} style={{ paddingBottom: block.spaceBelow }}>{inner}</div> : inner;
     // Thank-you page: blocks can be limited to a phase and to the presence of the store button

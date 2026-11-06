@@ -401,7 +401,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "⬓",
     description: "Rămâne lipit jos pe ecran",
     kinds: LANDING,
-    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff", animation: "none", speed: "medium", barBg: "#ffffff", text2: "", size: 18, size2: 13 }),
+    create: () => ({ type: "sticky_footer", text: "COMANDĂ ACUM", href: "#comanda", bg: "#0bba71", color: "#ffffff", animation: "none", speed: "medium", barBg: "#ffffff", text2: "", size: 18, size2: 13, padY: 16, barPadY: 12, gap2: 4 }),
     fields: [
       { kind: "text", key: "text", label: "Text buton" },
       { kind: "number", key: "size", label: "Mărime text principal (px)", min: 11, max: 32 },
@@ -411,6 +411,9 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "color", key: "bg", label: "Fundal" },
       { kind: "color", key: "color", label: "Culoare text" },
       { kind: "color", key: "barBg", label: "Fundal bară (în jurul butonului)", help: "Implicit alb" },
+      { kind: "number", key: "padY", label: "Spațiu în buton, sus și jos (px)", min: 4, max: 24, help: "Implicit 16. Sub 10 butonul devine greu de apăsat cu degetul" },
+      { kind: "number", key: "barPadY", label: "Spațiu bară, sus și jos (px)", min: 0, max: 24, help: "Distanța dintre buton și marginea barei. Implicit 12" },
+      { kind: "number", key: "gap2", label: "Spațiu între cele două linii (px)", min: 0, max: 12, help: "Se aplică doar dacă ai a doua linie. Implicit 4" },
       {
         kind: "select",
         key: "animation",

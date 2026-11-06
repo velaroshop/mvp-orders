@@ -125,6 +125,10 @@ export type StickyFooterBlock = {
   /** Text sizes in px */
   size: number;
   size2: number;
+  /** Spacing in px: inside the button (above and below the text), inside the bar (above and below the button), between the two lines */
+  padY: number;
+  barPadY: number;
+  gap2: number;
 };
 /** Full-width colored strip (edge to edge) with text, optional gradient, optional link and optional attention animation */
 export type BandAnimation = "none" | "pulse" | "shine" | "arrow";
@@ -502,6 +506,9 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         text2: str(b.text2).slice(0, 120),
         size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(32, Math.max(11, Math.round(b.size))) : 18,
         size2: typeof b.size2 === "number" && Number.isFinite(b.size2) ? Math.min(24, Math.max(10, Math.round(b.size2))) : 13,
+        padY: typeof b.padY === "number" && Number.isFinite(b.padY) ? Math.min(24, Math.max(4, Math.round(b.padY))) : 16,
+        barPadY: typeof b.barPadY === "number" && Number.isFinite(b.barPadY) ? Math.min(24, Math.max(0, Math.round(b.barPadY))) : 12,
+        gap2: typeof b.gap2 === "number" && Number.isFinite(b.gap2) ? Math.min(12, Math.max(0, Math.round(b.gap2))) : 4,
       };
 
     case "html":

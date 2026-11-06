@@ -114,6 +114,26 @@ export type StickyFooterBlock = {
   animation: StickyAnimation;
   speed: StickySpeed;
 };
+/** Full-width colored strip (edge to edge) with text, optional gradient, optional link and optional attention animation */
+export type BandAnimation = "none" | "pulse" | "shine" | "arrow";
+export type BandBlock = {
+  type: "band";
+  text: string;
+  href: string | null;
+  newTab: boolean;
+  /** Minimum height in px */
+  height: number;
+  /** Text size in px */
+  size: number;
+  bold: boolean;
+  align: "left" | "center" | "right";
+  bg: string;
+  /** Second color: when set, the background is a left-to-right gradient from bg to bg2 */
+  bg2: string | null;
+  color: string;
+  animation: BandAnimation;
+  speed: StickySpeed;
+};
 export type HtmlBlock = { type: "html"; html: string };
 /** Formatted text (legal pages, long texts). html is cleaned on the server (see sanitize-rich-text.ts) */
 export type RichTextBlock = { type: "rich_text"; html: string; color: string; size: number };
@@ -233,6 +253,7 @@ export type BlockVariant =
   | ListBlock
   | ButtonBlock
   | StickyFooterBlock
+  | BandBlock
   | SharedFooterBlock
   | HtmlBlock
   | RichTextBlock
@@ -431,6 +452,23 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         href: href(b.href, "#"),
         bg: color(b.bg, "#16a34a"),
         color: color(b.color, "#ffffff"),
+      };
+
+    case "band":
+      return {
+        type: "band",
+        text: str(b.text, "Textul benzii").slice(0, 300),
+        href: typeof b.href === "string" && SAFE_HREF.test(b.href.trim()) ? b.href.trim() : null,
+        newTab: b.newTab === true,
+        height: typeof b.height === "number" && Number.isFinite(b.height) ? Math.min(300, Math.max(24, Math.round(b.height))) : 56,
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(40, Math.max(11, Math.round(b.size))) : 18,
+        bold: b.bold !== false,
+        align: b.align === "left" || b.align === "right" ? b.align : "center",
+        bg: color(b.bg, "#af3a10"),
+        bg2: typeof b.bg2 === "string" && HEX_COLOR.test(b.bg2.trim()) ? b.bg2.trim() : null,
+        color: color(b.color, "#ffffff"),
+        animation: b.animation === "pulse" || b.animation === "shine" || b.animation === "arrow" ? b.animation : "none",
+        speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
       };
 
     case "sticky_footer":

@@ -190,6 +190,43 @@ function Block({
         </div>
       );
 
+    case "band": {
+      const background = block.bg2 ? `linear-gradient(90deg, ${block.bg}, ${block.bg2})` : block.bg;
+      const justify = block.align === "left" ? "flex-start" : block.align === "right" ? "flex-end" : "center";
+      const animated = block.animation !== "none";
+      const className = `vlr-band flex w-full items-center px-4 py-2 leading-snug${animated ? ` vlr-sticky-${block.animation} vlr-sticky-${block.speed}` : ""}`;
+      const style = {
+        minHeight: block.height,
+        fontSize: block.size,
+        fontWeight: block.bold ? 700 : 400,
+        justifyContent: justify,
+        textAlign: block.align,
+        background,
+        color: block.color,
+      } as const;
+      // Pulse scales only the text, so the strip itself never grows past the screen edges
+      const label = (
+        <span className={block.animation === "pulse" ? `vlr-sticky-pulse vlr-sticky-${block.speed}` : undefined} style={block.animation === "pulse" ? { display: "inline-block" } : undefined}>
+          {block.text}
+          {block.animation === "arrow" && (
+            <span aria-hidden="true" className="vlr-sticky-arrow-icon ml-2 inline-block">
+              →
+            </span>
+          )}
+        </span>
+      );
+      const stripClass = block.animation === "pulse" ? className.replace(` vlr-sticky-pulse vlr-sticky-${block.speed}`, "") : className;
+      return block.href ? (
+        <a href={block.href} {...(block.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={`${stripClass} no-underline`} style={style}>
+          {label}
+        </a>
+      ) : (
+        <div className={stripClass} style={style}>
+          {label}
+        </div>
+      );
+    }
+
     case "html":
       return <div dangerouslySetInnerHTML={{ __html: block.html }} />;
 
@@ -530,6 +567,30 @@ export default function BlockRenderer({
     .map((block, index) => ({ block, index }))
     .filter(({ block }) => block.type !== "topbar" && block.type !== "topbar_timer" && block.type !== "sticky_footer" && block.type !== "footer" && block.type !== "shared_footer");
 
+  // Bands run edge to edge, so they sit outside the centered column: the flow is cut into column segments around them
+  const segments: { items: React.ReactNode[]; band?: React.ReactNode }[] = [];
+  for (const { block, index } of flow) {
+    const inner = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
+    // Space under the block lives inside the phase gate, so a hidden block leaves no gap
+    const element = block.spaceBelow ? <div key={index} style={{ paddingBottom: block.spaceBelow }}>{inner}</div> : inner;
+    // Thank-you page: blocks can be limited to a phase and to the presence of the store button
+    const gated =
+      block.phase || block.showWhen ? (
+        <PhaseGate key={index} phase={block.phase} showWhen={block.showWhen}>
+          {element}
+        </PhaseGate>
+      ) : (
+        element
+      );
+    if (block.type === "band") {
+      segments.push({ items: [], band: gated });
+    } else {
+      const last = segments[segments.length - 1];
+      if (last && !last.band) last.items.push(gated);
+      else segments.push({ items: [gated] });
+    }
+  }
+
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
       {/* A bar that stays on top would cover the form's heading when a button scrolls to it: leave room */}
@@ -540,21 +601,15 @@ export default function BlockRenderer({
         <Block key={`topbar-${i}`} block={block} index={-1} firstImageIndex={firstImageIndex} preview={preview} />
       ))}
 
-      <div className={`mx-auto w-full ${layout === "wide" ? "max-w-[1200px]" : "max-w-[560px]"}`}>
-        {flow.map(({ block, index }) => {
-          const inner = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
-          // Space under the block lives inside the phase gate, so a hidden block leaves no gap
-          const element = block.spaceBelow ? <div key={index} style={{ paddingBottom: block.spaceBelow }}>{inner}</div> : inner;
-          // Thank-you page: blocks can be limited to a phase and to the presence of the store button
-          return block.phase || block.showWhen ? (
-            <PhaseGate key={index} phase={block.phase} showWhen={block.showWhen}>
-              {element}
-            </PhaseGate>
-          ) : (
-            element
-          );
-        })}
-      </div>
+      {segments.map((segment, si) =>
+        segment.band ? (
+          <div key={`band-${si}`}>{segment.band}</div>
+        ) : (
+          <div key={`flow-${si}`} className={`mx-auto w-full ${layout === "wide" ? "max-w-[1200px]" : "max-w-[560px]"}`}>
+            {segment.items}
+          </div>
+        ),
+      )}
 
       {footers.map((block, i) => (
         <Footer key={`footer-${i}`} block={block} />

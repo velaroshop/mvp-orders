@@ -163,19 +163,34 @@ function Block({
         </div>
       );
 
-    case "list":
+    case "list": {
+      // Without lines the points are spaced by the list; with lines each point carries its own padding and top border
+      const gapClass = { tight: "space-y-1", normal: "space-y-2", loose: "space-y-4" }[block.gap];
+      const padClass = { tight: "py-1.5", normal: "py-2", loose: "py-3.5" }[block.gap];
       return (
-        <ul className={`space-y-2 px-4 py-2 ${SIZE_CLASS[block.size]}`} style={{ color: block.color }}>
+        <ul className={`px-4 py-2 ${block.divider ? "" : gapClass} ${SIZE_CLASS[block.size]}`} style={{ color: block.color }}>
           {block.items.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 leading-snug">
-              <span className="font-bold" style={{ color: block.iconColor }} aria-hidden="true">
-                {block.icon}
-              </span>
+            <li
+              key={i}
+              className={`flex items-start gap-2 leading-snug ${block.divider ? padClass : ""}`}
+              style={block.divider && i > 0 ? { borderTop: `1px solid ${block.dividerColor}` } : undefined}
+            >
+              {block.icon === "circle" ? (
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="1.4em" height="1.4em" className="shrink-0" style={{ color: block.iconColor, marginTop: "-0.05em" }} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M7.5 12.5l3 3 6-6.5" />
+                </svg>
+              ) : (
+                <span className="font-bold" style={{ color: block.iconColor }} aria-hidden="true">
+                  {block.icon}
+                </span>
+              )}
               <span>{renderInline(item)}</span>
             </li>
           ))}
         </ul>
       );
+    }
 
     case "button":
       return (

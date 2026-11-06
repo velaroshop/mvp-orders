@@ -99,6 +99,11 @@ export type ListBlock = {
   iconColor: string;
   color: string;
   size: TextSize;
+  /** Space between points */
+  gap: "tight" | "normal" | "loose";
+  /** Thin line between points (not after the last one) */
+  divider: boolean;
+  dividerColor: string;
 };
 export type ButtonBlock = { type: "button"; text: string; href: string; bg: string; color: string };
 /** Attention animation of the fixed bottom button: none, a soft pulse, a light streak, an expanding ring, a small hop or a moving arrow */
@@ -283,7 +288,8 @@ export const ANPC_LINKS = [
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const SAFE_HREF = /^(?:https?:\/\/|\/(?!\/)|#|tel:|mailto:)/i;
 const TEXT_SIZES: TextSize[] = ["sm", "base", "lg", "xl", "2xl"];
-const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★" };
+/** "circle" is not a character: it is drawn as a check mark inside a circle (see BlockRenderer) */
+const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★", circle: "circle" };
 
 const MAX_ITEMS = 30;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -442,6 +448,9 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         iconColor: color(b.iconColor, "#16a34a"),
         color: color(b.color, "#18181b"),
         size: size(b.size, "base"),
+        gap: b.gap === "tight" || b.gap === "loose" ? b.gap : "normal",
+        divider: b.divider === true,
+        dividerColor: color(b.dividerColor, "#e4e4e7"),
       };
     }
 

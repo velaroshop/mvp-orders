@@ -284,7 +284,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "☰",
     description: "Beneficii, puncte cu bife",
     kinds: ALL,
-    create: () => ({ type: "list", items: ["Primul punct", "Al doilea punct"], icon: "check", iconColor: "#16a34a", color: "#18181b", size: "base" }),
+    create: () => ({ type: "list", items: ["Primul punct", "Al doilea punct"], icon: "check", iconColor: "#16a34a", color: "#18181b", size: "base", gap: "normal", divider: false, dividerColor: "#e4e4e7" }),
     fields: [
       { kind: "strings", key: "items", label: "Puncte", addLabel: "Adaugă punct" },
       {
@@ -293,6 +293,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         label: "Iconiță",
         options: [
           { value: "check", label: "✓ Bifă" },
+          { value: "circle", label: "Bifă în cerc" },
           { value: "dot", label: "• Punct" },
           { value: "star", label: "★ Stea" },
         ],
@@ -300,6 +301,18 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "color", key: "iconColor", label: "Culoare iconiță" },
       { kind: "color", key: "color", label: "Culoare text" },
       { kind: "select", key: "size", label: "Mărime", options: sizeOptions },
+      {
+        kind: "select",
+        key: "gap",
+        label: "Spațiu între rânduri",
+        options: [
+          { value: "tight", label: "Strâns" },
+          { value: "normal", label: "Normal" },
+          { value: "loose", label: "Aerisit" },
+        ],
+      },
+      { kind: "toggle", key: "divider", label: "Linie între puncte" },
+      { kind: "color", key: "dividerColor", label: "Culoare linie", showIf: { key: "divider", equals: true } },
     ],
   },
   {

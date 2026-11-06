@@ -142,17 +142,6 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     if (addMenuRef.current) addMenuRef.current.open = false;
   };
 
-  const move = (id: string, delta: number) =>
-    setItems((prev) => {
-      const from = prev.findIndex((i) => i.id === id);
-      const to = from + delta;
-      if (from < 0 || to < 0 || to >= prev.length) return prev;
-      const next = [...prev];
-      const [item] = next.splice(from, 1);
-      next.splice(to, 0, item);
-      return next;
-    });
-
   const duplicate = (id: string) => {
     const from = items.findIndex((i) => i.id === id);
     if (from < 0) return;
@@ -325,7 +314,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
 
           <SortableList ids={items.map((i) => i.id)} onMove={(from, to) => setItems((prev) => arrayMove(prev, from, to))}>
             <ul className="space-y-1">
-              {items.map((item, index) => {
+              {items.map((item) => {
                 const def = blockDef(item.data.type);
                 const active = item.id === selectedId;
                 return (
@@ -358,8 +347,6 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                         </button>
                         {active && (
                           <div className="flex gap-1">
-                            <button type="button" className={iconButton} disabled={index === 0} onClick={() => move(item.id, -1)} aria-label="Mută sus">↑</button>
-                            <button type="button" className={iconButton} disabled={index === items.length - 1} onClick={() => move(item.id, 1)} aria-label="Mută jos">↓</button>
                             <button type="button" className={iconButton} onClick={() => duplicate(item.id)} aria-label="Duplică">⧉</button>
                             <button type="button" className={iconButton} onClick={() => remove(item.id)} aria-label="Șterge">🗑</button>
                           </div>

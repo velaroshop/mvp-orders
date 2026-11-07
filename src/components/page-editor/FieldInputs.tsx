@@ -510,7 +510,7 @@ export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; v
   return (
     <div className="space-y-4">
       {fields
-        .filter((def) => !def.showIf || getPath(value, def.showIf.key) === def.showIf.equals)
+        .filter((def) => !def.showIf || String(getPath(value, def.showIf.key)) === String(def.showIf.equals))
         .map((def) => (
         <div key={def.key}>
           <Label def={def} />

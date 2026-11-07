@@ -189,6 +189,11 @@ export async function PUT(
     if (body.numeral2 !== undefined) updateData.numeral_2 = body.numeral2;
     if (body.numeral3 !== undefined) updateData.numeral_3 = body.numeral3;
     if (body.orderButtonText !== undefined) updateData.order_button_text = body.orderButtonText;
+    // Optional descriptions under the offers (column from migration 106): the admin only sends them when the column exists
+    for (const n of [1, 2, 3] as const) {
+      const value = body[`offerDescription${n}`];
+      if (value !== undefined) updateData[`offer_description_${n}`] = typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : null;
+    }
     
     // Pricing
     if (body.srp !== undefined) updateData.srp = body.srp;

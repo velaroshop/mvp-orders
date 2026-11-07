@@ -302,7 +302,27 @@ export type BeforeAfterBlock = {
 };
 // Order form (the landing page configuration with this slug drives offers, prices, upsells, tracking)
 // thankYouPath: own thank-you page on this site (for example "/thank-you"); empty = the store's thank-you page, as the iframe widget does
-export type FormBlock = { type: "form"; landingSlug: string; org: string | null; thankYouPath: string | null; variant: 1 | 2 | 3 };
+/** Look of the V4 order form (all colors and texts can be set; the fields and their order stay those of V3) */
+export type FormV4Style = {
+  title: string;
+  pill: string;
+  pillBg: string;
+  pillColor: string;
+  frameColor: string;
+  frameWidth: number;
+  titleColor: string;
+  accent: string;
+  selectedBg: string;
+  offerBorder: string;
+  priceColor: string;
+  descColor: string;
+  inputBorder: string;
+  buttonBg: string;
+  buttonColor: string;
+  notes: string[];
+  notesColor: string;
+};
+export type FormBlock = { type: "form"; landingSlug: string; org: string | null; thankYouPath: string | null; variant: 1 | 2 | 3 | 4; style: FormV4Style };
 // Thank-you page only: order details from the order in the URL (renders nothing elsewhere)
 export type OrderSummaryBlock = { type: "order_summary"; heading: string; bg: string; color: string; accent: string };
 export type SpacerBlock = { type: "spacer"; height: number };
@@ -433,6 +453,35 @@ const dimension = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 10000 ? Math.round(value) : null;
 const size = (value: unknown, fallback: TextSize): TextSize =>
   TEXT_SIZES.includes(value as TextSize) ? (value as TextSize) : fallback;
+
+function formV4Style(raw: unknown): FormV4Style {
+  const v = obj(raw);
+  return {
+    title: str(v.title, "ALEGE OFERTA TA").slice(0, 60),
+    pill: str(v.pill).slice(0, 60),
+    pillBg: color(v.pillBg, "#ffe14d"),
+    pillColor: color(v.pillColor, "#141414"),
+    frameColor: color(v.frameColor, "#141414"),
+    frameWidth: typeof v.frameWidth === "number" && Number.isFinite(v.frameWidth) ? Math.min(6, Math.max(0, Math.round(v.frameWidth))) : 3,
+    titleColor: color(v.titleColor, "#141414"),
+    accent: color(v.accent, "#d93f0f"),
+    selectedBg: color(v.selectedBg, "#fff4d1"),
+    offerBorder: color(v.offerBorder, "#d4d4d8"),
+    priceColor: color(v.priceColor, "#141414"),
+    descColor: color(v.descColor, "#52525b"),
+    inputBorder: color(v.inputBorder, "#141414"),
+    buttonBg: color(v.buttonBg, "#d93f0f"),
+    buttonColor: color(v.buttonColor, "#ffffff"),
+    notes: list(v.notes)
+      .filter((n): n is string => typeof n === "string" && n.trim() !== "")
+      .map((n) => n.slice(0, 40))
+      .slice(0, 4),
+    notesColor: color(v.notesColor, "#3f3f46"),
+  };
+}
+
+/** The V4 form look with every value at its default (used when a form is rendered without a block, and as the editor default) */
+export const DEFAULT_FORM_V4: FormV4Style = formV4Style({});
 
 function normalizeBlock(raw: unknown): PageBlock | null {
   if (!raw || typeof raw !== "object") return null;
@@ -879,7 +928,8 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         org: SLUG.test(org) ? org : null,
         thankYouPath: /^\/[a-z0-9\-_/]*$/i.test(thankYouPath) ? thankYouPath : null,
         // Blocks saved before the variant existed keep the V3 form they always had
-        variant: Number(b.variant) === 1 ? 1 : Number(b.variant) === 2 ? 2 : 3,
+        variant: Number(b.variant) === 1 ? 1 : Number(b.variant) === 2 ? 2 : Number(b.variant) === 4 ? 4 : 3,
+        style: formV4Style(b.style),
       };
     }
 

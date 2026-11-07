@@ -34,6 +34,9 @@ interface LandingPage {
   numeral_1?: string;
   numeral_2?: string;
   numeral_3?: string;
+  offer_description_1?: string | null;
+  offer_description_2?: string | null;
+  offer_description_3?: string | null;
   order_button_text: string;
   srp: number;
   price_1: number;
@@ -240,6 +243,14 @@ export default function EditLandingPagePage() {
           numeral1: formData.numeral_1 || "1 bucată",
           numeral2: formData.numeral_2 || "Două bucăți",
           numeral3: formData.numeral_3 || "Trei bucăți",
+          // Only when the database has the columns (migration 106): otherwise the save would fail on an unknown column
+          ...("offer_description_1" in formData
+            ? {
+                offerDescription1: formData.offer_description_1 ?? "",
+                offerDescription2: formData.offer_description_2 ?? "",
+                offerDescription3: formData.offer_description_3 ?? "",
+              }
+            : {}),
           orderButtonText: formData.order_button_text,
           srp: formData.srp,
           price1: formData.price_1,
@@ -714,6 +725,29 @@ export default function EditLandingPagePage() {
               <p className="text-xs text-zinc-500 mt-1">
                 Max. 20 caractere fiecare
               </p>
+
+              {/* Optional descriptions under the offers (V4 form of the own pages); shown once migration 106 has been run */}
+              {"offer_description_1" in formData && (
+                <div className="mt-3">
+                  <label className="label">Descriere sub ofertă (opțional)</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {([1, 2, 3] as const).map((n) => (
+                      <input
+                        key={n}
+                        type="text"
+                        value={(formData[`offer_description_${n}`] as string | null | undefined) ?? ""}
+                        onChange={(e) => setFormData({ ...formData, [`offer_description_${n}`]: e.target.value })}
+                        className="input"
+                        placeholder={`Oferta ${n}: ex. Pentru o singură zonă`}
+                        maxLength={60}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    O linie scurtă sub titlul ofertei (max. 60 de caractere). Apare doar în formularul V4 din paginile proprii.
+                  </p>
+                </div>
+              )}
 
               {/* Order Button Text */}
               <div>

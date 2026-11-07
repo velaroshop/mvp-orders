@@ -7,6 +7,7 @@ import { FormEvent, useState, useEffect, useRef } from "react";
 import type { OfferCode } from "@/lib/types";
 import { initInlinePixel, trackInlinePixel, readMetaCookies } from "@/lib/inline-pixel";
 import { newSessionId } from "@/lib/session-id";
+import { DEFAULT_FORM_V4, type FormV4Style } from "@/lib/page-blocks";
 import { offerTotal, offerDiscountPercent, offerUnitNote, offerPerPieceNote, isFreeOffer } from "@/lib/upsell-offer";
 
 interface Upsell {
@@ -54,6 +55,10 @@ interface LandingPage {
   free_shipping_offer_2?: boolean;
   free_shipping_offer_3?: boolean;
   form_variant?: number;
+  /** Optional one-line description under each offer (V4); null/missing = none */
+  offer_description_1?: string | null;
+  offer_description_2?: string | null;
+  offer_description_3?: string | null;
   offer_heading_1: string;
   offer_heading_2: string;
   offer_heading_3: string;
@@ -93,11 +98,14 @@ export default function OwnOrderForm({
   org = null,
   thankYouPath = null,
   variant = 3,
+  v4 = DEFAULT_FORM_V4,
 }: {
   slug: string;
   org?: string | null;
   /** Form layout chosen in the page block: 1 = offers below, 2 = offers on top, 3 = offers on top + new delivery fields */
-  variant?: 1 | 2 | 3;
+  variant?: 1 | 2 | 3 | 4;
+  /** Colors and texts of the V4 look (only used when variant is 4) */
+  v4?: FormV4Style;
   /** Own thank-you page on this site (for example "/thank-you"); null = the store's thank-you page, as the widget does */
   thankYouPath?: string | null;
 }) {
@@ -1115,8 +1123,15 @@ export default function OwnOrderForm({
   };
 
   // V3 = V2 layout (offers on top) + redesigned delivery fields
-  const isV3 = variant === 3;
+  // V4 = V3 fields, order and behavior, with its own look (framed card, offers as rows, colors set in the block)
+  const isV4 = variant === 4;
+  const isV3 = variant === 3 || isV4;
   const isV2 = variant === 2 || isV3;
+  const btnBg = isV4 ? v4.buttonBg : primaryColor;
+  // The order summary follows the store colors in V1-V3; V4 has its own light box (colors from the block)
+  const sumBg = isV4 ? v4.selectedBg : backgroundColor;
+  const sumText = isV4 ? "#18181b" : textOnDarkColor;
+  const sumAccent = isV4 ? v4.accent : accentColor;
   const labelClass = isV3
     ? "block text-lg sm:text-xl font-bold text-zinc-900 mb-1.5"
     : "block text-base sm:text-lg font-medium text-zinc-900 mb-1";
@@ -1130,7 +1145,7 @@ export default function OwnOrderForm({
       <div className="max-w-xl mx-auto">
 
         {/* V2 Header — Explicit old/new price, dynamic with selected offer */}
-        {isV2 && (
+        {isV2 && !isV4 && (
           <div className={`relative rounded-lg shadow-lg p-2.5 ${isV3 ? "pt-7" : "pt-5"} mb-2 sm:mb-3`} style={{ backgroundColor }}>
             <div className={`absolute ${isV3 ? "-top-4" : "-top-3"} left-1/2 -translate-x-1/2 z-10`}>
               {isV3 && (
@@ -1259,7 +1274,13 @@ export default function OwnOrderForm({
           className="space-y-4 sm:space-y-6"
         >
           {/* Unified Card: Delivery + Offers + Upsells + Summary */}
-          <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${isV2 ? "flex flex-col" : ""}`}>
+          <div
+            className={`vlr-v4-scope bg-white overflow-hidden ${isV4 ? "rounded-2xl" : "rounded-lg shadow-lg"} ${isV2 ? "flex flex-col" : ""}`}
+            style={isV4 ? { border: `${v4.frameWidth}px solid ${v4.frameColor}` } : undefined}
+          >
+          {isV4 && (
+            <style dangerouslySetInnerHTML={{__html: `.vlr-v4-scope input:not([type=checkbox]):not([type=radio]):not(.border-red-500){border-color:${v4.inputBorder};border-width:2px}`}} />
+          )}
 
           {/* Delivery Information */}
           <div className={isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"} style={isV2 ? { order: 3 } : undefined}>
@@ -1497,9 +1518,65 @@ export default function OwnOrderForm({
 
           {/* Quantity Selection */}
           <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
-            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
-              {isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
+            {isV4 && v4.pill && (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-md px-3 py-1 text-xs sm:text-sm font-black uppercase tracking-wide" style={{ backgroundColor: v4.pillBg, color: v4.pillColor }}>
+                  {v4.pill}
+                </span>
+              </div>
+            )}
+            <h2
+              className={`${isV4 ? "text-2xl sm:text-3xl font-black uppercase" : "text-lg sm:text-xl font-bold text-zinc-900"} mb-2 sm:mb-3 text-center`}
+              style={isV4 ? { color: v4.titleColor } : undefined}
+            >
+              {isV4 ? v4.title : isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
             </h2>
+            {isV4 && (
+              <div className="space-y-2.5">
+                {([1, 2, 3] as const).map((n) => {
+                  const code = `offer_${n}` as OfferCode;
+                  const chosen = selectedOffer === code;
+                  const price = landingPage[`price_${n}` as "price_1"];
+                  const title = landingPage[`numeral_${n}` as "numeral_1"];
+                  const tag = landingPage[`offer_heading_${n}` as "offer_heading_1"];
+                  const description = landingPage[`offer_description_${n}` as "offer_description_1"];
+                  const freeShipping = landingPage[`free_shipping_offer_${n}` as "free_shipping_offer_1"];
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setSelectedOffer(code);
+                        if (landingPage.client_side_tracking && landingPage.fb_pixel_id) {
+                          sendPixelEvent('OfferSelected', { content_ids: [code], value: price, currency: 'RON' });
+                        }
+                      }}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                      style={{
+                        border: `2px solid ${chosen ? v4.accent : v4.offerBorder}`,
+                        backgroundColor: chosen ? v4.selectedBg : "#ffffff",
+                      }}
+                      aria-pressed={chosen}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-base sm:text-lg font-bold leading-tight text-zinc-900">{title}</span>
+                        {description && (
+                          <span className="mt-0.5 block text-sm leading-snug" style={{ color: v4.descColor }}>{description}</span>
+                        )}
+                        {freeShipping && <span className="mt-0.5 block text-xs font-bold uppercase text-emerald-700">Transport gratuit</span>}
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-xl sm:text-2xl font-black leading-tight whitespace-nowrap" style={{ color: v4.priceColor }}>
+                          {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)} LEI
+                        </span>
+                        {tag && <span className="block text-[11px] sm:text-xs font-black uppercase leading-tight" style={{ color: v4.accent }}>{tag}</span>}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {!isV4 && (
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 type="button"
@@ -1642,6 +1719,7 @@ export default function OwnOrderForm({
                 )}
               </button>
             </div>
+            )}
 
           </div>
 
@@ -1978,31 +2056,31 @@ export default function OwnOrderForm({
           )}
 
           {/* Order Summary */}
-          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor, order: 5 } : { backgroundColor }}>
-            <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: textOnDarkColor }}>
+          <div className="p-2.5 sm:p-3" style={isV2 ? { backgroundColor: sumBg, order: 5 } : { backgroundColor: sumBg }}>
+            <h2 className="text-base sm:text-lg font-bold mb-1.5 text-center" style={{ color: sumText }}>
               Rezumatul comenzii
             </h2>
             <div className="space-y-0.5 mb-1.5 text-center">
-              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+              <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
                 Preț produse: <span className="font-bold">{currentPrice.toFixed(2)} Lei</span>
               </div>
-              <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+              <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
                 {hasFreeShipping() ? (
-                  <>Livrare curier rapid: <span className="line-through opacity-50">{landingPage.shipping_price.toFixed(2)} Lei</span> <span className="font-bold text-emerald-400">GRATUIT</span></>
+                  <>Livrare curier rapid: <span className="line-through opacity-50">{landingPage.shipping_price.toFixed(2)} Lei</span> <span className={`font-bold ${isV4 ? "text-emerald-700" : "text-emerald-400"}`}>GRATUIT</span></>
                 ) : (
                   <>Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span></>
                 )}
               </div>
               {getUpsellsTotal() > 0 && (
-                <div className="text-sm sm:text-base" style={{ color: textOnDarkColor, opacity: 0.8 }}>
+                <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
                   Oferte speciale ({selectedUpsells.size}): <span className="font-bold">{getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
               )}
             </div>
-            <div className="pt-1.5 border-t" style={{ borderColor: `${textOnDarkColor}40` }}>
+            <div className="pt-1.5 border-t" style={{ borderColor: `${sumText}40` }}>
               <div className="flex justify-center items-center gap-3">
-                <span className="text-sm sm:text-base font-bold" style={{ color: textOnDarkColor }}>PREȚ TOTAL</span>
-                <span className="text-lg sm:text-xl font-bold" style={{ color: accentColor }}>
+                <span className="text-sm sm:text-base font-bold" style={{ color: sumText }}>PREȚ TOTAL</span>
+                <span className="text-lg sm:text-xl font-bold" style={{ color: sumAccent }}>
                   {totalPrice.toFixed(2)} LEI
                 </span>
               </div>
@@ -2023,19 +2101,20 @@ export default function OwnOrderForm({
             <button
               type="submit"
               disabled={submitting}
-              className={`w-3/5 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`${isV4 ? "w-full" : "w-3/5"} text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
               style={{
-                backgroundColor: primaryColor,
+                backgroundColor: btnBg,
+                ...(isV4 ? { color: v4.buttonColor } : {}),
                 touchAction: 'manipulation',
                 ...(!submitting ? {
-                  boxShadow: `0 0 0 0 ${primaryColor}B3`,
+                  boxShadow: `0 0 0 0 ${btnBg}B3`,
                   animation: 'pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                 } : {})
               }}
               onMouseEnter={(e) => {
-                if (!submitting) {
+                if (!submitting && !isV4) {
                   // Darken color on hover (reduce brightness by ~10%)
                   const rgb = primaryColor.match(/\d+/g);
                   if (rgb && rgb.length === 3) {
@@ -2048,23 +2127,33 @@ export default function OwnOrderForm({
               }}
               onMouseLeave={(e) => {
                 if (!submitting) {
-                  e.currentTarget.style.backgroundColor = primaryColor;
+                  e.currentTarget.style.backgroundColor = btnBg;
                 }
               }}
             >
               {submitting ? "Se procesează..." : landingPage.order_button_text}
             </button>
-            <p className="text-center text-sm sm:text-base text-zinc-600 italic">
-              cu reducere aplicată
-            </p>
+            {isV4 ? (
+              v4.notes.length > 0 && (
+                <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-center text-xs sm:text-sm font-semibold" style={{ color: v4.notesColor }}>
+                  {v4.notes.map((note, i) => (
+                    <span key={i}>{note}</span>
+                  ))}
+                </p>
+              )
+            ) : (
+              <p className="text-center text-sm sm:text-base text-zinc-600 italic">
+                cu reducere aplicată
+              </p>
+            )}
           </div>
           <style dangerouslySetInnerHTML={{__html: `
             @keyframes pulse-button {
               0%, 100% {
-                box-shadow: 0 0 0 0 ${primaryColor}B3, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 0 ${btnBg}B3, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
               50% {
-                box-shadow: 0 0 0 10px ${primaryColor}00, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 10px ${btnBg}00, 0 10px 15px -3px rgba(0, 0, 0, 0.1);
               }
             }
             @keyframes fadeIn {

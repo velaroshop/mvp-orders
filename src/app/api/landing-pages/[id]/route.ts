@@ -190,9 +190,11 @@ export async function PUT(
     if (body.numeral3 !== undefined) updateData.numeral_3 = body.numeral3;
     if (body.orderButtonText !== undefined) updateData.order_button_text = body.orderButtonText;
     // Optional descriptions under the offers (column from migration 106): the admin only sends them when the column exists
+    // Own-pages system: superadmins only
+    const canSetDescriptions = session.user.activeRole === "owner" && session.user.isSuperadminOrg === true;
     for (const n of [1, 2, 3] as const) {
       const value = body[`offerDescription${n}`];
-      if (value !== undefined) updateData[`offer_description_${n}`] = typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : null;
+      if (canSetDescriptions && value !== undefined) updateData[`offer_description_${n}`] = typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : null;
     }
     
     // Pricing

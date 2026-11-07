@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 interface Product {
   id: string;
@@ -58,6 +59,9 @@ export default function EditLandingPagePage() {
   const router = useRouter();
   const params = useParams();
   const landingPageId = params.id as string;
+  // Offer descriptions belong to the own-pages system, which only superadmins have (show them to everyone if that system opens up)
+  const { data: session } = useSession();
+  const isSuperadmin = (session?.user as any)?.activeRole === "owner" && (session?.user as any)?.isSuperadminOrg === true;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -244,7 +248,7 @@ export default function EditLandingPagePage() {
           numeral2: formData.numeral_2 || "Două bucăți",
           numeral3: formData.numeral_3 || "Trei bucăți",
           // Only when the database has the columns (migration 106): otherwise the save would fail on an unknown column
-          ...("offer_description_1" in formData
+          ...(isSuperadmin && "offer_description_1" in formData
             ? {
                 offerDescription1: formData.offer_description_1 ?? "",
                 offerDescription2: formData.offer_description_2 ?? "",
@@ -727,7 +731,7 @@ export default function EditLandingPagePage() {
               </p>
 
               {/* Optional descriptions under the offers (V4 form of the own pages); shown once migration 106 has been run */}
-              {"offer_description_1" in formData && (
+              {isSuperadmin && "offer_description_1" in formData && (
                 <div className="mt-3">
                   <label className="label">Descriere sub ofertă (opțional)</label>
                   <div className="grid grid-cols-3 gap-3">

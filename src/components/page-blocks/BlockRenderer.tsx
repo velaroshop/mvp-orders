@@ -27,22 +27,27 @@ const SIZE_CLASS: Record<TextSize, string> = {
 const insetStyle = (inset: number): CSSProperties | undefined =>
   inset > 0 ? { padding: `${Math.round(inset / 2)}px ${inset}px` } : undefined;
 
+/** **bold** and ==highlighted== (text blocks), which may be nested in each other: **==both==** or ==**both**== */
+function markedParts(line: string, highlight: string, key: string): ReactNode[] {
+  return line.split(/(\*\*.+?\*\*|==.+?==)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={`${key}-${i}`}>{markedParts(part.slice(2, -2), highlight, `${key}-${i}`)}</strong>
+    ) : part.startsWith("==") && part.endsWith("==") && part.length > 4 ? (
+      <mark key={`${key}-${i}`} style={{ backgroundColor: highlight, color: "inherit", padding: "0 0.15em", WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>
+        {markedParts(part.slice(2, -2), highlight, `${key}-${i}`)}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
 /** Plain text with **bold** and line breaks; React escapes everything else. */
 function renderInline(text: string, highlight?: string): ReactNode[] {
   return text.split("\n").flatMap((line, lineIndex, lines) => {
     // With a highlight color, ==text== is marked like with a highlighter pen (text blocks only)
     const parts = highlight
-      ? line.split(/(\*\*.+?\*\*|==.+?==)/g).map((part, i) =>
-          part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-            <strong key={`${lineIndex}-${i}`}>{part.slice(2, -2)}</strong>
-          ) : part.startsWith("==") && part.endsWith("==") && part.length > 4 ? (
-            <mark key={`${lineIndex}-${i}`} style={{ backgroundColor: highlight, color: "inherit", padding: "0 0.15em", WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>
-              {part.slice(2, -2)}
-            </mark>
-          ) : (
-            part
-          ),
-        )
+      ? markedParts(line, highlight, String(lineIndex))
       : line.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 === 1 ? <strong key={`${lineIndex}-${i}`}>{part}</strong> : part));
     return lineIndex < lines.length - 1 ? [...parts, <br key={`br-${lineIndex}`} />] : parts;
   });

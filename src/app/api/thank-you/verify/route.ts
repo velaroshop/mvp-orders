@@ -58,8 +58,8 @@ function isDevOrigin(origin: string | null): boolean {
 }
 
 const DEFAULT_CTA_MESSAGE =
-  "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare.\nDacă vrei, vezi și alte produse pe care le vindem.";
-const DEFAULT_CTA_BUTTON_TEXT = "Vezi toate produsele";
+  "Comanda ta este înregistrată. Un coleg te va suna în curând pentru confirmare.\nDacă vrei, să vezi și alte produse pe care le vindem, apasă butonul de mai jos:";
+const DEFAULT_CTA_BUTTON_TEXT = "Vezi și alte produse la ofertă";
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 /** Adds https:// when missing, accepts only http(s) and tags the link with utm params */

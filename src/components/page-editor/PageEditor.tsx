@@ -9,6 +9,7 @@ import { loadFooters } from "@/lib/footer-library-client";
 import { FieldsPanel } from "./FieldInputs";
 import { insertPosition } from "@/lib/editor-insert";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
+import { previewCtaFromStore, type PreviewStore } from "@/lib/thank-you-cta";
 
 type Obj = Record<string, unknown>;
 type Item = { id: string; data: Obj };
@@ -76,6 +77,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [previewPhase, setPreviewPhase] = useState<"offer" | "final">("final");
   const [previewCta, setPreviewCta] = useState(true);
+  const [stores, setStores] = useState<PreviewStore[]>([]);
+  const [previewStoreId, setPreviewStoreId] = useState("");
   const addMenuRef = useRef<HTMLDetailsElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [blockQuery, setBlockQuery] = useState("");
@@ -89,6 +92,24 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
       cancelled = true;
     };
   }, []);
+
+  // Thank-you page only: the stores, so the preview can show a real store's message and button
+  useEffect(() => {
+    if (kind !== "thank_you") return;
+    let cancelled = false;
+    fetch("/api/stores")
+      .then((res) => (res.ok ? res.json() : { stores: [] }))
+      .then((data) => !cancelled && setStores(Array.isArray(data.stores) ? data.stores : []))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [kind]);
+
+  const previewStoreCta = useMemo(() => {
+    const store = stores.find((s) => s.id === previewStoreId);
+    return store ? previewCtaFromStore(store) : undefined;
+  }, [stores, previewStoreId]);
 
   const payload = useMemo(
     () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId, isHome: isHome && !!domainId, layout } : {}) }),
@@ -111,10 +132,10 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   // Live preview: the page being edited is sent to the preview frame (same origin) on every change
   const sendPreview = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
-      { type: "velaro-preview", kind, blocks: payload.blocks, background, layout, phase: previewPhase, withStoreCta: previewCta, footerLibrary },
+      { type: "velaro-preview", kind, blocks: payload.blocks, background, layout, phase: previewPhase, withStoreCta: previewCta, cta: previewStoreCta, footerLibrary },
       window.location.origin,
     );
-  }, [kind, payload.blocks, background, layout, previewPhase, previewCta, footerLibrary]);
+  }, [kind, payload.blocks, background, layout, previewPhase, previewCta, previewStoreCta, footerLibrary]);
 
   useEffect(() => {
     sendPreview();
@@ -475,6 +496,17 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                 <select value={previewPhase} onChange={(e) => setPreviewPhase(e.target.value as "offer" | "final")} className="rounded border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm text-white">
                   <option value="final">După ofertă</option>
                   <option value="offer">Oferta deschisă</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-1.5">
+                Magazin:
+                <select value={previewStoreId} onChange={(e) => setPreviewStoreId(e.target.value)} className="max-w-[160px] rounded border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm text-white">
+                  <option value="">Exemplu</option>
+                  {stores.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name || s.url || s.id}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="flex items-center gap-1.5">

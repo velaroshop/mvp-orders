@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { normalizeBlocks, normalizePageBackground, type PageBlock } from "@/lib/page-blocks";
 import { EMPTY_FOOTER_LIBRARY, type FooterLibrary } from "@/lib/footer-library";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
-import { ThankYouPreviewProvider } from "@/components/thank-you/ThankYouProvider";
+import { ThankYouPreviewProvider, type ThankYouCta } from "@/components/thank-you/ThankYouProvider";
 
 // Rendered inside an iframe by the page editor: it receives the page being edited via postMessage and shows it
 // with the real renderer, at the real phone width. It holds no data and never calls the order API.
@@ -16,12 +16,13 @@ type PreviewMessage = {
   background: unknown;
   phase: "offer" | "final";
   withStoreCta: boolean;
+  cta?: ThankYouCta | null;
   footerLibrary?: FooterLibrary;
   layout?: "narrow" | "wide";
 };
 
 export default function PagePreview() {
-  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean; footerLibrary: FooterLibrary; layout: "narrow" | "wide" } | null>(null);
+  const [state, setState] = useState<{ blocks: PageBlock[]; background: string; kind: "landing" | "thank_you"; phase: "offer" | "final"; withStoreCta: boolean; cta: ThankYouCta | null; footerLibrary: FooterLibrary; layout: "narrow" | "wide" } | null>(null);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -34,6 +35,7 @@ export default function PagePreview() {
         kind: data.kind,
         phase: data.phase,
         withStoreCta: data.withStoreCta,
+        cta: data.cta ?? null,
         footerLibrary: data.footerLibrary ?? EMPTY_FOOTER_LIBRARY,
         layout: data.layout === "wide" ? "wide" : "narrow",
       });
@@ -47,7 +49,7 @@ export default function PagePreview() {
 
   const page = <BlockRenderer blocks={state.blocks} background={state.background} footerLibrary={state.footerLibrary} layout={state.layout} preview />;
   return state.kind === "thank_you" ? (
-    <ThankYouPreviewProvider phase={state.phase} withStoreCta={state.withStoreCta}>
+    <ThankYouPreviewProvider phase={state.phase} withStoreCta={state.withStoreCta} cta={state.cta}>
       {page}
     </ThankYouPreviewProvider>
   ) : (

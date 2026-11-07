@@ -80,10 +80,13 @@ const RETRY_MESSAGE = "A apărut o eroare. Te rugăm să reîncarci pagina.";
 export function ThankYouPreviewProvider({
   phase,
   withStoreCta,
+  cta,
   children,
 }: {
   phase: "offer" | "final";
   withStoreCta: boolean;
+  /** A real store's button (chosen in the editor); without it the sample button is shown */
+  cta?: ThankYouCta | null;
   children: ReactNode;
 }) {
   const data: ThankYouData = {
@@ -112,9 +115,9 @@ export function ThankYouPreviewProvider({
       upsells: [],
     },
     thankYouCta: withStoreCta
-      ? {
-          message: "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare.\nDacă vrei, vezi și alte produse pe care le vindem.",
-          buttonText: "Vezi toate produsele",
+      ? cta ?? {
+          message: "Comanda ta este înregistrată. Un coleg te va suna în curând pentru confirmare.\nDacă vrei, să vezi și alte produse pe care le vindem, apasă butonul de mai jos:",
+          buttonText: "Vezi și alte produse la ofertă",
           buttonColor: "#ff6b35",
           buttonTextColor: "#ffffff",
           url: "#",

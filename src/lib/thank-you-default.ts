@@ -13,7 +13,7 @@ export const DEFAULT_THANK_YOU = {
     { type: "store_cta", phase: "final", showWhen: "cta" },
     {
       type: "text",
-      text: "Comanda ta este înregistrată. Un coleg te sună în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare.",
+      text: "Comanda ta este înregistrată. Un coleg te va suna în curând pentru confirmare. Coletul ajunge în 1-3 zile și plătești la livrare.",
       align: "center",
       size: "base",
       color: "#e2e8f0",

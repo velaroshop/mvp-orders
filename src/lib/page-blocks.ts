@@ -314,7 +314,13 @@ export type BeforeAfterBlock = {
 /** Look of the V4 order form (all colors and texts can be set; the fields and their order stay those of V3) */
 export type FormV4Style = {
   title: string;
+  titleBold: boolean;
   pill: string;
+  pillPulse: boolean;
+  /** Label under the price of an offer: background (empty = the accent color), text color (empty = automatic, light or dark by the background), corner radius in px */
+  tagBg: string;
+  tagColor: string;
+  tagRadius: number;
   pillBg: string;
   pillColor: string;
   frameColor: string;
@@ -467,7 +473,12 @@ function formV4Style(raw: unknown): FormV4Style {
   const v = obj(raw);
   return {
     title: str(v.title, "ALEGE OFERTA TA").slice(0, 60),
+    titleBold: v.titleBold !== false,
     pill: str(v.pill).slice(0, 60),
+    pillPulse: v.pillPulse === true,
+    tagBg: color(v.tagBg, ""),
+    tagColor: color(v.tagColor, ""),
+    tagRadius: typeof v.tagRadius === "number" && Number.isFinite(v.tagRadius) ? Math.min(20, Math.max(0, Math.round(v.tagRadius))) : 6,
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),
     frameColor: color(v.frameColor, "#141414"),

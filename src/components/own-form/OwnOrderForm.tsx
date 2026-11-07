@@ -93,6 +93,18 @@ interface LandingPage {
   };
 }
 
+/** Text color that stays readable on a given background: white on dark colors, near-black on light ones */
+function readableOn(hex: string): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  if (!/^[0-9a-f]{6}$/i.test(full)) return "#ffffff";
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#18181b" : "#ffffff";
+}
+
 export default function OwnOrderForm({
   slug,
   org = null,
@@ -1279,7 +1291,7 @@ export default function OwnOrderForm({
             style={isV4 ? { border: `${v4.frameWidth}px solid ${v4.frameColor}` } : undefined}
           >
           {isV4 && (
-            <style dangerouslySetInnerHTML={{__html: `.vlr-v4-scope input:not([type=checkbox]):not([type=radio]):not(.border-red-500){border-color:${v4.inputBorder};border-width:2px}`}} />
+            <style dangerouslySetInnerHTML={{__html: `.vlr-v4-scope input:not([type=checkbox]):not([type=radio]):not(.border-red-500){border-color:${v4.inputBorder};border-width:2px}@keyframes vlrPillPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}.vlr-pill-pulse{animation:vlrPillPulse 1.4s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.vlr-pill-pulse{animation:none}}`}} />
           )}
 
           {/* Delivery Information */}
@@ -1520,13 +1532,13 @@ export default function OwnOrderForm({
           <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
             {isV4 && v4.pill && (
               <div className="mb-2 flex justify-center">
-                <span className="rounded-md px-3 py-1 text-xs sm:text-sm font-black uppercase tracking-wide" style={{ backgroundColor: v4.pillBg, color: v4.pillColor }}>
+                <span className={`rounded-md px-3 py-1 text-xs sm:text-sm font-black uppercase tracking-wide ${v4.pillPulse ? "vlr-pill-pulse" : ""}`} style={{ backgroundColor: v4.pillBg, color: v4.pillColor }}>
                   {v4.pill}
                 </span>
               </div>
             )}
             <h2
-              className={`${isV4 ? "text-2xl sm:text-3xl font-black uppercase" : "text-lg sm:text-xl font-bold text-zinc-900"} mb-2 sm:mb-3 text-center`}
+              className={`${isV4 ? `text-2xl sm:text-3xl uppercase ${v4.titleBold ? "font-black" : "font-medium"}` : "text-lg sm:text-xl font-bold text-zinc-900"} mb-2 sm:mb-3 text-center`}
               style={isV4 ? { color: v4.titleColor } : undefined}
             >
               {isV4 ? v4.title : isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
@@ -1563,13 +1575,30 @@ export default function OwnOrderForm({
                         {description && (
                           <span className="mt-0.5 block text-sm leading-snug" style={{ color: v4.descColor }}>{description}</span>
                         )}
-                        {freeShipping && <span className="mt-0.5 block text-xs font-bold uppercase text-emerald-700">Transport gratuit</span>}
+                        {freeShipping && (
+                          <span className="mt-1 block">
+                            <span className="inline-block rounded-md px-2 py-0.5 text-xs font-bold uppercase" style={{ backgroundColor: "#15803d", color: "#ffffff" }}>
+                              Transport gratuit
+                            </span>
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block text-xl sm:text-2xl font-black leading-tight whitespace-nowrap" style={{ color: v4.priceColor }}>
                           {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)} LEI
                         </span>
-                        {tag && <span className="block text-[11px] sm:text-xs font-black uppercase leading-tight" style={{ color: v4.accent }}>{tag}</span>}
+                        {tag && (
+                          <span
+                            className="mt-1 inline-block px-2 py-0.5 text-[11px] sm:text-xs font-black uppercase leading-tight"
+                            style={{
+                              backgroundColor: v4.tagBg || v4.accent,
+                              color: v4.tagColor || readableOn(v4.tagBg || v4.accent),
+                              borderRadius: v4.tagRadius,
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        )}
                       </span>
                     </button>
                   );

@@ -157,7 +157,7 @@ function Block({
       return (
         <div
           className={`px-4 py-2 leading-snug ${SIZE_CLASS[block.size]} ${block.bold ? "font-bold" : ""}`}
-          style={{ color: block.color, textAlign: block.align }}
+          style={{ color: block.color, textAlign: block.align, ...(block.sizePx ? { fontSize: block.sizePx } : {}) }}
         >
           {renderInline(block.text)}
         </div>
@@ -168,7 +168,7 @@ function Block({
       const gapClass = { tight: "space-y-1", normal: "space-y-2", loose: "space-y-4" }[block.gap];
       const padClass = { tight: "py-1.5", normal: "py-2", loose: "py-3.5" }[block.gap];
       return (
-        <ul className={`px-4 py-2 ${block.divider ? "" : gapClass} ${SIZE_CLASS[block.size]}`} style={{ color: block.color }}>
+        <ul className={`px-4 py-2 ${block.divider ? "" : gapClass} ${SIZE_CLASS[block.size]}`} style={{ color: block.color, ...(block.sizePx ? { fontSize: block.sizePx } : {}) }}>
           {block.items.map((item, i) => (
             <li
               key={i}

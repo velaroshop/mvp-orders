@@ -274,6 +274,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         ],
       },
       { kind: "select", key: "size", label: "Mărime", options: sizeOptions },
+      { kind: "number", key: "sizePx", label: "Mărime exactă (px)", min: 10, max: 80, help: "Gol = folosește mărimea de mai sus. Dacă scrii o valoare, aceea câștigă" },
       { kind: "color", key: "color", label: "Culoare" },
       { kind: "toggle", key: "bold", label: "Îngroșat" },
     ],
@@ -301,6 +302,7 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "color", key: "iconColor", label: "Culoare iconiță" },
       { kind: "color", key: "color", label: "Culoare text" },
       { kind: "select", key: "size", label: "Mărime", options: sizeOptions },
+      { kind: "number", key: "sizePx", label: "Mărime exactă (px)", min: 10, max: 80, help: "Gol = folosește mărimea de mai sus. Dacă scrii o valoare, aceea câștigă" },
       {
         kind: "select",
         key: "gap",

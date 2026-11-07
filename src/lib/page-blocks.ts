@@ -89,6 +89,8 @@ export type TextBlock = {
   text: string;
   align: "left" | "center" | "right";
   size: TextSize;
+  /** Exact size in px: when set it wins over "size" (only present when set, so older pages are unchanged) */
+  sizePx?: number;
   color: string;
   bold: boolean;
 };
@@ -99,6 +101,8 @@ export type ListBlock = {
   iconColor: string;
   color: string;
   size: TextSize;
+  /** Exact size in px: when set it wins over "size" (only present when set, so older pages are unchanged) */
+  sizePx?: number;
   /** Space between points */
   gap: "tight" | "normal" | "loose";
   /** Thin line between points (not after the last one) */
@@ -309,6 +313,9 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/i;
 const imageSrc = (value: unknown): string | null =>
   typeof value === "string" && /^(https?:\/\/|\/(?!\/))/i.test(value.trim()) ? value.trim() : null;
 const list = (value: unknown): unknown[] => (Array.isArray(value) ? value.slice(0, MAX_ITEMS) : []);
+/** Exact text size in px as an optional key: nothing is added when it is missing or invalid */
+const sizePx = (value: unknown): { sizePx?: number } =>
+  typeof value === "number" && Number.isFinite(value) ? { sizePx: Math.min(80, Math.max(10, Math.round(value))) } : {};
 const obj = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
@@ -447,6 +454,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         text: str(b.text),
         align: b.align === "center" || b.align === "right" ? b.align : "left",
         size: size(b.size, "base"),
+        ...sizePx(b.sizePx),
         color: color(b.color, "#18181b"),
         bold: b.bold === true,
       };
@@ -461,6 +469,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         iconColor: color(b.iconColor, "#16a34a"),
         color: color(b.color, "#18181b"),
         size: size(b.size, "base"),
+        ...sizePx(b.sizePx),
         gap: b.gap === "tight" || b.gap === "loose" ? b.gap : "normal",
         divider: b.divider === true,
         dividerColor: color(b.dividerColor, "#e4e4e7"),

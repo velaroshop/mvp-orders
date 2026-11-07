@@ -93,6 +93,8 @@ export type TextBlock = {
   sizePx?: number;
   color: string;
   bold: boolean;
+  /** Background of text written as ==marked== */
+  highlightColor: string;
 };
 export type ListBlock = {
   type: "list";
@@ -109,7 +111,18 @@ export type ListBlock = {
   divider: boolean;
   dividerColor: string;
 };
-export type ButtonBlock = { type: "button"; text: string; href: string; bg: string; color: string };
+export type ButtonBlock = {
+  type: "button";
+  text: string;
+  href: string;
+  bg: string;
+  color: string;
+  /** Short reassurances in small print under the button ("Plătești la curier", ...) */
+  notes: string[];
+  notesColor: string;
+};
+/** Small rounded labels in a row ("NU ARDE PIELEA", "PLATA LA LIVRARE", ...) */
+export type ChipsBlock = { type: "chips"; items: string[]; bg: string; color: string; size: number; align: "left" | "center" | "right" };
 /** Attention animation of the fixed bottom button: none, a soft pulse, a light streak, an expanding ring, a small hop or a moving arrow */
 export type StickyAnimation = "none" | "pulse" | "shine" | "ring" | "bounce" | "arrow";
 const STICKY_ANIMATIONS: readonly string[] = ["pulse", "shine", "ring", "bounce", "arrow"];
@@ -178,6 +191,33 @@ export type StepsBlock = {
   titleColor: string;
   textColor: string;
   titleSize: number;
+  textSize: number;
+};
+/** Comparison of our product against one alternative: rows with a yes / no / partly mark in each of the two columns */
+export type ComparisonMark = "yes" | "no" | "partial";
+export type ComparisonBlock = {
+  type: "comparison";
+  productLabel: string;
+  otherLabel: string;
+  rows: { label: string; product: ComparisonMark; other: ComparisonMark }[];
+  /** Header of our column, background of our column, text, row lines, mark colors */
+  headBg: string;
+  headColor: string;
+  highlightBg: string;
+  color: string;
+  lineColor: string;
+  yesColor: string;
+  noColor: string;
+  size: number;
+};
+/** Timeline: colored label + text, joined by a vertical line on the left */
+export type TimelineBlock = {
+  type: "timeline";
+  items: { label: string; text: string }[];
+  lineColor: string;
+  labelColor: string;
+  textColor: string;
+  labelSize: number;
   textSize: number;
 };
 export type HtmlBlock = { type: "html"; html: string };
@@ -300,7 +340,10 @@ export type BlockVariant =
   | ButtonBlock
   | StickyFooterBlock
   | BandBlock
+  | ChipsBlock
   | CardsBlock
+  | ComparisonBlock
+  | TimelineBlock
   | StepsBlock
   | SharedFooterBlock
   | HtmlBlock
@@ -342,7 +385,7 @@ const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const SAFE_HREF = /^(?:https?:\/\/|\/(?!\/)|#|tel:|mailto:)/i;
 const TEXT_SIZES: TextSize[] = ["sm", "base", "lg", "xl", "2xl"];
 /** "circle" is not a character: it is drawn as a check mark inside a circle (see BlockRenderer) */
-const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★", circle: "circle" };
+const LIST_ICONS: Record<string, string> = { check: "✓", dot: "•", star: "★", circle: "circle", cross: "✕" };
 
 const MAX_ITEMS = 30;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -497,6 +540,7 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         ...sizePx(b.sizePx),
         color: color(b.color, "#18181b"),
         bold: b.bold === true,
+        highlightColor: color(b.highlightColor, "#ffe14d"),
       };
 
     case "list": {
@@ -523,7 +567,27 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         href: href(b.href, "#"),
         bg: color(b.bg, "#16a34a"),
         color: color(b.color, "#ffffff"),
+        notes: list(b.notes)
+          .filter((n): n is string => typeof n === "string" && n.trim() !== "")
+          .map((n) => n.slice(0, 40))
+          .slice(0, 4),
+        notesColor: color(b.notesColor, "#3f3f46"),
       };
+
+    case "chips": {
+      const items = list(b.items)
+        .filter((n): n is string => typeof n === "string" && n.trim() !== "")
+        .map((n) => n.slice(0, 40));
+      if (items.length === 0) return null;
+      return {
+        type: "chips",
+        items,
+        bg: color(b.bg, "#141414"),
+        color: color(b.color, "#ffffff"),
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(20, Math.max(10, Math.round(b.size))) : 12,
+        align: b.align === "left" || b.align === "right" ? b.align : "center",
+      };
+    }
 
     case "band":
       return {
@@ -678,6 +742,53 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         titleColor: color(b.titleColor, "#18181b"),
         textColor: color(b.textColor, "#27272a"),
         titleSize: num(b.titleSize, 16, 11, 32),
+        textSize: num(b.textSize, 15, 11, 28),
+      };
+    }
+
+    case "comparison": {
+      const mark = (v: unknown): ComparisonMark => (v === "yes" || v === "partial" ? v : "no");
+      const rows: ComparisonBlock["rows"] = [];
+      for (const raw of list(b.rows)) {
+        const r = obj(raw);
+        const label = str(r.label).slice(0, 120);
+        if (label.trim()) rows.push({ label, product: mark(r.product), other: mark(r.other) });
+      }
+      if (rows.length === 0) return null;
+      return {
+        type: "comparison",
+        productLabel: str(b.productLabel, "Produsul nostru").slice(0, 40),
+        otherLabel: str(b.otherLabel, "Alte produse").slice(0, 40),
+        rows,
+        headBg: color(b.headBg, "#141414"),
+        headColor: color(b.headColor, "#ffffff"),
+        highlightBg: color(b.highlightBg, "#fff4d1"),
+        color: color(b.color, "#18181b"),
+        lineColor: color(b.lineColor, "#e4e4e7"),
+        yesColor: color(b.yesColor, "#16a34a"),
+        noColor: color(b.noColor, "#52525b"),
+        size: typeof b.size === "number" && Number.isFinite(b.size) ? Math.min(24, Math.max(12, Math.round(b.size))) : 15,
+      };
+    }
+
+    case "timeline": {
+      const items: TimelineBlock["items"] = [];
+      for (const raw of list(b.items)) {
+        const c = obj(raw);
+        const label = str(c.label).slice(0, 60);
+        const text = str(c.text).slice(0, 600);
+        if (label.trim() || text.trim()) items.push({ label, text });
+      }
+      if (items.length === 0) return null;
+      const num = (v: unknown, fallback: number, min: number, max: number) =>
+        typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
+      return {
+        type: "timeline",
+        items,
+        lineColor: color(b.lineColor, "#d93f0f"),
+        labelColor: color(b.labelColor, "#d93f0f"),
+        textColor: color(b.textColor, "#18181b"),
+        labelSize: num(b.labelSize, 14, 11, 28),
         textSize: num(b.textSize, 15, 11, 28),
       };
     }

@@ -43,6 +43,8 @@ export type BlockDef = {
   fields: FieldDef[];
 };
 
+const MARKS = [{ value: "yes", label: "✓ Da" }, { value: "no", label: "✕ Nu" }, { value: "partial", label: "~ Parțial" }];
+
 const sizeOptions = [
   { value: "sm", label: "Mic" },
   { value: "base", label: "Normal" },
@@ -260,9 +262,9 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "T",
     description: "Titlu sau paragraf",
     kinds: ALL,
-    create: () => ({ type: "text", text: "Text nou", align: "center", size: "base", color: "#18181b", bold: false }),
+    create: () => ({ type: "text", text: "Text nou", align: "center", size: "base", color: "#18181b", bold: false, highlightColor: "#ffe14d" }),
     fields: [
-      { kind: "textarea", key: "text", label: "Text", rows: 4, help: "**îngroșat** · rând nou cu Enter" },
+      { kind: "textarea", key: "text", label: "Text", rows: 4, help: "**îngroșat** · ==marcat== · rând nou cu Enter" },
       {
         kind: "select",
         key: "align",
@@ -277,6 +279,7 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "number", key: "sizePx", label: "Mărime exactă (px)", min: 10, max: 80, help: "Gol = folosește mărimea de mai sus. Dacă scrii o valoare, aceea câștigă" },
       { kind: "color", key: "color", label: "Culoare" },
       { kind: "toggle", key: "bold", label: "Îngroșat" },
+      { kind: "color", key: "highlightColor", label: "Culoare marcaj", help: "Pentru textul scris între == ==, ca marcarea cu textmarkerul" },
     ],
   },
   {
@@ -295,6 +298,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         options: [
           { value: "check", label: "✓ Bifă" },
           { value: "circle", label: "Bifă în cerc" },
+          { value: "cross", label: "✕ X" },
           { value: "dot", label: "• Punct" },
           { value: "star", label: "★ Stea" },
         ],
@@ -323,12 +327,38 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "▭",
     description: "Buton cu link sau ancoră",
     kinds: ALL,
-    create: () => ({ type: "button", text: "Comandă acum", href: "#comanda", bg: "#16a34a", color: "#ffffff" }),
+    create: () => ({ type: "button", text: "Comandă acum", href: "#comanda", bg: "#16a34a", color: "#ffffff", notes: [], notesColor: "#3f3f46" }),
     fields: [
       { kind: "text", key: "text", label: "Text buton" },
       { kind: "url", key: "href", label: "Link", help: "#comanda duce la formular" },
       { kind: "color", key: "bg", label: "Fundal" },
       { kind: "color", key: "color", label: "Culoare text" },
+      { kind: "strings", key: "notes", label: "Garanții sub buton (opțional)", addLabel: "Adaugă garanție", help: "Rânduri mici sub buton, ex. „Plătești la curier”. Maximum 4" },
+      { kind: "color", key: "notesColor", label: "Culoare garanții" },
+    ],
+  },
+  {
+    type: "chips",
+    label: "Etichete",
+    icon: "◖◗",
+    description: "Etichete rotunjite pe un rând",
+    kinds: ALL,
+    create: () => ({ type: "chips", items: ["NU ARDE PIELEA", "CU COLAGEN", "PLATA LA LIVRARE"], bg: "#141414", color: "#ffffff", size: 12, align: "center" }),
+    fields: [
+      { kind: "strings", key: "items", label: "Etichete", addLabel: "Adaugă etichetă" },
+      { kind: "color", key: "bg", label: "Fundal" },
+      { kind: "color", key: "color", label: "Culoare text" },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 10, max: 20 },
+      {
+        kind: "select",
+        key: "align",
+        label: "Aliniere",
+        options: [
+          { value: "left", label: "Stânga" },
+          { value: "center", label: "Centru" },
+          { value: "right", label: "Dreapta" },
+        ],
+      },
     ],
   },
   {
@@ -490,6 +520,93 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "color", key: "titleColor", label: "Culoare titlu" },
       { kind: "color", key: "textColor", label: "Culoare text" },
       { kind: "number", key: "titleSize", label: "Mărime titlu (px)", min: 11, max: 32 },
+      { kind: "number", key: "textSize", label: "Mărime text (px)", min: 11, max: 28 },
+    ],
+  },
+  {
+    type: "comparison",
+    label: "Comparație",
+    icon: "⚖",
+    description: "Produsul tău față de altul, cu ✓ ✕ ~",
+    kinds: ALL,
+    create: () => ({
+      type: "comparison",
+      productLabel: "Produsul nostru",
+      otherLabel: "Alte produse",
+      rows: [
+        { label: "Primul criteriu", product: "yes", other: "no" },
+        { label: "Al doilea criteriu", product: "yes", other: "partial" },
+      ],
+      headBg: "#141414",
+      headColor: "#ffffff",
+      highlightBg: "#fff4d1",
+      color: "#18181b",
+      lineColor: "#e4e4e7",
+      yesColor: "#16a34a",
+      noColor: "#52525b",
+      size: 15,
+    }),
+    fields: [
+      { kind: "text", key: "productLabel", label: "Numele coloanei tale", maxLength: 40 },
+      { kind: "text", key: "otherLabel", label: "Numele celeilalte coloane", maxLength: 40 },
+      {
+        kind: "items",
+        key: "rows",
+        label: "Rânduri",
+        itemLabel: "Rândul",
+        addLabel: "Adaugă rând",
+        newItem: () => ({ label: "", product: "yes", other: "no" }),
+        fields: [
+          { kind: "text", key: "label", label: "Criteriu", maxLength: 120 },
+          { kind: "select", key: "product", label: "La produsul tău", options: MARKS },
+          { kind: "select", key: "other", label: "La celălalt", options: MARKS },
+        ],
+      },
+      { kind: "color", key: "headBg", label: "Fundal titlu coloana ta" },
+      { kind: "color", key: "headColor", label: "Culoare titlu coloana ta" },
+      { kind: "color", key: "highlightBg", label: "Fundal coloana ta" },
+      { kind: "color", key: "color", label: "Culoare text" },
+      { kind: "color", key: "lineColor", label: "Culoare linii" },
+      { kind: "color", key: "yesColor", label: "Culoare ✓" },
+      { kind: "color", key: "noColor", label: "Culoare ✕ și ~" },
+      { kind: "number", key: "size", label: "Mărime text (px)", min: 12, max: 24 },
+    ],
+  },
+  {
+    type: "timeline",
+    label: "Cronologie",
+    icon: "┃",
+    description: "Etichete colorate cu text, legate printr-o linie",
+    kinds: ALL,
+    create: () => ({
+      type: "timeline",
+      items: [
+        { label: "ZIUA 1", text: "Ce se întâmplă prima zi." },
+        { label: "ZIUA 7", text: "Ce se întâmplă după o săptămână." },
+      ],
+      lineColor: "#d93f0f",
+      labelColor: "#d93f0f",
+      textColor: "#18181b",
+      labelSize: 14,
+      textSize: 15,
+    }),
+    fields: [
+      {
+        kind: "items",
+        key: "items",
+        label: "Etape",
+        itemLabel: "Etapa",
+        addLabel: "Adaugă etapă",
+        newItem: () => ({ label: "", text: "" }),
+        fields: [
+          { kind: "text", key: "label", label: "Etichetă", maxLength: 60, placeholder: "ZIUA 7" },
+          { kind: "textarea", key: "text", label: "Text", rows: 3, help: "**îngroșat** · rând nou cu Enter" },
+        ],
+      },
+      { kind: "color", key: "lineColor", label: "Culoare linie" },
+      { kind: "color", key: "labelColor", label: "Culoare etichetă" },
+      { kind: "color", key: "textColor", label: "Culoare text" },
+      { kind: "number", key: "labelSize", label: "Mărime etichetă (px)", min: 11, max: 28 },
       { kind: "number", key: "textSize", label: "Mărime text (px)", min: 11, max: 28 },
     ],
   },

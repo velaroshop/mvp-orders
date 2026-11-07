@@ -28,11 +28,22 @@ const insetStyle = (inset: number): CSSProperties | undefined =>
   inset > 0 ? { padding: `${Math.round(inset / 2)}px ${inset}px` } : undefined;
 
 /** Plain text with **bold** and line breaks; React escapes everything else. */
-function renderInline(text: string): ReactNode[] {
+function renderInline(text: string, highlight?: string): ReactNode[] {
   return text.split("\n").flatMap((line, lineIndex, lines) => {
-    const parts = line.split(/\*\*(.+?)\*\*/g).map((part, i) =>
-      i % 2 === 1 ? <strong key={`${lineIndex}-${i}`}>{part}</strong> : part,
-    );
+    // With a highlight color, ==text== is marked like with a highlighter pen (text blocks only)
+    const parts = highlight
+      ? line.split(/(\*\*.+?\*\*|==.+?==)/g).map((part, i) =>
+          part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+            <strong key={`${lineIndex}-${i}`}>{part.slice(2, -2)}</strong>
+          ) : part.startsWith("==") && part.endsWith("==") && part.length > 4 ? (
+            <mark key={`${lineIndex}-${i}`} style={{ backgroundColor: highlight, color: "inherit", padding: "0 0.15em", WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>
+              {part.slice(2, -2)}
+            </mark>
+          ) : (
+            part
+          ),
+        )
+      : line.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 === 1 ? <strong key={`${lineIndex}-${i}`}>{part}</strong> : part));
     return lineIndex < lines.length - 1 ? [...parts, <br key={`br-${lineIndex}`} />] : parts;
   });
 }
@@ -159,7 +170,7 @@ function Block({
           className={`px-4 py-2 leading-snug ${SIZE_CLASS[block.size]} ${block.bold ? "font-bold" : ""}`}
           style={{ color: block.color, textAlign: block.align, ...(block.sizePx ? { fontSize: block.sizePx } : {}) }}
         >
-          {renderInline(block.text)}
+          {renderInline(block.text, block.highlightColor)}
         </div>
       );
 
@@ -202,6 +213,30 @@ function Block({
           >
             {block.text}
           </a>
+          {block.notes.length > 0 && (
+            <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-center text-xs font-semibold" style={{ color: block.notesColor }}>
+              {block.notes.map((note, i) => (
+                <span key={i}>{note}</span>
+              ))}
+            </p>
+          )}
+        </div>
+      );
+
+    case "chips":
+      return (
+        <div className="px-4 py-2">
+          <div className="flex flex-wrap gap-2" style={{ justifyContent: block.align === "left" ? "flex-start" : block.align === "right" ? "flex-end" : "center" }}>
+            {block.items.map((item, i) => (
+              <span
+                key={i}
+                className="rounded-full px-3 py-1.5 font-bold uppercase leading-none tracking-wide"
+                style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size }}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
       );
 
@@ -298,6 +333,60 @@ function Block({
             </li>
           ))}
         </ol>
+      );
+
+    case "comparison": {
+      const symbol = { yes: "✓", no: "✕", partial: "~" } as const;
+      const markColor = (m: "yes" | "no" | "partial") => (m === "yes" ? block.yesColor : block.noColor);
+      const cell = "px-2 py-3 text-center";
+      return (
+        <div className="px-4 py-2" style={{ color: block.color, fontSize: block.size }}>
+          <table className="w-full table-fixed border-collapse leading-snug">
+            <thead>
+              <tr>
+                <th className="w-[44%]" />
+                <th className="w-[28%] px-1 pb-0">
+                  <div className="rounded-t-lg px-1 py-2 text-center font-bold" style={{ backgroundColor: block.headBg, color: block.headColor }}>
+                    {block.productLabel}
+                  </div>
+                </th>
+                <th className="w-[28%] px-1 py-2 text-center font-bold">{block.otherLabel}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, i) => (
+                <tr key={i} style={{ borderTop: `1px solid ${block.lineColor}` }}>
+                  <td className="py-3 pr-2 text-left">{renderInline(row.label)}</td>
+                  <td className={cell} style={{ backgroundColor: block.highlightBg, color: markColor(row.product), fontWeight: 700, fontSize: block.size * 1.2 }}>
+                    <span aria-label={{ yes: "da", no: "nu", partial: "parțial" }[row.product]}>{symbol[row.product]}</span>
+                  </td>
+                  <td className={cell} style={{ color: markColor(row.other), fontWeight: 700, fontSize: block.size * 1.2 }}>
+                    <span aria-label={{ yes: "da", no: "nu", partial: "parțial" }[row.other]}>{symbol[row.other]}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    case "timeline":
+      return (
+        <div className="px-4 py-2">
+          <div className="space-y-3 leading-snug" style={{ borderLeft: `3px solid ${block.lineColor}`, paddingLeft: 14 }}>
+            {block.items.map((item, i) => (
+              <div key={i}>
+                {item.label && (
+                  <div className="font-bold uppercase" style={{ color: block.labelColor, fontSize: block.labelSize }}>
+                    {renderInline(item.label)}
+                  </div>
+                )}
+                {item.text && <div style={{ color: block.textColor, fontSize: block.textSize }}>{renderInline(item.text)}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
       );
 
     case "html":

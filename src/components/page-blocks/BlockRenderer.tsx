@@ -242,6 +242,64 @@ function Block({
       );
     }
 
+    case "cards":
+      return (
+        <div className="px-4 py-2">
+          <div className="grid" style={{ gridTemplateColumns: block.columns === 2 ? "repeat(2, minmax(0, 1fr))" : "minmax(0, 1fr)", gap: block.gap }}>
+            {block.items.map((item, i) => (
+              <div
+                key={i}
+                className="leading-snug"
+                style={{
+                  backgroundColor: block.bg,
+                  border: block.borderWidth > 0 ? `${block.borderWidth}px solid ${block.border}` : undefined,
+                  borderRadius: block.radius,
+                  padding: "12px 14px",
+                }}
+              >
+                {item.title && (
+                  <div className="font-bold" style={{ color: block.titleColor, fontSize: block.titleSize }}>
+                    {renderInline(item.title)}
+                  </div>
+                )}
+                {item.text && (
+                  <div style={{ color: block.textColor, fontSize: block.textSize, marginTop: item.title ? 4 : 0 }}>{renderInline(item.text)}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case "steps":
+      return (
+        <ol className="space-y-4 px-4 py-2">
+          {block.items.map((item, i) => (
+            <li key={i} className="flex items-start gap-3 leading-snug">
+              <span
+                aria-hidden="true"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: block.badgeBg, color: block.badgeColor }}
+              >
+                {i + 1}
+              </span>
+              <span className="min-w-0">
+                {item.title && (
+                  <span className="block font-bold" style={{ color: block.titleColor, fontSize: block.titleSize }}>
+                    {renderInline(item.title)}
+                  </span>
+                )}
+                {item.text && (
+                  <span className="block" style={{ color: block.textColor, fontSize: block.textSize }}>
+                    {renderInline(item.text)}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      );
+
     case "html":
       return <div dangerouslySetInnerHTML={{ __html: block.html }} />;
 
@@ -585,8 +643,10 @@ export default function BlockRenderer({
     .map((block, index) => ({ block, index }))
     .filter(({ block }) => block.type !== "topbar" && block.type !== "topbar_timer" && block.type !== "sticky_footer" && block.type !== "footer" && block.type !== "shared_footer");
 
-  // Bands run edge to edge, so they sit outside the centered column: the flow is cut into column segments around them
-  const segments: { items: React.ReactNode[]; band?: React.ReactNode }[] = [];
+  // Bands and sections with a background run edge to edge, so they sit outside the centered column: the flow is cut into
+  // segments around them. Consecutive blocks with the same section color share one section.
+  type Segment = { items: React.ReactNode[]; band?: React.ReactNode; section?: { bg: string; padTop: number; padBottom: number } };
+  const segments: Segment[] = [];
   for (const { block, index } of flow) {
     const innerBlock = <Block key={index} block={block} index={index} firstImageIndex={firstImageIndex} preview={preview} />;
     const inner = block.hidden ? <div key={index} style={{ opacity: 0.3 }} title="Bloc ascuns: nu se vede pe pagina publică">{innerBlock}</div> : innerBlock;
@@ -601,14 +661,24 @@ export default function BlockRenderer({
       ) : (
         element
       );
+    const last = segments[segments.length - 1];
     if (block.type === "band") {
       segments.push({ items: [], band: gated });
+    } else if (block.sectionBg) {
+      const pad = block.sectionPad ?? 32;
+      if (last?.section && last.section.bg.toLowerCase() === block.sectionBg.toLowerCase()) {
+        last.items.push(gated);
+        last.section.padBottom = pad;
+      } else {
+        segments.push({ items: [gated], section: { bg: block.sectionBg, padTop: pad, padBottom: pad } });
+      }
+    } else if (last && !last.band && !last.section) {
+      last.items.push(gated);
     } else {
-      const last = segments[segments.length - 1];
-      if (last && !last.band) last.items.push(gated);
-      else segments.push({ items: [gated] });
+      segments.push({ items: [gated] });
     }
   }
+  const columnClass = `mx-auto w-full ${layout === "wide" ? "max-w-[1200px]" : "max-w-[560px]"}`;
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: background }}>
@@ -623,8 +693,14 @@ export default function BlockRenderer({
       {segments.map((segment, si) =>
         segment.band ? (
           <div key={`band-${si}`}>{segment.band}</div>
+        ) : segment.section ? (
+          <div key={`section-${si}`} style={{ backgroundColor: segment.section.bg }}>
+            <div className={columnClass} style={{ paddingTop: segment.section.padTop, paddingBottom: segment.section.padBottom }}>
+              {segment.items}
+            </div>
+          </div>
         ) : (
-          <div key={`flow-${si}`} className={`mx-auto w-full ${layout === "wide" ? "max-w-[1200px]" : "max-w-[560px]"}`}>
+          <div key={`flow-${si}`} className={columnClass}>
             {segment.items}
           </div>
         ),

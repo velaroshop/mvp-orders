@@ -398,6 +398,102 @@ export const BLOCK_DEFS: BlockDef[] = [
     ],
   },
   {
+    type: "cards",
+    label: "Carduri",
+    icon: "▦",
+    description: "Casete cu titlu și text, pe 1 sau 2 coloane",
+    kinds: ALL,
+    create: () => ({
+      type: "cards",
+      items: [
+        { title: "Titlu card", text: "Textul cardului." },
+        { title: "Al doilea card", text: "Textul cardului." },
+      ],
+      columns: 1,
+      bg: "#ffffff",
+      border: "#18181b",
+      borderWidth: 2,
+      radius: 12,
+      titleColor: "#18181b",
+      textColor: "#27272a",
+      titleSize: 16,
+      textSize: 15,
+      gap: 12,
+    }),
+    fields: [
+      {
+        kind: "items",
+        key: "items",
+        label: "Carduri",
+        itemLabel: "Cardul",
+        addLabel: "Adaugă card",
+        newItem: () => ({ title: "", text: "" }),
+        fields: [
+          { kind: "text", key: "title", label: "Titlu", maxLength: 120 },
+          { kind: "textarea", key: "text", label: "Text", rows: 3, help: "**îngroșat** · rând nou cu Enter" },
+        ],
+      },
+      {
+        kind: "select",
+        key: "columns",
+        label: "Coloane",
+        options: [
+          { value: "1", label: "1 coloană" },
+          { value: "2", label: "2 coloane" },
+        ],
+      },
+      { kind: "color", key: "bg", label: "Fundal card" },
+      { kind: "color", key: "border", label: "Culoare bordură" },
+      { kind: "number", key: "borderWidth", label: "Grosime bordură (px)", min: 0, max: 6, help: "0 = fără bordură" },
+      { kind: "number", key: "radius", label: "Colțuri rotunjite (px)", min: 0, max: 32 },
+      { kind: "color", key: "titleColor", label: "Culoare titlu" },
+      { kind: "color", key: "textColor", label: "Culoare text" },
+      { kind: "number", key: "titleSize", label: "Mărime titlu (px)", min: 11, max: 32 },
+      { kind: "number", key: "textSize", label: "Mărime text (px)", min: 11, max: 28 },
+      { kind: "number", key: "gap", label: "Spațiu între carduri (px)", min: 0, max: 32 },
+    ],
+  },
+  {
+    type: "steps",
+    label: "Pași",
+    icon: "①",
+    description: "Pași numerotați, cu titlu și text",
+    kinds: ALL,
+    create: () => ({
+      type: "steps",
+      items: [
+        { title: "Primul pas.", text: "Descrierea pasului." },
+        { title: "Al doilea pas.", text: "Descrierea pasului." },
+      ],
+      badgeBg: "#18181b",
+      badgeColor: "#ffffff",
+      titleColor: "#18181b",
+      textColor: "#27272a",
+      titleSize: 16,
+      textSize: 15,
+    }),
+    fields: [
+      {
+        kind: "items",
+        key: "items",
+        label: "Pași",
+        itemLabel: "Pasul",
+        addLabel: "Adaugă pas",
+        newItem: () => ({ title: "", text: "" }),
+        fields: [
+          { kind: "text", key: "title", label: "Titlu (îngroșat)", maxLength: 160 },
+          { kind: "textarea", key: "text", label: "Text", rows: 3, help: "**îngroșat** · rând nou cu Enter" },
+        ],
+      },
+      { kind: "color", key: "badgeBg", label: "Fundal cerc" },
+      { kind: "color", key: "badgeColor", label: "Culoare număr" },
+      { kind: "color", key: "titleColor", label: "Culoare titlu" },
+      { kind: "color", key: "textColor", label: "Culoare text" },
+      { kind: "number", key: "titleSize", label: "Mărime titlu (px)", min: 11, max: 32 },
+      { kind: "number", key: "textSize", label: "Mărime text (px)", min: 11, max: 28 },
+    ],
+  },
+  {
     type: "sticky_footer",
     label: "Buton fix jos",
     icon: "⬓",
@@ -824,6 +920,20 @@ export const NAME_FIELDS: FieldDef[] = [
 /** Shown for every block that sits in the page flow (not the top bar, sticky button or footer) */
 export const SPACING_FIELDS: FieldDef[] = [
   { kind: "number", key: "spaceBelow", label: "Spațiu sub bloc (px)", min: 0, max: 80, help: "0 = fără spațiu. Util între două blocuri care ar trebui să respire" },
+  {
+    kind: "color",
+    key: "sectionBg",
+    label: "Fundal secțiune (pe toată lățimea)",
+    help: "Lasă gol pentru fără fundal. Blocurile consecutive cu aceeași culoare formează o singură secțiune. Pe fundal închis, setează culoarea textului la una deschisă",
+  },
+  {
+    kind: "number",
+    key: "sectionPad",
+    label: "Spațiu sus și jos în secțiune (px)",
+    min: 0,
+    max: 120,
+    help: "Implicit 32. La mai multe blocuri în aceeași secțiune, spațiul de sus se ia de la primul bloc, cel de jos de la ultimul",
+  },
 ];
 
 /** Blocks rendered outside the flow: the spacing field does not apply to them */

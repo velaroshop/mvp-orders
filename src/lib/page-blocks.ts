@@ -154,6 +154,32 @@ export type BandBlock = {
   animation: BandAnimation;
   speed: StickySpeed;
 };
+/** Cards: title + text in bordered boxes, on 1 or 2 columns */
+export type CardsBlock = {
+  type: "cards";
+  items: { title: string; text: string }[];
+  columns: 1 | 2;
+  bg: string;
+  border: string;
+  borderWidth: number;
+  radius: number;
+  titleColor: string;
+  textColor: string;
+  titleSize: number;
+  textSize: number;
+  gap: number;
+};
+/** Steps: numbered circle + bold title + text */
+export type StepsBlock = {
+  type: "steps";
+  items: { title: string; text: string }[];
+  badgeBg: string;
+  badgeColor: string;
+  titleColor: string;
+  textColor: string;
+  titleSize: number;
+  textSize: number;
+};
 export type HtmlBlock = { type: "html"; html: string };
 /** Formatted text (legal pages, long texts). html is cleaned on the server (see sanitize-rich-text.ts) */
 export type RichTextBlock = { type: "rich_text"; html: string; color: string; size: number };
@@ -274,6 +300,8 @@ export type BlockVariant =
   | ButtonBlock
   | StickyFooterBlock
   | BandBlock
+  | CardsBlock
+  | StepsBlock
   | SharedFooterBlock
   | HtmlBlock
   | RichTextBlock
@@ -294,7 +322,16 @@ export type BlockVariant =
 /** spaceBelow: empty space in px under the block (only set when above 0, so older pages are unchanged) */
 /** label: name given in the editor, to recognise the block in the list (never rendered) */
 /** hidden: switched off in the editor; kept in the page with all its settings, but not shown to visitors (only set when true) */
-export type PageBlock = BlockVariant & { phase?: BlockPhase; showWhen?: BlockCondition; spaceBelow?: number; label?: string; hidden?: boolean };
+/** sectionBg / sectionPad: full-width background behind the block and the space (px) above and below it; consecutive blocks with the same color form one section (only set when a color is chosen) */
+export type PageBlock = BlockVariant & {
+  phase?: BlockPhase;
+  showWhen?: BlockCondition;
+  spaceBelow?: number;
+  label?: string;
+  hidden?: boolean;
+  sectionBg?: string;
+  sectionPad?: number;
+};
 
 export const ANPC_LINKS = [
   { label: "ANPC – Soluționarea alternativă a litigiilor", href: "https://anpc.ro/ce-este-sal/", src: "/anpc/sal.webp" },
@@ -350,6 +387,9 @@ function normalizeBlock(raw: unknown): PageBlock | null {
     ...(b.phase === "offer" || b.phase === "final" ? { phase: b.phase } : {}),
     ...(b.showWhen === "cta" || b.showWhen === "no_cta" ? { showWhen: b.showWhen } : {}),
     ...(b.hidden === true ? { hidden: true } : {}),
+    ...(typeof b.sectionBg === "string" && HEX_COLOR.test(b.sectionBg.trim())
+      ? { sectionBg: b.sectionBg.trim(), sectionPad: typeof b.sectionPad === "number" && Number.isFinite(b.sectionPad) ? Math.min(120, Math.max(0, Math.round(b.sectionPad))) : 32 }
+      : {}),
     ...(typeof b.label === "string" && b.label.trim() ? { label: b.label.trim().slice(0, 30) } : {}),
     ...(typeof b.spaceBelow === "number" && b.spaceBelow >= 1 ? { spaceBelow: Math.min(80, Math.round(b.spaceBelow)) } : {}),
   };
@@ -590,6 +630,56 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
       return items.length === 0
         ? null
         : { type: "faq", title: str(b.title), items, openFirst: b.openFirst === true, accent: color(b.accent, "#18181b") };
+    }
+
+    case "cards": {
+      const items: { title: string; text: string }[] = [];
+      for (const raw of list(b.items)) {
+        const c = obj(raw);
+        const title = str(c.title).slice(0, 120);
+        const text = str(c.text).slice(0, 600);
+        if (title.trim() || text.trim()) items.push({ title, text });
+      }
+      if (items.length === 0) return null;
+      const num = (v: unknown, fallback: number, min: number, max: number) =>
+        typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
+      return {
+        type: "cards",
+        items,
+        columns: Number(b.columns) === 2 ? 2 : 1,
+        bg: color(b.bg, "#ffffff"),
+        border: color(b.border, "#18181b"),
+        borderWidth: num(b.borderWidth, 2, 0, 6),
+        radius: num(b.radius, 12, 0, 32),
+        titleColor: color(b.titleColor, "#18181b"),
+        textColor: color(b.textColor, "#27272a"),
+        titleSize: num(b.titleSize, 16, 11, 32),
+        textSize: num(b.textSize, 15, 11, 28),
+        gap: num(b.gap, 12, 0, 32),
+      };
+    }
+
+    case "steps": {
+      const items: { title: string; text: string }[] = [];
+      for (const raw of list(b.items)) {
+        const c = obj(raw);
+        const title = str(c.title).slice(0, 160);
+        const text = str(c.text).slice(0, 600);
+        if (title.trim() || text.trim()) items.push({ title, text });
+      }
+      if (items.length === 0) return null;
+      const num = (v: unknown, fallback: number, min: number, max: number) =>
+        typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
+      return {
+        type: "steps",
+        items,
+        badgeBg: color(b.badgeBg, "#18181b"),
+        badgeColor: color(b.badgeColor, "#ffffff"),
+        titleColor: color(b.titleColor, "#18181b"),
+        textColor: color(b.textColor, "#27272a"),
+        titleSize: num(b.titleSize, 16, 11, 32),
+        textSize: num(b.textSize, 15, 11, 28),
+      };
     }
 
     case "video": {

@@ -174,6 +174,7 @@ export async function PUT(
     if (body.variationSelectionMode !== undefined && ["multi", "single"].includes(body.variationSelectionMode)) {
       updateData.variation_selection_mode = body.variationSelectionMode;
     }
+    if (body.is_virtual !== undefined) updateData.is_virtual = !!body.is_virtual;
     if (body.import_price !== undefined) {
       updateData.import_price = body.import_price === null || body.import_price === "" ? null : parseFloat(body.import_price);
     }

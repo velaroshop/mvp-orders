@@ -23,6 +23,7 @@ interface Product {
   sku?: string;
   status: "active" | "testing" | "inactive";
   import_price?: number | null;
+  is_virtual?: boolean;
   variations?: Variation[];
   variations_label?: string | null;
   variation_selection_mode?: "multi" | "single";
@@ -52,6 +53,8 @@ export default function EditProductPage() {
   const productId = params.id as string;
 
   const [formData, setFormData] = useState<Product | null>(null);
+  // Sent only when changed, so saving works the same before migration 107 (the column) is run
+  const [initialVirtual, setInitialVirtual] = useState(false);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,6 +96,7 @@ export default function EditProductPage() {
       const data = await res.json();
       if (!data.product) throw new Error("Produsul nu a fost găsit");
       setFormData(data.product);
+      setInitialVirtual(!!data.product.is_virtual);
       setVariations(data.product.variations || []);
       setVariationsLabel(data.product.variations_label || "");
       setSelectionMode(data.product.variation_selection_mode || "multi");
@@ -119,6 +123,7 @@ export default function EditProductPage() {
           sku: formData.sku,
           status: formData.status,
           import_price: formData.import_price ?? null,
+          ...(!!formData.is_virtual !== initialVirtual ? { is_virtual: !!formData.is_virtual } : {}),
         }),
       });
       const data = await res.json();
@@ -362,6 +367,20 @@ export default function EditProductPage() {
               <span className="text-sm text-zinc-400 shrink-0">RON</span>
             </div>
             <p className="text-faint text-xs mt-1">Opțional. Pre-completează costul produsului în Calculatorul ROAS.</p>
+          </div>
+
+          {/* Virtual */}
+          <div>
+            <label className="flex items-center gap-2 text-sm text-zinc-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!formData.is_virtual}
+                onChange={(e) => setFormData({ ...formData, is_virtual: e.target.checked })}
+                className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+              />
+              Produs virtual (fără stoc fizic)
+            </label>
+            <p className="text-faint text-xs mt-1">Nu apare în lista din cardul „Analiză stoc” de pe dashboard.</p>
           </div>
 
           {/* Status */}

@@ -11,6 +11,7 @@ export default function NewProductPage() {
     name: "",
     sku: "",
     status: "active" as "active" | "testing",
+    is_virtual: false,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +84,20 @@ export default function NewProductPage() {
               required
             />
             <p className="text-faint text-xs mt-1">Identificator unic, convertit automat la majuscule. Maxim 10 caractere.</p>
+          </div>
+
+          {/* Virtual */}
+          <div>
+            <label className="flex items-center gap-2 text-sm text-zinc-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_virtual}
+                onChange={(e) => setFormData({ ...formData, is_virtual: e.target.checked })}
+                className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+              />
+              Produs virtual (fără stoc fizic)
+            </label>
+            <p className="text-faint text-xs mt-1">Nu apare în lista din cardul „Analiză stoc” de pe dashboard.</p>
           </div>
 
           {/* Status */}

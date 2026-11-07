@@ -277,6 +277,8 @@ export async function POST(request: NextRequest) {
       sku: normalizedSku,
       status,
     };
+    // Only when set: the column exists after migration 107
+    if (body.is_virtual === true) insertData.is_virtual = true;
     if (parent_product_id) {
       insertData.parent_product_id = parent_product_id;
       insertData.variation_visual_type = variation_visual_type || null;

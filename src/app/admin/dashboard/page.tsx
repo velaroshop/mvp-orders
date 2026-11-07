@@ -53,6 +53,7 @@ interface Product {
   id: string;
   name: string;
   sku?: string;
+  is_virtual?: boolean;
 }
 
 type QuickFilter = "today" | "yesterday" | "last3days" | "wtd" | "mtd" | "all";
@@ -169,13 +170,9 @@ export default function DashboardPage() {
         const response = await fetch("/api/products/active");
         if (response.ok) {
           const data = await response.json();
-          const productList = data.products || [];
-          setProducts(productList);
-
-          // Auto-select first product if not already selected
-          if (productList.length > 0 && !selectedProduct) {
-            setSelectedProduct(productList[0].name);
-          }
+          // Virtual products have no physical stock: they stay out of the stock analysis list
+          // Nothing is selected at first, so opening the dashboard makes no stock request
+          setProducts((data.products || []).filter((p: Product) => !p.is_virtual));
         } else {
           console.error("Failed to fetch products, using fallback");
           // Fallback: use productStockAnalysis from stats if available
@@ -185,9 +182,6 @@ export default function DashboardPage() {
               name: p.name
             }));
             setProducts(fallbackProducts);
-            if (!selectedProduct) {
-              setSelectedProduct(fallbackProducts[0].name);
-            }
           }
         }
       } catch (error) {
@@ -314,6 +308,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedProduct) {
       fetchStockAnalysis(selectedProduct, stockAnalysisPeriod);
+    } else {
+      setStockAnalysisData(null);
     }
   }, [selectedProduct, stockAnalysisPeriod]);
 
@@ -579,9 +575,12 @@ export default function DashboardPage() {
                 {products.length === 0 ? (
                   <option value="">Niciun produs disponibil</option>
                 ) : (
-                  products.map((product) => (
-                    <option key={product.id} value={product.name}>{product.name}</option>
-                  ))
+                  <>
+                    <option value="">Alege un produs</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.name}>{product.name}</option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
@@ -678,7 +677,7 @@ export default function DashboardPage() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-zinc-400 text-center py-8">Selectează un produs</p>
+            <p className="text-sm text-zinc-400 text-center py-8">Alege un produs din listă</p>
           )}
         </div>
       </div>

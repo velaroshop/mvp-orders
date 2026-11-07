@@ -31,13 +31,18 @@ export async function GET(request: NextRequest) {
     const organizationId = session.user.activeOrganizationId;
 
     // Get all active main products (not variation children) with SKU for HelpShip integration
-    const { data: products, error } = await supabase
-      .from("products")
-      .select("id, name, sku, import_price")
-      .eq("organization_id", organizationId)
-      .eq("status", "active")
-      .is("parent_product_id", null)
-      .order("name", { ascending: true });
+    const loadProducts = (columns: string) =>
+      supabase
+        .from("products")
+        .select(columns)
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .is("parent_product_id", null)
+        .order("name", { ascending: true });
+
+    // is_virtual comes from migration 107: until it is run, the list simply has no such field
+    let { data: products, error } = await loadProducts("id, name, sku, import_price, is_virtual");
+    if (error) ({ data: products, error } = await loadProducts("id, name, sku, import_price"));
 
     if (error) {
       console.error("Error fetching products:", error);

@@ -16,6 +16,7 @@ interface Product {
   testing_orders_count?: number;
   is_in_use?: boolean;
   variations_count?: number;
+  is_virtual?: boolean;
 }
 
 const statusBadge: Record<string, string> = {
@@ -203,6 +204,7 @@ export default function ProductsPage() {
                 >
                   <span className="flex items-center gap-2 min-w-0">
                     <span className="text-sm font-medium text-white truncate">{product.name}</span>
+                    {product.is_virtual && <span className="badge badge-zinc shrink-0">Virtual</span>}
                     {(product.variations_count || 0) > 0 && (
                       <span className="badge badge-zinc shrink-0">{product.variations_count} var.</span>
                     )}

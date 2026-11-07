@@ -94,6 +94,12 @@ interface LandingPage {
 }
 
 /** Text color that stays readable on a given background: white on dark colors, near-black on light ones */
+/** "139", "44,50": whole amounts without decimals, comma as the decimal separator (Romanian style) */
+function leiText(n: number): string {
+  const rounded = Math.round((Number(n) || 0) * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(".", ",");
+}
+
 function readableOn(hex: string): string {
   const h = hex.replace("#", "");
   const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -1543,6 +1549,21 @@ export default function OwnOrderForm({
             >
               {isV4 ? v4.title : isV3 ? "APASĂ PE OFERTA DORITĂ" : "SELECTAȚI OFERTA DORITĂ"}
             </h2>
+            {isV4 && v4.refBand && landingPage.srp > landingPage.price_1 && (
+              <div className="mb-3 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base font-semibold" style={{ color: v4.refColor }}>
+                <span>
+                  Preț întreg: <span className="line-through">{leiText(landingPage.srp)} LEI</span> / bucată
+                </span>
+                <span
+                  className="rounded-md px-2.5 py-0.5 font-black uppercase leading-tight"
+                  style={{ backgroundColor: v4.refBadgeBg || v4.accent, color: v4.refBadgeColor || readableOn(v4.refBadgeBg || v4.accent) }}
+                >
+                  {landingPage.discount_type === "amount"
+                    ? `-${leiText(Math.round(landingPage.srp - landingPage.price_1))} LEI`
+                    : `-${Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100)}%`}
+                </span>
+              </div>
+            )}
             {isV4 && (
               <div className="space-y-2.5">
                 {([1, 2, 3] as const).map((n) => {
@@ -1553,6 +1574,8 @@ export default function OwnOrderForm({
                   const tag = landingPage[`offer_heading_${n}` as "offer_heading_1"];
                   const description = landingPage[`offer_description_${n}` as "offer_description_1"];
                   const freeShipping = landingPage[`free_shipping_offer_${n}` as "free_shipping_offer_1"];
+                  const pieces = Math.max(1, Number(landingPage[`quantity_offer_${n}` as "quantity_offer_1"]) || n);
+                  const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
                   return (
                     <button
                       key={n}
@@ -1587,6 +1610,9 @@ export default function OwnOrderForm({
                         <span className="block text-xl sm:text-2xl font-black leading-tight whitespace-nowrap" style={{ color: v4.priceColor }}>
                           {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)} LEI
                         </span>
+                        {perPiece && (
+                          <span className="block text-xs sm:text-sm font-semibold leading-tight" style={{ color: v4.descColor }}>{perPiece}</span>
+                        )}
                         {tag && (
                           <span
                             className="mt-1 inline-block px-2 py-0.5 text-[11px] sm:text-xs font-black uppercase leading-tight"

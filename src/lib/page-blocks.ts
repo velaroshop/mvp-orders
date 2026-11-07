@@ -321,6 +321,14 @@ export type FormV4Style = {
   tagBg: string;
   tagColor: string;
   tagRadius: number;
+  /** Band under the title with the full one-piece price struck through and the saving badge (off by default) */
+  refBand: boolean;
+  refColor: string;
+  /** Saving badge: background (empty = the accent color) and text color (empty = automatic) */
+  refBadgeBg: string;
+  refBadgeColor: string;
+  /** Small "price / piece" note under the price of offers with more than one piece (off by default) */
+  perPiece: boolean;
   pillBg: string;
   pillColor: string;
   frameColor: string;
@@ -479,6 +487,11 @@ function formV4Style(raw: unknown): FormV4Style {
     tagBg: color(v.tagBg, ""),
     tagColor: color(v.tagColor, ""),
     tagRadius: typeof v.tagRadius === "number" && Number.isFinite(v.tagRadius) ? Math.min(20, Math.max(0, Math.round(v.tagRadius))) : 6,
+    refBand: v.refBand === true,
+    refColor: color(v.refColor, "#3f3f46"),
+    refBadgeBg: color(v.refBadgeBg, ""),
+    refBadgeColor: color(v.refBadgeColor, ""),
+    perPiece: v.perPiece === true,
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),
     frameColor: color(v.frameColor, "#141414"),

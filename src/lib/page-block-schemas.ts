@@ -327,7 +327,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     icon: "▭",
     description: "Buton cu link sau ancoră",
     kinds: ALL,
-    create: () => ({ type: "button", text: "Comandă acum", href: "#comanda", bg: "#16a34a", color: "#ffffff", notes: [], notesColor: "#3f3f46" }),
+    create: () => ({ type: "button", text: "Comandă acum", href: "#comanda", bg: "#16a34a", color: "#ffffff", notes: [], notesColor: "#3f3f46", price: "", oldPrice: "", badge: "", priceColor: "#18181b", oldPriceColor: "#52525b", priceSize: 28, badgeBg: "#141414", badgeColor: "#ffffff" }),
     fields: [
       { kind: "text", key: "text", label: "Text buton" },
       { kind: "url", key: "href", label: "Link", help: "#comanda duce la formular" },
@@ -335,6 +335,14 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "color", key: "color", label: "Culoare text" },
       { kind: "strings", key: "notes", label: "Garanții sub buton (opțional)", addLabel: "Adaugă garanție", help: "Rânduri mici sub buton, ex. „Plătești la curier”. Maximum 4" },
       { kind: "color", key: "notesColor", label: "Culoare garanții" },
+      { kind: "text", key: "price", label: "Preț nou deasupra butonului (opțional)", maxLength: 30, placeholder: "69 lei", help: "Text liber. Dacă îl completezi, apare un rând cu prețul deasupra butonului" },
+      { kind: "text", key: "oldPrice", label: "Preț vechi (tăiat, opțional)", maxLength: 30, placeholder: "139 lei" },
+      { kind: "text", key: "badge", label: "Insignă de reducere (opțional)", maxLength: 20, placeholder: "-50%" },
+      { kind: "number", key: "priceSize", label: "Mărime preț (px)", min: 16, max: 60 },
+      { kind: "color", key: "priceColor", label: "Culoare preț nou" },
+      { kind: "color", key: "oldPriceColor", label: "Culoare preț vechi" },
+      { kind: "color", key: "badgeBg", label: "Fundal insignă" },
+      { kind: "color", key: "badgeColor", label: "Culoare text insignă" },
     ],
   },
   {

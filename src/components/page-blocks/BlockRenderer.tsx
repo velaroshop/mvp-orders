@@ -211,6 +211,25 @@ function Block({
     case "button":
       return (
         <div className="px-4 py-3">
+          {(block.price || block.oldPrice || block.badge) && (
+            <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 leading-none">
+              {block.price && (
+                <span className="font-black" style={{ color: block.priceColor, fontSize: block.priceSize }}>
+                  {block.price}
+                </span>
+              )}
+              {block.oldPrice && (
+                <span className="font-semibold line-through" style={{ color: block.oldPriceColor, fontSize: Math.round(block.priceSize * 0.7) }}>
+                  {block.oldPrice}
+                </span>
+              )}
+              {block.badge && (
+                <span className="rounded-md px-2 py-1 font-extrabold" style={{ backgroundColor: block.badgeBg, color: block.badgeColor, fontSize: Math.max(12, Math.round(block.priceSize * 0.55)) }}>
+                  {block.badge}
+                </span>
+              )}
+            </div>
+          )}
           <a
             href={block.href}
             className="block rounded-xl px-6 py-4 text-center text-lg font-bold shadow-md"

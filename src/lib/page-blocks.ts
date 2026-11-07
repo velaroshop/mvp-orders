@@ -120,6 +120,15 @@ export type ButtonBlock = {
   /** Short reassurances in small print under the button ("Plătești la curier", ...) */
   notes: string[];
   notesColor: string;
+  /** Optional price line above the button: new price, old price (struck through) and a discount badge, all free text */
+  price: string;
+  oldPrice: string;
+  badge: string;
+  priceColor: string;
+  oldPriceColor: string;
+  priceSize: number;
+  badgeBg: string;
+  badgeColor: string;
 };
 /** Small rounded labels in a row ("NU ARDE PIELEA", "PLATA LA LIVRARE", ...) */
 export type ChipsBlock = { type: "chips"; items: string[]; bg: string; color: string; size: number; align: "left" | "center" | "right" };
@@ -635,6 +644,14 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
           .map((n) => n.slice(0, 40))
           .slice(0, 4),
         notesColor: color(b.notesColor, "#3f3f46"),
+        price: str(b.price).slice(0, 30),
+        oldPrice: str(b.oldPrice).slice(0, 30),
+        badge: str(b.badge).slice(0, 20),
+        priceColor: color(b.priceColor, "#18181b"),
+        oldPriceColor: color(b.oldPriceColor, "#52525b"),
+        priceSize: typeof b.priceSize === "number" && Number.isFinite(b.priceSize) ? Math.min(60, Math.max(16, Math.round(b.priceSize))) : 28,
+        badgeBg: color(b.badgeBg, "#141414"),
+        badgeColor: color(b.badgeColor, "#ffffff"),
       };
 
     case "chips": {

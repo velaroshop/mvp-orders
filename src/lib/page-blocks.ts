@@ -248,7 +248,21 @@ export type FbCommentsBlock = {
 };
 
 export type ReviewItem = { name: string; text: string; rating: number; avatar: string | null; verified: boolean };
-export type ReviewsBlock = { type: "reviews"; title: string; items: ReviewItem[]; accent: string; showRating: boolean };
+export type ReviewsBlock = {
+  type: "reviews";
+  title: string;
+  items: ReviewItem[];
+  accent: string;
+  showRating: boolean;
+  /** "classic": card with photo and name on top; "compact": stars, quote, then "Name · verified" (no photo) */
+  style: "classic" | "compact";
+  /** Compact style: first card with a thick colored border and a bold quote */
+  highlightFirst: boolean;
+  cardBg: string;
+  cardBorder: string;
+  textColor: string;
+  mutedColor: string;
+};
 export type FaqBlock = {
   type: "faq";
   title: string;
@@ -647,7 +661,19 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
       }
       return items.length === 0
         ? null
-        : { type: "reviews", title: str(b.title), items, accent: color(b.accent, "#f59e0b"), showRating: b.showRating !== false };
+        : {
+            type: "reviews",
+            title: str(b.title),
+            items,
+            accent: color(b.accent, "#f59e0b"),
+            showRating: b.showRating !== false,
+            style: b.style === "compact" ? "compact" : "classic",
+            highlightFirst: b.highlightFirst === true,
+            cardBg: color(b.cardBg, "#ffffff"),
+            cardBorder: color(b.cardBorder, "#e4e4e7"),
+            textColor: color(b.textColor, "#18181b"),
+            mutedColor: color(b.mutedColor, "#52525b"),
+          };
     }
 
     case "fb_comments": {

@@ -397,6 +397,47 @@ function Block({
       return <div className="vlr-rich px-4 py-3" style={{ color: block.color, fontSize: block.size }} dangerouslySetInnerHTML={{ __html: block.html }} />;
 
     case "reviews":
+      if (block.style === "compact") {
+        return (
+          <section className="px-4 py-4">
+            {block.title && <h2 className="mb-3 text-xl font-extrabold uppercase" style={{ color: block.textColor }}>{block.title}</h2>}
+            <div className="space-y-3">
+              {block.items.map((review, i) => {
+                const lead = block.highlightFirst && i === 0;
+                return (
+                  <figure
+                    key={i}
+                    className="leading-snug"
+                    style={{
+                      backgroundColor: block.cardBg,
+                      border: `${lead ? 2 : 1}px solid ${lead ? block.accent : block.cardBorder}`,
+                      borderRadius: 12,
+                      padding: "12px 14px",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    {block.showRating && (
+                      <div className="mb-1 text-sm leading-none" style={{ color: block.accent }} aria-label={`${review.rating} din 5 stele`}>
+                        {"★".repeat(review.rating)}
+                        <span style={{ opacity: 0.25 }}>{"★".repeat(5 - review.rating)}</span>
+                      </div>
+                    )}
+                    <blockquote className={lead ? "font-bold" : ""} style={{ color: block.textColor, fontSize: 15 }}>
+                      {review.text.startsWith("„") ? "" : "„"}
+                      {renderInline(review.text)}
+                      {review.text.endsWith("”") ? "" : "”"}
+                    </blockquote>
+                    <figcaption className="mt-1 text-xs" style={{ color: block.mutedColor }}>
+                      {review.name}
+                      {review.verified ? " · client verificat" : ""}
+                    </figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </section>
+        );
+      }
       return (
         <section className="px-4 py-4">
           {block.title && <h2 className="mb-3 text-center text-xl font-bold text-zinc-900">{block.title}</h2>}

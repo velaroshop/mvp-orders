@@ -77,6 +77,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [previewPhase, setPreviewPhase] = useState<"offer" | "final">("final");
   const [previewCta, setPreviewCta] = useState(true);
   const addMenuRef = useRef<HTMLDetailsElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [blockQuery, setBlockQuery] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [footerLibrary, setFooterLibrary] = useState<FooterLibrary>(EMPTY_FOOTER_LIBRARY);
 
@@ -129,6 +131,10 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   // A page is reachable only on its domain: without one it cannot be published
   const needsDomain = kind === "landing" && domains !== undefined && !domainId;
   const available = BLOCK_DEFS.filter((d) => d.kinds.includes(kind) && (!allowedBlocks || allowedBlocks.includes(d.type)));
+  // Live search in the add-block menu: ignores case and diacritics, looks in the name and the description
+  const fold = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const queryWords = fold(blockQuery).split(/\s+/).filter(Boolean);
+  const matching = queryWords.length === 0 ? available : available.filter((d) => queryWords.every((w) => fold(`${d.label} ${d.description}`).includes(w)));
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const selectedDef = selected ? blockDef(selected.data.type) : undefined;
 
@@ -140,6 +146,7 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
     setItems((prev) => [...prev.slice(0, at), item, ...prev.slice(at)]);
     setSelectedId(item.id);
     if (addMenuRef.current) addMenuRef.current.open = false;
+    setBlockQuery("");
   };
 
   const duplicate = (id: string) => {
@@ -290,10 +297,35 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
       <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)_420px]">
         {/* Blocks list */}
         <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-3">
-          <details ref={addMenuRef} className="mb-3">
+          <details
+            ref={addMenuRef}
+            className="mb-3"
+            onToggle={(e) => {
+              if ((e.currentTarget as HTMLDetailsElement).open) searchRef.current?.focus();
+              else setBlockQuery("");
+            }}
+          >
             <summary className={`${buttonBase} cursor-pointer list-none bg-emerald-600 text-center text-white hover:bg-emerald-700`}>＋ Adaugă bloc</summary>
+            <input
+              ref={searchRef}
+              type="search"
+              value={blockQuery}
+              onChange={(e) => setBlockQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && matching[0]) {
+                  e.preventDefault();
+                  addBlock(matching[0].type);
+                } else if (e.key === "Escape" && addMenuRef.current) {
+                  addMenuRef.current.open = false;
+                }
+              }}
+              placeholder="Caută bloc…"
+              aria-label="Caută bloc"
+              className="mt-2 w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-1.5 text-sm text-white placeholder:text-zinc-400"
+            />
             <div className="mt-2 max-h-80 space-y-1 overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 p-1">
-              {available.map((def) => (
+              {matching.length === 0 && <p className="px-2 py-3 text-center text-sm text-zinc-400">Niciun bloc găsit</p>}
+              {matching.map((def) => (
                 <button
                   key={def.type}
                   type="button"

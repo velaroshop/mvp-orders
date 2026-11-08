@@ -281,8 +281,21 @@ function Block({
       // Pulse scales only the text, so the strip itself never grows past the screen edges
       const label = (
         <span className={block.animation === "pulse" ? `vlr-sticky-pulse vlr-sticky-${block.speed}` : undefined} style={block.animation === "pulse" ? { display: "inline-block" } : undefined}>
-          {block.text}
-          {block.animation === "arrow" && (
+          {block.text2 ? <span className="block">{block.text}</span> : block.text}
+          {block.text2 && (
+            <span
+              className="block"
+              style={{ marginTop: block.gap2, fontSize: block.size2, fontWeight: block.bold2 ? 700 : 400, ...(block.color2 ? { color: block.color2 } : {}) }}
+            >
+              {block.text2}
+              {block.animation === "arrow" && (
+                <span aria-hidden="true" className="vlr-sticky-arrow-icon ml-2 inline-block">
+                  →
+                </span>
+              )}
+            </span>
+          )}
+          {!block.text2 && block.animation === "arrow" && (
             <span aria-hidden="true" className="vlr-sticky-arrow-icon ml-2 inline-block">
               →
             </span>

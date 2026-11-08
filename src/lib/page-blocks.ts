@@ -175,6 +175,13 @@ export type BandBlock = {
   color: string;
   animation: BandAnimation;
   speed: StickySpeed;
+  /** Optional second line, with its own size, weight and color (empty color = same as the first line) */
+  text2: string;
+  size2: number;
+  bold2: boolean;
+  color2: string;
+  /** Space between the two lines in px */
+  gap2: number;
 };
 /** Cards: title + text in bordered boxes, on 1 or 2 columns */
 export type CardsBlock = {
@@ -708,6 +715,11 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         color: color(b.color, "#ffffff"),
         animation: b.animation === "pulse" || b.animation === "shine" || b.animation === "arrow" ? b.animation : "none",
         speed: b.speed === "slow" || b.speed === "fast" ? b.speed : "medium",
+        text2: str(b.text2).slice(0, 300),
+        size2: typeof b.size2 === "number" && Number.isFinite(b.size2) ? Math.min(40, Math.max(10, Math.round(b.size2))) : 14,
+        bold2: b.bold2 === true,
+        color2: color(b.color2, ""),
+        gap2: typeof b.gap2 === "number" && Number.isFinite(b.gap2) ? Math.min(24, Math.max(0, Math.round(b.gap2))) : 2,
       };
 
     case "sticky_footer":

@@ -6,6 +6,8 @@ import {
   TERMS_VERSION,
   TERMS_CONTENT_HASH,
 } from "@/lib/terms-content";
+import { AnafError, lookupCompany, normalizeCui, type AnafCompany } from "@/lib/anaf";
+import { cuiAlreadyRegistered } from "@/lib/org-cui";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +23,6 @@ export async function POST(request: NextRequest) {
       name,
       organizationName,
       organizationCui,
-      organizationAddress,
       termsAccepted,
       authorizedRepresentative,
     } = await request.json();
@@ -42,7 +43,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!organizationName?.trim()) {
+    // ── CUI: obligatoriu, verificat la ANAF pe server ─────────────────────────
+    // Denumirea și adresa vin din ANAF, nu din formular. Dacă ANAF nu răspunde,
+    // contul se poate crea cu denumirea introdusă manual, iar la activare se verifică.
+
+    const cui = normalizeCui(organizationCui);
+    if (!cui) {
+      return NextResponse.json(
+        { error: "CUI-ul firmei este obligatoriu (între 2 și 10 cifre)" },
+        { status: 400 }
+      );
+    }
+
+    let company: AnafCompany | null = null;
+    let anafAvailable = true;
+    try {
+      company = await lookupCompany(cui);
+    } catch (err) {
+      if (!(err instanceof AnafError)) throw err;
+      anafAvailable = false;
+    }
+
+    if (anafAvailable && !company) {
+      return NextResponse.json(
+        { error: "CUI-ul nu a fost găsit la ANAF. Verifică numărul introdus." },
+        { status: 400 }
+      );
+    }
+    if (company?.isInactive) {
+      return NextResponse.json(
+        { error: "Firma figurează inactivă la ANAF, deci nu putem crea contul. Te rugăm să ne contactezi la contact@jupimedia.ro." },
+        { status: 400 }
+      );
+    }
+    if (await cuiAlreadyRegistered(cui)) {
+      return NextResponse.json(
+        { error: "Există deja un cont pentru această firmă. Dacă ai nevoie de acces, contactează-ne la contact@jupimedia.ro." },
+        { status: 400 }
+      );
+    }
+
+    const companyName: string = company ? company.companyName : String(organizationName || "").trim();
+    if (!companyName) {
       return NextResponse.json(
         { error: "Denumirea firmei este obligatorie" },
         { status: 400 }
@@ -103,8 +145,9 @@ export async function POST(request: NextRequest) {
 
     let organizationId: string | null = null;
 
-    const slug = organizationName
+    const slug = companyName
       .toLowerCase()
+      .replace(/\./g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
@@ -124,10 +167,10 @@ export async function POST(request: NextRequest) {
     const { data: organization, error: orgError } = await supabase
       .from("organizations")
       .insert({
-        name: organizationName.trim(),
+        name: companyName,
         slug: finalSlug,
-        cui: organizationCui?.trim() || null,
-        address: organizationAddress?.trim() || null,
+        cui,
+        address: company ? [company.address, company.city, company.county].filter(Boolean).join(", ") || null : null,
         is_active: false, // Necesită activare de către superadmin
         is_pending: true,
       })
@@ -162,6 +205,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Profil de facturare (facturarea rămâne oprită până o pornește superadminul) ──
+
+    const { error: billingError } = await supabase.from("org_billing").insert({
+      organization_id: organizationId,
+      company_name: companyName,
+      cui,
+      is_vat_payer: company?.isVatPayer ?? false,
+      address: company?.address || null,
+      city: company?.city || null,
+      county: company?.county || null,
+      postal_code: company?.postalCode || null,
+      billing_email: email,
+      contact_name: name || null,
+      notes: company ? null : "Date neverificate la ANAF la înregistrare (ANAF indisponibil). Verifică din Billing, cu „Completează din CUI”.",
+    });
+    if (billingError) {
+      // Nu blocăm înregistrarea; profilul se poate completa din Billing
+      console.error("[Signup] Nu s-a creat profilul de facturare:", billingError.message);
+    }
+
     // ── Salvare dovadă acceptare termeni ─────────────────────────────────────
     // Versiunea și hash-ul sunt preluate server-side din lib/terms-content.ts,
     // nu din cererea clientului.
@@ -177,8 +240,8 @@ export async function POST(request: NextRequest) {
         is_authorized_representative: true,
         user_email: user.email,
         user_name: user.name ?? null,
-        organization_name: organizationName.trim(),
-        organization_cui: organizationCui?.trim() || null,
+        organization_name: companyName,
+        organization_cui: cui,
       });
 
     if (termsError) {
@@ -189,7 +252,7 @@ export async function POST(request: NextRequest) {
 
     // ── Email de bun venit (non-blocking) ────────────────────────────────────
 
-    sendWelcomeEmail(user.email, user.name || "there", organizationName || "").catch((err) =>
+    sendWelcomeEmail(user.email, user.name || "there", companyName).catch((err) =>
       console.error("[Signup] Failed to send welcome email:", err)
     );
 

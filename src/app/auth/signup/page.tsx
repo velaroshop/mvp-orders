@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, User, Building2, Zap, Hash, MapPin } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Building2, Zap, Hash, Loader2, BadgeCheck } from "lucide-react";
 import TermsModal from "./TermsModal";
+
+type CuiStatus = "idle" | "loading" | "verified" | "invalid" | "not_found" | "inactive" | "duplicate" | "unavailable";
+
+const CUI_ERRORS: Partial<Record<CuiStatus, string>> = {
+  invalid: "CUI invalid. Introdu între 2 și 10 cifre.",
+  not_found: "CUI-ul nu a fost găsit la ANAF. Verifică numărul introdus.",
+  inactive: "Firma figurează inactivă la ANAF, deci nu putem crea contul. Te rugăm să ne contactezi la contact@jupimedia.ro.",
+  duplicate: "Există deja un cont pentru această firmă. Dacă ai nevoie de acces, contactează-ne la contact@jupimedia.ro.",
+};
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -15,8 +24,9 @@ export default function SignUpPage() {
     confirmPassword: "",
     organizationName: "",
     organizationCui: "",
-    organizationAddress: "",
   });
+  const [cuiStatus, setCuiStatus] = useState<CuiStatus>("idle");
+  const currentCui = useRef("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -24,6 +34,39 @@ export default function SignUpPage() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Checks the CUI at ANAF; on success the company name is filled in and locked
+  async function verifyCui(): Promise<{ status: CuiStatus; name: string }> {
+    const cui = formData.organizationCui.replace(/\D/g, "");
+    if (!cui) {
+      setCuiStatus("idle");
+      return { status: "idle", name: "" };
+    }
+    if (cui.length < 2 || cui.length > 10) {
+      setCuiStatus("invalid");
+      return { status: "invalid", name: "" };
+    }
+
+    currentCui.current = cui;
+    setCuiStatus("loading");
+    let status: CuiStatus = "unavailable";
+    let name = "";
+    try {
+      const res = await fetch(`/api/auth/anaf?cui=${cui}`);
+      const data = await res.json();
+      status = (data.status as CuiStatus) || "unavailable";
+      name = data.companyName || "";
+    } catch {
+      status = "unavailable";
+    }
+
+    // The field changed while the check was running: ignore this answer
+    if (currentCui.current !== cui) return { status: "idle", name: "" };
+
+    setCuiStatus(status);
+    if (status === "verified") setFormData((f) => ({ ...f, organizationCui: cui, organizationName: name }));
+    return { status, name };
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +80,27 @@ export default function SignUpPage() {
       setError("Parola trebuie să aibă cel puțin 8 caractere");
       return;
     }
-    if (!formData.organizationName.trim()) {
+
+    let status = cuiStatus;
+    let companyName = formData.organizationName;
+    if (status === "idle" || status === "invalid") {
+      const result = await verifyCui();
+      status = result.status;
+      if (result.name) companyName = result.name;
+    }
+    if (status === "loading") {
+      setError("Se verifică CUI-ul la ANAF. Încearcă din nou în câteva secunde.");
+      return;
+    }
+    if (status === "idle") {
+      setError("CUI-ul firmei este obligatoriu");
+      return;
+    }
+    if (status !== "verified" && status !== "unavailable") {
+      setError(CUI_ERRORS[status] || "CUI-ul nu a putut fi verificat");
+      return;
+    }
+    if (!companyName.trim()) {
       setError("Denumirea firmei este obligatorie");
       return;
     }
@@ -60,9 +123,8 @@ export default function SignUpPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          organizationName: formData.organizationName,
-          organizationCui: formData.organizationCui.trim() || undefined,
-          organizationAddress: formData.organizationAddress.trim() || undefined,
+          organizationName: companyName,
+          organizationCui: formData.organizationCui.trim(),
           termsAccepted: true,
           authorizedRepresentative: true,
         }),
@@ -157,6 +219,53 @@ export default function SignUpPage() {
                 </div>
               </div>
 
+              {/* CUI */}
+              <div>
+                <label htmlFor="organizationCui" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  CUI firmă
+                </label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    id="organizationCui"
+                    type="text"
+                    value={formData.organizationCui}
+                    onChange={(e) => {
+                      currentCui.current = "";
+                      // Editing the CUI after a verification clears the name that was filled in from ANAF
+                      setFormData({
+                        ...formData,
+                        organizationCui: e.target.value,
+                        organizationName: cuiStatus === "verified" ? "" : formData.organizationName,
+                      });
+                      setCuiStatus("idle");
+                    }}
+                    onBlur={() => {
+                      // Also retried when ANAF was unavailable, in case it is back
+                      if ((cuiStatus === "idle" || cuiStatus === "unavailable") && formData.organizationCui.trim()) verifyCui();
+                    }}
+                    className={inputCls}
+                    placeholder="RO12345678"
+                    required
+                    disabled={isLoading}
+                  />
+                  {cuiStatus === "loading" && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 animate-spin" />
+                  )}
+                  {cuiStatus === "verified" && (
+                    <BadgeCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                  )}
+                </div>
+                {cuiStatus === "loading" && <p className="text-xs text-slate-500 mt-1.5">Se verifică la ANAF...</p>}
+                {cuiStatus === "verified" && <p className="text-xs text-emerald-600 mt-1.5">Verificat la ANAF. Datele firmei au fost completate.</p>}
+                {cuiStatus === "unavailable" && (
+                  <p className="text-xs text-amber-700 mt-1.5">
+                    Nu am putut verifica acum la ANAF. Poți introduce denumirea manual, iar noi o vom verifica la activarea contului.
+                  </p>
+                )}
+                {CUI_ERRORS[cuiStatus] && <p className="text-xs text-red-600 mt-1.5">{CUI_ERRORS[cuiStatus]}</p>}
+              </div>
+
               {/* Denumire firmă */}
               <div>
                 <label htmlFor="organizationName" className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -169,47 +278,9 @@ export default function SignUpPage() {
                     type="text"
                     value={formData.organizationName}
                     onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
-                    className={inputCls}
-                    placeholder="Firma S.R.L."
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* CUI */}
-              <div>
-                <label htmlFor="organizationCui" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  CUI firmă <span className="text-slate-400 font-normal">(opțional)</span>
-                </label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    id="organizationCui"
-                    type="text"
-                    value={formData.organizationCui}
-                    onChange={(e) => setFormData({ ...formData, organizationCui: e.target.value })}
-                    className={inputCls}
-                    placeholder="RO12345678"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Sediu */}
-              <div>
-                <label htmlFor="organizationAddress" className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Sediu social <span className="text-slate-400 font-normal">(opțional)</span>
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    id="organizationAddress"
-                    type="text"
-                    value={formData.organizationAddress}
-                    onChange={(e) => setFormData({ ...formData, organizationAddress: e.target.value })}
-                    className={inputCls}
-                    placeholder="Str. Exemplu nr. 1, București"
+                    className={`${inputCls} read-only:bg-slate-50 read-only:text-slate-700`}
+                    placeholder={cuiStatus === "unavailable" ? "Firma S.R.L." : "Se completează automat după CUI"}
+                    readOnly={cuiStatus !== "unavailable"}
                     disabled={isLoading}
                   />
                 </div>
@@ -325,7 +396,7 @@ export default function SignUpPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isLoading || !termsAccepted || !authorizedRep}
+                disabled={isLoading || cuiStatus === "loading" || !termsAccepted || !authorizedRep}
                 className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-indigo-200 mt-2"
               >
                 {isLoading ? "Se creează contul..." : "Creează cont"}

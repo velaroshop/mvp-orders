@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { HelpshipClient } from "@/lib/helpship";
+import { recalcCustomerLoyalty } from "@/lib/loyalty";
 
 /**
  * Sincronizează manual tracking status pentru o comandă specifică
@@ -26,7 +27,7 @@ export async function POST(
     // Găsește comanda în DB
     const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
-      .select("id, helpship_order_id, organization_id, tracking_status")
+      .select("id, helpship_order_id, organization_id, tracking_status, customer_id")
       .eq("id", orderId)
       .single();
 
@@ -76,6 +77,7 @@ export async function POST(
     }
 
     const changed = tracking.trackingStatus !== order.tracking_status;
+    if (changed) await recalcCustomerLoyalty([order.customer_id]);
 
     console.log(
       `[Sync Tracking] Order ${orderId}: ${order.tracking_status || 'null'} -> ${tracking.trackingStatus}${changed ? ' (changed)' : ' (unchanged)'}`

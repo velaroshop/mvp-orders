@@ -330,6 +330,23 @@ export default function CustomerDetailsPage() {
     }
   }
 
+  async function handleLoyal(action: "mark" | "unmark" | "auto") {
+    try {
+      const res = await fetch(`/api/customers/${customerId}/loyal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      const message =
+        action === "mark" ? "Client marcat ca fidel" : action === "unmark" ? "Client scos din fideli" : "Clientul urmează din nou regula automată";
+      setToast({ isOpen: true, type: "success", message });
+      fetchCustomerDetails();
+    } catch (error) {
+      setToast({ isOpen: true, type: "error", message: error instanceof Error ? error.message : "Eroare" });
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl">
@@ -392,6 +409,49 @@ export default function CustomerDetailsPage() {
         </div>
       )}
 
+      {/* Loyal customer banner */}
+      {customer.isLoyal && (
+        <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-4 mb-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-emerald-300 font-semibold">★ CLIENT FIDEL</p>
+            <p className="text-emerald-400 text-sm mt-1">
+              {customer.deliveredCount ?? 0} livrate · {customer.returnedCount ?? 0} returnate
+              {customer.loyalOverride === true ? " · marcat manual" : ""}
+            </p>
+            {customer.loyalSince && (
+              <p className="text-emerald-500 text-xs mt-1">Din: {formatDate(customer.loyalSince)}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {customer.loyalOverride === true && (
+              <button
+                onClick={() => handleLoyal("auto")}
+                className="px-3 py-1.5 bg-zinc-700 text-zinc-200 text-sm font-medium rounded-md hover:bg-zinc-600 transition-colors whitespace-nowrap"
+              >
+                Revino la regula automată
+              </button>
+            )}
+            <button
+              onClick={() => handleLoyal("unmark")}
+              className="px-3 py-1.5 bg-zinc-700 text-zinc-200 text-sm font-medium rounded-md hover:bg-zinc-600 transition-colors whitespace-nowrap"
+            >
+              Scoate din fideli
+            </button>
+          </div>
+        </div>
+      )}
+      {!customer.isLoyal && !customer.isBlacklisted && customer.loyalOverride === false && (
+        <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 mb-4 flex items-center justify-between gap-4">
+          <p className="text-zinc-300 text-sm">Scos manual din fideli ({customer.deliveredCount ?? 0} livrate · {customer.returnedCount ?? 0} returnate).</p>
+          <button
+            onClick={() => handleLoyal("auto")}
+            className="px-3 py-1.5 bg-zinc-700 text-zinc-200 text-sm font-medium rounded-md hover:bg-zinc-600 transition-colors whitespace-nowrap"
+          >
+            Revino la regula automată
+          </button>
+        </div>
+      )}
+
       {/* Customer Info Card */}
       <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -444,12 +504,22 @@ export default function CustomerDetailsPage() {
           </div>
           </div>
           {!customer.isBlacklisted && (
-            <button
-              onClick={handleToggleBlacklist}
-              className="ml-4 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors whitespace-nowrap"
-            >
-              🚫 Blacklist
-            </button>
+            <div className="ml-4 flex gap-2">
+              {!customer.isLoyal && (
+                <button
+                  onClick={() => handleLoyal("mark")}
+                  className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors whitespace-nowrap"
+                >
+                  ★ Marchează fidel
+                </button>
+              )}
+              <button
+                onClick={handleToggleBlacklist}
+                className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors whitespace-nowrap"
+              >
+                🚫 Blacklist
+              </button>
+            </div>
           )}
         </div>
       </div>

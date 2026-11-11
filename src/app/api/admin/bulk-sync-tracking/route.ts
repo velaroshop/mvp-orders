@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { HelpshipClient } from "@/lib/helpship";
+import { recalcCustomerLoyalty } from "@/lib/loyalty";
 
 // Allow up to 300s on Vercel Pro — needed for large order volumes
 export const maxDuration = 300;
@@ -34,13 +35,13 @@ export async function POST(request: NextRequest) {
 
     // Fetch all orders via pagination (Supabase caps at 1000 rows per request)
     const PAGE_SIZE = 1000;
-    let allOrders: { id: string; helpship_order_id: string; tracking_status: string | null }[] = [];
+    let allOrders: { id: string; helpship_order_id: string; tracking_status: string | null; customer_id: string | null }[] = [];
     let from = 0;
 
     while (true) {
       const { data: page, error } = await supabaseAdmin
         .from("orders")
-        .select("id, helpship_order_id, tracking_status")
+        .select("id, helpship_order_id, tracking_status, customer_id")
         .eq("organization_id", organizationId)
         .not("helpship_order_id", "is", null)
         .not("status", "in", '("testing","queue","cancelled")')
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
 
     let synced = 0;
     let errors = 0;
+    const syncedCustomerIds: (string | null)[] = [];
 
     // Process in batches
     for (let i = 0; i < toSync.length; i += BATCH_SIZE) {
@@ -90,6 +92,7 @@ export async function POST(request: NextRequest) {
               .eq("id", order.id);
 
             synced++;
+            syncedCustomerIds.push(order.customer_id);
           } catch {
             errors++;
           }
@@ -101,6 +104,8 @@ export async function POST(request: NextRequest) {
         await new Promise((r) => setTimeout(r, DELAY_MS));
       }
     }
+
+    await recalcCustomerLoyalty(syncedCustomerIds);
 
     return NextResponse.json({
       synced,

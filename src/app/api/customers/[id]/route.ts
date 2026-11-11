@@ -73,6 +73,11 @@ export async function GET(
       isBlacklisted: customerData.is_blacklisted || false,
       blacklistedAt: customerData.blacklisted_at || null,
       blacklistedReason: customerData.blacklisted_reason || null,
+      isLoyal: customerData.is_loyal || false,
+      loyalSince: customerData.loyal_since || null,
+      loyalOverride: customerData.loyal_override ?? null,
+      deliveredCount: customerData.delivered_count || 0,
+      returnedCount: customerData.returned_count || 0,
     };
 
     // Calculate totalSpent only from confirmed orders

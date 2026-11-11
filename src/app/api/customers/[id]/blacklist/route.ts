@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit-log";
+import { recalcCustomerLoyalty } from "@/lib/loyalty";
 
 /**
  * POST /api/customers/[id]/blacklist - Toggle blacklist status
@@ -62,6 +63,9 @@ export async function POST(
     if (updateError) {
       return NextResponse.json({ error: "Failed to update blacklist status" }, { status: 500 });
     }
+
+    // A blacklisted customer is never loyal; also restores loyalty when removed from blacklist
+    await recalcCustomerLoyalty([customerId]);
 
     // Audit log
     logAudit({

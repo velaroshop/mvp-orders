@@ -46,6 +46,7 @@ export default function ConfirmOrderModal({
   duplicateInfo,
 }: ConfirmOrderModalProps) {
   const [customerOrderCount, setCustomerOrderCount] = useState<number | null>(null);
+  const [loyalDelivered, setLoyalDelivered] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -175,6 +176,7 @@ export default function ConfirmOrderModal({
       setPostalCodeError(null);
       setSubmitError(null);
       setCustomerOrderCount(null);
+      setLoyalDelivered(null);
 
       if (initialData.address && initialData.city && initialData.county) {
         searchPostalCodes(initialData.address, initialData.city, initialData.county);
@@ -187,6 +189,9 @@ export default function ConfirmOrderModal({
           .then(data => {
             if (data?.customer?.totalOrders != null) {
               setCustomerOrderCount(data.customer.totalOrders);
+            }
+            if (data?.customer?.isLoyal) {
+              setLoyalDelivered(data.customer.deliveredCount ?? 0);
             }
           })
           .catch(() => {/* non-critical */});
@@ -301,6 +306,11 @@ export default function ConfirmOrderModal({
                     {customerOrderCount != null && (
                       <span className="text-zinc-400 font-normal ml-1">
                         ({customerOrderCount} {customerOrderCount === 1 ? "comandă" : "comenzi"})
+                      </span>
+                    )}
+                    {loyalDelivered != null && (
+                      <span className="ml-2 align-middle bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                        ★ FIDEL · {loyalDelivered} {loyalDelivered === 1 ? "livrată" : "livrate"}
                       </span>
                     )}
                   </h3>

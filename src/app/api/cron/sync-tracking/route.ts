@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getHelpshipCredentials } from "@/lib/helpship-credentials";
 import { HelpshipClient } from "@/lib/helpship";
+import { recalcCustomerLoyalty } from "@/lib/loyalty";
 
 /**
  * Cron job pentru sincronizarea tracking status din Helpship
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Găsește comenzile cu helpship_order_id din ultimele 6 luni (exclusiv testing/queue)
     const { data: allOrders, error: fetchError } = await supabaseAdmin
       .from("orders")
-      .select("id, helpship_order_id, organization_id, tracking_status")
+      .select("id, helpship_order_id, organization_id, tracking_status, customer_id")
       .not("helpship_order_id", "is", null)
       .not("status", "in", '("testing","queue")')
       .gte("created_at", cutoffDate)
@@ -60,6 +61,9 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[Cron Tracking] Found ${orders.length} orders to sync`);
+
+    // Customers whose orders changed status, to refresh their loyalty afterwards
+    const changedCustomerIds: (string | null)[] = [];
 
     const results = {
       total: orders.length,
@@ -122,6 +126,7 @@ export async function GET(request: NextRequest) {
 
             console.log(`[Cron Tracking] Order ${order.id}: ${order.tracking_status || 'null'} -> ${tracking.trackingStatus}`);
             results.updated++;
+            changedCustomerIds.push(order.customer_id);
           } catch (error) {
             console.error(`[Cron Tracking] Error updating order ${order.id}:`, error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -144,6 +149,8 @@ export async function GET(request: NextRequest) {
         }
       }
     }
+
+    await recalcCustomerLoyalty(changedCustomerIds);
 
     console.log(
       `[Cron Tracking] Finished. Updated: ${results.updated}, Unchanged: ${results.unchanged}, Failed: ${results.failed}`

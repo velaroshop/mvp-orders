@@ -120,6 +120,7 @@ export async function GET(request: Request) {
     if ((session.user as any).isSuperadminOrg && orders.length > 0) {
       await attachWhatsAppState(orders);
     }
+    await attachLoyalCustomers(orders);
 
     return NextResponse.json({
       orders,
@@ -158,6 +159,33 @@ async function attachWhatsAppState(
     }
   } catch (err) {
     console.warn("[Orders List] WhatsApp state lookup failed:", err);
+  }
+}
+
+// Marks orders of loyal customers; failures (e.g. migration 109 not applied) are ignored
+async function attachLoyalCustomers(
+  orders: { customerId?: string | null; customerIsLoyal?: boolean; customerDeliveredCount?: number }[]
+) {
+  try {
+    const ids = [...new Set(orders.map((o) => o.customerId).filter((id): id is string => !!id))];
+    if (ids.length === 0) return;
+
+    const { data, error } = await supabaseAdmin
+      .from("customers")
+      .select("id, delivered_count")
+      .in("id", ids)
+      .eq("is_loyal", true);
+    if (error || !data) return;
+
+    const byId = new Map(data.map((r) => [r.id, r]));
+    for (const order of orders) {
+      const row = order.customerId ? byId.get(order.customerId) : undefined;
+      if (!row) continue;
+      order.customerIsLoyal = true;
+      order.customerDeliveredCount = row.delivered_count ?? 0;
+    }
+  } catch (err) {
+    console.warn("[Orders List] Loyal customers lookup failed:", err);
   }
 }
 
@@ -259,6 +287,8 @@ async function fallbackSearch(
     createdAt: row.created_at,
     updatedAt: row.updated_at ?? undefined,
   }));
+
+  await attachLoyalCustomers(orders);
 
   return NextResponse.json({
     orders,

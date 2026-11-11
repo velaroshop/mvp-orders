@@ -43,6 +43,11 @@ export interface Customer {
   isBlacklisted?: boolean;
   blacklistedAt?: string;
   blacklistedReason?: string;
+  isLoyal?: boolean;
+  loyalSince?: string | null;
+  loyalOverride?: boolean | null; // true = marked by hand, false = removed by hand, null = automatic rule
+  deliveredCount?: number;
+  returnedCount?: number;
 }
 
 export interface LandingPage {
@@ -113,6 +118,9 @@ export interface Order {
   whatsappConfirmedAt?: string;
   whatsappReply?: string; // Free-text replies from the customer, newline separated
   whatsappReplyAt?: string;
+  // Loyal customer state (attached by the orders list API)
+  customerIsLoyal?: boolean;
+  customerDeliveredCount?: number;
   createdAt: string;
   updatedAt?: string;
 }

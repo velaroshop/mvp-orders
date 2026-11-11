@@ -13,6 +13,7 @@ function CustomersPageContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [onlyBlacklisted, setOnlyBlacklisted] = useState(false);
+  const [onlyLoyal, setOnlyLoyal] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const phoneFilter = searchParams.get("phone");
@@ -24,11 +25,11 @@ function CustomersPageContent() {
     fetchCustomers();
   }, [currentPage]);
 
-  // Reload from the first page when the blacklist filter is toggled
+  // Reload from the first page when the blacklist or loyal filter is toggled
   useEffect(() => {
     setCurrentPage(1);
     fetchCustomers();
-  }, [onlyBlacklisted]);
+  }, [onlyBlacklisted, onlyLoyal]);
 
   // Debounced search effect
   useEffect(() => {
@@ -64,6 +65,9 @@ function CustomersPageContent() {
       }
       if (onlyBlacklisted) {
         params.append("blacklisted", "true");
+      }
+      if (onlyLoyal) {
+        params.append("loyal", "true");
       }
 
       const response = await fetch(`/api/customers/list?${params.toString()}`);
@@ -206,6 +210,18 @@ function CustomersPageContent() {
         >
           🚫 Doar blacklist
         </button>
+        <button
+          type="button"
+          onClick={() => setOnlyLoyal((v) => !v)}
+          aria-pressed={onlyLoyal}
+          className={`px-4 py-3 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors ${
+            onlyLoyal
+              ? "bg-emerald-600 border-emerald-500 text-white"
+              : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
+          }`}
+        >
+          ⭐ Doar fideli
+        </button>
       </div>
 
       {/* Customers Table */}
@@ -220,7 +236,7 @@ function CustomersPageContent() {
       ) : customers.length === 0 ? (
         <div className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700 p-8 text-center">
           <p className="text-zinc-400">
-            {onlyBlacklisted ? "Nu există clienți pe blacklist." : "Nu există clienți înregistrați încă."}
+            {onlyBlacklisted ? "Nu există clienți pe blacklist." : onlyLoyal ? "Nu există clienți fideli." : "Nu există clienți înregistrați încă."}
           </p>
         </div>
       ) : (
@@ -266,6 +282,9 @@ function CustomersPageContent() {
                           </span>
                           {(customer as any).isBlacklisted && (
                             <span className="bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">BLACKLIST</span>
+                          )}
+                          {(customer as any).isLoyal && (
+                            <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">★ FIDEL</span>
                           )}
                         </div>
                         {(customer as any).isBlacklisted && (

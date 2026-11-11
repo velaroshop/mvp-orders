@@ -2052,6 +2052,9 @@ export default function AdminPage() {
                       <div className="flex items-start gap-1.5">
                         <div>
                           <div className="flex items-center gap-1">
+                            {order.customerIsLoyal && (
+                              <span className="shrink-0 text-emerald-400 text-sm leading-none" title="Client fidel">★</span>
+                            )}
                             <p className="font-medium text-white text-sm truncate max-w-36">{order.fullName}</p>
                             {order.whatsappConfirmedAt && (
                               <span
@@ -2079,6 +2082,11 @@ export default function AdminPage() {
                             })()}
                           </div>
                           <p className="text-zinc-400 text-xs">{order.phone}</p>
+                          {order.customerIsLoyal && (
+                            <p className="text-emerald-400 text-[10px] font-semibold">
+                              FIDEL · {order.customerDeliveredCount} {order.customerDeliveredCount === 1 ? "livrată" : "livrate"}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -2086,6 +2094,14 @@ export default function AdminPage() {
                     {/* Order Note */}
                     <td className="px-2 py-1.5 hidden md:table-cell">
                       <div className="flex flex-col gap-1">
+                        {/* Loyal customer - Green styling */}
+                        {order.customerIsLoyal && (
+                          <div className="bg-emerald-500/20 border border-emerald-500/50 rounded px-1.5 py-0.5 w-fit">
+                            <p className="text-emerald-300 text-[10px] font-medium">
+                              CLIENT FIDEL · {order.customerDeliveredCount} {order.customerDeliveredCount === 1 ? "livrată" : "livrate"}
+                            </p>
+                          </div>
+                        )}
                         {/* Cancel Note - Red styling */}
                         {order.cancelledNote && (
                           <div className="bg-red-500/20 border border-red-500/50 rounded px-1.5 py-0.5 w-fit">

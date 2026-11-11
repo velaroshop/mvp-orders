@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "25");
     const offset = parseInt(searchParams.get("offset") || "0");
     const onlyBlacklisted = searchParams.get("blacklisted") === "true";
+    const onlyLoyal = searchParams.get("loyal") === "true";
 
     let totalCount = 0;
     let customersData: any[] = [];
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
         .order("total_orders", { ascending: false })
         .range(offset, offset + limit - 1);
       if (onlyBlacklisted) phoneQuery = phoneQuery.eq("is_blacklisted", true);
+      if (onlyLoyal) phoneQuery = phoneQuery.eq("is_loyal", true);
       const { data: phoneMatches, error: phoneError, count } = await phoneQuery;
 
       if (phoneError) {
@@ -73,6 +75,7 @@ export async function GET(request: Request) {
           .eq("organization_id", activeOrganizationId)
           .order("total_orders", { ascending: false });
         if (onlyBlacklisted) nameQuery = nameQuery.eq("is_blacklisted", true);
+        if (onlyLoyal) nameQuery = nameQuery.eq("is_loyal", true);
         const { data: nameCustomers } = await nameQuery;
 
         nameMatchCustomers = nameCustomers || [];
@@ -100,8 +103,11 @@ export async function GET(request: Request) {
         .from("customers")
         .select("*", { count: "exact" })
         .eq("organization_id", activeOrganizationId);
+      if (onlyLoyal) listQuery = listQuery.eq("is_loyal", true);
       listQuery = onlyBlacklisted
         ? listQuery.eq("is_blacklisted", true).order("blacklisted_at", { ascending: false })
+        : onlyLoyal
+        ? listQuery.order("delivered_count", { ascending: false })
         : listQuery.order("total_orders", { ascending: false });
       const { data, error, count } = await listQuery.range(offset, offset + limit - 1);
 
@@ -159,6 +165,11 @@ export async function GET(request: Request) {
       isBlacklisted: row.is_blacklisted || false,
       blacklistedAt: row.blacklisted_at || null,
       blacklistedReason: row.blacklisted_reason || null,
+      isLoyal: row.is_loyal || false,
+      loyalSince: row.loyal_since || null,
+      loyalOverride: row.loyal_override ?? null,
+      deliveredCount: row.delivered_count || 0,
+      returnedCount: row.returned_count || 0,
     }));
 
     console.log(`[Customers List] Returned ${mappedCustomers.length} customers (search: "${searchQuery}", total: ${totalCount})`);

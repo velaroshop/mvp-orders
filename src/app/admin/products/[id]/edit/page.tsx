@@ -81,7 +81,7 @@ export default function EditProductPage() {
   const [isSavingLabel, setIsSavingLabel] = useState(false);
 
   // Variation selection mode
-  const [selectionMode, setSelectionMode] = useState<"multi" | "single">("multi");
+  const [selectionMode, setSelectionMode] = useState<"multi" | "single">("single");
   const [isSavingMode, setIsSavingMode] = useState(false);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function EditProductPage() {
       setInitialVirtual(!!data.product.is_virtual);
       setVariations(data.product.variations || []);
       setVariationsLabel(data.product.variations_label || "");
-      setSelectionMode(data.product.variation_selection_mode || "multi");
+      setSelectionMode(data.product.variation_selection_mode || "single");
       // Pre-fill new variation SKU prefix
       setNewVariation(v => ({ ...v, sku: (data.product.sku || "") + "-" }));
     } catch (err) {

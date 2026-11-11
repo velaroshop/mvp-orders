@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
  * GET /api/billing/status - What the top banner and the sidebar show for the current user
  *  - admin: superadmin owners see organizations with invoices past the due date
  *  - owner: the owner of an organization sees its own invoice that is due soon or overdue, and the next invoice date
+ *  - everyone: the legal name and CUI of the active organization from its billing data, when there is one
  * Returns an empty object when there is nothing to show (or the billing tables do not exist yet).
  */
 export async function GET() {
@@ -25,6 +26,17 @@ export async function GET() {
     const orgId = user.activeOrganizationId as string | undefined;
     const today = todayRo();
     const result: Record<string, any> = {};
+
+    // The company's legal name and CUI as verified in Billing (the registration values may be placeholders)
+    if (orgId) {
+      const { data: profile } = await supabaseAdmin
+        .from("org_billing")
+        .select("company_name, cui, is_vat_payer")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      if (profile?.cui) result.cui = profile.is_vat_payer ? `RO${profile.cui}` : String(profile.cui);
+      if (profile?.company_name) result.companyName = profile.company_name;
+    }
 
     if (isOwner && user.isSuperadminOrg) {
       const { data: overdue, error } = await supabaseAdmin

@@ -229,17 +229,24 @@ export default function Sidebar() {
   const orgCui: string | null = (activeOrganization as any)?.cui || null;
   const userEmail: string = (session?.user as any)?.email || "";
 
-  // Date of the next invoice, shown to the owner only while billing is active
+  // Billing data of the active organization: its legal name and CUI as verified in Billing, and (owner only, while billing is active) the next invoice date
   const [nextInvoiceDate, setNextInvoiceDate] = useState<string | null>(null);
+  const [billingCui, setBillingCui] = useState<string | null>(null);
+  const [billingName, setBillingName] = useState<string | null>(null);
   useEffect(() => {
-    if (userRole !== "owner") {
-      setNextInvoiceDate(null);
-      return;
-    }
+    if (!userRole) return;
     fetch("/api/billing/status")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setNextInvoiceDate(data?.nextInvoiceDate || null))
-      .catch(() => setNextInvoiceDate(null));
+      .then((data) => {
+        setNextInvoiceDate(data?.nextInvoiceDate || null);
+        setBillingCui(data?.cui || null);
+        setBillingName(data?.companyName || null);
+      })
+      .catch(() => {
+        setNextInvoiceDate(null);
+        setBillingCui(null);
+        setBillingName(null);
+      });
   }, [userRole, activeOrganization?.id]);
 
   const SidebarContent = () => (
@@ -347,19 +354,22 @@ export default function Sidebar() {
             {/* Header */}
             <div className="px-4 py-3 border-b border-zinc-800">
               <p className="text-[13px] font-semibold text-white truncate leading-tight">
-                {orgName}{orgCui ? ` (${orgCui})` : ""}
+                {billingName || orgName}{billingCui || orgCui ? ` (${billingCui || orgCui})` : ""}
               </p>
               <p className="text-[11px] text-zinc-500 truncate mt-0.5">{userEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-600/20 border border-emerald-500/40 text-emerald-400">
                   {orgPlan.toUpperCase()}
                 </span>
-                {nextInvoiceDate && (
-                  <span className="text-[10px] text-zinc-400">
-                    Următoarea factură: {new Date(`${nextInvoiceDate}T12:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "short" })}
-                  </span>
-                )}
               </div>
+              {nextInvoiceDate && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/15 px-3 py-1.5">
+                  <span className="text-[11px] text-emerald-200">Următoarea factură</span>
+                  <span className="text-[13px] font-bold text-emerald-300">
+                    {new Date(`${nextInvoiceDate}T12:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Org switcher */}

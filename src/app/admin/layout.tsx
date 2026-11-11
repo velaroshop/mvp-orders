@@ -1,5 +1,6 @@
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
+import BillingBanner from "./components/BillingBanner";
 
 export default function AdminLayout({
   children,
@@ -17,6 +18,7 @@ export default function AdminLayout({
       {/* Main content */}
       <main className="flex-1 min-w-0 mt-20 lg:ml-56 overflow-x-hidden">
         <div className="p-4 lg:p-8">
+          <BillingBanner />
           {children}
         </div>
       </main>

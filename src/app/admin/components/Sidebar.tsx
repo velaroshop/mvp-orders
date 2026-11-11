@@ -35,6 +35,7 @@ import {
   LayoutTemplate,
   Gauge,
   Wallet,
+  Receipt,
 } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -55,6 +56,7 @@ const iconMap: Record<string, React.ReactNode> = {
   "/admin/activity-log":                    <Activity className="w-4 h-4" />,
   "/admin/settings":                        <Settings className="w-4 h-4" />,
   "/admin/superadmin":                      <Building2 className="w-4 h-4" />,
+  "/admin/superadmin/billing":              <Receipt className="w-4 h-4" />,
   "/admin/superadmin/image-compress":       <ImageDown className="w-4 h-4" />,
   "/admin/superadmin/video-convert":        <Film className="w-4 h-4" />,
   "/admin/tools":                           <Wrench className="w-4 h-4" />,
@@ -111,6 +113,7 @@ const menuGroups = [
     label: "Superadmin",
     items: [
       { name: "Organizații", href: "/admin/superadmin", superadminOnly: true },
+      { name: "Billing", href: "/admin/superadmin/billing", superadminOnly: true },
       { name: "Tutorial", href: "/admin/tutorial", superadminOnly: true },
     ],
   },
@@ -224,26 +227,20 @@ export default function Sidebar() {
   const initials = userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
   const orgPlan: string = (activeOrganization as any)?.plan || (session?.user as any)?.activePlan || "pro";
   const orgCui: string | null = (activeOrganization as any)?.cui || null;
-  const orgCreatedAt: string | null = (activeOrganization as any)?.createdAt || null;
   const userEmail: string = (session?.user as any)?.email || "";
 
-  function getDaysUntilBilling(createdAt: string): number {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const createdDay = new Date(createdAt).getDate();
-    const billingDay = createdDay === 1 ? 0 : createdDay - 1; // 0 = last day of month in JS
-    let next: Date;
-    if (billingDay === 0) {
-      next = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      if (next <= today) next = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-    } else {
-      next = new Date(today.getFullYear(), today.getMonth(), billingDay);
-      if (next <= today) next = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
+  // Date of the next invoice, shown to the owner only while billing is active
+  const [nextInvoiceDate, setNextInvoiceDate] = useState<string | null>(null);
+  useEffect(() => {
+    if (userRole !== "owner") {
+      setNextInvoiceDate(null);
+      return;
     }
-    return Math.ceil((next.getTime() - today.getTime()) / 86400000);
-  }
-
-  const daysUntilBilling = orgCreatedAt ? getDaysUntilBilling(orgCreatedAt) : null;
+    fetch("/api/billing/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setNextInvoiceDate(data?.nextInvoiceDate || null))
+      .catch(() => setNextInvoiceDate(null));
+  }, [userRole, activeOrganization?.id]);
 
   const SidebarContent = () => (
     <aside className="flex flex-col h-full w-56 bg-zinc-950 text-white">
@@ -357,8 +354,10 @@ export default function Sidebar() {
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-600/20 border border-emerald-500/40 text-emerald-400">
                   {orgPlan.toUpperCase()}
                 </span>
-                {daysUntilBilling !== null && (
-                  <span className="text-[10px] text-zinc-500">{daysUntilBilling} zile până la facturare</span>
+                {nextInvoiceDate && (
+                  <span className="text-[10px] text-zinc-400">
+                    Următoarea factură: {new Date(`${nextInvoiceDate}T12:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "short" })}
+                  </span>
                 )}
               </div>
             </div>

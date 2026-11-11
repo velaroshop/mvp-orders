@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 
-type EntityType = "landing_page" | "product" | "upsell" | "store" | "team_member" | "customer";
+type EntityType = "landing_page" | "product" | "upsell" | "store" | "team_member" | "customer" | "billing";
 type AuditAction = "create" | "update" | "delete" | "status_change" | "toggle_active" | "blacklist" | "unblacklist";
 
 interface AuditLogParams {

@@ -52,7 +52,7 @@ export async function GET() {
       }
     }
 
-    if (isOwner && orgId && !user.isSuperadminOrg) {
+    if (isOwner && orgId) {
       const { data: open, error } = await supabaseAdmin
         .from("billing_invoices")
         .select("series, number, amount, currency, due_date")

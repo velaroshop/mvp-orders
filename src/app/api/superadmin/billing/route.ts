@@ -60,7 +60,6 @@ export async function GET() {
     let recurring = 0;
 
     const organizations = (orgsResult.data || [])
-      .filter((org: any) => !org.is_superadmin)
       .map((org: any) => {
         const billing: any = billingByOrg.get(org.id) || null;
         const invoices = invoicesByOrg.get(org.id) || [];

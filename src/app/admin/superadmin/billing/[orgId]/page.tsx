@@ -53,7 +53,23 @@ interface Invoice {
   paid_at: string | null;
   paid_method: string | null;
   source: string;
+  external_id: string | null;
+  emailed_at: string | null;
   note: string | null;
+}
+
+interface IssuePreview {
+  configured: boolean;
+  missing: string[];
+  series: string;
+  nextNumber: number | null;
+  seriesError: string | null;
+  warnings: string[];
+  today?: string;
+  client?: { name: string; cui: string; isVatPayer: boolean; address: string; city: string; county: string };
+  product?: { code: string; name: string; unit: string };
+  emailTo?: string[];
+  defaults?: { issue_date: string; period_start: string; period_end: string; amount: number | null; due_date: string; currency: string };
 }
 
 interface OrgInfo {
@@ -124,6 +140,11 @@ export default function OrgBillingPage() {
 
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [invForm, setInvForm] = useState({ series: "", number: "", period_start: "", period_end: "", amount: "", issued_at: "", due_date: "", note: "" });
+  const [showIssue, setShowIssue] = useState(false);
+  const [issuePreview, setIssuePreview] = useState<IssuePreview | null>(null);
+  const [issueLoading, setIssueLoading] = useState(false);
+  const [issuing, setIssuing] = useState(false);
+  const [issueForm, setIssueForm] = useState({ issue_date: "", period_start: "", period_end: "", amount: "", due_date: "", send_email: true });
   const [payingId, setPayingId] = useState<string | null>(null);
   const [payDate, setPayDate] = useState("");
   const [payMethod, setPayMethod] = useState(PAY_METHODS[0]);
@@ -288,6 +309,77 @@ export default function OrgBillingPage() {
       setPayingId(null);
       await load();
       changed();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Eroare" });
+    }
+  }
+
+  async function openIssue() {
+    if (showIssue) {
+      setShowIssue(false);
+      return;
+    }
+    setShowIssue(true);
+    setIssueLoading(true);
+    setIssuePreview(null);
+    setMessage(null);
+    try {
+      const preview: IssuePreview = await call(`/api/superadmin/billing/${orgId}/issue`, "GET");
+      setIssuePreview(preview);
+      if (preview.defaults) {
+        setIssueForm({
+          issue_date: preview.defaults.issue_date,
+          period_start: preview.defaults.period_start,
+          period_end: preview.defaults.period_end,
+          amount: preview.defaults.amount != null ? String(preview.defaults.amount) : "",
+          due_date: "",
+          send_email: (preview.emailTo || []).length > 0,
+        });
+      }
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Eroare" });
+      setShowIssue(false);
+    } finally {
+      setIssueLoading(false);
+    }
+  }
+
+  async function submitIssue() {
+    if (!issuePreview) return;
+    const number = issuePreview.nextNumber != null ? `${issuePreview.series}${String(issuePreview.nextNumber).padStart(4, "0")}` : issuePreview.series;
+    if (!confirm(`Se emite o factură fiscală în SmartBill (${number}) pentru ${numOrNull(issueForm.amount) ?? "?"} ${issuePreview.defaults?.currency || "RON"}. Continui?`)) return;
+    setIssuing(true);
+    setMessage(null);
+    try {
+      const json = await call(`/api/superadmin/billing/${orgId}/issue`, "POST", {
+        issue_date: issueForm.issue_date,
+        period_start: issueForm.period_start,
+        period_end: issueForm.period_end,
+        amount: numOrNull(issueForm.amount),
+        due_date: issueForm.due_date || undefined,
+        send_email: issueForm.send_email,
+      });
+      const issued = `${json.invoice.series || ""}${json.invoice.number || ""}`;
+      let text = `Factura ${issued} a fost emisă în SmartBill.`;
+      if (json.email) text += json.email.ok ? " Emailul a fost trimis clientului." : ` Emailul nu s-a trimis: ${json.email.error}`;
+      setMessage({ type: json.email && !json.email.ok ? "error" : "success", text });
+      setShowIssue(false);
+      await load();
+      changed();
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Eroare" });
+    } finally {
+      setIssuing(false);
+    }
+  }
+
+  async function resendEmail(id: string) {
+    if (!confirm("Trimiți emailul cu factura către adresele de facturare ale clientului?")) return;
+    setMessage(null);
+    try {
+      await call(`/api/superadmin/billing/invoices/${id}/email`, "POST");
+      setMessage({ type: "success", text: "Emailul cu factura a fost trimis." });
+      await load();
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Eroare" });
     }
@@ -538,6 +630,10 @@ export default function OrgBillingPage() {
       <section className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="section-title">Facturi</h2>
+          <div className="flex gap-2">
+          <button type="button" className="btn btn-primary btn-sm" onClick={openIssue}>
+            {showIssue ? "Închide" : "Emite factura în SmartBill"}
+          </button>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -546,9 +642,90 @@ export default function OrgBillingPage() {
               setInvForm((f) => ({ ...f, amount: f.amount || (finalPrice != null ? String(finalPrice) : ""), issued_at: f.issued_at || today }));
             }}
           >
-            {showInvoiceForm ? "Închide" : "Adaugă factură"}
+            {showInvoiceForm ? "Închide" : "Adaugă manual"}
           </button>
+          </div>
         </div>
+
+        {showIssue && (
+          <div className="mb-5 rounded-lg border border-indigo-500/40 bg-zinc-900/60 p-4">
+            <h3 className="text-sm font-semibold text-white mb-3">Emite factura în SmartBill</h3>
+            {issueLoading && <p className="text-sm text-zinc-400">Se verifică SmartBill...</p>}
+            {issuePreview && (
+              <>
+                {!issuePreview.configured && (
+                  <p className="text-sm text-red-300 mb-2">SmartBill nu este configurat (lipsesc variabilele SMARTBILL_*).</p>
+                )}
+                {issuePreview.missing.length > 0 && (
+                  <p className="text-sm text-red-300 mb-2">
+                    Completează și salvează datele de facturare: {issuePreview.missing.join(", ")}.
+                  </p>
+                )}
+                {issuePreview.seriesError && <p className="text-sm text-red-300 mb-2">{issuePreview.seriesError}</p>}
+                {issuePreview.warnings.map((w) => (
+                  <p key={w} className="text-sm text-amber-300 mb-2">⚠ {w}</p>
+                ))}
+
+                {issuePreview.configured && issuePreview.missing.length === 0 && !issuePreview.seriesError && issuePreview.defaults && (
+                  <>
+                    <div className="mb-4 rounded-lg bg-zinc-800/70 p-3 text-sm text-zinc-300 space-y-1">
+                      <p>
+                        Serie <strong className="text-white">{issuePreview.series}</strong>
+                        {issuePreview.nextNumber != null && <> · următorul număr <strong className="text-white">{issuePreview.series}{String(issuePreview.nextNumber).padStart(4, "0")}</strong></>}
+                      </p>
+                      <p>Client: <strong className="text-white">{issuePreview.client?.name}</strong> · CUI {issuePreview.client?.isVatPayer ? "RO" : ""}{issuePreview.client?.cui}</p>
+                      <p>Linie: {issuePreview.product?.name} · 1 {issuePreview.product?.unit} · cod {issuePreview.product?.code}</p>
+                      <p>Întocmit de: Lucian Marculescu</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="label">Perioadă de la</label>
+                        <input type="date" className="input" value={issueForm.period_start} onChange={(e) => setIssueForm({ ...issueForm, period_start: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="label">Perioadă până la</label>
+                        <input type="date" className="input" value={issueForm.period_end} onChange={(e) => setIssueForm({ ...issueForm, period_end: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="label">Emisă la</label>
+                        <input type="date" className="input" value={issueForm.issue_date} onChange={(e) => setIssueForm({ ...issueForm, issue_date: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="label">Scadență</label>
+                        <input
+                          type="date"
+                          className="input"
+                          value={issueForm.due_date || (issueForm.issue_date ? addDays(issueForm.issue_date, PAYMENT_TERM_DAYS) : "")}
+                          onChange={(e) => setIssueForm({ ...issueForm, due_date: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Sumă ({issuePreview.defaults.currency})</label>
+                        <input className="input" inputMode="decimal" value={issueForm.amount} onChange={(e) => setIssueForm({ ...issueForm, amount: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <label className="flex items-center gap-2 text-sm text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={issueForm.send_email}
+                          disabled={(issuePreview.emailTo || []).length === 0}
+                          onChange={(e) => setIssueForm({ ...issueForm, send_email: e.target.checked })}
+                        />
+                        {(issuePreview.emailTo || []).length > 0
+                          ? `Trimite emailul clientului (${(issuePreview.emailTo || []).join(", ")})`
+                          : "Nu există email de facturare, emailul nu se poate trimite"}
+                      </label>
+                      <button type="button" className="btn btn-primary" onClick={submitIssue} disabled={issuing}>
+                        {issuing ? "Se emite..." : "Emite factura"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {showInvoiceForm && (
           <div className="mb-5 rounded-lg border border-zinc-700 bg-zinc-900/60 p-4">
@@ -628,6 +805,7 @@ export default function OrgBillingPage() {
                   <tr key={inv.id} className={inv.status === "cancelled" ? "opacity-60" : ""}>
                     <td className="py-2.5 pr-3 text-zinc-200 whitespace-nowrap">
                       {`${inv.series || ""}${inv.number || ""}` || "—"}
+                      {inv.source === "smartbill" && <span className="ml-1.5 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300">SmartBill</span>}
                       {inv.note && <span className="block text-xs text-zinc-400">{inv.note}</span>}
                     </td>
                     <td className="py-2.5 pr-3 text-zinc-300 whitespace-nowrap">
@@ -670,7 +848,27 @@ export default function OrgBillingPage() {
                           Marchează achitată
                         </button>
                       )}
-                      {inv.status === "paid" && (
+                      {inv.source === "smartbill" && (
+                        <>
+                          <a
+                            href={`/api/superadmin/billing/invoices/${inv.id}/pdf`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-sm mr-1"
+                          >
+                            PDF
+                          </a>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm mr-1"
+                            title={inv.emailed_at ? `Trimis la ${new Date(inv.emailed_at).toLocaleString("ro-RO")}` : "Nu a fost trimis"}
+                            onClick={() => resendEmail(inv.id)}
+                          >
+                            {inv.emailed_at ? "Retrimite email" : "Trimite email"}
+                          </button>
+                        </>
+                      )}
+                      {inv.status === "paid" && inv.source !== "smartbill" && (
                         <button type="button" className="btn btn-secondary btn-sm mr-1" onClick={() => invoiceAction(inv.id, "unpay")}>
                           Neachitată
                         </button>

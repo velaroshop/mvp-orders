@@ -109,3 +109,24 @@ export function missingBillingFields(b: {
   if (b.monthly_price == null || !(b.monthly_price > 0)) missing.push("prețul lunar");
   return missing;
 }
+
+/** dd.mm.yyyy for texts printed on invoices and emails. */
+export function formatDateRo(date: string): string {
+  const [y, m, d] = date.split("-");
+  return `${d}.${m}.${y}`;
+}
+
+/**
+ * Period an invoice covers: it ends on the issue date and starts the day after the previous invoice's period
+ * (or on the subscription start date for the first invoice).
+ */
+export function defaultInvoicePeriod(issueDate: string, lastPeriodEnd: string | null, startDate: string): { start: string; end: string } {
+  const start = lastPeriodEnd ? addDays(lastPeriodEnd, 1) : startDate;
+  if (start <= issueDate) return { start, end: issueDate };
+  // start is in the future (e.g. an early invoice): fall back to one month ending on the issue date
+  const [y, m, d] = issueDate.split("-").map(Number);
+  const prev = new Date(Date.UTC(y, m - 2, 1));
+  const lastDay = new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() + 1, 0)).getUTCDate();
+  const monthAgo = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}-${String(Math.min(d, lastDay)).padStart(2, "0")}`;
+  return { start: addDays(monthAgo, 1), end: issueDate };
+}

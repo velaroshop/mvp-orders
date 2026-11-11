@@ -3,6 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit-log";
 import { requireSuperadmin, DATE_RE } from "@/lib/billing-server";
 import { todayRo } from "@/lib/billing";
+import { collectInSmartbill } from "@/lib/billing-invoices";
+import { SmartbillError } from "@/lib/smartbill";
 
 /**
  * PATCH /api/superadmin/billing/invoices/[id]
@@ -34,10 +36,36 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (!DATE_RE.test(paidAt)) {
         return NextResponse.json({ error: "Data plății este invalidă." }, { status: 400 });
       }
-      update = { status: "paid", paid_at: paidAt, paid_method: body.paid_method ? String(body.paid_method).trim() : null };
+      const paidMethod = body.paid_method ? String(body.paid_method).trim() : null;
+
+      // Invoices issued in SmartBill: the collection is recorded there first, so both sides stay in step
+      if (invoice.source === "smartbill") {
+        const { data: billing } = await supabaseAdmin
+          .from("org_billing")
+          .select("*")
+          .eq("organization_id", invoice.organization_id)
+          .maybeSingle();
+        if (!billing) {
+          return NextResponse.json({ error: "Lipsesc datele de facturare ale organizației." }, { status: 400 });
+        }
+        try {
+          await collectInSmartbill(invoice, billing, paidAt, paidMethod);
+        } catch (e) {
+          const message = e instanceof SmartbillError ? e.message : "Nu s-a putut înregistra încasarea în SmartBill.";
+          return NextResponse.json({ error: `SmartBill: ${message}` }, { status: 502 });
+        }
+      }
+
+      update = { status: "paid", paid_at: paidAt, paid_method: paidMethod };
     } else if (action === "unpay") {
       if (invoice.status !== "paid") {
         return NextResponse.json({ error: "Factura nu este marcată ca achitată." }, { status: 400 });
+      }
+      if (invoice.source === "smartbill") {
+        return NextResponse.json(
+          { error: "Încasarea este înregistrată în SmartBill. Șterge-o acolo, iar statusul se actualizează la următoarea sincronizare." },
+          { status: 400 }
+        );
       }
       update = { status: "issued", paid_at: null, paid_method: null };
     } else {

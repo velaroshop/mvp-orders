@@ -117,16 +117,18 @@ export function formatDateRo(date: string): string {
 }
 
 /**
- * Period an invoice covers: it ends on the issue date and starts the day after the previous invoice's period
- * (or on the subscription start date for the first invoice).
+ * Period an invoice covers: it starts the day after the previous invoice's period (or on the subscription start
+ * date for the first invoice) and ends on the next scheduled invoicing date after that start.
+ * The end does not depend on the day the invoice is issued, so a late invoice still covers the whole cycle.
  */
-export function defaultInvoicePeriod(issueDate: string, lastPeriodEnd: string | null, startDate: string): { start: string; end: string } {
+export function defaultInvoicePeriod(
+  settings: OrgBillingSettings,
+  orgCreatedAt: string,
+  lastPeriodEnd: string | null,
+  today: string
+): { start: string; end: string } {
+  const startDate = settings.billing_start_date || orgCreatedAt.slice(0, 10);
   const start = lastPeriodEnd ? addDays(lastPeriodEnd, 1) : startDate;
-  if (start <= issueDate) return { start, end: issueDate };
-  // start is in the future (e.g. an early invoice): fall back to one month ending on the issue date
-  const [y, m, d] = issueDate.split("-").map(Number);
-  const prev = new Date(Date.UTC(y, m - 2, 1));
-  const lastDay = new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() + 1, 0)).getUTCDate();
-  const monthAgo = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}-${String(Math.min(d, lastDay)).padStart(2, "0")}`;
-  return { start: addDays(monthAgo, 1), end: issueDate };
+  const end = nextInvoiceDate({ ...settings, billing_enabled: true, paused: false }, orgCreatedAt, start) || today;
+  return { start, end };
 }

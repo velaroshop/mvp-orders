@@ -4,6 +4,7 @@ import { logAudit } from "@/lib/audit-log";
 import { requireSuperadmin, DATE_RE } from "@/lib/billing-server";
 import {
   addDays,
+  daysBetween,
   defaultInvoicePeriod,
   effectivePrice,
   formatDateRo,
@@ -65,8 +66,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ org
     }
 
     const lastPeriodEnd = invoices.map((i: any) => i.period_end).filter(Boolean).sort().pop() || null;
-    const startDate = billing.billing_start_date || org.created_at.slice(0, 10);
-    const period = defaultInvoicePeriod(today, lastPeriodEnd, startDate);
+    const period = defaultInvoicePeriod(billing, org.created_at, lastPeriodEnd, today);
     const price = effectivePrice(billing.monthly_price != null ? Number(billing.monthly_price) : null, Number(billing.discount_percent) || 0);
     const next = nextInvoiceDate(billing, org.created_at, today);
 
@@ -74,7 +74,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ org
     if (!billing.billing_enabled) warnings.push("Facturarea este oprită pentru această organizație.");
     if (billing.paused) warnings.push("Facturarea este în pauză.");
     if (billing.free_until && today <= billing.free_until) warnings.push(`Organizația are perioadă gratuită până la ${formatDateRo(billing.free_until)}.`);
-    if (next && next !== today) warnings.push(`Următoarea factură este programată pe ${formatDateRo(next)}. Verifică perioada înainte de emitere.`);
+    if (next && next !== today) warnings.push(`Următoarea factură este programată pe ${formatDateRo(next)}.`);
+    const periodDays = daysBetween(period.start, period.end) + 1;
+    if (periodDays < 25 || periodDays > 35) {
+      warnings.push(`Perioada are ${periodDays} ${periodDays === 1 ? "zi" : "zile"}. Verifică perioada și suma înainte de emitere.`);
+    }
 
     const product = planProduct(billing.invoice_plan);
     return NextResponse.json({

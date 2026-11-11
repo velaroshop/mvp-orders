@@ -26,6 +26,7 @@ export default function SignUpPage() {
     organizationCui: "",
   });
   const [cuiStatus, setCuiStatus] = useState<CuiStatus>("idle");
+  const [isVatPayer, setIsVatPayer] = useState(false); // shows the RO prefix; only the digits are sent
   const currentCui = useRef("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -51,11 +52,13 @@ export default function SignUpPage() {
     setCuiStatus("loading");
     let status: CuiStatus = "unavailable";
     let name = "";
+    let vatPayer = false;
     try {
       const res = await fetch(`/api/auth/anaf?cui=${cui}`);
       const data = await res.json();
       status = (data.status as CuiStatus) || "unavailable";
       name = data.companyName || "";
+      vatPayer = !!data.isVatPayer;
     } catch {
       status = "unavailable";
     }
@@ -64,6 +67,7 @@ export default function SignUpPage() {
     if (currentCui.current !== cui) return { status: "idle", name: "" };
 
     setCuiStatus(status);
+    setIsVatPayer(status === "verified" && vatPayer);
     if (status === "verified") setFormData((f) => ({ ...f, organizationCui: cui, organizationName: name }));
     return { status, name };
   }
@@ -239,16 +243,25 @@ export default function SignUpPage() {
                         organizationName: cuiStatus === "verified" ? "" : formData.organizationName,
                       });
                       setCuiStatus("idle");
+                      setIsVatPayer(false);
                     }}
                     onBlur={() => {
                       // Also retried when ANAF was unavailable, in case it is back
                       if ((cuiStatus === "idle" || cuiStatus === "unavailable") && formData.organizationCui.trim()) verifyCui();
                     }}
-                    className={inputCls}
+                    className={isVatPayer ? inputCls.replace("pl-10", "pl-[4.25rem]") : inputCls}
                     placeholder="RO12345678"
                     required
                     disabled={isLoading}
                   />
+                  {isVatPayer && (
+                    <span
+                      className="absolute left-9 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 select-none"
+                      title="Firma este plătitoare de TVA"
+                    >
+                      RO
+                    </span>
+                  )}
                   {cuiStatus === "loading" && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 animate-spin" />
                   )}
@@ -257,7 +270,11 @@ export default function SignUpPage() {
                   )}
                 </div>
                 {cuiStatus === "loading" && <p className="text-xs text-slate-500 mt-1.5">Se verifică la ANAF...</p>}
-                {cuiStatus === "verified" && <p className="text-xs text-emerald-600 mt-1.5">Verificat la ANAF. Datele firmei au fost completate.</p>}
+                {cuiStatus === "verified" && (
+                  <p className="text-xs text-emerald-600 mt-1.5">
+                    Verificat la ANAF. Datele firmei au fost completate.{isVatPayer ? " Firmă plătitoare de TVA (prefixul RO)." : " Firmă neplătitoare de TVA."}
+                  </p>
+                )}
                 {cuiStatus === "unavailable" && (
                   <p className="text-xs text-amber-700 mt-1.5">
                     Nu am putut verifica acum la ANAF. Poți introduce denumirea manual, iar noi o vom verifica la activarea contului.

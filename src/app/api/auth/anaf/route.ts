@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/auth/anaf?cui=... - CUI check for the sign-up form (public).
  * Answers with a status: verified (with the company name), not_found, inactive, duplicate or unavailable.
- * Only the company name is returned; the address is taken again on the server when the account is created.
+ * Only the company name and VAT status are returned; the address is taken again on the server when the account is created.
  */
 export async function GET(request: NextRequest) {
   const rate = checkRateLimit(`auth-anaf:${getClientIP(request)}`, { limit: 15, windowSeconds: 60 });
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (!company) return NextResponse.json({ status: "not_found" });
     if (company.isInactive) return NextResponse.json({ status: "inactive" });
     if (await cuiAlreadyRegistered(cui)) return NextResponse.json({ status: "duplicate" });
-    return NextResponse.json({ status: "verified", cui, companyName: company.companyName });
+    return NextResponse.json({ status: "verified", cui, companyName: company.companyName, isVatPayer: company.isVatPayer });
   } catch (error) {
     if (!(error instanceof AnafError)) console.error("Error in GET /api/auth/anaf:", error);
     return NextResponse.json({ status: "unavailable" });

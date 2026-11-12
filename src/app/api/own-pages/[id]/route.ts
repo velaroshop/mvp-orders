@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { refreshPublicPages } from "@/lib/revalidate-public";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
-import { parseBackground, parseBlocksInput, parseSlug, parseTitle } from "@/lib/own-page-input";
+import { parseBackground, parseBlocksInput, parseShareImage, parseShareText, parseSlug, parseTitle } from "@/lib/own-page-input";
 
-const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, domain_id, is_home, layout, updated_at";
+const COLUMNS = "id, slug, title, background, blocks, status, landing_page_id, domain_id, is_home, layout, share_image_url, share_title, share_description, updated_at";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -48,6 +48,11 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
 
   if (body.title !== undefined) update.title = parseTitle(body.title);
   if (body.background !== undefined) update.background = parseBackground(body.background);
+
+  // Link card (Facebook / WhatsApp): image, title, description; null = automatic
+  if (body.shareImageUrl !== undefined) update.share_image_url = parseShareImage(body.shareImageUrl);
+  if (body.shareTitle !== undefined) update.share_title = parseShareText(body.shareTitle, 90);
+  if (body.shareDescription !== undefined) update.share_description = parseShareText(body.shareDescription, 200);
 
   if (body.slug !== undefined) {
     const slug = parseSlug(body.slug);

@@ -6,6 +6,7 @@ import { loadFooterLibrary } from "@/lib/page-footers";
 import { sanitizeBlocks } from "@/lib/sanitize-rich-text";
 import BlockRenderer from "@/components/page-blocks/BlockRenderer";
 import PageTracker from "@/components/page-blocks/PageTracker";
+import { absoluteUrl, pickShareImage } from "@/lib/share-preview";
 
 // Pages served on a customer's own domain: the middleware rewrites comanda.client.ro/<slug> to /sites/comanda~client~ro/<slug>.
 // The domain gives the organization; /<slug> is the domain's sales page with that slug, or else one of the organization's
@@ -83,13 +84,30 @@ type Params = { params: Promise<{ host: string; path?: string[] }> };
 // 1x1 transparent PNG: a domain without its own icon shows no icon at all, not the application's default one
 const NEUTRAL_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
+// Link card settings of a sales page. Read apart from the page so a page still loads before migration 112 is applied.
+async function getShareSettings(pageId: string | null) {
+  if (!pageId) return null;
+  const { data } = await supabaseAdmin.from("landing_page_content").select("share_image_url, share_title, share_description").eq("id", pageId).maybeSingle();
+  return data;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { host, path } = await params;
   const [page, domain] = await Promise.all([getPage(host, path), getDomain(decodeHost(host))]);
   const icon = domain?.favicon_url || NEUTRAL_ICON;
+  const title = page?.title || "Pagină";
+
+  // Link card (Facebook / WhatsApp): the uploaded image, else the first photo of the page's main blocks
+  const share = page ? await getShareSettings(page.id) : null;
+  const shareImage = share?.share_image_url || (page ? pickShareImage(normalizeBlocks(page.blocks)) : null);
+  const cardTitle = share?.share_title || title;
+  const cardDescription = share?.share_description || undefined;
+  const image = shareImage ? absoluteUrl(shareImage, decodeHost(host)) : undefined;
   return {
-    title: page?.title || "Pagină",
+    title,
     icons: { icon, apple: domain?.favicon_url || undefined },
+    openGraph: { type: "website", title: cardTitle, description: cardDescription, ...(image ? { images: [{ url: image }] } : {}) },
+    twitter: { card: image ? "summary_large_image" : "summary", title: cardTitle, description: cardDescription, ...(image ? { images: [image] } : {}) },
     // Test phase: keep own pages out of search results
     robots: { index: false, follow: false },
   };

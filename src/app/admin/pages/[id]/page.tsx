@@ -29,6 +29,9 @@ export default function EditOwnPage() {
           domainId: page.domain_id ?? null,
           isHome: page.is_home === true,
           layout: page.layout === "wide" ? "wide" : "narrow",
+          shareImageUrl: page.share_image_url ?? "",
+          shareTitle: page.share_title ?? "",
+          shareDescription: page.share_description ?? "",
         });
       })
       .catch((e) => !cancelled && setError(e instanceof Error ? e.message : "Eroare"));
@@ -47,7 +50,7 @@ export default function EditOwnPage() {
     const res = await fetch(`/api/own-pages/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: data.title, slug: data.slug, background: data.background, blocks: data.blocks, status: data.status, domainId: data.domainId, isHome: data.isHome, layout: data.layout }),
+      body: JSON.stringify({ title: data.title, slug: data.slug, background: data.background, blocks: data.blocks, status: data.status, domainId: data.domainId, isHome: data.isHome, layout: data.layout, shareImageUrl: data.shareImageUrl, shareTitle: data.shareTitle, shareDescription: data.shareDescription }),
     });
     const body = await res.json().catch(() => ({}));
     return res.ok ? { ok: true } : { ok: false, error: body.error || "Nu am putut salva." };

@@ -21,3 +21,15 @@ export function parseSlug(raw: unknown): string | null {
 }
 
 export const parseTitle = (raw: unknown): string => (typeof raw === "string" ? raw.trim().slice(0, 120) : "");
+
+/** Share-preview text (link card title / description): trimmed, one line, null when empty */
+export function parseShareText(raw: unknown, max: number): string | null {
+  const text = typeof raw === "string" ? raw.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  return text || null;
+}
+
+/** Share-preview image: an http(s) address, null when empty or invalid */
+export function parseShareImage(raw: unknown): string | null {
+  const url = typeof raw === "string" ? raw.trim() : "";
+  return /^https?:\/\/\S+$/i.test(url) && url.length <= 1000 ? url : null;
+}

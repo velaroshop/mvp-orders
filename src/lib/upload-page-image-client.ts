@@ -40,7 +40,8 @@ async function shrinkInBrowser(file: File): Promise<Blob> {
   }
 }
 
-export async function uploadPageImage(file: File, maxWidth = 800): Promise<UploadedImage> {
+/** share = the link-card image: the server crops it to 1200x630 and saves it as JPEG */
+export async function uploadPageImage(file: File, maxWidth = 800, share = false): Promise<UploadedImage> {
   if (file.size > MAX_FILE_BYTES) throw new Error("Imaginea depășește 15 MB");
 
   let body: Blob = file;
@@ -54,6 +55,7 @@ export async function uploadPageImage(file: File, maxWidth = 800): Promise<Uploa
   const form = new FormData();
   form.append("file", body, file.name);
   form.append("maxWidth", String(maxWidth));
+  if (share) form.append("share", "1");
 
   const res = await fetch("/api/own-pages/upload-image", { method: "POST", body: form });
   const data = await res.json().catch(() => ({}));

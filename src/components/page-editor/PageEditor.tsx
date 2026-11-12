@@ -7,6 +7,8 @@ import { normalizeBlocks } from "@/lib/page-blocks";
 import { buildFooterLibrary, EMPTY_FOOTER_LIBRARY, type FooterLibrary } from "@/lib/footer-library";
 import { loadFooters } from "@/lib/footer-library-client";
 import { FieldsPanel } from "./FieldInputs";
+import { uploadPageImage } from "@/lib/upload-page-image-client";
+import { sharingDebuggerUrl } from "@/lib/share-preview";
 import { insertPosition } from "@/lib/editor-insert";
 import { SortableList, SortableRow, arrayMove } from "./SortableList";
 import { previewCtaFromStore, type PreviewStore } from "@/lib/thank-you-cta";
@@ -26,6 +28,10 @@ export interface EditorPageData {
   isHome?: boolean;
   /** Page width: "narrow" (phone-style column) or "wide" (homepages) */
   layout?: "narrow" | "wide";
+  /** Link card (Facebook / WhatsApp): image address, title, description. Empty = automatic */
+  shareImageUrl?: string;
+  shareTitle?: string;
+  shareDescription?: string;
 }
 
 export type SaveResult = { ok: true; page?: Partial<EditorPageData> } | { ok: false; error: string };
@@ -70,6 +76,12 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   const [domainId, setDomainId] = useState<string | null>(initial.domainId ?? null);
   const [isHome, setIsHome] = useState<boolean>(initial.isHome ?? false);
   const [layout, setLayout] = useState<"narrow" | "wide">(initial.layout ?? "narrow");
+  const [shareImageUrl, setShareImageUrl] = useState(initial.shareImageUrl ?? "");
+  const [shareTitle, setShareTitle] = useState(initial.shareTitle ?? "");
+  const [shareDescription, setShareDescription] = useState(initial.shareDescription ?? "");
+  const [shareUploading, setShareUploading] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const shareFileRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Item[]>(() => toItems(normalizeBlocks(initial.blocks)));
   const [status, setStatus] = useState<"draft" | "published">(initial.status ?? "draft");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -112,8 +124,8 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
   }, [stores, previewStoreId]);
 
   const payload = useMemo(
-    () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId, isHome: isHome && !!domainId, layout } : {}) }),
-    [title, slug, background, items, domains, domainId, isHome, layout],
+    () => ({ title, slug, background, blocks: items.map((i) => i.data), ...(domains ? { domainId, isHome: isHome && !!domainId, layout, shareImageUrl, shareTitle, shareDescription } : {}) }),
+    [title, slug, background, items, domains, domainId, isHome, layout, shareImageUrl, shareTitle, shareDescription],
   );
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(payload));
   const dirty = JSON.stringify(payload) !== savedSnapshot;
@@ -480,6 +492,75 @@ export default function PageEditor({ kind, initial, onSave, backHref, backLabel,
                       </span>
                     </span>
                   </label>
+                  <div className="border-t border-zinc-700 pt-4">
+                    <div className="mb-1 text-sm font-medium text-zinc-200">La distribuire (Facebook, WhatsApp)</div>
+                    <p className="mb-3 text-xs text-zinc-400">Cum arată linkul paginii când e trimis sau postat. Dacă lași câmpurile goale, imaginea e prima poză din pagină (fără pozele de la comentarii), iar titlul e titlul paginii.</p>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="mb-1 text-xs text-zinc-300">Imagine (se decupează la 1200×630)</div>
+                        <div className="flex gap-2">
+                          <input
+                            value={shareImageUrl}
+                            onChange={(e) => setShareImageUrl(e.target.value)}
+                            placeholder="https://… sau încarcă un fișier"
+                            className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white"
+                          />
+                          <button
+                            type="button"
+                            disabled={shareUploading}
+                            onClick={() => shareFileRef.current?.click()}
+                            className="shrink-0 whitespace-nowrap rounded-md border border-zinc-600 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+                          >
+                            {shareUploading ? "Se încarcă…" : "Încarcă"}
+                          </button>
+                        </div>
+                        <input
+                          ref={shareFileRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            setShareError(null);
+                            setShareUploading(true);
+                            try {
+                              setShareImageUrl((await uploadPageImage(file, 1200, true)).url);
+                            } catch (err) {
+                              setShareError(err instanceof Error ? err.message : "Încărcarea a eșuat");
+                            } finally {
+                              setShareUploading(false);
+                            }
+                          }}
+                        />
+                        {shareError && <p className="mt-1 text-xs text-red-400">{shareError}</p>}
+                        {/^https?:\/\//i.test(shareImageUrl) && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={shareImageUrl} alt="" className="mt-2 aspect-[1.91/1] w-full rounded border border-zinc-700 bg-zinc-900 object-cover" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="mb-1 text-xs text-zinc-300">Titlu (gol = titlul paginii)</div>
+                        <input value={shareTitle} maxLength={90} onChange={(e) => setShareTitle(e.target.value)} className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
+                      </div>
+                      <div>
+                        <div className="mb-1 text-xs text-zinc-300">Descriere (opțional)</div>
+                        <textarea value={shareDescription} maxLength={200} rows={2} onChange={(e) => setShareDescription(e.target.value)} className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white" />
+                      </div>
+                      {domainId && (
+                        <a
+                          href={sharingDebuggerUrl(publicUrl?.(slug, domains.find((d) => d.id === domainId)?.hostname) ?? "")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block text-sm text-emerald-400 hover:text-emerald-300"
+                        >
+                          Reîmprospătează preview-ul în Facebook →
+                        </a>
+                      )}
+                      <p className="text-xs text-zinc-400">Facebook păstrează preview-ul în cache. După ce schimbi imaginea, salvează pagina, apoi apasă linkul de mai sus și „Scrape again”.</p>
+                    </div>
+                  </div>
                 </div>
               )}
               <p className="mt-4 text-sm text-zinc-400">Alege un bloc din listă ca să-i modifici setările.</p>

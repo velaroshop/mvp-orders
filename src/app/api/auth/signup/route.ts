@@ -70,12 +70,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (company?.isInactive) {
-      return NextResponse.json(
-        { error: "Firma figurează inactivă la ANAF, deci nu putem crea contul. Te rugăm să ne contactezi la contact@jupimedia.ro." },
-        { status: 400 }
-      );
-    }
+    // TEMPORARILY OFF: companies inactive at ANAF may register
+    // if (company?.isInactive) {
+    //   return NextResponse.json(
+    //     { error: "Firma figurează inactivă la ANAF, deci nu putem crea contul. Te rugăm să ne contactezi la contact@jupimedia.ro." },
+    //     { status: 400 }
+    //   );
+    // }
     if (await cuiAlreadyRegistered(cui)) {
       return NextResponse.json(
         { error: "Există deja un cont pentru această firmă. Dacă ai nevoie de acces, contactează-ne la contact@jupimedia.ro." },

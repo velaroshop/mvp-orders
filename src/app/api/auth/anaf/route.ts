@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
   try {
     const company = await lookupCompany(cui);
     if (!company) return NextResponse.json({ status: "not_found" });
-    if (company.isInactive) return NextResponse.json({ status: "inactive" });
+    // TEMPORARILY OFF: companies inactive at ANAF may register
+    // if (company.isInactive) return NextResponse.json({ status: "inactive" });
     if (await cuiAlreadyRegistered(cui)) return NextResponse.json({ status: "duplicate" });
     return NextResponse.json({ status: "verified", cui, companyName: company.companyName, isVatPayer: company.isVatPayer });
   } catch (error) {

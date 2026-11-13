@@ -130,7 +130,8 @@ export default function VideoConvertPage() {
       }
       const ffmpeg = new FFmpeg();
       ffmpeg.on("progress", ({ progress }) => {
-        setConvertProgress(Math.round(progress * 100));
+        // ffmpeg reports nonsense (negative or huge) when it cannot read the video's duration: ignore those values
+        if (progress >= 0 && progress <= 1) setConvertProgress(Math.round(progress * 100));
       });
       const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
       await ffmpeg.load({
@@ -429,7 +430,7 @@ export default function VideoConvertPage() {
         {isLoading
           ? "Se încarcă ffmpeg.wasm (~30MB, o singură dată)..."
           : isConverting
-          ? `Se convertește... ${convertProgress}%`
+          ? `Se convertește...${convertProgress > 0 ? ` ${convertProgress}%` : ""}`
           : `Convertește în ${outputFormat === "webp" ? "WebP animat" : "MP4"}`}
       </button>
 

@@ -105,6 +105,22 @@ export default function VideoConvertPage() {
     if (!session?.user) router.replace("/admin/orders");
   }, [status, session, router]);
 
+  // The COOP/COEP headers only take effect on a full page load: after a client-side navigation (sidebar link) the
+  // page is not isolated and ffmpeg cannot start. Reload once; the flag prevents a loop if the headers are really missing.
+  useEffect(() => {
+    try {
+      if (window.crossOriginIsolated) {
+        sessionStorage.removeItem("video-convert-reloaded");
+        return;
+      }
+      if (sessionStorage.getItem("video-convert-reloaded")) return;
+      sessionStorage.setItem("video-convert-reloaded", "1");
+    } catch {
+      return;
+    }
+    window.location.reload();
+  }, []);
+
   async function loadFFmpeg() {
     if (ffmpegRef.current) return ffmpegRef.current;
     setIsLoading(true);

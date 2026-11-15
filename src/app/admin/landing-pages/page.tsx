@@ -1522,20 +1522,8 @@ export default function LandingPagesPage() {
                     </p>
                   </div>
 
-                  {/* Display Order and Active */}
+                  {/* Active (the order of upsells is changed by drag and drop) */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Ordine afișare
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={editUpsellModal.display_order}
-                        onChange={(e) => setEditUpsellModal({ ...editUpsellModal, display_order: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      />
-                    </div>
                     <div>
                       <label className="block text-sm font-medium text-zinc-300 mb-2">
                         Status

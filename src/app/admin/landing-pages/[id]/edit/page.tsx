@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import NumberInput from "@/components/ui/NumberInput";
 import { useSession } from "next-auth/react";
 
 interface Product {
@@ -806,14 +807,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Cantitate ofertă 1
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity_offer_1 || 1}
-                    onChange={(e) => setFormData({ ...formData, quantity_offer_1: parseInt(e.target.value) || 1 })}
-                    className="input"
-                    placeholder="1"
-                  />
+                  <NumberInput value={formData.quantity_offer_1} onChange={(n) => setFormData({ ...formData, quantity_offer_1: n ?? 1 })} decimals={0} min={1} fallback={1} className="input" placeholder="1" />
                   <p className="text-xs text-zinc-500 mt-1">
                     Numărul de bucăți din oferta 1 (implicit: 1)
                   </p>
@@ -822,14 +816,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Cantitate ofertă 2
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity_offer_2 || 2}
-                    onChange={(e) => setFormData({ ...formData, quantity_offer_2: parseInt(e.target.value) || 2 })}
-                    className="input"
-                    placeholder="2"
-                  />
+                  <NumberInput value={formData.quantity_offer_2} onChange={(n) => setFormData({ ...formData, quantity_offer_2: n ?? 2 })} decimals={0} min={1} fallback={2} className="input" placeholder="2" />
                   <p className="text-xs text-zinc-500 mt-1">
                     Numărul de bucăți din oferta 2 (implicit: 2)
                   </p>
@@ -838,14 +825,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Cantitate ofertă 3
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.quantity_offer_3 || 3}
-                    onChange={(e) => setFormData({ ...formData, quantity_offer_3: parseInt(e.target.value) || 3 })}
-                    className="input"
-                    placeholder="3"
-                  />
+                  <NumberInput value={formData.quantity_offer_3} onChange={(n) => setFormData({ ...formData, quantity_offer_3: n ?? 3 })} decimals={0} min={1} fallback={3} className="input" placeholder="3" />
                   <p className="text-xs text-zinc-500 mt-1">
                     Numărul de bucăți din oferta 3 (implicit: 3)
                   </p>
@@ -866,22 +846,7 @@ export default function EditLandingPagePage() {
                 <label className="label">
                   SRP (Preț recomandat) *
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="999"
-                  value={formData.srp}
-                  onChange={(e) => setFormData({ ...formData, srp: parseFloat(e.target.value) || 0 })}
-                  onKeyPress={(e) => {
-                    if (!/[0-9.]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="input max-w-md"
-                  placeholder="0.00"
-                  required
-                />
+                <NumberInput value={formData.srp} onChange={(n) => setFormData({ ...formData, srp: n ?? 0 })} max={999} className="input max-w-md" placeholder="0.00" />
                 <p className="text-xs text-zinc-500 mt-1">
                   Prețul afișat ca preț normal, nepromoțional (max. 999).
                 </p>
@@ -893,22 +858,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Preț 1 *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999"
-                    value={formData.price_1}
-                    onChange={(e) => setFormData({ ...formData, price_1: parseFloat(e.target.value) || 0 })}
-                    onKeyPress={(e) => {
-                      if (!/[0-9.]/.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="input"
-                    placeholder="0.00"
-                    required
-                  />
+                  <NumberInput value={formData.price_1} onChange={(n) => setFormData({ ...formData, price_1: n ?? 0 })} max={999} className="input" placeholder="0.00" />
                   <p className="text-xs text-zinc-500 mt-1">
                     O bucată (max. 999)
                   </p>
@@ -917,22 +867,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Preț 2 *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999"
-                    value={formData.price_2}
-                    onChange={(e) => setFormData({ ...formData, price_2: parseFloat(e.target.value) || 0 })}
-                    onKeyPress={(e) => {
-                      if (!/[0-9.]/.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="input"
-                    placeholder="0.00"
-                    required
-                  />
+                  <NumberInput value={formData.price_2} onChange={(n) => setFormData({ ...formData, price_2: n ?? 0 })} max={999} className="input" placeholder="0.00" />
                   <p className="text-xs text-zinc-500 mt-1">
                     Două bucăți (max. 999)
                   </p>
@@ -941,22 +876,7 @@ export default function EditLandingPagePage() {
                   <label className="label">
                     Preț 3 *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="999"
-                    value={formData.price_3}
-                    onChange={(e) => setFormData({ ...formData, price_3: parseFloat(e.target.value) || 0 })}
-                    onKeyPress={(e) => {
-                      if (!/[0-9.]/.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="input"
-                    placeholder="0.00"
-                    required
-                  />
+                  <NumberInput value={formData.price_3} onChange={(n) => setFormData({ ...formData, price_3: n ?? 0 })} max={999} className="input" placeholder="0.00" />
                   <p className="text-xs text-zinc-500 mt-1">
                     Trei bucăți (max. 999)
                   </p>
@@ -968,22 +888,7 @@ export default function EditLandingPagePage() {
                 <label className="label">
                   Preț livrare *
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="99"
-                  value={formData.shipping_price}
-                  onChange={(e) => setFormData({ ...formData, shipping_price: parseFloat(e.target.value) || 0 })}
-                  onKeyPress={(e) => {
-                    if (!/[0-9.]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="input max-w-md"
-                  placeholder="0.00"
-                  required
-                />
+                <NumberInput value={formData.shipping_price} onChange={(n) => setFormData({ ...formData, shipping_price: n ?? 0 })} max={99} className="input max-w-md" placeholder="0.00" />
                 <p className="text-xs text-zinc-500 mt-1">
                   Prețul plătit de client pentru livrare (max. 99).
                 </p>

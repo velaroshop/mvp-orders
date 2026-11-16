@@ -882,23 +882,13 @@ export default function RoasPage() {
                     })}
                   </tbody>
                   <tfoot className="bg-zinc-900/80 border-t-2 border-zinc-600">
+                    {/* Totals of the month: sums only */}
                     <tr>
                       <td className="font-bold text-white">TOTAL</td>
                       <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.adSpend)}</td>
                       <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.revenue)}</td>
-                      <td className="text-right">{formatCurrency(roasData.totals.avgOrderValue)}</td>
-                      <td className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className={`font-bold ${getRoasColor(roasData.totals.roas)}`}>
-                            {formatRoas(roasData.totals.roas)}
-                          </span>
-                          {getRoasBadge(roasData.totals.roas) && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${getRoasBadge(roasData.totals.roas)!.className}`}>
-                              {getRoasBadge(roasData.totals.roas)!.text}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                      <td />
+                      <td />
                       <td className="text-right">
                         <span className="text-white font-bold">{roasData.totals.orders}</span>
                         {roasData.totals.metaPurchases > 0 && (
@@ -911,11 +901,41 @@ export default function RoasPage() {
                           </span>
                         )}
                       </td>
-                      <td className="text-right font-bold text-white">
-                        {roasData.totals.orders > 0 ? `${Math.round(roasData.totals.adSpend / roasData.totals.orders)} lei` : "-"}
-                      </td>
+                      <td />
                       <td className="text-right font-bold text-white">{roasData.totals.productsSold}</td>
                     </tr>
+                    {/* Averages of the month: per day over the days in the table, plus order value, ROAS and CPA */}
+                    {(() => {
+                      const days = roasData.data.length;
+                      const perDay = (value: number) => (days > 0 ? value / days : 0);
+                      const perDayCount = (value: number) =>
+                        days > 0 ? perDay(value).toLocaleString("ro-RO", { maximumFractionDigits: 1 }) : "-";
+                      return (
+                        <tr className="border-t border-zinc-700">
+                          <td className="font-bold text-white" title={`Medie pe zi, din ${days} zile`}>MEDII</td>
+                          <td className="text-right font-bold text-white">{days > 0 ? formatCurrency(perDay(roasData.totals.adSpend)) : "-"}</td>
+                          <td className="text-right font-bold text-white">{days > 0 ? formatCurrency(perDay(roasData.totals.revenue)) : "-"}</td>
+                          <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.avgOrderValue)}</td>
+                          <td className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className={`font-bold ${getRoasColor(roasData.totals.roas)}`}>
+                                {formatRoas(roasData.totals.roas)}
+                              </span>
+                              {getRoasBadge(roasData.totals.roas) && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${getRoasBadge(roasData.totals.roas)!.className}`}>
+                                  {getRoasBadge(roasData.totals.roas)!.text}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-right font-bold text-white">{perDayCount(roasData.totals.orders)}</td>
+                          <td className="text-right font-bold text-white">
+                            {roasData.totals.orders > 0 ? `${Math.round(roasData.totals.adSpend / roasData.totals.orders)} lei` : "-"}
+                          </td>
+                          <td className="text-right font-bold text-white">{perDayCount(roasData.totals.productsSold)}</td>
+                        </tr>
+                      );
+                    })()}
                   </tfoot>
                 </table>
               </div>

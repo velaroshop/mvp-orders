@@ -882,28 +882,6 @@ export default function RoasPage() {
                     })}
                   </tbody>
                   <tfoot className="bg-zinc-900/80 border-t-2 border-zinc-600">
-                    {/* Totals of the month: sums only */}
-                    <tr>
-                      <td className="font-bold text-white">TOTAL</td>
-                      <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.adSpend)}</td>
-                      <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.revenue)}</td>
-                      <td />
-                      <td />
-                      <td className="text-right">
-                        <span className="text-white font-bold">{roasData.totals.orders}</span>
-                        {roasData.totals.metaPurchases > 0 && (
-                          <span className="text-faint text-xs ml-1">
-                            (vs {roasData.totals.metaPurchases}{" "}
-                            <span className={(roasData.totals.orders - roasData.totals.metaPurchases) >= 0 ? "text-green-400" : "text-red-400"}>
-                              {(roasData.totals.orders - roasData.totals.metaPurchases) >= 0 ? "+" : ""}
-                              {roasData.totals.orders - roasData.totals.metaPurchases}
-                            </span>)
-                          </span>
-                        )}
-                      </td>
-                      <td />
-                      <td className="text-right font-bold text-white">{roasData.totals.productsSold}</td>
-                    </tr>
                     {/* Averages of the month: per day over the days in the table, plus order value, ROAS and CPA */}
                     {(() => {
                       const days = roasData.data.length;
@@ -911,7 +889,7 @@ export default function RoasPage() {
                       const perDayCount = (value: number) =>
                         days > 0 ? perDay(value).toLocaleString("ro-RO", { maximumFractionDigits: 1 }) : "-";
                       return (
-                        <tr className="border-t border-zinc-700">
+                        <tr>
                           <td className="font-bold text-white" title={`Medie pe zi, din ${days} zile`}>MEDII</td>
                           <td className="text-right font-bold text-white">{days > 0 ? formatCurrency(perDay(roasData.totals.adSpend)) : "-"}</td>
                           <td className="text-right font-bold text-white">{days > 0 ? formatCurrency(perDay(roasData.totals.revenue)) : "-"}</td>
@@ -936,6 +914,28 @@ export default function RoasPage() {
                         </tr>
                       );
                     })()}
+                    {/* Totals of the month: sums only */}
+                    <tr className="border-t border-zinc-700">
+                      <td className="font-bold text-white">TOTAL</td>
+                      <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.adSpend)}</td>
+                      <td className="text-right font-bold text-white">{formatCurrency(roasData.totals.revenue)}</td>
+                      <td />
+                      <td />
+                      <td className="text-right">
+                        <span className="text-white font-bold">{roasData.totals.orders}</span>
+                        {roasData.totals.metaPurchases > 0 && (
+                          <span className="text-faint text-xs ml-1">
+                            (vs {roasData.totals.metaPurchases}{" "}
+                            <span className={(roasData.totals.orders - roasData.totals.metaPurchases) >= 0 ? "text-green-400" : "text-red-400"}>
+                              {(roasData.totals.orders - roasData.totals.metaPurchases) >= 0 ? "+" : ""}
+                              {roasData.totals.orders - roasData.totals.metaPurchases}
+                            </span>)
+                          </span>
+                        )}
+                      </td>
+                      <td />
+                      <td className="text-right font-bold text-white">{roasData.totals.productsSold}</td>
+                    </tr>
                   </tfoot>
                 </table>
               </div>

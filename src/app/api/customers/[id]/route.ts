@@ -114,6 +114,7 @@ export async function GET(
       orderNumber: row.order_number ?? undefined,
       orderSeries: row.order_series ?? undefined,
       orderNote: row.order_note ?? undefined,
+      cancelledNote: row.cancelled_note ?? undefined,
       trackingStatus: row.tracking_status ?? undefined,
       trackingUpdatedAt: row.tracking_updated_at ?? undefined,
       createdAt: row.created_at,

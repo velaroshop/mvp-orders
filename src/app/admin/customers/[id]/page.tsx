@@ -7,6 +7,7 @@ import type { Customer, Order } from "@/lib/types";
 import { getTrackingUrl } from "@/lib/tracking-url";
 import ConfirmOrderModal from "../../components/ConfirmOrderModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
+import OrderNotes from "../../components/OrderNotes";
 
 export default function CustomerDetailsPage() {
   const params = useParams();
@@ -557,6 +558,9 @@ export default function CustomerDetailsPage() {
                     Status
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+                    Notițe
+                  </th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
                     Dată
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
@@ -633,6 +637,9 @@ export default function CustomerDetailsPage() {
                           ? "Sync Error"
                           : "Confirmed"}
                       </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <OrderNotes orderNote={order.orderNote} cancelledNote={order.cancelledNote} />
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       <div className="text-xs text-zinc-300">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { syncOrderToHelpship } from "@/lib/helpship-sync";
+import { syncOrderToHelpship, SYNC_IN_PROGRESS_MESSAGE, HELPSHIP_UNAVAILABLE_MESSAGE } from "@/lib/helpship-sync";
 import { sendMetaPurchaseEvent } from "@/lib/meta-tracking";
 
 /**
@@ -61,7 +61,20 @@ export async function GET(request: NextRequest) {
         // Sync to Helpship (will update status to 'pending' on success)
         const syncResult = await syncOrderToHelpship(order.id);
 
+        // Another run (or a manual finalize) is already sending this order
+        if (syncResult.error === SYNC_IN_PROGRESS_MESSAGE) {
+          console.log(`[Cron] Order ${order.id} is already being sent, skipping`);
+          continue;
+        }
+
         if (!syncResult.success) {
+          // Helpship is down: the rest of the orders stay in queue and are picked up by the next run
+          if (syncResult.error === HELPSHIP_UNAVAILABLE_MESSAGE) {
+            results.failed++;
+            results.errors.push({ orderId: order.id, error: syncResult.error });
+            console.warn("[Cron] Helpship unavailable, stopping this run");
+            break;
+          }
           throw new Error(syncResult.error || "Failed to sync to Helpship");
         }
 

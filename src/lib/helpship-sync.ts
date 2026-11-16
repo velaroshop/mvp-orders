@@ -4,6 +4,11 @@ import { getHelpshipCredentials } from "./helpship-credentials";
 import { scheduleOrderConfirmationWhatsApp } from "./whatsapp-confirmation";
 
 export const HELPSHIP_UNAVAILABLE_MESSAGE = "Helpship indisponibil (503). Se va reîncerca automat.";
+export const SYNC_IN_PROGRESS_MESSAGE = "Comanda este deja în curs de trimitere către Helpship.";
+
+// While a queue order is being sent, its queue_expires_at is pushed forward so no other run (cron every minute, manual
+// finalize) picks it up and creates a second order in Helpship. It is restored when the attempt ends.
+const SYNC_CLAIM_MS = 5 * 60 * 1000;
 
 /**
  * Syncs an order to Helpship with all its products (main + presale + postsale upsells)
@@ -17,6 +22,9 @@ export async function syncOrderToHelpship(
   helpshipOrderId?: string;
   error?: string;
 }> {
+  // undefined = the order was not claimed (only queue orders are); otherwise the original queue_expires_at to restore
+  let claimedExpiry: string | null | undefined;
+
   try {
     console.log("[Helpship Sync] Starting sync for order:", orderId);
 
@@ -111,6 +119,29 @@ export async function syncOrderToHelpship(
 
     const vatPercentage = (settings?.vat_enabled ?? false) ? 21 : 0;
 
+    // Only one run may send a queue order: the claim is a compare-and-swap on queue_expires_at
+    if (order.status === "queue") {
+      const claim = supabaseAdmin
+        .from("orders")
+        .update({ queue_expires_at: new Date(Date.now() + SYNC_CLAIM_MS).toISOString() })
+        .eq("id", orderId)
+        .eq("status", "queue");
+      const { data: claimed, error: claimError } = await (order.queue_expires_at
+        ? claim.eq("queue_expires_at", order.queue_expires_at)
+        : claim.is("queue_expires_at", null)
+      ).select("id");
+
+      if (claimError) {
+        console.error("[Helpship Sync] Failed to claim order:", claimError);
+        return { success: false, error: "Failed to claim order" };
+      }
+      if (!claimed || claimed.length === 0) {
+        console.warn("[Helpship Sync] Order already being sent by another run, skipping:", orderId);
+        return { success: false, error: SYNC_IN_PROGRESS_MESSAGE };
+      }
+      claimedExpiry = order.queue_expires_at ?? null;
+    }
+
     // Get Helpship credentials and create client
     const credentials = await getHelpshipCredentials(landingPage.organization_id);
     const helpshipClient = new HelpshipClient(credentials);
@@ -150,6 +181,7 @@ export async function syncOrderToHelpship(
         helpship_order_id: helpshipResult.orderId,
         status: "pending",
         sync_error_message: null,
+        ...(claimedExpiry !== undefined ? { queue_expires_at: claimedExpiry } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
@@ -196,6 +228,7 @@ export async function syncOrderToHelpship(
         .update({
           status: "sync_error",
           sync_error_message: errorMessage,
+          ...(claimedExpiry !== undefined ? { queue_expires_at: claimedExpiry } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("id", orderId);

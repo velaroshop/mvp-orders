@@ -66,6 +66,14 @@ interface HelpshipOrderPayload {
   packagingType?: string;
 }
 
+// A Helpship call that hangs would keep the function alive until Vercel kills it (300s) while the request may still be
+// processed by Helpship later, so every call has a time limit
+const TOKEN_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = 30000;
+
+const isTimeoutError = (err: unknown) =>
+  err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+
 class HelpshipClient {
   private clientId: string;
   private clientSecret: string;
@@ -110,18 +118,26 @@ class HelpshipClient {
     }
 
     console.log("[Helpship] Requesting new access token...");
-    const response = await fetch(this.tokenUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        scope: "helpship.api",
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(this.tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          scope: "helpship.api",
+        }),
+        signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS),
+      });
+    } catch (err) {
+      // The token request creates nothing, so a timeout is the same as the service being unavailable (retried automatically)
+      if (isTimeoutError(err)) throw new Error("Service Unavailable: Helpship token request timed out");
+      throw err;
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -164,10 +180,19 @@ class HelpshipClient {
     let lastResponse: Response | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      lastResponse = await fetch(url, {
-        ...options,
-        headers,
-      });
+      try {
+        lastResponse = await fetch(url, {
+          ...options,
+          headers,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+      } catch (err) {
+        if (!isTimeoutError(err)) throw err;
+        // Never retried: Helpship may still process a request that timed out. A timed out POST may have created
+        // something, so it is reported like a 504 (checked manually); a timed out read is like a 503 (retried automatically)
+        if (options.method === "POST") throw new Error(`Helpship request timed out (504)`);
+        throw new Error(`Service Unavailable: Helpship request timed out`);
+      }
 
       // Only retry on transient server errors (502, 503, 504)
       if (lastResponse.status === 502 || lastResponse.status === 503 || lastResponse.status === 504) {
@@ -245,12 +270,8 @@ class HelpshipClient {
     const addressLine2 = orderData.addressDetails || "";
 
     // Obține GUID-ul pentru România (sau folosește null dacă nu se găsește)
-    let countryId: string | null = null;
-    try {
-      countryId = await this.getRomaniaCountryId();
-    } catch (err) {
-      console.warn("[Helpship] Failed to get Romania countryId, using null:", err);
-    }
+    // When Helpship cannot answer, the error is thrown (the order is retried later) instead of creating it without a country
+    const countryId = await this.getRomaniaCountryId();
 
     // Folosește order_series din store pentru numele comenzii
     const orderName = `${orderData.orderSeries}-${String(orderData.orderNumber).padStart(5, "0")}`;
@@ -423,9 +444,12 @@ class HelpshipClient {
       } else {
         const errorText = await response.text();
         console.error(`[Helpship] Failed to get countries: ${response.status} ${errorText}`);
+        // Nothing was created yet, so the order can safely be retried: reported like an unavailable service
+        throw new Error(`Service Unavailable: Helpship countries request failed`);
       }
     } catch (err) {
       console.error(`[Helpship] Error getting countries:`, err instanceof Error ? err.message : String(err));
+      throw err;
     }
 
     console.warn("[Helpship] Could not find Romania countryId from API");

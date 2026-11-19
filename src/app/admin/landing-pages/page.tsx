@@ -245,7 +245,7 @@ export default function LandingPagesPage() {
 
   async function fetchProducts() {
     try {
-      const response = await fetch("/api/products");
+      const response = await fetch("/api/products?forUpsells=1");
       if (!response.ok) {
         console.error("Failed to fetch products");
         return;

@@ -33,6 +33,38 @@ export async function GET(request: NextRequest) {
 
     const organizationId = session.user.activeOrganizationId;
 
+    // Product list for upsells: a product with variations only exists through its variations (the main product is never
+    // sent to Helpship), so it is replaced by its active variations, each with its own SKU
+    if (request.nextUrl.searchParams.get("forUpsells") === "1") {
+      const { data: all, error: allError } = await supabase
+        .from("products")
+        .select("id, name, sku, status, parent_product_id, variation_display_order")
+        .eq("organization_id", organizationId)
+        .eq("status", "active")
+        .order("name", { ascending: true });
+
+      if (allError) {
+        console.error("Error fetching products for upsells:", allError);
+        return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
+      }
+
+      const rows = all || [];
+      const byId = new Map(rows.map((p) => [p.id, p]));
+      const parentsWithVariations = new Set(rows.filter((p) => p.parent_product_id).map((p) => p.parent_product_id));
+
+      const list = rows
+        .filter((p) => (p.parent_product_id ? byId.has(p.parent_product_id) : !parentsWithVariations.has(p.id)))
+        .map((p) => ({
+          id: p.id,
+          sku: p.sku,
+          status: p.status,
+          name: p.parent_product_id ? `${byId.get(p.parent_product_id)!.name} - ${p.name}` : p.name,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      return NextResponse.json({ products: list });
+    }
+
     // Fetch only main products (not variation children) for the organization
     const { data: products, error } = await supabase
       .from("products")

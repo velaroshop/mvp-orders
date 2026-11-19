@@ -105,7 +105,7 @@ export default function AddUpsellPage() {
   async function fetchProducts() {
     try {
       setIsLoadingProducts(true);
-      const response = await fetch("/api/products");
+      const response = await fetch("/api/products?forUpsells=1");
       if (response.ok) {
         const data = await response.json();
         setProducts(data.products || []);

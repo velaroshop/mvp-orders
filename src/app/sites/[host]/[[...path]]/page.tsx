@@ -102,9 +102,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const shareImage = share?.share_image_url || (page ? pickShareImage(normalizeBlocks(page.blocks)) : null);
   const cardTitle = share?.share_title || title;
   const cardDescription = share?.share_description || undefined;
+  // Page description: never the application's default text (it would show in ads and link cards): the share text, else the title
+  const description = cardDescription || title;
   const image = shareImage ? absoluteUrl(shareImage, decodeHost(host)) : undefined;
   return {
     title,
+    description,
     icons: { icon, apple: domain?.favicon_url || undefined },
     openGraph: { type: "website", title: cardTitle, description: cardDescription, ...(image ? { images: [{ url: image }] } : {}) },
     twitter: { card: image ? "summary_large_image" : "summary", title: cardTitle, description: cardDescription, ...(image ? { images: [image] } : {}) },

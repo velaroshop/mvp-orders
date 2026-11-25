@@ -76,7 +76,7 @@ function Block({
       return (
         <div
           className={`w-full px-3 py-2 text-center font-semibold ${block.sticky ? "sticky top-0 z-40" : ""}`}
-          style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size }}
+          style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size, ...(block.spaceBelow ? { marginBottom: block.spaceBelow } : {}) }}
         >
           {block.href ? (
             <a href={block.href} style={{ color: "inherit", textDecoration: "none" }}>
@@ -93,7 +93,14 @@ function Block({
       return (
         <div
           className={`w-full px-3 py-2 text-center font-semibold ${block.sticky ? "sticky top-0 z-40" : ""}`}
-          style={{ backgroundColor: block.bg, color: block.color, fontSize: block.size, borderRadius: `0 0 ${block.radius}px ${block.radius}px` }}
+          style={{
+            backgroundColor: block.bg,
+            color: block.color,
+            fontSize: block.size,
+            borderRadius: `0 0 ${block.radius}px ${block.radius}px`,
+            // Margin (not padding on a wrapper) so a sticky bar still sticks while the gap stays in the page flow
+            ...(block.spaceBelow ? { marginBottom: block.spaceBelow } : {}),
+          }}
         >
           <TopbarTimer block={block} />
         </div>

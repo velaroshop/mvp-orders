@@ -1650,9 +1650,9 @@ export default function OwnOrderForm({
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className={`block font-bold leading-tight text-zinc-900 ${cardStyle ? "text-lg sm:text-xl" : "text-base sm:text-lg"}`} style={ink ? { color: ink } : undefined}>{title}</span>
+                        <span className={`block font-bold leading-tight text-zinc-900 ${cardStyle ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`} style={ink ? { color: ink } : undefined}>{title}</span>
                         {description && (
-                          <span className="mt-0.5 block text-sm leading-snug" style={{ color: ink || v4.descColor }}>{description}</span>
+                          <span className={`mt-0.5 block leading-snug ${cardStyle ? "text-base sm:text-lg" : "text-sm"}`} style={{ color: ink || v4.descColor }}>{description}</span>
                         )}
                         {freeShipping && (
                           <span className="mt-1 block">

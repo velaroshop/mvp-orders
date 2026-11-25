@@ -344,8 +344,14 @@ export type FormV4Style = {
   refBadge: boolean;
   /** "OFERTĂ SELECTATĂ" pill on the top edge of the chosen offer (on by default) */
   selectedPill: boolean;
-  /** Small "price / piece" note under the price of offers with more than one piece (off by default) */
+  /** Small "price / piece" note under the price of offers with more than one piece (off by default); in the card style only under the chosen offer */
   perPiece: boolean;
+  /** Clean card look: big radio, thick border on the chosen offer, tonal cards, fully rounded button (off by default) */
+  cardStyle: boolean;
+  /** Price of the chosen offer in the button text, e.g. "COMANDĂ ACUM — 149 LEI" (off by default) */
+  buttonPrice: boolean;
+  /** Background of the form card in the card style */
+  formBg: string;
   pillBg: string;
   pillColor: string;
   frameColor: string;
@@ -511,6 +517,9 @@ function formV4Style(raw: unknown): FormV4Style {
     refBadge: v.refBadge !== false,
     selectedPill: v.selectedPill !== false,
     perPiece: v.perPiece === true,
+    cardStyle: v.cardStyle === true,
+    buttonPrice: v.buttonPrice === true,
+    formBg: color(v.formBg, "#ffffff"),
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),
     frameColor: color(v.frameColor, "#141414"),

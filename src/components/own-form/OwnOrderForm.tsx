@@ -111,6 +111,19 @@ function readableOn(hex: string): string {
   return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#18181b" : "#ffffff";
 }
 
+/** Mix of two "#rrggbb" colors: t = 0 gives a, t = 1 gives b */
+function mixHex(a: string, b: string, t: number): string {
+  const parse = (hex: string) => {
+    const h = hex.replace("#", "");
+    const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    return /^[0-9a-f]{6}$/i.test(full) ? [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) : null;
+  };
+  const x = parse(a);
+  const y = parse(b);
+  if (!x || !y) return a;
+  return `#${x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("")}`;
+}
+
 export default function OwnOrderForm({
   slug,
   org = null,
@@ -1145,6 +1158,8 @@ export default function OwnOrderForm({
   const isV4 = variant === 4;
   const isV3 = variant === 3 || isV4;
   const isV2 = variant === 2 || isV3;
+  // V4 clean card look (switch in the block): tonal cards, big radio, fully rounded button
+  const cardStyle = isV4 && v4.cardStyle;
   const btnBg = isV4 ? v4.buttonBg : primaryColor;
   // The order summary follows the store colors in V1-V3; V4 has its own light box (colors from the block)
   const sumBg = isV4 ? v4.selectedBg : backgroundColor;
@@ -1294,7 +1309,7 @@ export default function OwnOrderForm({
           {/* Unified Card: Delivery + Offers + Upsells + Summary */}
           <div
             className={`vlr-v4-scope bg-white overflow-hidden ${isV4 ? "rounded-2xl" : "rounded-lg shadow-lg"} ${isV2 ? "flex flex-col" : ""}`}
-            style={isV4 ? { border: `${v4.frameWidth}px solid ${v4.frameColor}` } : undefined}
+            style={isV4 ? { border: `${v4.frameWidth}px solid ${v4.frameColor}`, ...(cardStyle ? { backgroundColor: v4.formBg } : {}) } : undefined}
           >
           {isV4 && (
             <style dangerouslySetInnerHTML={{__html: `.vlr-v4-scope input:not([type=checkbox]):not([type=radio]):not(.border-red-500){border-color:${v4.inputBorder};border-width:2px}@keyframes vlrPillPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}.vlr-pill-pulse{animation:vlrPillPulse 1.4s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.vlr-pill-pulse{animation:none}}`}} />
@@ -1575,7 +1590,7 @@ export default function OwnOrderForm({
               </div>
             )}
             {isV4 && (
-              <div className={v4.selectedPill ? "space-y-3.5 pt-2" : "space-y-2.5"}>
+              <div className={v4.selectedPill ? "space-y-3.5 pt-2" : cardStyle ? "space-y-3.5" : "space-y-2.5"}>
                 {([1, 2, 3] as const).map((n) => {
                   const code = `offer_${n}` as OfferCode;
                   const chosen = selectedOffer === code;
@@ -1585,7 +1600,7 @@ export default function OwnOrderForm({
                   const description = landingPage[`offer_description_${n}` as "offer_description_1"];
                   const freeShipping = landingPage[`free_shipping_offer_${n}` as "free_shipping_offer_1"];
                   const pieces = Math.max(1, Number(landingPage[`quantity_offer_${n}` as "quantity_offer_1"]) || n);
-                  const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
+                  const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 && (!cardStyle || chosen) ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
                   return (
                     <button
                       key={n}
@@ -1596,11 +1611,18 @@ export default function OwnOrderForm({
                           sendPixelEvent('OfferSelected', { content_ids: [code], value: price, currency: 'RON' });
                         }
                       }}
-                      className="relative flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
-                      style={{
-                        border: `2px solid ${chosen ? v4.accent : v4.offerBorder}`,
-                        backgroundColor: chosen ? v4.selectedBg : "#ffffff",
-                      }}
+                      className={`relative flex w-full items-center justify-between gap-3 text-left transition-all ${cardStyle ? "rounded-[20px] px-4 py-4" : "rounded-xl px-3.5 py-3"}`}
+                      style={
+                        cardStyle
+                          ? {
+                              border: `3px solid ${chosen ? v4.accent : "transparent"}`,
+                              backgroundColor: chosen ? v4.selectedBg : mixHex(v4.selectedBg, v4.formBg, 0.5),
+                            }
+                          : {
+                              border: `2px solid ${chosen ? v4.accent : v4.offerBorder}`,
+                              backgroundColor: chosen ? v4.selectedBg : "#ffffff",
+                            }
+                      }
                       aria-pressed={chosen}
                     >
                       {chosen && v4.selectedPill && (
@@ -1611,8 +1633,18 @@ export default function OwnOrderForm({
                           Ofertă selectată
                         </span>
                       )}
+                      <span className="flex min-w-0 items-center gap-3">
+                      {cardStyle && (
+                        <span
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                          style={{ border: `3px solid ${v4.accent}`, backgroundColor: "#ffffff" }}
+                          aria-hidden="true"
+                        >
+                          {chosen && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: v4.accent }} />}
+                        </span>
+                      )}
                       <span className="min-w-0">
-                        <span className="block text-base sm:text-lg font-bold leading-tight text-zinc-900">{title}</span>
+                        <span className={`block font-bold leading-tight text-zinc-900 ${cardStyle ? "text-lg sm:text-xl" : "text-base sm:text-lg"}`}>{title}</span>
                         {description && (
                           <span className="mt-0.5 block text-sm leading-snug" style={{ color: v4.descColor }}>{description}</span>
                         )}
@@ -1624,8 +1656,9 @@ export default function OwnOrderForm({
                           </span>
                         )}
                       </span>
+                      </span>
                       <span className="shrink-0 text-right">
-                        <span className="block text-xl sm:text-2xl font-black leading-tight whitespace-nowrap" style={{ color: v4.priceColor }}>
+                        <span className={`block font-black leading-tight whitespace-nowrap ${cardStyle ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"}`} style={{ color: v4.priceColor }}>
                           {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)} LEI
                         </span>
                         {perPiece && (
@@ -2174,7 +2207,7 @@ export default function OwnOrderForm({
             <button
               type="submit"
               disabled={submitting}
-              className={`${isV4 ? "w-full" : "w-3/5"} text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-lg text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
+              className={`${isV4 ? "w-full" : "w-3/5"} text-white font-bold ${cardStyle ? "py-4 sm:py-5 rounded-full" : "py-3 sm:py-4 rounded-lg"} px-4 sm:px-6 text-xl sm:text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 ${
                 !submitting ? 'animate-pulse' : ''
               }`}
               style={{
@@ -2204,7 +2237,11 @@ export default function OwnOrderForm({
                 }
               }}
             >
-              {submitting ? "Se procesează..." : landingPage.order_button_text}
+              {submitting
+                ? "Se procesează..."
+                : isV4 && v4.buttonPrice && Number(landingPage[`price_${selectedOffer.slice(-1)}` as "price_1"]) > 0
+                  ? `${landingPage.order_button_text} — ${leiText(Number(landingPage[`price_${selectedOffer.slice(-1)}` as "price_1"]))} LEI`
+                  : landingPage.order_button_text}
             </button>
             {isV4 ? (
               v4.notes.length > 0 && (

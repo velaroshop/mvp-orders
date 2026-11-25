@@ -352,6 +352,10 @@ export type FormV4Style = {
   buttonPrice: boolean;
   /** Corner radius of the order button: "auto" = fully rounded in the card style, the usual corners otherwise; or "0", "8", "16", "pill" */
   buttonRadius: "auto" | "0" | "8" | "16" | "pill";
+  /** Card style: background of the chosen / not chosen offer (empty = automatic, from the "chosen offer" color and the form background) and color of the radio (empty = the accent) */
+  cardSelectedBg: string;
+  cardUnselectedBg: string;
+  radioColor: string;
   /** Background of the form card in the card style */
   formBg: string;
   pillBg: string;
@@ -522,6 +526,9 @@ function formV4Style(raw: unknown): FormV4Style {
     cardStyle: v.cardStyle === true,
     buttonPrice: v.buttonPrice === true,
     buttonRadius: v.buttonRadius === "0" || v.buttonRadius === "8" || v.buttonRadius === "16" || v.buttonRadius === "pill" ? v.buttonRadius : "auto",
+    cardSelectedBg: color(v.cardSelectedBg, ""),
+    cardUnselectedBg: color(v.cardUnselectedBg, ""),
+    radioColor: color(v.radioColor, ""),
     formBg: color(v.formBg, "#ffffff"),
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),

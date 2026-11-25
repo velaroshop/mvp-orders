@@ -1011,6 +1011,9 @@ export const BLOCK_DEFS: BlockDef[] = [
       { kind: "toggle", key: "style.perPiece", label: "V4: preț pe bucată la ofertele cu mai multe bucăți", help: "Notă mică sub preț, ex. „44,50 lei / bucată”", showIf: { key: "variant", equals: "4" } },
       { kind: "toggle", key: "style.selectedPill", label: "V4: pastila „OFERTĂ SELECTATĂ” pe oferta aleasă", help: "Pe marginea de sus a ofertei alese, în culoarea de accent", showIf: { key: "variant", equals: "4" } },
       { kind: "toggle", key: "style.cardStyle", label: "V4: stil carduri (radio mare, bordură groasă, buton rotunjit)", help: "Ofertele devin carduri cu radio pe stânga; cea aleasă are bordură groasă, cele nealese au o nuanță din aceeași culoare. Prețul pe bucată apare doar la oferta aleasă (dacă „preț pe bucată” e pornit)", showIf: { key: "variant", equals: "4" } },
+      { kind: "color", key: "style.cardSelectedBg", label: "V4: culoare ofertă aleasă (stil carduri)", help: "Gol = automat („fundal ofertă aleasă”). Textul devine alb sau negru după culoare", showIf: { key: "style.cardStyle", equals: true } },
+      { kind: "color", key: "style.cardUnselectedBg", label: "V4: culoare ofertă nealeasă (stil carduri)", help: "Gol = automat, o nuanță între „fundal ofertă aleasă” și fundalul formularului", showIf: { key: "style.cardStyle", equals: true } },
+      { kind: "color", key: "style.radioColor", label: "V4: culoare radio (stil carduri)", help: "Gol = culoarea de accent", showIf: { key: "style.cardStyle", equals: true } },
       { kind: "color", key: "style.formBg", label: "V4: fundal formular (stil carduri)", help: "Fundalul cardului formularului. Nuanța cardurilor nealese se calculează din „fundal ofertă aleasă” și din această culoare", showIf: { key: "style.cardStyle", equals: true } },
       {
         kind: "select",

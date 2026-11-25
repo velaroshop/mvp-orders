@@ -1601,6 +1601,11 @@ export default function OwnOrderForm({
                   const freeShipping = landingPage[`free_shipping_offer_${n}` as "free_shipping_offer_1"];
                   const pieces = Math.max(1, Number(landingPage[`quantity_offer_${n}` as "quantity_offer_1"]) || n);
                   const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 && (!cardStyle || chosen) ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
+                  // Card style: colors picked in the block (empty = automatic); the text follows the card color
+                  const cardBg = chosen ? v4.cardSelectedBg || v4.selectedBg : v4.cardUnselectedBg || mixHex(v4.selectedBg, v4.formBg, 0.5);
+                  const customCardBg = cardStyle && (chosen ? v4.cardSelectedBg : v4.cardUnselectedBg);
+                  const ink = customCardBg ? readableOn(cardBg) : null;
+                  const radioColor = v4.radioColor || v4.accent;
                   return (
                     <button
                       key={n}
@@ -1616,7 +1621,7 @@ export default function OwnOrderForm({
                         cardStyle
                           ? {
                               border: `3px solid ${chosen ? v4.accent : "transparent"}`,
-                              backgroundColor: chosen ? v4.selectedBg : mixHex(v4.selectedBg, v4.formBg, 0.5),
+                              backgroundColor: cardBg,
                             }
                           : {
                               border: `2px solid ${chosen ? v4.accent : v4.offerBorder}`,
@@ -1637,16 +1642,16 @@ export default function OwnOrderForm({
                       {cardStyle && (
                         <span
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                          style={{ border: `3px solid ${v4.accent}`, backgroundColor: "#ffffff" }}
+                          style={{ border: `3px solid ${radioColor}`, backgroundColor: "#ffffff" }}
                           aria-hidden="true"
                         >
-                          {chosen && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: v4.accent }} />}
+                          {chosen && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: radioColor }} />}
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className={`block font-bold leading-tight text-zinc-900 ${cardStyle ? "text-lg sm:text-xl" : "text-base sm:text-lg"}`}>{title}</span>
+                        <span className={`block font-bold leading-tight text-zinc-900 ${cardStyle ? "text-lg sm:text-xl" : "text-base sm:text-lg"}`} style={ink ? { color: ink } : undefined}>{title}</span>
                         {description && (
-                          <span className="mt-0.5 block text-sm leading-snug" style={{ color: v4.descColor }}>{description}</span>
+                          <span className="mt-0.5 block text-sm leading-snug" style={{ color: ink || v4.descColor }}>{description}</span>
                         )}
                         {freeShipping && (
                           <span className="mt-1 block">
@@ -1658,11 +1663,12 @@ export default function OwnOrderForm({
                       </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className={`block font-black leading-tight whitespace-nowrap ${cardStyle ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"}`} style={{ color: v4.priceColor }}>
-                          {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)} LEI
+                        <span className={`block font-black leading-tight whitespace-nowrap ${cardStyle ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"}`} style={{ color: ink || v4.priceColor }}>
+                          {Number(price).toFixed(0) === Number(price).toFixed(2).replace(/\.00$/, "") ? Number(price).toFixed(0) : Number(price).toFixed(2)}
+                          {cardStyle ? <span className="ml-1 text-base sm:text-lg font-bold">Lei</span> : " LEI"}
                         </span>
                         {perPiece && (
-                          <span className="block text-xs sm:text-sm font-semibold leading-tight" style={{ color: v4.descColor }}>{perPiece}</span>
+                          <span className="block text-xs sm:text-sm font-semibold leading-tight" style={{ color: ink || v4.descColor }}>{perPiece}</span>
                         )}
                         {tag && (
                           <span

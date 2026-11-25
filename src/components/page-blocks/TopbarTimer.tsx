@@ -20,15 +20,40 @@ function format(ms: number): string {
   return `${d > 0 ? `${d}z ` : ""}${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
+const TEXT_TOKENS = /\{(azi|mâine|data|zi)\}/g;
+
+/** "25 noiembrie" for a "YYYY-MM-DD" key (noon UTC keeps the calendar day whatever the visitor's time zone) */
+const dayMonth = (key: string) =>
+  new Date(`${key}T12:00:00Z`).toLocaleDateString("ro-RO", { day: "numeric", month: "long", timeZone: "UTC" });
+const weekday = (key: string) => new Date(`${key}T12:00:00Z`).toLocaleDateString("ro-RO", { weekday: "long", timeZone: "UTC" });
+
+/** Replaces {azi}, {mâine}, {data} (expiry day) and {zi} (weekday of the expiry day) with Romania dates */
+function fillTokens(text: string, now: Date, days: number): string {
+  const today = bucharestDateKey(now);
+  const expiry = shiftDateKey(today, days);
+  return text.replace(TEXT_TOKENS, (_m, token: string) => {
+    if (token === "azi") return dayMonth(today);
+    if (token === "mâine") return dayMonth(shiftDateKey(today, 1));
+    if (token === "data") return dayMonth(expiry);
+    return weekday(expiry);
+  });
+}
+
 /**
- * Top bar with a discount badge, an offer name and a countdown to midnight of "today + days" (Romania time).
- * The countdown restarts for the next day when it reaches zero: it is a daily rolling deadline, not a fixed date.
+ * Top bar with a discount badge, an offer name and either a countdown to midnight of "today + days" (Romania time)
+ * or a highlighted text. The countdown restarts for the next day when it reaches zero: it is a daily rolling deadline,
+ * not a fixed date.
  */
 export default function TopbarTimer({ block }: { block: TopbarTimerBlock }) {
+  const textMode = block.mode === "text";
+  const hasTokens = textMode && /\{(azi|mâine|data|zi)\}/.test(block.expiresText);
+
   // Nothing is shown until the page is hydrated: the time depends on the visitor's clock
   const [remaining, setRemaining] = useState<string | null>(null);
+  const [filledText, setFilledText] = useState<string | null>(null);
 
   useEffect(() => {
+    if (textMode) return;
     let deadline = deadlineFor(new Date(), block.days);
     const tick = () => {
       const now = new Date();
@@ -38,7 +63,16 @@ export default function TopbarTimer({ block }: { block: TopbarTimerBlock }) {
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [block.days]);
+  }, [block.days, textMode]);
+
+  // Dates depend on the day: filled in after hydration (a cached page must not show yesterday's date) and refreshed every minute
+  useEffect(() => {
+    if (!hasTokens) return;
+    const update = () => setFilledText(fillTokens(block.expiresText, new Date(), block.days));
+    update();
+    const timer = setInterval(update, 60_000);
+    return () => clearInterval(timer);
+  }, [hasTokens, block.expiresText, block.days]);
 
   return (
     <div className="space-y-1 leading-tight">
@@ -49,12 +83,23 @@ export default function TopbarTimer({ block }: { block: TopbarTimerBlock }) {
             {block.discount}
           </span>
         )}
-        <span className="font-normal opacity-90">
-          {block.expiresLabel}{" "}
-          <span className="font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }} aria-live="off">
-            {remaining ?? "--:--:--"}
+        {textMode ? (
+          block.expiresText && (
+            <span
+              className="rounded px-2 py-0.5 font-bold uppercase tracking-wide"
+              style={{ backgroundColor: block.textBg, color: block.textColor, visibility: hasTokens && filledText === null ? "hidden" : undefined }}
+            >
+              {hasTokens ? filledText ?? block.expiresText : block.expiresText}
+            </span>
+          )
+        ) : (
+          <span className="font-normal opacity-90">
+            {block.expiresLabel}{" "}
+            <span className="font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }} aria-live="off">
+              {remaining ?? "--:--:--"}
+            </span>
           </span>
-        </span>
+        )}
       </div>
       {block.offerName && <div className="font-bold uppercase tracking-wide">{block.offerName}</div>}
     </div>

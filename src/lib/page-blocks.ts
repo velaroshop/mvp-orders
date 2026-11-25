@@ -32,6 +32,12 @@ export type TopbarTimerBlock = {
   discountBg: string;
   discountColor: string;
   expiresLabel: string;
+  /** "timer" = countdown, "text" = highlighted text (expiresText) instead of the countdown */
+  mode: "timer" | "text";
+  /** Text of the "text" mode; {azi}, {mâine}, {data} and {zi} are replaced with dates (Romania time) */
+  expiresText: string;
+  textBg: string;
+  textColor: string;
   offerName: string;
   days: number;
   size: number;
@@ -571,6 +577,10 @@ function normalizeVariant(b: Record<string, unknown>): BlockVariant | null {
         discountBg: color(b.discountBg, "#16a34a"),
         discountColor: color(b.discountColor, "#ffffff"),
         expiresLabel: str(b.expiresLabel, "Oferta expiră în").slice(0, 60),
+        mode: b.mode === "text" ? "text" : "timer",
+        expiresText: str(b.expiresText, "OFERTĂ VALABILĂ DOAR AZI").slice(0, 80),
+        textBg: color(b.textBg, "#16a34a"),
+        textColor: color(b.textColor, "#ffffff"),
         offerName: str(b.offerName).slice(0, 80),
         days: bounded(b.days, 0, 0, 60),
         size: bounded(b.size, 14, 11, 20),

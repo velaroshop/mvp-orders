@@ -1049,7 +1049,7 @@ export const BLOCK_DEFS: BlockDef[] = [
         ],
         showIf: { key: "variant", equals: "4" },
       },
-      { kind: "toggle", key: "style.buttonPrice", label: "Prețul ofertei alese pe buton", help: "Ex. „COMANDĂ ACUM — 149 LEI”; se schimbă odată cu oferta aleasă", showIf: { key: "variant", equals: "4" } },
+      { kind: "toggle", key: "style.buttonPrice", label: "Prețul total pe buton", help: "Ex. „COMANDĂ ACUM — 104 LEI”: oferta, livrarea și extra-urile alese, ca în „Preț total”; se schimbă odată cu alegerile", showIf: { key: "variant", equals: "4" } },
       { kind: "strings", key: "style.notes", label: "Garanții sub buton (opțional)", addLabel: "Adaugă garanție", help: "Rânduri mici sub buton, ex. „Fără card”. Maximum 4", showIf: { key: "variant", equals: "4" } },
       { kind: "color", key: "style.notesColor", label: "Culoare garanții", showIf: { key: "variant", equals: "4" } },
     ],

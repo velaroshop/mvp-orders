@@ -1163,7 +1163,8 @@ export default function OwnOrderForm({
   const btnBg = isV4 ? v4.buttonBg : primaryColor;
   // The order summary follows the store colors in V1-V3; V4 has its own light box (colors from the block)
   const sumBg = isV4 ? v4.selectedBg : backgroundColor;
-  const sumText = isV4 ? "#18181b" : textOnDarkColor;
+  // V4: the summary box uses the "chosen offer" color, so its text must stay readable on a dark color too
+  const sumText = isV4 ? readableOn(v4.selectedBg) : textOnDarkColor;
   const sumAccent = isV4 ? v4.accent : accentColor;
   const labelClass = isV3
     ? "block text-lg sm:text-xl font-bold text-zinc-900 mb-1.5"
@@ -2246,8 +2247,8 @@ export default function OwnOrderForm({
             >
               {submitting
                 ? "Se procesează..."
-                : isV4 && v4.buttonPrice && Number(landingPage[`price_${selectedOffer.slice(-1)}` as "price_1"]) > 0
-                  ? `${landingPage.order_button_text} — ${leiText(Number(landingPage[`price_${selectedOffer.slice(-1)}` as "price_1"]))} LEI`
+                : isV4 && v4.buttonPrice && totalPrice > 0
+                  ? `${landingPage.order_button_text} — ${leiText(totalPrice)} LEI`
                   : landingPage.order_button_text}
             </button>
             {isV4 ? (

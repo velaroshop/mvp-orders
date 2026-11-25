@@ -19,6 +19,8 @@ export type FieldDef =
   | (FieldBase & { kind: "toggle" })
   // Section title in the settings panel (no value)
   | (FieldBase & { kind: "heading" })
+  // Copy / paste of the look of a form block between pages (works on the whole block, no value of its own)
+  | (FieldBase & { kind: "styleCopy" })
   // Formatted text editor (headings, bold, lists, links); the value is HTML
   | (FieldBase & { kind: "richtext" })
   // Choice among the organization's landing pages: sets this key (the slug) and, in orgKey, the organization slug
@@ -997,6 +999,8 @@ export const BLOCK_DEFS: BlockDef[] = [
           { value: "", label: "Pagina din Shopify" },
         ],
       },
+      { kind: "heading", key: "_h_copie", label: "Copiază stilul între formulare", showIf: { key: "variant", equals: "4" } },
+      { kind: "styleCopy", key: "_copie", label: "Copiază stilul", showIf: { key: "variant", equals: "4" } },
       { kind: "heading", key: "_h_titlu", label: "Titlu", showIf: { key: "variant", equals: "4" } },
       { kind: "text", key: "style.title", label: "Titlu deasupra ofertelor", maxLength: 60, showIf: { key: "variant", equals: "4" } },
       { kind: "toggle", key: "style.titleBold", label: "Titlu îngroșat", showIf: { key: "variant", equals: "4" } },

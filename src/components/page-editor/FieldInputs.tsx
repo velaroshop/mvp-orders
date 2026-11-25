@@ -505,13 +505,85 @@ function FieldInput({
   }
 }
 
+const STYLE_CLIPBOARD_KEY = "velaro-form-v4-style";
+// Texts of the form look: kept from the target form unless "Copiază și textele" is checked
+const STYLE_TEXT_KEYS = ["title", "pill", "notes"];
+
+/** Copy the V4 look of this form block, or paste a copied look onto it (same browser; also put on the clipboard as text). */
+function StyleCopy({ value, onChange }: { value: Obj; onChange: (next: Obj) => void }) {
+  const [withTexts, setWithTexts] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  function copy() {
+    const style = value.style && typeof value.style === "object" ? value.style : {};
+    const json = JSON.stringify({ kind: "form-v4-style", style });
+    try {
+      localStorage.setItem(STYLE_CLIPBOARD_KEY, json);
+    } catch {
+      /* storage can be blocked: the clipboard below still works */
+    }
+    navigator.clipboard?.writeText(json).catch(() => {});
+    setMessage("Stilul a fost copiat. Deschide alt formular V4 și apasă „Lipește stilul”.");
+  }
+
+  async function paste() {
+    let json: string | null = null;
+    try {
+      json = localStorage.getItem(STYLE_CLIPBOARD_KEY);
+    } catch {
+      json = null;
+    }
+    if (!json) {
+      try {
+        json = (await navigator.clipboard?.readText()) ?? null;
+      } catch {
+        json = null;
+      }
+    }
+    let source: Obj | null = null;
+    try {
+      const parsed = json ? JSON.parse(json) : null;
+      if (parsed && parsed.kind === "form-v4-style" && parsed.style && typeof parsed.style === "object") source = parsed.style as Obj;
+    } catch {
+      source = null;
+    }
+    if (!source) {
+      setMessage("Nu am găsit niciun stil copiat. Apasă mai întâi „Copiază stilul” pe formularul model.");
+      return;
+    }
+    const current = value.style && typeof value.style === "object" ? (value.style as Obj) : {};
+    const merged: Obj = { ...source };
+    if (!withTexts) for (const k of STYLE_TEXT_KEYS) if (k in current) merged[k] = current[k];
+    onChange({ ...value, style: merged });
+    setMessage(withTexts ? "Stilul și textele au fost lipite." : "Stilul a fost lipit. Textele formularului au rămas cele de dinainte.");
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button type="button" onClick={copy} className={smallButton}>Copiază stilul</button>
+        <button type="button" onClick={paste} className={smallButton}>Lipește stilul</button>
+      </div>
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-200">
+        <input type="checkbox" checked={withTexts} onChange={(e) => setWithTexts(e.target.checked)} className="h-4 w-4" />
+        <span>Lipește și textele (titlu, etichetă, garanții)</span>
+      </label>
+      {message && <p className="text-xs text-zinc-300">{message}</p>}
+    </div>
+  );
+}
+
 /** Renders the settings fields of a block (or of one item of a list) and reports the updated object. */
 export function FieldsPanel({ fields, value, onChange }: { fields: FieldDef[]; value: Obj; onChange: (next: Obj) => void }) {
   return (
     <div className="space-y-4">
       {fields
         .filter((def) => !def.showIf || String(getPath(value, def.showIf.key)) === String(def.showIf.equals))
-        .map((def) => def.kind === "heading" ? (
+        .map((def) => def.kind === "styleCopy" ? (
+        <div key={def.key}>
+          <StyleCopy value={value} onChange={onChange} />
+        </div>
+      ) : def.kind === "heading" ? (
         <div key={def.key} className="border-t border-zinc-700 pt-4 text-xs font-bold uppercase tracking-wide text-zinc-300">
           {def.label}
         </div>

@@ -350,6 +350,8 @@ export type FormV4Style = {
   cardStyle: boolean;
   /** Price of the chosen offer in the button text, e.g. "COMANDĂ ACUM — 149 LEI" (off by default) */
   buttonPrice: boolean;
+  /** Corner radius of the order button: "auto" = fully rounded in the card style, the usual corners otherwise; or "0", "8", "16", "pill" */
+  buttonRadius: "auto" | "0" | "8" | "16" | "pill";
   /** Background of the form card in the card style */
   formBg: string;
   pillBg: string;
@@ -519,6 +521,7 @@ function formV4Style(raw: unknown): FormV4Style {
     perPiece: v.perPiece === true,
     cardStyle: v.cardStyle === true,
     buttonPrice: v.buttonPrice === true,
+    buttonRadius: v.buttonRadius === "0" || v.buttonRadius === "8" || v.buttonRadius === "16" || v.buttonRadius === "pill" ? v.buttonRadius : "auto",
     formBg: color(v.formBg, "#ffffff"),
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),

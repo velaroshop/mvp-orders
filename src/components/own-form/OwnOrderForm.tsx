@@ -2213,6 +2213,7 @@ export default function OwnOrderForm({
               style={{
                 backgroundColor: btnBg,
                 ...(isV4 ? { color: v4.buttonColor } : {}),
+                ...(isV4 && v4.buttonRadius !== "auto" ? { borderRadius: v4.buttonRadius === "pill" ? 9999 : Number(v4.buttonRadius) } : {}),
                 touchAction: 'manipulation',
                 ...(!submitting ? {
                   boxShadow: `0 0 0 0 ${btnBg}B3`,

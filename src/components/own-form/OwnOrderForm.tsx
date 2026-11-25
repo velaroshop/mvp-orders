@@ -1552,20 +1552,30 @@ export default function OwnOrderForm({
             {isV4 && v4.refBand && landingPage.srp > landingPage.price_1 && (
               <div className="mb-3 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-sm sm:text-base font-semibold" style={{ color: v4.refColor }}>
                 <span>
-                  Preț întreg: <span className="line-through">{leiText(landingPage.srp)} LEI</span> / bucată
+                  Preț întreg:{" "}
+                  {v4.refBadge ? (
+                    <span className="line-through">{leiText(landingPage.srp)} LEI</span>
+                  ) : (
+                    <span className="text-xl sm:text-2xl font-black line-through decoration-[3px]" style={{ color: "#dc2626" }}>
+                      {leiText(landingPage.srp)} LEI
+                    </span>
+                  )}{" "}
+                  / bucată
                 </span>
-                <span
-                  className="rounded-md px-2.5 py-0.5 font-black uppercase leading-tight"
-                  style={{ backgroundColor: v4.refBadgeBg || v4.accent, color: v4.refBadgeColor || readableOn(v4.refBadgeBg || v4.accent) }}
-                >
-                  {landingPage.discount_type === "amount"
-                    ? `-${leiText(Math.round(landingPage.srp - landingPage.price_1))} LEI`
-                    : `-${Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100)}%`}
-                </span>
+                {v4.refBadge && (
+                  <span
+                    className="rounded-md px-2.5 py-0.5 font-black uppercase leading-tight"
+                    style={{ backgroundColor: v4.refBadgeBg || v4.accent, color: v4.refBadgeColor || readableOn(v4.refBadgeBg || v4.accent) }}
+                  >
+                    {landingPage.discount_type === "amount"
+                      ? `-${leiText(Math.round(landingPage.srp - landingPage.price_1))} LEI`
+                      : `-${Math.round(((landingPage.srp - landingPage.price_1) / landingPage.srp) * 100)}%`}
+                  </span>
+                )}
               </div>
             )}
             {isV4 && (
-              <div className="space-y-2.5">
+              <div className={v4.selectedPill ? "space-y-3.5 pt-2" : "space-y-2.5"}>
                 {([1, 2, 3] as const).map((n) => {
                   const code = `offer_${n}` as OfferCode;
                   const chosen = selectedOffer === code;
@@ -1586,13 +1596,21 @@ export default function OwnOrderForm({
                           sendPixelEvent('OfferSelected', { content_ids: [code], value: price, currency: 'RON' });
                         }
                       }}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
+                      className="relative flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition-all"
                       style={{
                         border: `2px solid ${chosen ? v4.accent : v4.offerBorder}`,
                         backgroundColor: chosen ? v4.selectedBg : "#ffffff",
                       }}
                       aria-pressed={chosen}
                     >
+                      {chosen && v4.selectedPill && (
+                        <span
+                          className="pointer-events-none absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2.5 py-0.5 text-[11px] sm:text-xs font-black uppercase leading-tight"
+                          style={{ backgroundColor: v4.accent, color: readableOn(v4.accent) }}
+                        >
+                          Ofertă selectată
+                        </span>
+                      )}
                       <span className="min-w-0">
                         <span className="block text-base sm:text-lg font-bold leading-tight text-zinc-900">{title}</span>
                         {description && (

@@ -340,6 +340,10 @@ export type FormV4Style = {
   /** Saving badge: background (empty = the accent color) and text color (empty = automatic) */
   refBadgeBg: string;
   refBadgeColor: string;
+  /** Show the saving badge in the band (on by default); off = the struck-through price stands alone, emphasized */
+  refBadge: boolean;
+  /** "OFERTĂ SELECTATĂ" pill on the top edge of the chosen offer (on by default) */
+  selectedPill: boolean;
   /** Small "price / piece" note under the price of offers with more than one piece (off by default) */
   perPiece: boolean;
   pillBg: string;
@@ -504,6 +508,8 @@ function formV4Style(raw: unknown): FormV4Style {
     refColor: color(v.refColor, "#3f3f46"),
     refBadgeBg: color(v.refBadgeBg, ""),
     refBadgeColor: color(v.refBadgeColor, ""),
+    refBadge: v.refBadge !== false,
+    selectedPill: v.selectedPill !== false,
     perPiece: v.perPiece === true,
     pillBg: color(v.pillBg, "#ffe14d"),
     pillColor: color(v.pillColor, "#141414"),

@@ -1554,7 +1554,7 @@ export default function OwnOrderForm({
           <div className={`${isV2 ? "" : "border-t"} border-zinc-200 ${isV2 ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}`} style={isV2 ? { order: 1 } : undefined}>
             {isV4 && v4.pill && (
               <div className="mb-2 flex justify-center">
-                <span className={`rounded-md px-3 py-1 text-xs sm:text-sm font-black uppercase tracking-wide ${v4.pillPulse ? "vlr-pill-pulse" : ""}`} style={{ backgroundColor: v4.pillBg, color: v4.pillColor }}>
+                <span className={`rounded-md px-3 py-1 text-xs sm:text-sm font-black uppercase tracking-wide ${v4.pillPulse ? "vlr-pill-pulse" : ""}`} style={{ backgroundColor: v4.pillBg, color: v4.pillColor, ...(v4.pillSize > 0 ? { fontSize: v4.pillSize, padding: "0.3em 0.8em", maxWidth: "100%" } : {}) }}>
                   {v4.pill}
                 </span>
               </div>

@@ -2175,18 +2175,18 @@ export default function OwnOrderForm({
             </h2>
             <div className="space-y-0.5 mb-1.5 text-center">
               <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
-                Preț produse: <span className="font-bold">{currentPrice.toFixed(2)} Lei</span>
+                Preț produse: <span className="font-bold">{cardStyle ? leiText(currentPrice) : currentPrice.toFixed(2)} Lei</span>
               </div>
               <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
                 {hasFreeShipping() ? (
-                  <>Livrare curier rapid: <span className="line-through opacity-50">{landingPage.shipping_price.toFixed(2)} Lei</span> <span className={`font-bold ${isV4 ? "text-emerald-700" : "text-emerald-400"}`}>GRATUIT</span></>
+                  <>Livrare curier rapid: <span className="line-through opacity-50">{cardStyle ? leiText(landingPage.shipping_price) : landingPage.shipping_price.toFixed(2)} Lei</span> <span className={`font-bold ${isV4 ? "text-emerald-700" : "text-emerald-400"}`}>GRATUIT</span></>
                 ) : (
-                  <>Livrare curier rapid: <span className="font-bold">{landingPage.shipping_price.toFixed(2)} Lei</span></>
+                  <>Livrare curier rapid: <span className="font-bold">{cardStyle ? leiText(landingPage.shipping_price) : landingPage.shipping_price.toFixed(2)} Lei</span></>
                 )}
               </div>
               {getUpsellsTotal() > 0 && (
                 <div className="text-sm sm:text-base" style={{ color: sumText, opacity: 0.8 }}>
-                  Oferte speciale ({selectedUpsells.size}): <span className="font-bold">{getUpsellsTotal().toFixed(2)} Lei</span>
+                  Oferte speciale ({selectedUpsells.size}): <span className="font-bold">{cardStyle ? leiText(getUpsellsTotal()) : getUpsellsTotal().toFixed(2)} Lei</span>
                 </div>
               )}
             </div>
@@ -2194,7 +2194,14 @@ export default function OwnOrderForm({
               <div className="flex justify-center items-center gap-3">
                 <span className="text-sm sm:text-base font-bold" style={{ color: sumText }}>PREȚ TOTAL</span>
                 <span className="text-lg sm:text-xl font-bold" style={{ color: sumAccent }}>
-                  {totalPrice.toFixed(2)} LEI
+                  {cardStyle ? (
+                    <>
+                      {leiText(totalPrice)}
+                      <span className="ml-1 text-sm sm:text-base">Lei</span>
+                    </>
+                  ) : (
+                    <>{totalPrice.toFixed(2)} LEI</>
+                  )}
                 </span>
               </div>
             </div>
@@ -2248,7 +2255,12 @@ export default function OwnOrderForm({
               {submitting
                 ? "Se procesează..."
                 : isV4 && v4.buttonPrice && totalPrice > 0
-                  ? `${landingPage.order_button_text} — ${leiText(totalPrice)} LEI`
+                  ? (
+                    <>
+                      {landingPage.order_button_text} — {leiText(totalPrice)}
+                      <span className="ml-1 text-[0.75em]">Lei</span>
+                    </>
+                  )
                   : landingPage.order_button_text}
             </button>
             {isV4 ? (

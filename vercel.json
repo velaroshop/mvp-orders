@@ -19,6 +19,14 @@
     {
       "path": "/api/cron/sync-billing",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/ads-digest",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/ads-digest",
+      "schedule": "0 6 * * *"
     }
   ]
 }

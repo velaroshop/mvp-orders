@@ -306,3 +306,10 @@ export async function sendOverdueInvoicesAlert(to: string, items: OverdueInvoice
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
+
+
+/** Sends a ready-made HTML email (used by the daily ads report). */
+export async function sendHtmlEmail(input: { to: string; subject: string; html: string }): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await resend.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}

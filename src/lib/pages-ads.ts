@@ -277,3 +277,23 @@ export async function buildAds(organizationId: string, from: string, to: string,
   }
 }
 
+
+
+/** Visits of a period in the shape the per-ad analysis needs (used by the daily report). */
+export async function fetchAdsVisits(organizationId: string, from: string, to: string): Promise<AdsVisit[]> {
+  const rows: AdsVisit[] = [];
+  for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+    const { data, error } = await supabaseAdmin
+      .from("page_visits")
+      .select("created_at, slug, utm_campaign, utm_content, form_seen, form_started, ordered")
+      .eq("organization_id", organizationId)
+      .gte("created_at", bucharestDayStartIso(from))
+      .lte("created_at", bucharestDayEndIso(to))
+      .order("created_at", { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as AdsVisit[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}

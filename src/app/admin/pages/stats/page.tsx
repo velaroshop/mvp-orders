@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { bucharestDateKey, shiftDateKey } from "@/lib/romania-time";
+import AdsSection, { type AdsPayload } from "./AdsSection";
 
 interface Counts {
   visits: number;
@@ -12,6 +13,7 @@ interface Counts {
 }
 type Row = Counts & { key: string };
 interface Stats {
+  ads: AdsPayload;
   total: Counts;
   byPage: Row[];
   byDay: Row[];
@@ -192,7 +194,7 @@ export default function PagesStatsPage() {
   const hours = stats?.byHour ?? [];
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div>
         <Link href="/admin/pages" className="text-sm text-zinc-400 hover:text-zinc-200">
           ← Pagini proprii
@@ -236,6 +238,8 @@ export default function PagesStatsPage() {
         <div className={`space-y-6 ${loading ? "opacity-60" : ""}`}>
           {stats.truncated && <div className="rounded-md border border-amber-800 bg-amber-900/20 p-3 text-sm text-amber-200">Perioada are foarte multe vizite: sunt luate în calcul primele 50.000.</div>}
 
+          <AdsSection ads={stats.ads} slugFiltered={slug !== ""} />
+
           <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
             <h2 className="mb-4 text-lg font-semibold text-white">Pâlnia de conversie</h2>
             <Funnel counts={stats.total} />
@@ -260,7 +264,7 @@ export default function PagesStatsPage() {
           {!slug && <Table title="Pe pagină" rows={stats.byPage} firstColumn="Pagină" />}
           <Table title="Pe zi" rows={stats.byDay} firstColumn="Zi" />
           <Table title="Pe sursă" rows={stats.bySource} firstColumn="Sursă" />
-          <Table title="Pe campanie / reclamă" rows={stats.byCampaign} firstColumn="Sursă / campanie / reclamă" />
+          <Table title="Detalii brute: pe campanie / reclamă (după link)" rows={stats.byCampaign} firstColumn="Sursă / campanie / reclamă" />
           <Table title="Pe dispozitiv" rows={stats.byDevice} firstColumn="Dispozitiv · sistem · browser" />
 
           {stats.errors.length > 0 && (

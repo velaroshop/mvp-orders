@@ -134,6 +134,77 @@ export async function fetchCampaignInsights({
   return allRows;
 }
 
+export interface MetaAdInsightRow {
+  adId: string;
+  adName: string;
+  adsetName: string;
+  campaignId: string;
+  campaignName: string;
+  spend: number;
+  impressions: number;
+  linkClicks: number;
+  metaPurchases: number;
+}
+
+/** Spend and results per ad for a whole period (not per day), only ads that spent something in it. */
+export async function fetchAdInsights({
+  accessToken,
+  adAccountId,
+  since,
+  until,
+}: {
+  accessToken: string;
+  adAccountId: string;
+  since: string;
+  until: string;
+}): Promise<MetaAdInsightRow[]> {
+  const fields = ["ad_id", "ad_name", "adset_name", "campaign_id", "campaign_name", "spend", "impressions", "inline_link_clicks", "actions"].join(",");
+  const timeRange = JSON.stringify({ since, until });
+  let url = `${META_API_BASE}/${adAccountId}/insights?level=ad&fields=${fields}&time_range=${encodeURIComponent(timeRange)}&limit=500&access_token=${accessToken}`;
+  const rows: MetaAdInsightRow[] = [];
+
+  while (url) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      const msg = error?.error?.message || `HTTP ${res.status}`;
+      if (error?.error?.code === 190) throw new Error("Token-ul Meta a expirat. Actualizează-l în Setări.");
+      if (res.status === 429) throw new Error("Meta limitează cererile. Încearcă din nou peste câteva minute.");
+      throw new Error(`Nu am putut citi reclamele de la Meta: ${msg}`);
+    }
+    const data = await res.json();
+    for (const row of data.data || []) {
+      rows.push({
+        adId: row.ad_id,
+        adName: row.ad_name || "",
+        adsetName: row.adset_name || "",
+        campaignId: row.campaign_id,
+        campaignName: row.campaign_name || "",
+        spend: parseFloat(row.spend || "0"),
+        impressions: parseInt(row.impressions || "0", 10),
+        linkClicks: parseInt(row.inline_link_clicks || "0", 10),
+        metaPurchases: extractActionValue(row.actions, "purchase"),
+      });
+    }
+    url = data.paging?.next || "";
+  }
+  return rows;
+}
+
+/** Delivery status of every ad of the account (ACTIVE, PAUSED, ...), by ad id. */
+export async function fetchAdStatuses(accessToken: string, adAccountId: string): Promise<Record<string, string>> {
+  const statuses: Record<string, string> = {};
+  let url = `${META_API_BASE}/${adAccountId}/ads?fields=id,effective_status&limit=500&access_token=${accessToken}`;
+  while (url) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) break;
+    const data = await res.json();
+    for (const ad of data.data || []) statuses[ad.id] = ad.effective_status || "UNKNOWN";
+    url = data.paging?.next || "";
+  }
+  return statuses;
+}
+
 async function fetchCampaignStatuses(
   accessToken: string,
   adAccountId: string

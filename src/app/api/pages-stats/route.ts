@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireSuperadmin } from "@/lib/superadmin-guard";
 import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso, toBucharestParts } from "@/lib/romania-time";
 import { isNoiseError } from "@/lib/js-error-noise";
+import { buildAds } from "@/lib/pages-ads";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ const PAGE_SIZE = 1000;
 const MAX_ROWS = 50000;
 
 type Visit = {
+  page_id: string | null;
   created_at: string;
   slug: string;
   utm_source: string | null;
@@ -59,6 +61,7 @@ function group(visits: Visit[], keyOf: (v: Visit) => string) {
   return [...map.entries()].map(([key, counts]) => ({ key, ...counts })).sort((a, b) => b.visits - a.visits);
 }
 
+
 /**
  * GET /api/pages-stats?from=YYYY-MM-DD&to=YYYY-MM-DD&slug=<optional> (superadmin only)
  * Funnel and breakdowns of the visits of the own pages, read from page_visits. Days and hours are Romania time.
@@ -82,7 +85,7 @@ export async function GET(request: NextRequest) {
   for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
     let query = supabaseAdmin
       .from("page_visits")
-      .select("created_at, slug, utm_source, utm_campaign, utm_content, referrer_host, device, os, browser, in_app, form_seen, form_started, ordered, max_scroll, time_s, fcp_ms, form_ms, js_errors, js_error")
+      .select("page_id, created_at, slug, utm_source, utm_campaign, utm_content, referrer_host, device, os, browser, in_app, form_seen, form_started, ordered, max_scroll, time_s, fcp_ms, form_ms, js_errors, js_error")
       .eq("organization_id", guard.organizationId)
       .gte("created_at", startIso)
       .lte("created_at", endIso)
@@ -126,7 +129,10 @@ export async function GET(request: NextRequest) {
     .map(([message, e]) => ({ message, count: e.count, browsers: [...e.browsers].slice(0, 4) }))
     .sort((a, b) => b.count - a.count);
 
+  const ads = slug ? null : await buildAds(guard.organizationId, from, to, all);
+
   return NextResponse.json({
+    ads,
     total,
     byPage: group(all, (v) => v.slug),
     byDay: group(all, (v) => bucharestDateKey(new Date(v.created_at))).sort((a, b) => (a.key < b.key ? 1 : -1)),

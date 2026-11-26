@@ -156,7 +156,7 @@ function HoursChart({ hours }: { hours: (Counts & { hour: number })[] }) {
 
 export default function PagesStatsPage() {
   const today = useMemo(() => bucharestDateKey(new Date()), []);
-  const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("3");
+  const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("7");
   const [slug, setSlug] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [pageOptions, setPageOptions] = useState<string[]>([]);

@@ -68,7 +68,7 @@ async function sendOrderConfirmationWhatsApp(order: any, upsells: any[], total: 
     "3": formatOrderNumber(order.order_number, order.order_series, order.id),
     "4": truncate(formatProducts(buildLines(order, upsells)), MAX_PRODUCTS_TEXT),
     "5": new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 2 }).format(total),
-    "6": deliveryWindow(now),
+    "6": holidayDeliveryWindow(now) ?? deliveryWindow(now),
   };
   const sanitized = Object.fromEntries(
     Object.entries(variables).map(([k, v]) => [k, sanitizeVariable(v)])
@@ -202,10 +202,32 @@ function bucharestNow() {
     month: "numeric",
     day: "numeric",
     hour: "numeric",
+    minute: "numeric",
     hourCycle: "h23",
   }).formatToParts(new Date());
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour") };
+  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute") };
+}
+
+// Fixed windows for the St. Andrew / National Day holidays of 2026 (Cargus has no pickups on 1 December, and
+// picks up on Sunday 29 and Monday 30). Orders confirmed by 15:00 on Friday 27 leave the same day.
+// Returns null outside 26 Nov - 1 Dec 2026, so the normal calculation applies again from 2 December on its own.
+const HOLIDAY_NOTE = "din cauza sărbătorilor";
+const HOLIDAY_CUTOFF_MINUTES = 15 * 60;
+
+export function holidayDeliveryWindow(now: { year: number; month: number; day: number; hour: number; minute: number }): string | null {
+  if (now.year !== 2026) return null;
+  const early = `marți sau miercuri (1-2 decembrie, ${HOLIDAY_NOTE})`;
+  const mid = `miercuri sau joi (2-3 decembrie, ${HOLIDAY_NOTE})`;
+  const late = `joi sau vineri (3-4 decembrie, ${HOLIDAY_NOTE})`;
+  if (now.month === 11) {
+    if (now.day === 26) return early;
+    if (now.day === 27) return now.hour * 60 + now.minute < HOLIDAY_CUTOFF_MINUTES ? early : mid;
+    if (now.day === 28 || now.day === 29) return mid;
+    if (now.day === 30) return late;
+  }
+  if (now.month === 12 && now.day === 1) return late;
+  return null;
 }
 
 // Next two business days, e.g. "joi sau vineri (29-30 octombrie)"

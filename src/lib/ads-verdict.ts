@@ -21,6 +21,7 @@ export interface AdJudgeInput {
   orders: number;
   active: boolean | null; // null = status unknown
   thresholds: AdThresholds | null;
+  minOrdersScale?: number; // campaigns need more orders than a single ad before they are scaled
 }
 
 export const MIN_VISITS = 50; // below this (and a small spend) an ad is too new to judge
@@ -45,7 +46,7 @@ export function judgeAd(a: AdJudgeInput): AdVerdict {
   if (a.spend >= MIN_SPEND_STOP_MULT * t.cpaMax && (cpa === null || cpa > t.stopAbove)) {
     return { code: "stop", reason: `${cpaText}, peste pragul de oprire (${lei(t.stopAbove)}), după ${lei(a.spend)} cheltuiți` };
   }
-  if (cpa !== null && a.orders >= MIN_ORDERS_SCALE && cpa < t.scaleBelow) {
+  if (cpa !== null && a.orders >= (a.minOrdersScale ?? MIN_ORDERS_SCALE) && cpa < t.scaleBelow) {
     return { code: "scale", reason: `${cpaText}, sub pragul de scalare (${lei(t.scaleBelow)}), din ${a.orders} comenzi` };
   }
   if (cpa !== null && cpa < t.scaleBelow) {

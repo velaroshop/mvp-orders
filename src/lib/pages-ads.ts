@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { bucharestDayEndIso, bucharestDayStartIso, shiftDateKey } from "@/lib/romania-time";
 import { fetchAdInsights, fetchAdStatuses, type MetaAdInsightRow } from "@/lib/meta-ads";
 import { loadBreakEven } from "@/lib/break-even-data";
-import { buildAdIndex, cpaTrend, diagnose, judgeAd, resolveAd, type AdThresholds, type Funnel } from "@/lib/ads-verdict";
+import { buildAdIndex, cpaTrend, diagnose, judgeAd, normalizeKey, resolveAd, type AdThresholds, type Funnel } from "@/lib/ads-verdict";
 
 const PAGE_SIZE = 1000;
 const MAX_ROWS = 50000;
@@ -105,8 +105,26 @@ export async function buildAds(organizationId: string, from: string, to: string,
     const prevMetaById = new Map<string, MetaAdInsightRow>(previous.map((a) => [a.adId, a]));
 
     // Visits per ad (an ad = Meta ad id when the link matches one, otherwise the text of the link)
-    const aggs = new Map<string, { agg: AdAgg; adIds: string[]; name: string; campaign: string }>();
+    const aggs = new Map<string, { agg: AdAgg; adIds: string[]; name: string; campaign: string; campaignId: string | null }>();
+    const campaignAggs = new Map<string, AdAgg>();
     const pageFunnel = new Map<string, Funnel>();
+    // Campaigns: the budget (CBO) is set there, so the scale / stop decision is taken per campaign
+    const campaignNames = new Map<string, string>();
+    const campaignByName = new Map<string, Set<string>>();
+    for (const a of [...current, ...previous]) {
+      campaignNames.set(a.campaignId, a.campaignName);
+      const key = normalizeKey(a.campaignName);
+      campaignByName.set(key, (campaignByName.get(key) ?? new Set()).add(a.campaignId));
+    }
+    const campaignIdOf = (campaign: string | null, content: string | null): string | null => {
+      const ad = resolveAd(index, campaign, content);
+      if (ad) return ad.refs[0].campaignId;
+      const raw = (campaign ?? "").trim();
+      if (!raw) return null;
+      if (campaignNames.has(raw)) return raw;
+      const ids = campaignByName.get(normalizeKey(raw)) ?? campaignByName.get(normalizeKey(raw.replace(/\+/g, " ")));
+      return ids && ids.size === 1 ? [...ids][0] : null;
+    };
     const keyOf = (campaign: string | null, content: string | null) => {
       const ad = resolveAd(index, campaign, content);
       if (ad) return { key: `ad:${ad.groupKey}`, adIds: ad.refs.map((r) => r.adId), name: ad.refs[0].adName || ad.refs[0].adId, campaign: ad.refs[0].campaignName };
@@ -121,9 +139,20 @@ export async function buildAds(organizationId: string, from: string, to: string,
       if (v.ordered) page.ordered += 1;
       pageFunnel.set(v.slug, page);
 
+      const cid = campaignIdOf(v.utm_campaign, v.utm_content);
+      if (cid) {
+        const c = campaignAggs.get(cid) ?? emptyAgg();
+        c.visits += 1;
+        if (v.form_seen) c.formSeen += 1;
+        if (v.form_started) c.started += 1;
+        if (v.ordered) c.ordered += 1;
+        c.slugs.set(v.slug, (c.slugs.get(v.slug) ?? 0) + 1);
+        campaignAggs.set(cid, c);
+      }
+
       const k = keyOf(v.utm_campaign, v.utm_content);
       if (!k) continue;
-      const entry = aggs.get(k.key) ?? { agg: emptyAgg(), adIds: k.adIds, name: k.name, campaign: k.campaign };
+      const entry = aggs.get(k.key) ?? { agg: emptyAgg(), adIds: k.adIds, name: k.name, campaign: k.campaign, campaignId: cid };
       entry.agg.visits += 1;
       if (v.form_seen) entry.agg.formSeen += 1;
       if (v.form_started) entry.agg.started += 1;
@@ -133,14 +162,17 @@ export async function buildAds(organizationId: string, from: string, to: string,
     }
 
     const prevOrders = new Map<string, number>();
+    const prevCampaignOrders = new Map<string, number>();
     for (const v of prevVisits) {
       if (!v.ordered) continue;
+      const cid = campaignIdOf(v.utm_campaign, v.utm_content);
+      if (cid) prevCampaignOrders.set(cid, (prevCampaignOrders.get(cid) ?? 0) + 1);
       const k = keyOf(v.utm_campaign, v.utm_content);
       if (k) prevOrders.set(k.key, (prevOrders.get(k.key) ?? 0) + 1);
     }
 
     const sumOf = (map: Map<string, MetaAdInsightRow>, ids: string[]) => ids.reduce((sum, id) => sum + (map.get(id)?.spend ?? 0), 0);
-    const rows = [...aggs.entries()].map(([key, { agg, adIds, name, campaign }]) => {
+    const rows = [...aggs.entries()].map(([key, { agg, adIds, name, campaign, campaignId }]) => {
       const adsets = [...new Set(adIds.map((id) => metaById.get(id)?.adsetName).filter(Boolean))] as string[];
       const slug = [...agg.slugs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
       const product = productOfPage.get(slug) ?? null;
@@ -154,6 +186,7 @@ export async function buildAds(organizationId: string, from: string, to: string,
         key,
         name,
         campaign,
+        campaignId,
         adset: adsets.length === 1 ? adsets[0] : adsets.length > 1 ? `${adsets.length} grupuri de reclame` : "",
         slug,
         product,
@@ -178,15 +211,53 @@ export async function buildAds(organizationId: string, from: string, to: string,
     const matchedIds = new Set([...aggs.values()].flatMap((e) => e.adIds));
     const other = current.filter((a) => a.spend > 0 && !matchedIds.has(a.adId)).sort((a, b) => b.spend - a.spend);
 
+    const matchedAdIds = new Set([...aggs.values()].flatMap((e) => e.adIds));
+    const campaigns = [...campaignAggs.entries()].map(([cid, agg]) => {
+      const inCampaign = current.filter((a) => a.campaignId === cid);
+      const spend = inCampaign.reduce((sum, a) => sum + a.spend, 0);
+      const prevSpend = previous.filter((a) => a.campaignId === cid).reduce((sum, a) => sum + a.spend, 0);
+      const slug = [...agg.slugs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+      const product = productOfPage.get(slug) ?? null;
+      const thresholds = product ? thresholdsOf.get(product) ?? null : null;
+      const known = [...current, ...previous].filter((a) => a.campaignId === cid).map((a) => statuses[a.adId]).filter(Boolean);
+      const active = known.length > 0 ? known.some((st) => st === "ACTIVE") : null;
+      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, minOrdersScale: 10 });
+      const trend = cpaTrend(spend, agg.ordered, prevSpend, prevCampaignOrders.get(cid) ?? 0);
+      const idle = inCampaign.filter((a) => a.spend > 0 && !matchedAdIds.has(a.adId));
+      return {
+        key: cid,
+        name: campaignNames.get(cid) ?? cid,
+        slug,
+        product,
+        active,
+        spend,
+        visits: agg.visits,
+        formSeen: agg.formSeen,
+        started: agg.started,
+        ordered: agg.ordered,
+        cpa: agg.ordered > 0 && spend > 0 ? spend / agg.ordered : null,
+        cpaMax: thresholds?.cpaMax ?? null,
+        scaleBelow: thresholds?.scaleBelow ?? null,
+        stopAbove: thresholds?.stopAbove ?? null,
+        verdict,
+        trend: trend.trend,
+        trendPct: trend.changePct,
+        adCount: inCampaign.filter((a) => a.spend > 0).length,
+        idleAds: { count: idle.length, spend: idle.reduce((sum, a) => sum + a.spend, 0) },
+      };
+    });
+    campaigns.sort((a, b) => b.spend - a.spend);
+
     rows.sort((a, b) => b.spend - a.spend || b.visits - a.visits);
     return {
       connected: true as const,
       rows,
+      campaigns,
       otherSpend: { total: other.reduce((sum, a) => sum + a.spend, 0), count: other.length, top: other.slice(0, 14).map((a) => ({ name: a.adName, campaign: a.campaignName, spend: a.spend })) },
     };
   } catch (error) {
     console.error("[Pages Stats] ads failed:", error);
-    return { connected: true as const, error: error instanceof Error ? error.message : "Nu am putut citi reclamele de la Meta", rows: [] };
+    return { connected: true as const, error: error instanceof Error ? error.message : "Nu am putut citi reclamele de la Meta", rows: [], campaigns: [] };
   }
 }
 

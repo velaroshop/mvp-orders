@@ -8,6 +8,7 @@ export interface AdRow {
   key: string;
   name: string;
   campaign: string;
+  campaignId: string | null;
   adset: string;
   slug: string;
   product: string | null;
@@ -27,6 +28,30 @@ export interface AdRow {
   diagnosis: string | null;
 }
 
+export interface CampaignRow {
+  key: string;
+  name: string;
+  slug: string;
+  product: string | null;
+  active: boolean | null;
+  spend: number;
+  visits: number;
+  formSeen: number;
+  started: number;
+  ordered: number;
+  cpa: number | null;
+  cpaMax: number | null;
+  scaleBelow: number | null;
+  stopAbove: number | null;
+  verdict: { code: AdVerdictCode; reason: string };
+  trend: "better" | "worse" | "same" | null;
+  trendPct: number | null;
+  adCount: number;
+  idleAds: { count: number; spend: number };
+}
+
+type Scored = Pick<AdRow, "key" | "name" | "spend" | "cpa" | "cpaMax" | "scaleBelow" | "stopAbove">;
+
 export type AdsPayload =
   | null
   | { connected: false; error: string }
@@ -34,6 +59,7 @@ export type AdsPayload =
       connected: true;
       error?: string;
       rows: AdRow[];
+      campaigns: CampaignRow[];
       otherSpend?: { total: number; count: number; top: { name: string; campaign: string; spend: number }[] };
     };
 
@@ -50,6 +76,9 @@ const VERDICTS: Record<AdVerdictCode, { label: string; badge: string; border: st
   noprice: { label: "Fără prag", badge: "bg-zinc-600/40 text-zinc-300 border-zinc-500/50", border: "border-l-zinc-500", hint: "Lipsește pragul de CPA" },
 };
 
+// Inside a campaign (CBO) the budget is shared by Meta, so an ad is judged by what it does to the campaign
+const ROLE_LABELS: Partial<Record<AdVerdictCode, string>> = { scale: "Câștigătoare", watch: "Neutră", stop: "De scos" };
+
 const FILTERS: { id: "all" | AdVerdictCode | "quiet"; label: string }[] = [
   { id: "all", label: "Toate" },
   { id: "scale", label: "Scalează" },
@@ -60,7 +89,7 @@ const FILTERS: { id: "all" | AdVerdictCode | "quiet"; label: string }[] = [
 
 const QUIET: AdVerdictCode[] = ["early", "paused", "nospend", "noprice"];
 
-function cpaColor(ad: AdRow): string {
+function cpaColor(ad: Scored): string {
   if (ad.cpa === null || ad.scaleBelow === null || ad.stopAbove === null || ad.cpaMax === null) return "text-white";
   if (ad.cpa < ad.scaleBelow) return "text-emerald-400";
   if (ad.cpa <= ad.cpaMax) return "text-emerald-300";
@@ -68,19 +97,20 @@ function cpaColor(ad: AdRow): string {
   return "text-red-400";
 }
 
-function AdCard({ ad }: { ad: AdRow }) {
+function AdCard({ ad, role = false }: { ad: AdRow; role?: boolean }) {
   const v = VERDICTS[ad.verdict.code];
+  const label = (role && ROLE_LABELS[ad.verdict.code]) || v.label;
   return (
     <div className={`rounded-lg border border-zinc-700 border-l-4 ${v.border} bg-zinc-800 p-3 sm:p-4`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${v.badge}`}>{v.label}</span>
+            <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${v.badge}`}>{label}</span>
             <span className="break-words font-semibold text-white">{ad.name}</span>
           </div>
           <p className="mt-1 break-words text-xs text-zinc-400">
-            {ad.campaign}
-            {ad.adset && ` · ${ad.adset}`} · pagina <span className="text-zinc-300">/{ad.slug}</span>
+            {!role && <>{ad.campaign} · </>}
+            {ad.adset && <>{ad.adset} · </>}pagina <span className="text-zinc-300">/{ad.slug}</span>
             {ad.product && <> · {ad.product}</>}
           </p>
         </div>
@@ -125,7 +155,7 @@ function AdCard({ ad }: { ad: AdRow }) {
   );
 }
 
-function ActionColumn({ code, ads }: { code: "scale" | "watch" | "stop"; ads: AdRow[] }) {
+function ActionColumn({ code, ads, what }: { code: "scale" | "watch" | "stop"; ads: Scored[]; what: string }) {
   const v = VERDICTS[code];
   const spend = ads.reduce((sum, a) => sum + a.spend, 0);
   const top = [...ads].sort((a, b) => b.spend - a.spend).slice(0, 4);
@@ -150,19 +180,97 @@ function ActionColumn({ code, ads }: { code: "scale" | "watch" | "stop"; ads: Ad
           {ads.length > top.length && <li className="text-xs text-zinc-400">+ încă {ads.length - top.length} mai jos</li>}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-zinc-400">Nicio reclamă în această categorie.</p>
+        <p className="mt-3 text-sm text-zinc-400">Nicio {what} în această categorie.</p>
+      )}
+    </div>
+  );
+}
+
+const CAMPAIGN_LABELS: Partial<Record<AdVerdictCode, string>> = { scale: "Scalează campania", watch: "Urmărește", stop: "Oprește / scade bugetul" };
+
+function CampaignCard({ campaign, ads }: { campaign: CampaignRow; ads: AdRow[] }) {
+  const v = VERDICTS[campaign.verdict.code];
+  const label = CAMPAIGN_LABELS[campaign.verdict.code] ?? v.label;
+  const order: AdVerdictCode[] = ["stop", "scale", "watch", "early", "paused", "nospend", "noprice"];
+  const sorted = [...ads].sort((a, b) => order.indexOf(a.verdict.code) - order.indexOf(b.verdict.code) || b.spend - a.spend);
+  const toRemove = ads.filter((a) => a.verdict.code === "stop");
+  const winners = ads.filter((a) => a.verdict.code === "scale");
+  return (
+    <div className={`rounded-lg border border-zinc-700 border-l-4 ${v.border} bg-zinc-800 p-3 sm:p-4`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${v.badge}`}>{label}</span>
+            <span className="break-words font-semibold text-white">{campaign.name}</span>
+            {campaign.active === false && <span className="text-xs text-zinc-400">(pauză)</span>}
+          </div>
+          <p className="mt-1 text-xs text-zinc-400">
+            pagina <span className="text-zinc-300">/{campaign.slug}</span>
+            {campaign.product && <> · {campaign.product}</>} · {campaign.adCount} {campaign.adCount === 1 ? "reclamă" : "reclame"} cu cheltuială
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-4 text-right">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-zinc-400">Cheltuit</div>
+            <div className="font-semibold text-white">{campaign.spend > 0 ? lei(campaign.spend) : "–"}</div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-zinc-400">Comenzi</div>
+            <div className="font-semibold text-white">{campaign.ordered}</div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-zinc-400">CPA</div>
+            <div className={`font-semibold ${cpaColor(campaign)}`}>{campaign.cpa === null ? "–" : lei(campaign.cpa)}</div>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-2 text-sm text-zinc-200">{campaign.verdict.reason}</p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+        <span>
+          {campaign.visits} vizite · {pct(campaign.formSeen, campaign.visits)} văd formularul · {pct(campaign.started, campaign.formSeen)} încep · {pct(campaign.ordered, campaign.visits)} comandă
+        </span>
+        {campaign.cpaMax !== null && <span>Cost maxim pe comandă (echilibru): {lei(campaign.cpaMax)}</span>}
+        {campaign.trend && campaign.trendPct !== null && (
+          <span className={campaign.trend === "better" ? "text-emerald-400" : campaign.trend === "worse" ? "text-red-400" : "text-zinc-400"}>
+            {campaign.trend === "better" ? "▲ mai bun" : campaign.trend === "worse" ? "▼ mai slab" : "≈ la fel"}: CPA {campaign.trendPct > 0 ? "+" : ""}
+            {campaign.trendPct}% față de perioada dinainte
+          </span>
+        )}
+      </div>
+
+      {(toRemove.length > 0 || winners.length > 0 || campaign.idleAds.count > 0) && (
+        <p className="mt-2 rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-300">
+          <span className="font-semibold text-zinc-200">În campanie: </span>
+          {winners.length > 0 && <>{winners.length} {winners.length === 1 ? "reclamă câștigătoare" : "reclame câștigătoare"}. </>}
+          {toRemove.length > 0 && <>{toRemove.length} {toRemove.length === 1 ? "reclamă de scos" : "reclame de scos"} ({lei(toRemove.reduce((sum, a) => sum + a.spend, 0))} cheltuiți). </>}
+          {campaign.idleAds.count > 0 && <>{campaign.idleAds.count} {campaign.idleAds.count === 1 ? "reclamă" : "reclame"} au cheltuit {lei(campaign.idleAds.spend)} fără vizite pe paginile tale.</>}
+        </p>
+      )}
+
+      {sorted.length > 0 && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-sm font-medium text-zinc-200">Reclamele din campanie ({sorted.length})</summary>
+          <div className="mt-2 space-y-2">
+            {sorted.map((ad) => (
+              <AdCard key={ad.key} ad={ad} role />
+            ))}
+          </div>
+        </details>
       )}
     </div>
   );
 }
 
 export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slugFiltered: boolean }) {
+  const [view, setView] = useState<"campaigns" | "ads">("campaigns");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
 
   if (slugFiltered) {
     return (
       <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4 text-sm text-zinc-300">
-        Analiza reclamelor e pe toate paginile odată (cheltuiala unei reclame nu se poate împărți pe pagini). Alege „Toate paginile” ca să o vezi.
+        Analiza reclamelor e pe toate paginile odată (cheltuiala unei reclame sau campanii nu se poate împărți pe pagini). Alege „Toate paginile” ca să o vezi.
       </div>
     );
   }
@@ -171,43 +279,60 @@ export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slu
     return <div className="rounded-lg border border-amber-800 bg-amber-900/20 p-4 text-sm text-amber-200">{ads.error}</div>;
   }
 
-  const byCode = (codes: AdVerdictCode[]) => ads.rows.filter((r) => codes.includes(r.verdict.code));
-  const visible =
-    filter === "all" ? ads.rows : filter === "quiet" ? byCode(QUIET) : byCode([filter]);
+  const inCampaigns = view === "campaigns";
+  const items: (AdRow | CampaignRow)[] = inCampaigns ? ads.campaigns : ads.rows;
+  const byCode = (codes: AdVerdictCode[]) => items.filter((r) => codes.includes(r.verdict.code));
+  const visible = filter === "all" ? items : filter === "quiet" ? byCode(QUIET) : byCode([filter]);
   const order: AdVerdictCode[] = ["stop", "scale", "watch", "early", "paused", "nospend", "noprice"];
   const sorted = [...visible].sort((a, b) => order.indexOf(a.verdict.code) - order.indexOf(b.verdict.code) || b.spend - a.spend);
+  const what = inCampaigns ? "campanie" : "reclamă";
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-white">Ce faci cu reclamele</h2>
-        <p className="mt-1 text-sm text-zinc-400">
-          Cheltuiala vine de la Meta, comenzile din paginile tale. Costul pe comandă (CPA) e comparat cu pragul de echilibru al produsului din pagina Break-even (preț, cost produs, confirmări, retururi).
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold text-white">Ce faci cu {inCampaigns ? "campaniile" : "reclamele"}</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Cheltuiala vine de la Meta, comenzile din paginile tale. Costul pe comandă (CPA) e comparat cu pragul de echilibru al produsului din pagina Break-even (preț, cost produs, confirmări, retururi).
+            {inCampaigns && " Bugetul se decide pe campanie; reclamele din ea arată ce o trage în sus și ce o strică."}
+          </p>
+        </div>
+        <div className="flex gap-1 rounded-md border border-zinc-700 bg-zinc-800 p-1">
+          {([["campaigns", "Campanii"], ["ads", "Reclame"]] as const).map(([id, text]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { setView(id); setFilter("all"); }}
+              className={`rounded px-3 py-1.5 text-sm ${view === id ? "bg-zinc-600 text-white" : "text-zinc-300 hover:bg-zinc-700"}`}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
       </div>
 
       {ads.error && <div className="rounded-md border border-amber-800 bg-amber-900/20 p-3 text-sm text-amber-200">{ads.error}</div>}
 
       <div className="grid gap-3 md:grid-cols-3">
-        <ActionColumn code="scale" ads={byCode(["scale"])} />
-        <ActionColumn code="watch" ads={byCode(["watch"])} />
-        <ActionColumn code="stop" ads={byCode(["stop"])} />
+        <ActionColumn code="scale" ads={byCode(["scale"])} what={what} />
+        <ActionColumn code="watch" ads={byCode(["watch"])} what={what} />
+        <ActionColumn code="stop" ads={byCode(["stop"])} what={what} />
       </div>
 
       <details className="rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-sm text-zinc-300">
         <summary className="cursor-pointer font-medium text-zinc-200">Cum se decide verdictul</summary>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-zinc-300">
-          <li><strong className="text-emerald-300">Scalează</strong>: cel puțin 5 comenzi și CPA sub 70% din costul maxim pe comandă.</li>
+          <li><strong className="text-emerald-300">Scalează</strong>: CPA sub 70% din costul maxim pe comandă, cu cel puțin 10 comenzi pe campanie (5 pe o reclamă singură).</li>
           <li><strong className="text-red-300">Oprește</strong>: a cheltuit cel puțin de 2 ori costul maxim și are zero comenzi sau CPA peste 150% din el.</li>
-          <li><strong className="text-amber-200">Urmărește</strong>: tot ce e între; reclama nu e încă nici de scalat, nici de oprit.</li>
+          <li><strong className="text-amber-200">Urmărește</strong>: tot ce e între; nu e încă nici de scalat, nici de oprit.</li>
           <li><strong>Prea devreme</strong>: sub 50 de vizite și sub costul maxim cheltuit; nu o judecăm.</li>
-          <li>Trendul compară CPA-ul cu perioada de aceeași lungime dinainte. Diagnosticul compară pașii reclamei (formular văzut, început, trimis) cu media paginii.</li>
+          <li>Trendul compară CPA-ul cu perioada de aceeași lungime dinainte. În vederea pe reclame, diagnosticul compară pașii reclamei (formular văzut, început, trimis) cu media paginii.</li>
         </ul>
       </details>
 
       <div className="flex flex-wrap items-center gap-1.5">
         {FILTERS.map((f) => {
-          const count = f.id === "all" ? ads.rows.length : f.id === "quiet" ? byCode(QUIET).length : byCode([f.id]).length;
+          const count = f.id === "all" ? items.length : f.id === "quiet" ? byCode(QUIET).length : byCode([f.id]).length;
           return (
             <button
               key={f.id}
@@ -222,12 +347,12 @@ export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slu
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-zinc-400">Nicio reclamă în această categorie, în perioada aleasă.</p>
+        <p className="text-sm text-zinc-400">Nicio {what} în această categorie, în perioada aleasă.</p>
       ) : (
         <div className="space-y-2">
-          {sorted.map((ad) => (
-            <AdCard key={ad.key} ad={ad} />
-          ))}
+          {inCampaigns
+            ? (sorted as CampaignRow[]).map((c) => <CampaignCard key={c.key} campaign={c} ads={ads.rows.filter((r) => r.campaignId === c.key)} />)
+            : (sorted as AdRow[]).map((ad) => <AdCard key={ad.key} ad={ad} />)}
         </div>
       )}
 

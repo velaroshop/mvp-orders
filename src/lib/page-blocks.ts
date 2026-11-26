@@ -332,6 +332,8 @@ export type FormV4Style = {
   pillPulse: boolean;
   /** Text size of the label above the title in px (0 = the usual size) */
   pillSize: number;
+  /** Heading above the add-on products (empty = the usual heading) */
+  upsellTitle: string;
   /** Label under the price of an offer: background (empty = the accent color), text color (empty = automatic, light or dark by the background), corner radius in px */
   tagBg: string;
   tagColor: string;
@@ -515,6 +517,7 @@ function formV4Style(raw: unknown): FormV4Style {
     titleBold: v.titleBold !== false,
     pill: str(v.pill).slice(0, 60),
     pillPulse: v.pillPulse === true,
+    upsellTitle: typeof v.upsellTitle === "string" ? v.upsellTitle.slice(0, 80) : "",
     pillSize: typeof v.pillSize === "number" && Number.isFinite(v.pillSize) ? Math.min(60, Math.max(0, Math.round(v.pillSize))) : 0,
     tagBg: color(v.tagBg, ""),
     tagColor: color(v.tagColor, ""),

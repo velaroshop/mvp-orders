@@ -2012,7 +2012,11 @@ export default function OwnOrderForm({
             <div className="border-t border-zinc-200 p-3 sm:p-4" style={isV2 ? { order: 4 } : undefined}>
               {/* Header */}
               <div className="mb-2 text-center">
-                {isV3 ? (
+                {isV4 && v4.upsellTitle ? (
+                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
+                    {v4.upsellTitle}
+                  </h2>
+                ) : isV3 ? (
                   <h2 className="text-lg sm:text-xl font-bold text-zinc-900 flex items-center justify-center gap-2 leading-tight">
                     Adaugă produse cu EXTRA REDUCERE
                   </h2>

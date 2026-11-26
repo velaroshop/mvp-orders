@@ -507,7 +507,7 @@ function FieldInput({
 
 const STYLE_CLIPBOARD_KEY = "velaro-form-v4-style";
 // Texts of the form look: kept from the target form unless "Copiază și textele" is checked
-const STYLE_TEXT_KEYS = ["title", "pill", "notes"];
+const STYLE_TEXT_KEYS = ["title", "pill", "notes", "upsellTitle"];
 
 /** Copy the V4 look of this form block, or paste a copied look onto it (same browser; also put on the clipboard as text). */
 function StyleCopy({ value, onChange }: { value: Obj; onChange: (next: Obj) => void }) {

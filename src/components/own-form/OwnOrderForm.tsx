@@ -1601,7 +1601,7 @@ export default function OwnOrderForm({
                   const description = landingPage[`offer_description_${n}` as "offer_description_1"];
                   const freeShipping = landingPage[`free_shipping_offer_${n}` as "free_shipping_offer_1"];
                   const pieces = Math.max(1, Number(landingPage[`quantity_offer_${n}` as "quantity_offer_1"]) || n);
-                  const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 && (!cardStyle || chosen) ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
+                  const perPiece = v4.perPiece && pieces > 1 && Number(price) > 0 ? `${leiText(Number(price) / pieces)} lei / bucată` : null;
                   // Card style: colors picked in the block (empty = automatic); the text follows the card color
                   const cardBg = chosen ? v4.cardSelectedBg || v4.selectedBg : v4.cardUnselectedBg || mixHex(v4.selectedBg, v4.formBg, 0.5);
                   const customCardBg = cardStyle && (chosen ? v4.cardSelectedBg : v4.cardUnselectedBg);

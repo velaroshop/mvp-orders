@@ -25,6 +25,16 @@ async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ da
   return out;
 }
 
+type ProductRow = { id: string; name: string; import_price: number | null; manual_return_rate?: number | null };
+
+/** Products with the optional manual return rate; works before the column exists (migration 113) too. */
+async function loadProducts(organizationId: string): Promise<{ data: ProductRow[] | null }> {
+  const withRate = await supabaseAdmin.from("products").select("id, name, import_price, manual_return_rate").eq("organization_id", organizationId);
+  if (!withRate.error) return { data: withRate.data as ProductRow[] };
+  const without = await supabaseAdmin.from("products").select("id, name, import_price").eq("organization_id", organizationId);
+  return { data: (without.data as ProductRow[] | null) ?? null };
+}
+
 /**
  * Per product: CPA max / stop / scale thresholds (from mature orders), real CPA on the last
  * 3 and 7 closed days (ad spend of the product's campaigns / placed orders) and a verdict.
@@ -45,7 +55,7 @@ export async function loadBreakEven(organizationId: string) {
       .select("vat_enabled, courier_cost, packaging_cost")
       .eq("organization_id", organizationId)
       .maybeSingle(),
-    supabaseAdmin.from("products").select("id, name, import_price").eq("organization_id", organizationId),
+    loadProducts(organizationId),
     fetchAll<any>((f, t) =>
       supabaseAdmin
         .from("landing_pages")
@@ -63,7 +73,8 @@ export async function loadBreakEven(organizationId: string) {
     courierPack: shipping > 0 ? shipping : DEFAULT_PARAMS.courierPack,
   };
 
-  const products = (productsRes.data || []) as { id: string; name: string; import_price: number | null }[];
+  const products = (productsRes.data || []) as ProductRow[];
+  const manualRetByName = new Map(products.map((p) => [p.name, p.manual_return_rate == null ? null : Number(p.manual_return_rate) / 100]));
   const productById = new Map(products.map((p) => [p.id, p]));
   const unitCostByName = new Map(products.map((p) => [p.name, p.import_price == null ? null : Number(p.import_price)]));
   const lpBySlug = new Map(lps.map((l: any) => [l.slug, l]));
@@ -73,7 +84,7 @@ export async function loadBreakEven(organizationId: string) {
     return o.product_name || (lp?.product_id && productById.get(lp.product_id)?.name) || o.landing_key || "necunoscut";
   };
 
-  const [matureOrders, recentOrders, insights] = await Promise.all([
+  const [matureOrders, recent30Orders, recentOrders, insights] = await Promise.all([
     fetchAll<any>((f, t) =>
       supabaseAdmin
         .from("orders")
@@ -82,6 +93,18 @@ export async function loadBreakEven(organizationId: string) {
         .neq("status", "testing")
         .gte("created_at", bucharestDayStartIso(matureFrom))
         .lt("created_at", bucharestDayStartIso(matureTo))
+        .order("created_at", { ascending: true })
+        .range(f, t)
+    ),
+    // Last 30 closed days: order value, pieces, upsell share and confirmation rate
+    fetchAll<any>((f, t) =>
+      supabaseAdmin
+        .from("orders")
+        .select("created_at, status, tracking_status, offer_code, product_name, product_quantity, total, upsells, landing_key, source")
+        .eq("organization_id", organizationId)
+        .neq("status", "testing")
+        .gte("created_at", bucharestDayStartIso(matureTo))
+        .lt("created_at", bucharestDayStartIso(today))
         .order("created_at", { ascending: true })
         .range(f, t)
     ),
@@ -108,25 +131,30 @@ export async function loadBreakEven(organizationId: string) {
     ),
   ]);
 
-  // Mature orders per product
-  const matureByProduct = new Map<string, OrderForThreshold[]>();
+  // Orders per product, for both windows
   // Orders entered manually from partial orders are left out: Meta never sees them, they return more
   // often and their share changes over time, so they would make CPA and thresholds incomparable.
-  for (const o of matureOrders) {
-    if (o.source === "partial") continue;
-    const lp = lpBySlug.get(o.landing_key);
-    const qty = o.product_quantity || (lp && Number(lp[`quantity_${o.offer_code}`])) || 1;
-    const name = productNameOf(o);
-    if (!matureByProduct.has(name)) matureByProduct.set(name, []);
-    matureByProduct.get(name)!.push({
-      total: o.total,
-      status: o.status,
-      tracking_status: o.tracking_status,
-      offer_code: o.offer_code,
-      upsells: o.upsells,
-      quantity: qty,
-    });
-  }
+  const groupByProduct = (orders: any[]) => {
+    const byProduct = new Map<string, OrderForThreshold[]>();
+    for (const o of orders) {
+      if (o.source === "partial") continue;
+      const lp = lpBySlug.get(o.landing_key);
+      const qty = o.product_quantity || (lp && Number(lp[`quantity_${o.offer_code}`])) || 1;
+      const name = productNameOf(o);
+      if (!byProduct.has(name)) byProduct.set(name, []);
+      byProduct.get(name)!.push({
+        total: o.total,
+        status: o.status,
+        tracking_status: o.tracking_status,
+        offer_code: o.offer_code,
+        upsells: o.upsells,
+        quantity: qty,
+      });
+    }
+    return byProduct;
+  };
+  const matureByProduct = groupByProduct(matureOrders);
+  const recent30ByProduct = groupByProduct(recent30Orders);
 
   // Recent placed orders per product, split into the 3-day and 7-day windows
   const orders3 = new Map<string, number>();
@@ -173,11 +201,12 @@ export async function loadBreakEven(organizationId: string) {
     if (row.date >= start3) spend3.set(match, (spend3.get(match) || 0) + spend);
   }
 
-  const names = new Set<string>([...matureByProduct.keys(), ...orders7.keys(), ...spend7.keys()]);
+  const names = new Set<string>([...matureByProduct.keys(), ...recent30ByProduct.keys(), ...orders7.keys(), ...spend7.keys()]);
   const rows = [...names].map((name) => {
     const unitCost = unitCostByName.get(name) ?? null;
     const mature = matureByProduct.get(name) || [];
-    const t = computeThreshold(mature, unitCost, params);
+    const recent30 = recent30ByProduct.get(name) || [];
+    const t = computeThreshold(recent30, mature, unitCost, params, manualRetByName.get(name) ?? null);
     const w3 = recentWindow(spend3.get(name) || 0, orders3.get(name) || 0);
     const w7 = recentWindow(spend7.get(name) || 0, orders7.get(name) || 0);
     const verdict = decide(t, unitCost != null, w3, w7, params);
@@ -187,13 +216,18 @@ export async function loadBreakEven(organizationId: string) {
       cpaMax: t.cpaMax,
       stopAbove: t.stopAbove,
       scaleBelow: t.scaleBelow,
-      lowSample: t.placed > 0 && t.placed < params.minOrdersThreshold,
+      lowSample: t.placed > 0 && (t.placed < params.minOrdersThreshold || (t.retRateSource === "calculated" && t.delivered + t.returned < params.minOrdersThreshold)),
       w3,
       w7,
       partials3: partials3.get(name) || 0,
       partials7: partials7.get(name) || 0,
       detail: {
-        matureOrders: t.placed,
+        placed: t.placed,
+        matureOrders: t.matureOrders,
+        unresolvedRecent: t.unresolvedRecent,
+        retRateCalculated: t.retRateCalculated,
+        retRateManual: t.retRateManual,
+        retRateSource: t.retRateSource,
         offerMix: t.mix,
         avgQty: t.avgQty,
         upsellShare: t.upsellShare,
@@ -216,7 +250,7 @@ export async function loadBreakEven(organizationId: string) {
 
   // Rows with nothing to show (no thresholds and no recent activity) stay out of the table
   const visible = rows.filter(
-    (r) => r.detail.matureOrders > 0 || r.w7.spend > 0 || r.w7.orders > 0
+    (r) => r.detail.placed > 0 || r.detail.matureOrders > 0 || r.w7.spend > 0 || r.w7.orders > 0
   );
   const rank: Record<string, number> = { stop: 0, scale: 1, insufficient: 2, hold: 3, nocost: 4, nohistory: 5, inactive: 6 };
   visible.sort((a, b) => rank[a.verdict.code] - rank[b.verdict.code] || b.w7.spend - a.w7.spend);

@@ -1,6 +1,8 @@
 // CPA break-even per product + scale/stop verdict.
-// Thresholds come from mature orders (final delivery/return status); the CPA that gets compared
-// to them comes from the last closed days (ad spend / placed orders), so recent returns don't matter.
+// Two separate windows feed the thresholds: order value, pieces, upsell share and confirmation rate come from the
+// orders of the last 30 days; the return rate comes from the orders of 30-120 days ago (final delivery/return status),
+// unless a manual return rate is set on the product (and 18% when there is neither). The CPA that gets compared to the thresholds comes from the last
+// closed days (ad spend / placed orders), so recent returns don't matter. Thresholds are rounded down to whole lei.
 
 export interface BreakEvenParams {
   vat: number;         // VAT applied to AOV: net = AOV / (1 + vat)
@@ -12,6 +14,7 @@ export interface BreakEvenParams {
   minOrdersThreshold: number; // mature orders below this => unreliable threshold
   minOrdersScale: number;     // orders in the 7-day window needed to recommend scaling
   minSpendStopMult: number;   // spend in the 3-day window needed to recommend stopping, as multiple of CPA max
+  defaultReturnRate: number;  // used when a product has no manual return rate and no order with a final status yet
 }
 
 export const DEFAULT_PARAMS: BreakEvenParams = {
@@ -24,6 +27,7 @@ export const DEFAULT_PARAMS: BreakEvenParams = {
   minOrdersThreshold: 30,
   minOrdersScale: 10,
   minSpendStopMult: 2,
+  defaultReturnRate: 0.18,
 };
 
 export interface OrderForThreshold {
@@ -36,11 +40,16 @@ export interface OrderForThreshold {
 }
 
 export interface ThresholdResult {
-  placed: number;
-  confirmed: number;
-  delivered: number;
-  returned: number;
-  unresolved: number;
+  placed: number;          // orders of the last 30 days
+  confirmed: number;       // of those, confirmed
+  unresolvedRecent: number; // of those, confirmed but without a final delivery/return status yet
+  matureOrders: number;    // orders of 30-120 days ago, the base of the return rate
+  delivered: number;       // mature window
+  returned: number;        // mature window
+  unresolved: number;      // mature window
+  retRateCalculated: number | null;
+  retRateManual: number | null;
+  retRateSource: "manual" | "calculated" | "default";
   aov: number;
   net: number;
   avgQty: number;
@@ -71,51 +80,68 @@ function hasUpsell(u: unknown): boolean {
   return Array.isArray(x) && x.length > 0;
 }
 
+const floorLei = (v: number) => Math.floor(v);
+
+/**
+ * recent: orders of the last 30 days (value, pieces, upsell, confirmation).
+ * mature: orders of 30-120 days ago (return rate). manualRetRate (0..1) replaces the calculated return rate when set.
+ */
 export function computeThreshold(
-  orders: OrderForThreshold[],
+  recent: OrderForThreshold[],
+  mature: OrderForThreshold[],
   unitCost: number | null,
-  p: BreakEvenParams
+  p: BreakEvenParams,
+  manualRetRate: number | null = null
 ): ThresholdResult {
-  const placed = orders.length;
-  const confirmed = orders.filter(
-    (o) => CONFIRMED_STATUSES.includes(o.status) || (o.tracking_status != null && SHIPPED_FINAL.includes(o.tracking_status))
-  );
-  const delivered = confirmed.filter((o) => o.tracking_status === "Delivered").length;
-  const returned = confirmed.filter((o) => o.tracking_status != null && RETURNED.includes(o.tracking_status)).length;
+  const isConfirmed = (o: OrderForThreshold) =>
+    CONFIRMED_STATUSES.includes(o.status) || (o.tracking_status != null && SHIPPED_FINAL.includes(o.tracking_status));
+  const hasFinal = (o: OrderForThreshold) => o.tracking_status != null && SHIPPED_FINAL.includes(o.tracking_status);
+
+  const placed = recent.length;
+  const confirmed = recent.filter(isConfirmed);
+  const unresolvedRecent = confirmed.filter((o) => !hasFinal(o)).length;
+
+  const matureConfirmed = mature.filter(isConfirmed);
+  const delivered = matureConfirmed.filter((o) => o.tracking_status === "Delivered").length;
+  const returned = matureConfirmed.filter((o) => o.tracking_status != null && RETURNED.includes(o.tracking_status)).length;
   const resolved = delivered + returned;
+  const retRateCalculated = resolved > 0 ? returned / resolved : null;
+  const retRate = manualRetRate ?? retRateCalculated ?? p.defaultReturnRate;
+  const retRateSource = manualRetRate != null ? "manual" : retRateCalculated != null ? "calculated" : "default";
 
-  const aov = placed ? orders.reduce((s, o) => s + num(o.total), 0) / placed : 0;
+  const aov = placed ? recent.reduce((s, o) => s + num(o.total), 0) / placed : 0;
   const net = aov / (1 + p.vat);
-  const avgQty = placed ? orders.reduce((s, o) => s + num(o.quantity), 0) / placed : 0;
-  const upsellShare = placed ? orders.filter((o) => hasUpsell(o.upsells)).length / placed : 0;
-
+  const avgQty = placed ? recent.reduce((s, o) => s + num(o.quantity), 0) / placed : 0;
+  const upsellShare = placed ? recent.filter((o) => hasUpsell(o.upsells)).length / placed : 0;
   const confRate = placed ? confirmed.length / placed : 0;
-  const retRate = resolved ? returned / resolved : 0;
 
   const productCost = unitCost == null ? null : unitCost * avgQty;
   const costDelivered = productCost == null ? null : productCost + p.courierPack + p.upsellCost * upsellShare;
   const returnLoss = p.courierPack + p.returnBack; // the product comes back to stock
 
+  // Stop and scale are taken from the unrounded CPA max, then each is rounded down on its own
   let profitDelivered: number | null = null;
-  let cpaMax: number | null = null;
+  let rawMax: number | null = null;
   if (costDelivered != null && placed > 0) {
     profitDelivered = net - costDelivered;
-    cpaMax = profitDelivered * confRate * (1 - retRate) - returnLoss * confRate * retRate;
+    rawMax = profitDelivered * confRate * (1 - retRate) - returnLoss * confRate * retRate;
   }
 
   const mix: Record<string, number> = {};
-  for (const o of orders) {
+  for (const o of recent) {
     const k = o.offer_code || "?";
     mix[k] = (mix[k] || 0) + 1;
   }
 
   return {
-    placed, confirmed: confirmed.length, delivered, returned, unresolved: confirmed.length - resolved,
+    placed, confirmed: confirmed.length, unresolvedRecent,
+    matureOrders: mature.length, delivered, returned, unresolved: matureConfirmed.length - resolved,
+    retRateCalculated, retRateManual: manualRetRate, retRateSource,
     aov, net, avgQty, upsellShare, confRate, retRate,
     productCost, costDelivered, returnLoss, profitDelivered,
-    cpaMax,
-    stopAbove: cpaMax == null ? null : cpaMax * p.stopMult,
-    scaleBelow: cpaMax == null ? null : cpaMax * p.scaleMult,
+    cpaMax: rawMax == null ? null : floorLei(rawMax),
+    stopAbove: rawMax == null ? null : floorLei(rawMax * p.stopMult),
+    scaleBelow: rawMax == null ? null : floorLei(rawMax * p.scaleMult),
     mix,
   };
 }
@@ -145,7 +171,7 @@ export function decide(
   p: BreakEvenParams
 ): Verdict {
   if (!unitCostKnown) return { code: "nocost", reason: "Lipsește cost produs (import_price)" };
-  if (t.placed === 0 || t.cpaMax == null) return { code: "nohistory", reason: "Nicio comandă matură pentru prag" };
+  if (t.placed === 0 || t.cpaMax == null) return { code: "nohistory", reason: "Nicio comandă în ultimele 30 de zile" };
   if (w7.spend === 0) return { code: "inactive", reason: "Fără cheltuială mapată în ultimele 7 zile" };
 
   const max = t.cpaMax;

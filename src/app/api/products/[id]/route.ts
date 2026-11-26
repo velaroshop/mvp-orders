@@ -179,6 +179,14 @@ export async function PUT(
       updateData.import_price = body.import_price === null || body.import_price === "" ? null : parseFloat(body.import_price);
     }
 
+    if (body.manual_return_rate !== undefined) {
+      const rate = body.manual_return_rate === null || body.manual_return_rate === "" ? null : parseFloat(body.manual_return_rate);
+      if (rate !== null && (!Number.isFinite(rate) || rate < 0 || rate > 100)) {
+        return NextResponse.json({ error: "Rata de retur manuală trebuie să fie între 0 și 100" }, { status: 400 });
+      }
+      updateData.manual_return_rate = rate;
+    }
+
     const { data: product, error } = await supabase
       .from("products")
       .update(updateData)

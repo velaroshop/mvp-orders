@@ -23,6 +23,7 @@ interface Product {
   sku?: string;
   status: "active" | "testing" | "inactive";
   import_price?: number | null;
+  manual_return_rate?: number | null;
   is_virtual?: boolean;
   variations?: Variation[];
   variations_label?: string | null;
@@ -55,6 +56,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState<Product | null>(null);
   // Sent only when changed, so saving works the same before migration 107 (the column) is run
   const [initialVirtual, setInitialVirtual] = useState(false);
+  const [initialReturnRate, setInitialReturnRate] = useState<number | null>(null);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,6 +99,7 @@ export default function EditProductPage() {
       if (!data.product) throw new Error("Produsul nu a fost găsit");
       setFormData(data.product);
       setInitialVirtual(!!data.product.is_virtual);
+      setInitialReturnRate(data.product.manual_return_rate ?? null);
       setVariations(data.product.variations || []);
       setVariationsLabel(data.product.variations_label || "");
       setSelectionMode(data.product.variation_selection_mode || "single");
@@ -124,6 +127,7 @@ export default function EditProductPage() {
           status: formData.status,
           import_price: formData.import_price ?? null,
           ...(!!formData.is_virtual !== initialVirtual ? { is_virtual: !!formData.is_virtual } : {}),
+          ...((formData.manual_return_rate ?? null) !== initialReturnRate ? { manual_return_rate: formData.manual_return_rate ?? null } : {}),
         }),
       });
       const data = await res.json();
@@ -367,6 +371,28 @@ export default function EditProductPage() {
               <span className="text-sm text-zinc-400 shrink-0">RON</span>
             </div>
             <p className="text-faint text-xs mt-1">Opțional. Pre-completează costul produsului în Calculatorul ROAS.</p>
+          </div>
+
+          {/* Rată retur manuală */}
+          <div>
+            <label className="label">Rată retur manuală</label>
+            <div className="flex items-center gap-2 max-w-xs">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={formData.manual_return_rate ?? ""}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  manual_return_rate: e.target.value === "" ? null : parseFloat(e.target.value),
+                })}
+                className="input"
+                placeholder="ex. 18"
+              />
+              <span className="text-sm text-zinc-400 shrink-0">%</span>
+            </div>
+            <p className="text-faint text-xs mt-1">Opțional. Dacă e completată, înlocuiește rata de retur calculată din comenzi în Break-even (CPA maxim). Gol = se folosește rata calculată (18% dacă nu există încă comenzi cu status final).</p>
           </div>
 
           {/* Virtual */}

@@ -25,6 +25,11 @@ interface Row {
   partials3: number;
   partials7: number;
   detail: {
+    placed: number;
+    unresolvedRecent: number;
+    retRateCalculated: number | null;
+    retRateManual: number | null;
+    retRateSource: "manual" | "calculated" | "default";
     matureOrders: number;
     offerMix: Record<string, number>;
     avgQty: number;
@@ -63,6 +68,7 @@ const VERDICTS: Record<VerdictCode, { label: string; className: string }> = {
   inactive: { label: "Inactiv", className: "bg-zinc-700/40 text-zinc-400 border-zinc-600" },
 };
 
+const f0 = (x: number | null | undefined) => (x == null ? "—" : String(Math.round(x)));
 const f1 = (x: number | null | undefined) => (x == null ? "—" : x.toFixed(1).replace(".", ","));
 const f2 = (x: number | null | undefined) => (x == null ? "—" : x.toFixed(2).replace(".", ","));
 const pct = (x: number) => `${(x * 100).toFixed(1).replace(".", ",")}%`;
@@ -211,11 +217,11 @@ export default function BreakEvenPage() {
                     <td className="p-3 text-right">{cpaCell(row.w3, row, row.partials3)}</td>
                     <td className="p-3 text-right">{cpaCell(row.w7, row, row.partials7)}</td>
                     <td className="p-3 text-right text-zinc-200">
-                      {f1(row.cpaMax)}
-                      {row.lowSample && <span title="Sub 30 de comenzi mature: prag nesigur" className="ml-1 text-amber-400">⚠</span>}
+                      {f0(row.cpaMax)}
+                      {row.lowSample && <span title="Sub 30 de comenzi în ultimele 30 de zile sau sub 30 de comenzi cu status final pentru retur: prag nesigur" className="ml-1 text-amber-400">⚠</span>}
                     </td>
-                    <td className="p-3 text-right text-zinc-200">{f1(row.stopAbove)}</td>
-                    <td className="p-3 text-right text-zinc-200">{f1(row.scaleBelow)}</td>
+                    <td className="p-3 text-right text-zinc-200">{f0(row.stopAbove)}</td>
+                    <td className="p-3 text-right text-zinc-200">{f0(row.scaleBelow)}</td>
                     <td className="p-3">
                       <span className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${v.className}`}>{v.label}</span>
                       <p className="text-xs text-zinc-400 mt-0.5">{row.verdict.reason}</p>
@@ -252,18 +258,26 @@ export default function BreakEvenPage() {
 function DetailBlock({ row, data }: { row: Row; data: Payload }) {
   const d = row.detail;
   const p = data.params;
-  if (d.matureOrders === 0) return <p>Nicio comandă matură pentru acest produs.</p>;
+  if (d.placed === 0) return <p>Nicio comandă în ultimele 30 de zile pentru acest produs.</p>;
   return (
     <div className="space-y-1">
       <p>
-        <span className="text-zinc-400">Comenzi mature:</span> {d.matureOrders} · mix:{" "}
+        <span className="text-zinc-400">Comenzi ultimele 30 de zile:</span> {d.placed} · mix:{" "}
         {Object.entries(d.offerMix).map(([k, v]) => `${k.replace("offer_", "oferta ")}=${v}`).join(", ")} · {f2(d.avgQty)} buc/comandă ·{" "}
         {pct(d.upsellShare)} cu upsell
       </p>
       <p><span className="text-zinc-400">AOV:</span> {f2(d.aov)} lei → venit net {f2(d.net)} lei{p.vat > 0 ? ` (fără TVA ${Math.round(p.vat * 100)}%)` : ""}</p>
-      <p><span className="text-zinc-400">Confirmare:</span> {d.confirmed} / {d.matureOrders} = {pct(d.confRate)}</p>
       <p>
-        <span className="text-zinc-400">Retur:</span> {d.returned} refuzate / ({d.delivered} livrate + {d.returned} refuzate) = {pct(d.retRate)}
+        <span className="text-zinc-400">Confirmare:</span> {d.confirmed} / {d.placed} = {pct(d.confRate)}
+        {d.unresolvedRecent > 0 && ` · ${d.unresolvedRecent} confirmate încă fără livrare sau retur`}
+      </p>
+      <p>
+        <span className="text-zinc-400">Retur (comenzi de acum 30-120 zile):</span>{" "}
+        {d.retRateSource === "manual"
+          ? <>rată manuală {pct(d.retRate)}{d.retRateCalculated != null && ` (calculată ar fi ${pct(d.retRateCalculated)}: ${d.returned} / ${d.delivered + d.returned})`}</>
+          : d.retRateSource === "default"
+          ? <>nicio comandă cu status final și nicio rată manuală: folosesc {pct(d.retRate)} (implicit)</>
+          : <>{d.returned} refuzate / ({d.delivered} livrate + {d.returned} refuzate) = {pct(d.retRate)}</>}
         {d.unresolved > 0 && ` · ${d.unresolved} încă nerezolvate`}
       </p>
       <p>

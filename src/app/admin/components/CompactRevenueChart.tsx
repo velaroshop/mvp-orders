@@ -19,6 +19,8 @@ interface RevenueData {
 interface CompactRevenueChartProps {
   data: RevenueData[];
   yesterdayData?: RevenueData[];
+  /** "YYYY-MM-DD" of the selected single day; a day before today is finished, so it is compared whole with the day before */
+  selectedDate?: string | null;
   granularity: "hourly" | "daily" | "monthly";
   loading?: boolean;
   hideRevenue?: boolean;
@@ -27,6 +29,7 @@ interface CompactRevenueChartProps {
 export default function CompactRevenueChart({
   data,
   yesterdayData,
+  selectedDate,
   granularity,
   loading,
   hideRevenue,
@@ -71,6 +74,18 @@ export default function CompactRevenueChart({
     : 0;
   const hasYesterday = yesterdayData && yesterdayData.length > 0;
 
+  // Only the current day is still running: for it, the previous day is cut at the current hour. A finished day is compared whole.
+  const todayKey = new Date().toLocaleDateString("en-CA");
+  const isLive = !selectedDate || selectedDate >= todayKey;
+  const partial = granularity === "hourly" && isLive;
+  const shortDate = (key: string) =>
+    new Date(`${key}T12:00:00Z`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", timeZone: "UTC" });
+  const prevKey = selectedDate
+    ? new Date(new Date(`${selectedDate}T12:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10)
+    : null;
+  const curLabel = isLive || !selectedDate ? "Azi" : shortDate(selectedDate);
+  const prevLabel = isLive || !prevKey ? "Ieri" : shortDate(prevKey);
+
   // Yesterday at same time — sum only hours <= current hour (period format "HH:00")
   const currentHourKey = `${String(new Date().getHours()).padStart(2, "0")}:00`;
   const yesterdaySameTime = yesterdayData
@@ -86,7 +101,7 @@ export default function CompactRevenueChart({
 
   // Badge: compare today vs yesterday at same time
   const diffPercent =
-    granularity === "hourly" && yesterdaySameTime > 0
+    partial && yesterdaySameTime > 0
       ? ((todayTotal - yesterdaySameTime) / yesterdaySameTime) * 100
       : yesterdayTotal > 0
       ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100
@@ -112,10 +127,14 @@ export default function CompactRevenueChart({
       {/* Header */}
       <div className="mb-3">
         <h3 className="text-sm font-semibold text-white">
-          {hideRevenue ? "Comenzi azi" : "Venituri azi"}
+          {hideRevenue ? "Comenzi" : "Venituri"} {isLive ? "azi" : curLabel}
         </h3>
         <p className="text-xs text-zinc-400 mt-0.5">
-          {granularity === "hourly" ? "Azi vs. ieri la aceeași oră" : "Azi vs. ieri"}
+          {partial
+            ? "Azi vs. ieri la aceeași oră"
+            : isLive
+            ? "Azi vs. ieri"
+            : `${curLabel} vs. ${prevLabel}, zile complete`}
         </p>
       </div>
 
@@ -123,7 +142,7 @@ export default function CompactRevenueChart({
       <div className="flex items-start justify-between mb-4 gap-3">
         {/* Today */}
         <div>
-          <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Azi</p>
+          <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">{curLabel}</p>
           {hideRevenue ? (
             <p className="text-xl font-bold text-white leading-none">
               {todayOrders}
@@ -152,7 +171,7 @@ export default function CompactRevenueChart({
         )}
 
         {/* Yesterday at same time */}
-        {hasYesterday && granularity === "hourly" && (
+        {hasYesterday && partial && (
           <div className="text-right">
             <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">
               Ieri {currentHourKey}
@@ -173,9 +192,9 @@ export default function CompactRevenueChart({
             )}
           </div>
         )}
-        {hasYesterday && granularity !== "hourly" && (
+        {hasYesterday && !partial && (
           <div className="text-right">
-            <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Ieri</p>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">{prevLabel}</p>
             {hideRevenue ? (
               <p className="text-sm font-semibold text-zinc-400 leading-none">
                 {yesterdayOrders}
@@ -198,7 +217,7 @@ export default function CompactRevenueChart({
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-0.5 bg-indigo-400 rounded-full" />
-          <span className="text-[10px] text-zinc-400">Azi</span>
+          <span className="text-[10px] text-zinc-400">{curLabel}</span>
         </div>
         {hasYesterday && (
           <div className="flex items-center gap-1.5">
@@ -209,13 +228,13 @@ export default function CompactRevenueChart({
                   "repeating-linear-gradient(90deg, #71717a 0px, #71717a 4px, transparent 4px, transparent 8px)",
               }}
             />
-            <span className="text-[10px] text-zinc-400">Ieri</span>
+            <span className="text-[10px] text-zinc-400">{prevLabel}</span>
           </div>
         )}
       </div>
 
       {/* Ieri total + de recuperat / depășit */}
-      {hasYesterday && granularity === "hourly" && !hideRevenue && yesterdayTotal > 0 && (
+      {hasYesterday && partial && !hideRevenue && yesterdayTotal > 0 && (
         <div className="mb-2 text-[11px] text-zinc-400">
           {gap > 0 ? (
             <>
@@ -292,11 +311,11 @@ export default function CompactRevenueChart({
               formatter={(value: any, name: any) => {
                 if (value === null) return ["-", name];
                 if (hideRevenue) {
-                  return [`${Number(value)} comenzi`, name === yestKey ? "Ieri" : "Azi"];
+                  return [`${Number(value)} comenzi`, name === yestKey ? prevLabel : curLabel];
                 }
                 return [
                   `${Number(value).toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON`,
-                  name === yestKey ? "Ieri" : "Azi",
+                  name === yestKey ? prevLabel : curLabel,
                 ];
               }}
             />

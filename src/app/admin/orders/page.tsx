@@ -151,6 +151,8 @@ export default function AdminPage() {
   const [yesterdayRevenueData, setYesterdayRevenueData] = useState<
     Array<{ period: string; totalRevenue: number; orderCount: number }>
   >([]);
+  // Day the chart data was fetched for (single-day filters only), so the card knows whether that day is finished
+  const [revenueDay, setRevenueDay] = useState<string | null>(null);
   const [revenueLoading, setRevenueLoading] = useState(false);
 
   // KPI state
@@ -310,6 +312,7 @@ export default function AdminPage() {
           data: result.data || [],
           granularity: result.granularity || 'hourly',
         });
+        setRevenueDay(isSingleDay ? startDate : null);
       } else {
         console.error("Failed to fetch revenue data");
       }
@@ -1682,6 +1685,7 @@ export default function AdminPage() {
               <CompactRevenueChart
                 data={todayRevenueData.data}
                 yesterdayData={yesterdayRevenueData}
+                selectedDate={revenueDay}
                 granularity={todayRevenueData.granularity}
                 loading={revenueLoading}
                 hideRevenue={isStoreManager}

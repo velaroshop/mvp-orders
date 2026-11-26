@@ -25,6 +25,7 @@ export interface AdRow {
   verdict: { code: AdVerdictCode; reason: string };
   trend: "better" | "worse" | "same" | null;
   trendPct: number | null;
+  recent3: { spend: number; orders: number } | null;
   diagnosis: string | null;
 }
 
@@ -46,6 +47,7 @@ export interface CampaignRow {
   verdict: { code: AdVerdictCode; reason: string };
   trend: "better" | "worse" | "same" | null;
   trendPct: number | null;
+  recent3: { spend: number; orders: number } | null;
   adCount: number;
   idleAds: { count: number; spend: number };
 }
@@ -86,6 +88,17 @@ const FILTERS: { id: "all" | AdVerdictCode | "quiet"; label: string }[] = [
   { id: "stop", label: "Oprește" },
   { id: "quiet", label: "Prea puține date / pauză" },
 ];
+
+function Recent3({ r, cpaMax }: { r: { spend: number; orders: number } | null; cpaMax: number | null }) {
+  if (!r) return null;
+  const cpa = r.orders > 0 ? r.spend / r.orders : null;
+  const bad = cpaMax !== null && (cpa === null ? r.spend >= cpaMax : cpa > cpaMax);
+  return (
+    <span className={bad ? "text-red-400" : "text-zinc-400"}>
+      Ultimele 3 zile: {lei(r.spend)} · {r.orders} {r.orders === 1 ? "comandă" : "comenzi"} · CPA {cpa === null ? "–" : lei(cpa)}
+    </span>
+  );
+}
 
 const QUIET: AdVerdictCode[] = ["early", "paused", "nospend", "noprice"];
 
@@ -137,6 +150,7 @@ function AdCard({ ad, role = false }: { ad: AdRow; role?: boolean }) {
           {ad.visits} vizite · {pct(ad.formSeen, ad.visits)} văd formularul · {pct(ad.started, ad.formSeen)} încep · {pct(ad.ordered, ad.visits)} comandă
         </span>
         {ad.cpaMax !== null && <span>Cost maxim pe comandă (echilibru): {lei(ad.cpaMax)}</span>}
+        <Recent3 r={ad.recent3} cpaMax={ad.cpaMax} />
         {ad.trend && ad.trendPct !== null && (
           <span className={ad.trend === "better" ? "text-emerald-400" : ad.trend === "worse" ? "text-red-400" : "text-zinc-400"}>
             {ad.trend === "better" ? "▲ mai bun" : ad.trend === "worse" ? "▼ mai slab" : "≈ la fel"}: CPA {ad.trendPct > 0 ? "+" : ""}
@@ -232,6 +246,7 @@ function CampaignCard({ campaign, ads }: { campaign: CampaignRow; ads: AdRow[] }
           {campaign.visits} vizite · {pct(campaign.formSeen, campaign.visits)} văd formularul · {pct(campaign.started, campaign.formSeen)} încep · {pct(campaign.ordered, campaign.visits)} comandă
         </span>
         {campaign.cpaMax !== null && <span>Cost maxim pe comandă (echilibru): {lei(campaign.cpaMax)}</span>}
+        <Recent3 r={campaign.recent3} cpaMax={campaign.cpaMax} />
         {campaign.trend && campaign.trendPct !== null && (
           <span className={campaign.trend === "better" ? "text-emerald-400" : campaign.trend === "worse" ? "text-red-400" : "text-zinc-400"}>
             {campaign.trend === "better" ? "▲ mai bun" : campaign.trend === "worse" ? "▼ mai slab" : "≈ la fel"}: CPA {campaign.trendPct > 0 ? "+" : ""}
@@ -322,10 +337,11 @@ export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slu
       <details className="rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-sm text-zinc-300">
         <summary className="cursor-pointer font-medium text-zinc-200">Cum se decide verdictul</summary>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-zinc-300">
-          <li><strong className="text-emerald-300">Scalează</strong>: CPA sub 70% din costul maxim pe comandă, cu cel puțin 10 comenzi pe campanie (5 pe o reclamă singură).</li>
-          <li><strong className="text-red-300">Oprește</strong>: a cheltuit cel puțin de 2 ori costul maxim și are zero comenzi sau CPA peste 150% din el.</li>
+          <li><strong className="text-emerald-300">Scalează</strong>: CPA din perioada aleasă sub 70% din costul maxim pe comandă, cu cel puțin 10 comenzi pe campanie (5 pe o reclamă singură), <strong>și</strong> ultimele 3 zile sub costul maxim (nu scalezi o campanie care tocmai s-a stricat).</li>
+          <li><strong className="text-red-300">Oprește</strong>: a cheltuit cel puțin de 2 ori costul maxim și are zero comenzi sau CPA peste 150% din el, fie în toată perioada, fie (doar la campanii) în ultimele 3 zile.</li>
           <li><strong className="text-amber-200">Urmărește</strong>: tot ce e între; nu e încă nici de scalat, nici de oprit.</li>
           <li><strong>Prea devreme</strong>: sub 50 de vizite și sub costul maxim cheltuit; nu o judecăm.</li>
+          <li>Verificarea pe ultimele 3 zile se face automat când perioada aleasă e mai lungă de 3 zile. Pe „3 zile”, „Ieri” sau „Azi” perioada însăși e verificarea.</li>
           <li>Trendul compară CPA-ul cu perioada de aceeași lungime dinainte. În vederea pe reclame, diagnosticul compară pașii reclamei (formular văzut, început, trimis) cu media paginii.</li>
         </ul>
       </details>

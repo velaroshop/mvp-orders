@@ -22,6 +22,8 @@ export interface AdJudgeInput {
   active: boolean | null; // null = status unknown
   thresholds: AdThresholds | null;
   minOrdersScale?: number; // campaigns need more orders than a single ad before they are scaled
+  recent3?: { spend: number; orders: number } | null; // last 3 days of the period (null when the period itself is that short)
+  stopOnRecent3?: boolean; // default true; a single ad has too few orders in 3 days to be stopped on them (inside a CBO it is noise)
 }
 
 export const MIN_VISITS = 50; // below this (and a small spend) an ad is too new to judge
@@ -43,11 +45,24 @@ export function judgeAd(a: AdJudgeInput): AdVerdict {
   if (a.visits < MIN_VISITS && a.spend < t.cpaMax) {
     return { code: "early", reason: `Prea devreme: ${a.visits} vizite și ${lei(a.spend)} cheltuiți. Mai are nevoie de date` };
   }
+
+  // Last 3 days: stop reacts fast, scale needs them to be in profit too (a good 7-day average can hide a fresh decline)
+  const r3 = a.recent3 ?? null;
+  const cpa3 = r3 && r3.orders > 0 ? r3.spend / r3.orders : null;
+  const cpa3Text = r3 ? (cpa3 === null ? "ultimele 3 zile fără comenzi" : `ultimele 3 zile CPA ${lei(cpa3)}`) : "";
+  const stop3 = (a.stopOnRecent3 ?? true) && r3 !== null && r3.spend >= MIN_SPEND_STOP_MULT * t.cpaMax && (cpa3 === null || cpa3 > t.stopAbove);
+
   if (a.spend >= MIN_SPEND_STOP_MULT * t.cpaMax && (cpa === null || cpa > t.stopAbove)) {
     return { code: "stop", reason: `${cpaText}, peste pragul de oprire (${lei(t.stopAbove)}), după ${lei(a.spend)} cheltuiți` };
   }
-  if (cpa !== null && a.orders >= (a.minOrdersScale ?? MIN_ORDERS_SCALE) && cpa < t.scaleBelow) {
-    return { code: "scale", reason: `${cpaText}, sub pragul de scalare (${lei(t.scaleBelow)}), din ${a.orders} comenzi` };
+  if (stop3) {
+    return { code: "stop", reason: `${cpaText} în perioadă, dar ${cpa3Text}, peste pragul de oprire (${lei(t.stopAbove)}), după ${lei(r3!.spend)} cheltuiți în 3 zile` };
+  }
+  if (cpa !== null && cpa < t.scaleBelow && a.orders >= (a.minOrdersScale ?? MIN_ORDERS_SCALE)) {
+    if (r3 && (cpa3 === null || cpa3 > t.cpaMax)) {
+      return { code: "watch", reason: `${cpaText} e bun, dar ${cpa3Text}, peste costul maxim (${lei(t.cpaMax)}). Nu scala până nu se repară` };
+    }
+    return { code: "scale", reason: `${cpaText}, sub pragul de scalare (${lei(t.scaleBelow)}), din ${a.orders} comenzi${cpa3 !== null ? `; ${cpa3Text}` : ""}` };
   }
   if (cpa !== null && cpa < t.scaleBelow) {
     return { code: "watch", reason: `${cpaText} e bun, dar sunt doar ${a.orders} comenzi. Mai așteaptă înainte să scalezi` };

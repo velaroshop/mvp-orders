@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { bucharestDayEndIso, bucharestDayStartIso, shiftDateKey } from "@/lib/romania-time";
+import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso, shiftDateKey } from "@/lib/romania-time";
 import { fetchAdInsights, fetchAdStatuses, type MetaAdInsightRow } from "@/lib/meta-ads";
 import { loadBreakEven } from "@/lib/break-even-data";
 import { buildAdIndex, cpaTrend, diagnose, judgeAd, normalizeKey, resolveAd, type AdThresholds, type Funnel } from "@/lib/ads-verdict";
@@ -9,6 +9,7 @@ const MAX_ROWS = 50000;
 
 /** The columns of a visit that the per-ad analysis needs */
 export type AdsVisit = {
+  created_at: string;
   slug: string;
   utm_campaign: string | null;
   utm_content: string | null;
@@ -73,8 +74,13 @@ export async function buildAds(organizationId: string, from: string, to: string,
     const perAccount = async <T,>(fetcher: (account: string) => Promise<T[]>) => (await Promise.all(accounts.map((a) => fetcher(a).catch((e) => { console.error("[Pages Ads]", a, String(e)); return [] as T[]; })))).flat();
     const statusesOf = async () => Object.assign({}, ...(await Promise.all(accounts.map((a) => fetchAdStatuses(token, a).catch(() => ({}))))));
 
-    const [current, previous, statuses, prevVisits, breakEven, pages, landings, products] = await Promise.all([
+    // Last 3 days of the period: only when the period is longer than that (otherwise the period is the check)
+    const from3 = shiftDateKey(to, -2);
+    const hasRecent3 = from3 > from;
+
+    const [current, recent3Rows, previous, statuses, prevVisits, breakEven, pages, landings, products] = await Promise.all([
       perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: from, until: to })),
+      hasRecent3 ? perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: from3, until: to })) : Promise.resolve([] as MetaAdInsightRow[]),
       perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: prevFrom, until: prevTo })),
       statusesOf() as Promise<Record<string, string>>,
       fetchAdVisits(organizationId, prevFrom, prevTo),
@@ -103,6 +109,9 @@ export async function buildAds(organizationId: string, from: string, to: string,
     const index = buildAdIndex([...current, ...previous].map((a) => ({ adId: a.adId, adName: a.adName, campaignId: a.campaignId, campaignName: a.campaignName })));
     const metaById = new Map<string, MetaAdInsightRow>(current.map((a) => [a.adId, a]));
     const prevMetaById = new Map<string, MetaAdInsightRow>(previous.map((a) => [a.adId, a]));
+    const recentMetaById = new Map<string, MetaAdInsightRow>(recent3Rows.map((a) => [a.adId, a]));
+    const recentOrders = new Map<string, number>(); // orders of the last 3 days, per ad group and per campaign
+    const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
 
     // Visits per ad (an ad = Meta ad id when the link matches one, otherwise the text of the link)
     const aggs = new Map<string, { agg: AdAgg; adIds: string[]; name: string; campaign: string; campaignId: string | null }>();
@@ -140,6 +149,8 @@ export async function buildAds(organizationId: string, from: string, to: string,
       pageFunnel.set(v.slug, page);
 
       const cid = campaignIdOf(v.utm_campaign, v.utm_content);
+      const isRecent = hasRecent3 && v.ordered && bucharestDateKey(new Date(v.created_at)) >= from3;
+      if (isRecent && cid) bump(recentOrders, `camp:${cid}`);
       if (cid) {
         const c = campaignAggs.get(cid) ?? emptyAgg();
         c.visits += 1;
@@ -152,6 +163,7 @@ export async function buildAds(organizationId: string, from: string, to: string,
 
       const k = keyOf(v.utm_campaign, v.utm_content);
       if (!k) continue;
+      if (isRecent) bump(recentOrders, k.key);
       const entry = aggs.get(k.key) ?? { agg: emptyAgg(), adIds: k.adIds, name: k.name, campaign: k.campaign, campaignId: cid };
       entry.agg.visits += 1;
       if (v.form_seen) entry.agg.formSeen += 1;
@@ -180,7 +192,8 @@ export async function buildAds(organizationId: string, from: string, to: string,
       const spend = sumOf(metaById, adIds);
       const knownStatuses = adIds.map((id) => statuses[id]).filter(Boolean);
       const active = knownStatuses.length > 0 ? knownStatuses.some((st) => st === "ACTIVE") : null;
-      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds });
+      const recent3 = hasRecent3 ? { spend: sumOf(recentMetaById, adIds), orders: recentOrders.get(key) ?? 0 } : null;
+      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, recent3, stopOnRecent3: false });
       const trend = cpaTrend(spend, agg.ordered, sumOf(prevMetaById, adIds), prevOrders.get(key) ?? 0);
       return {
         key,
@@ -203,6 +216,7 @@ export async function buildAds(organizationId: string, from: string, to: string,
         verdict,
         trend: trend.trend,
         trendPct: trend.changePct,
+        recent3,
         diagnosis: diagnose(agg, pageFunnel.get(slug) ?? agg),
       };
     });
@@ -221,7 +235,8 @@ export async function buildAds(organizationId: string, from: string, to: string,
       const thresholds = product ? thresholdsOf.get(product) ?? null : null;
       const known = [...current, ...previous].filter((a) => a.campaignId === cid).map((a) => statuses[a.adId]).filter(Boolean);
       const active = known.length > 0 ? known.some((st) => st === "ACTIVE") : null;
-      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, minOrdersScale: 10 });
+      const recent3 = hasRecent3 ? { spend: recent3Rows.filter((a) => a.campaignId === cid).reduce((sum, a) => sum + a.spend, 0), orders: recentOrders.get(`camp:${cid}`) ?? 0 } : null;
+      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, minOrdersScale: 10, recent3 });
       const trend = cpaTrend(spend, agg.ordered, prevSpend, prevCampaignOrders.get(cid) ?? 0);
       const idle = inCampaign.filter((a) => a.spend > 0 && !matchedAdIds.has(a.adId));
       return {
@@ -242,6 +257,7 @@ export async function buildAds(organizationId: string, from: string, to: string,
         verdict,
         trend: trend.trend,
         trendPct: trend.changePct,
+        recent3,
         adCount: inCampaign.filter((a) => a.spend > 0).length,
         idleAds: { count: idle.length, spend: idle.reduce((sum, a) => sum + a.spend, 0) },
       };

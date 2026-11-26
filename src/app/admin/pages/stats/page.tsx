@@ -100,6 +100,7 @@ function Table({ title, rows, firstColumn }: { title: string; rows: Row[]; first
 const PRESETS = [
   { id: "today", label: "Azi", days: 0 },
   { id: "yesterday", label: "Ieri", days: 1 },
+  { id: "3", label: "3 zile", days: 2 },
   { id: "7", label: "Ultimele 7 zile", days: 6 },
   { id: "30", label: "Ultimele 30 de zile", days: 29 },
 ] as const;

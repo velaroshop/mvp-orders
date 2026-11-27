@@ -204,6 +204,23 @@ export default function OwnOrderForm({
     address?: string;
   }>({});
 
+  // Height of a bar stuck to the top of the screen (sticky top bar of the page), so scrolling to a message leaves it visible under the bar
+  function stickyTopOffset(): number {
+    let offset = 0;
+    document.querySelectorAll<HTMLElement>(".sticky.top-0, .fixed.top-0").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.height > 0 && r.top <= 1) offset = Math.max(offset, r.bottom);
+    });
+    return Math.ceil(offset);
+  }
+
+  // Scrolls a message into view just under the sticky top bar, if the page has one
+  function scrollMessageIntoView(el: HTMLElement | null) {
+    if (!el) return;
+    el.style.scrollMarginTop = `${stickyTopOffset() + 12}px`;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   // What is still missing, in plain words, for the red summary above the delivery fields
   function errorSummary(): { title: string; reason: string | null } | null {
     const labels: string[] = [];
@@ -896,7 +913,7 @@ export default function OwnOrderForm({
       if (allEmpty) {
         // Wait for the hint to render, then scroll so that the hint and the phone field are visible together
         setTimeout(() => {
-          emptyHintRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          scrollMessageIntoView(emptyHintRef.current);
           formElement.querySelector<HTMLInputElement>('input[type="tel"]')?.focus({ preventScroll: true });
         }, 0);
         return;
@@ -905,7 +922,7 @@ export default function OwnOrderForm({
       const fieldOrder = ["phone", "fullName", "county", "city", "address"];
       const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
       setTimeout(() => {
-        errorSummaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollMessageIntoView(errorSummaryRef.current);
         if (firstError) {
           const inputs = formElement.querySelectorAll<HTMLInputElement>("input");
           inputs[fieldOrder.indexOf(firstError)]?.focus({ preventScroll: true });

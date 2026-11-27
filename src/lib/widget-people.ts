@@ -67,15 +67,18 @@ export async function computePeopleStats({ organizationId, landingKey, startIso,
   }
 
   // 3. Per session
-  const sessions = new Map<string, { landing: string; pressed: number; blockedEmpty: number; blockedPartial: number; sent: boolean; success: boolean }>();
+  const sessions = new Map<string, { landing: string; pressed: number; blockedEmpty: number; blockedPartial: number; blockedOnlyPhone: number; sent: boolean; success: boolean }>();
   for (const e of actions) {
-    const s = sessions.get(e.session_id) ?? { landing: e.landing_key || "?", pressed: 0, blockedEmpty: 0, blockedPartial: 0, sent: false, success: false };
+    const s = sessions.get(e.session_id) ?? { landing: e.landing_key || "?", pressed: 0, blockedEmpty: 0, blockedPartial: 0, blockedOnlyPhone: 0, sent: false, success: false };
     if (s.landing === "?" && e.landing_key) s.landing = e.landing_key;
     if (e.event_type === "submit_attempt") s.pressed += 1;
     if (e.event_type === "submit_blocked_validation") {
       // all five fields missing = the button was pressed on an empty form
       if (e.field_errors && Object.keys(e.field_errors).length >= 5) s.blockedEmpty += 1;
       else s.blockedPartial += 1;
+      // everything filled in except the phone
+      const keys = e.field_errors ? Object.keys(e.field_errors) : [];
+      if (keys.length === 1 && keys[0] === "phone") s.blockedOnlyPhone += 1;
     }
     if (e.event_type === "submit_sent") s.sent = true;
     if (e.event_type === "submit_success") s.success = true;
@@ -92,7 +95,7 @@ export async function computePeopleStats({ organizationId, landingKey, startIso,
   for (const l of loadedByLanding.keys()) row(l);
 
   const total = { pressed: 0, multiPress: 0, sent: 0, success: 0 };
-  const blocked = { sessions: 0, recovered: 0, lost: 0, lostEmptyOnly: 0, lostPartial: 0, emptyEvents: 0, partialEvents: 0 };
+  const blocked = { sessions: 0, recovered: 0, lost: 0, lostEmptyOnly: 0, lostPartial: 0, emptyEvents: 0, partialEvents: 0, onlyPhoneEvents: 0, onlyPhoneSessions: 0, onlyPhoneLost: 0 };
   for (const s of sessions.values()) {
     const r = row(s.landing);
     const wasBlocked = s.blockedEmpty + s.blockedPartial > 0;
@@ -102,6 +105,11 @@ export async function computePeopleStats({ organizationId, landingKey, startIso,
     if (s.success) { total.success += 1; r.success += 1; }
     blocked.emptyEvents += s.blockedEmpty;
     blocked.partialEvents += s.blockedPartial;
+    blocked.onlyPhoneEvents += s.blockedOnlyPhone;
+    if (s.blockedOnlyPhone > 0) {
+      blocked.onlyPhoneSessions += 1;
+      if (!s.success) blocked.onlyPhoneLost += 1;
+    }
     if (wasBlocked) {
       blocked.sessions += 1;
       r.blocked += 1;

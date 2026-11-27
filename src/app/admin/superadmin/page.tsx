@@ -81,7 +81,7 @@ export default function SuperadminPage() {
     multiPress: number;
     sent: number;
     success: number;
-    blocked: { sessions: number; recovered: number; lost: number; lostEmptyOnly: number; lostPartial: number; emptyEvents: number; partialEvents: number };
+    blocked: { sessions: number; recovered: number; lost: number; lostEmptyOnly: number; lostPartial: number; emptyEvents: number; partialEvents: number; onlyPhoneEvents: number; onlyPhoneSessions: number; onlyPhoneLost: number };
     byLanding: { landing: string; loaded: number; pressed: number; sent: number; success: number; blocked: number; lost: number }[];
     truncated: boolean;
   }
@@ -1135,6 +1135,9 @@ export default function SuperadminPage() {
                         <p className="text-sm text-zinc-200"><strong className="text-white">{b.lostPartial.toLocaleString("ro-RO")}</strong> începuseră să completeze</p>
                       </div>
                     </div>
+                    <p className="text-sm text-zinc-200 mt-3">
+                      <strong className="text-white">Doar telefonul lipsă</strong> (restul completat): {b.onlyPhoneEvents.toLocaleString("ro-RO")} blocări la {b.onlyPhoneSessions.toLocaleString("ro-RO")} oameni, dintre care {b.onlyPhoneLost.toLocaleString("ro-RO")} au plecat fără să comande.
+                    </p>
                     <p className="text-xs text-zinc-400 mt-3">Cei care au început să completeze și au plecat sunt cei mai ușor de recuperat. Apăsările pe formular gol sunt, de obicei, curiozitate.</p>
                   </div>
 

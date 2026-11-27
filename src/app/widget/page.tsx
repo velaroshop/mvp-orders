@@ -783,7 +783,10 @@ function WidgetFormContent() {
 
   function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
-    const digitsOnly = value.replace(/\D/g, "");
+    let digitsOnly = value.replace(/\D/g, "");
+    // A whole number that arrives with the country prefix (autofill, paste) goes back to the national form 07xx...
+    if (/^0040\d{9}$/.test(digitsOnly)) digitsOnly = `0${digitsOnly.slice(4)}`;
+    else if (/^40\d{9}$/.test(digitsOnly)) digitsOnly = `0${digitsOnly.slice(2)}`;
     const limited = digitsOnly.slice(0, 16);
     setPhone(limited);
   }
@@ -1415,6 +1418,7 @@ function WidgetFormContent() {
                 </label>
                 <input
                   type="tel"
+                  autoComplete="tel-national"
                   value={phone}
                   onChange={(e) => {
                     handlePhoneChange(e);
@@ -1495,6 +1499,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder={isV3 ? "Te rugăm să introduci numele complet" : "Introduceți aici numele complet"}
+                  autoComplete="name"
                   maxLength={100}
                   className={`${inputBase} ${
                     errors.fullName
@@ -1611,6 +1616,7 @@ function WidgetFormContent() {
                     }
                   }}
                   placeholder={isV3 ? "Strada, Număr, bloc, scară, ap." : "Strada și numărul"}
+                  autoComplete="street-address"
                   maxLength={200}
                   className={`${inputBase} ${
                     errors.address

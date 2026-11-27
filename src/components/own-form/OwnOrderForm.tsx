@@ -192,6 +192,9 @@ export default function OwnOrderForm({
   }>({});
 
   // Error states for validation
+  // Button pressed on a completely empty form: one calm hint above the phone instead of five red errors
+  const [emptyFormHint, setEmptyFormHint] = useState(false);
+  const emptyHintRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<{
     phone?: string;
     fullName?: string;
@@ -857,10 +860,22 @@ export default function OwnOrderForm({
 
     // If there are errors, set them, focus first error field, and stop submission
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      const formElement = event.currentTarget;
+      const allEmpty = !phoneDigits && !fullName.trim() && !county.trim() && !city.trim() && !address.trim();
+      // Nothing filled in yet: the visitor pressed the button too early, so no red errors, just a hint at the phone field
+      setEmptyFormHint(allEmpty);
+      setErrors(allEmpty ? {} : newErrors);
       submittingRef.current = false;
       setSubmitting(false);
       logEvent("submit_blocked_validation", { fieldErrors: newErrors });
+      if (allEmpty) {
+        // Wait for the hint to render, then scroll so that the hint and the phone field are visible together
+        setTimeout(() => {
+          emptyHintRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          formElement.querySelector<HTMLInputElement>('input[type="tel"]')?.focus({ preventScroll: true });
+        }, 0);
+        return;
+      }
       // Focus first empty field
       const fieldOrder = ["phone", "fullName", "county", "city", "address"];
       const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
@@ -1321,6 +1336,15 @@ export default function OwnOrderForm({
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-2 sm:mb-3 text-center">
               Introduceți datele de livrare
             </h2>
+            {emptyFormHint && !phone && !fullName.trim() && !county.trim() && !city.trim() && !address.trim() && (
+              <div
+                ref={emptyHintRef}
+                role="status"
+                className="mb-3 scroll-mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-center text-sm font-medium text-zinc-800 sm:text-base"
+              >
+                Completează mai întâi datele de livrare de mai jos (telefon, nume și adresă), apoi apasă din nou butonul.
+              </div>
+            )}
             <div className={isV3 ? "space-y-4" : "space-y-3"}>
               <div>
                 <label className={labelClass}>

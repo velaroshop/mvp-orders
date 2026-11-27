@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export type AdVerdictCode = "scale" | "watch" | "stop" | "early" | "paused" | "nospend" | "noprice";
+export type AdVerdictCode = "scale" | "watch" | "stop" | "early" | "paused" | "nospend" | "noprice" | "cooldown";
 
 export interface AdRow {
   key: string;
@@ -48,6 +48,7 @@ export interface CampaignRow {
   trend: "better" | "worse" | "same" | null;
   trendPct: number | null;
   recent3: { spend: number; orders: number } | null;
+  budgetChange: { date: string; until: string; oldBudget: number | null; newBudget: number | null; pct: number | null; active: boolean } | null;
   adCount: number;
   idleAds: { count: number; spend: number };
 }
@@ -74,6 +75,7 @@ const VERDICTS: Record<AdVerdictCode, { label: string; badge: string; border: st
   stop: { label: "Oprește", badge: "bg-red-500/20 text-red-300 border-red-600/50", border: "border-l-red-500", hint: "A cheltuit destul și iese peste pragul de oprire" },
   early: { label: "Prea devreme", badge: "bg-zinc-600/40 text-zinc-300 border-zinc-500/50", border: "border-l-zinc-500", hint: "Prea puține date pentru o decizie" },
   paused: { label: "Pauzată", badge: "bg-zinc-600/40 text-zinc-300 border-zinc-500/50", border: "border-l-zinc-500", hint: "Nu mai rulează" },
+  cooldown: { label: "Așteaptă", badge: "bg-sky-500/20 text-sky-300 border-sky-600/50", border: "border-l-sky-500", hint: "Buget schimbat de curând: nu mai schimba încă" },
   nospend: { label: "Fără cheltuială", badge: "bg-zinc-600/40 text-zinc-300 border-zinc-500/50", border: "border-l-zinc-500", hint: "Nu am găsit reclama la Meta" },
   noprice: { label: "Fără prag", badge: "bg-zinc-600/40 text-zinc-300 border-zinc-500/50", border: "border-l-zinc-500", hint: "Lipsește pragul de CPA" },
 };
@@ -86,6 +88,7 @@ const FILTERS: { id: "all" | AdVerdictCode | "quiet"; label: string }[] = [
   { id: "scale", label: "Scalează" },
   { id: "watch", label: "Urmărește" },
   { id: "stop", label: "Oprește" },
+  { id: "cooldown", label: "Așteaptă după schimbare" },
   { id: "quiet", label: "Prea puține date / pauză" },
 ];
 
@@ -200,12 +203,12 @@ function ActionColumn({ code, ads, what }: { code: "scale" | "watch" | "stop"; a
   );
 }
 
-const CAMPAIGN_LABELS: Partial<Record<AdVerdictCode, string>> = { scale: "Scalează campania", watch: "Urmărește", stop: "Oprește / scade bugetul" };
+const CAMPAIGN_LABELS: Partial<Record<AdVerdictCode, string>> = { scale: "Scalează campania", watch: "Urmărește", stop: "Oprește / scade bugetul", cooldown: "Așteaptă după schimbarea de buget" };
 
 function CampaignCard({ campaign, ads }: { campaign: CampaignRow; ads: AdRow[] }) {
   const v = VERDICTS[campaign.verdict.code];
   const label = CAMPAIGN_LABELS[campaign.verdict.code] ?? v.label;
-  const order: AdVerdictCode[] = ["stop", "scale", "watch", "early", "paused", "nospend", "noprice"];
+  const order: AdVerdictCode[] = ["stop", "scale", "cooldown", "watch", "early", "paused", "nospend", "noprice"];
   const sorted = [...ads].sort((a, b) => order.indexOf(a.verdict.code) - order.indexOf(b.verdict.code) || b.spend - a.spend);
   const toRemove = ads.filter((a) => a.verdict.code === "stop");
   const winners = ads.filter((a) => a.verdict.code === "scale");
@@ -240,6 +243,13 @@ function CampaignCard({ campaign, ads }: { campaign: CampaignRow; ads: AdRow[] }
       </div>
 
       <p className="mt-2 text-sm text-zinc-200">{campaign.verdict.reason}</p>
+      {campaign.budgetChange && (
+        <p className="mt-1 text-xs text-sky-300">
+          Ultima schimbare de buget: {new Date(`${campaign.budgetChange.date}T12:00:00Z`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", timeZone: "UTC" })}
+          {campaign.budgetChange.oldBudget !== null && campaign.budgetChange.newBudget !== null && <> ({lei(campaign.budgetChange.oldBudget)} → {lei(campaign.budgetChange.newBudget)} pe zi{campaign.budgetChange.pct !== null && <>, {campaign.budgetChange.pct > 0 ? "+" : ""}{campaign.budgetChange.pct}%</>})</>}
+          {campaign.budgetChange.active && <> · următoarea schimbare după {new Date(`${campaign.budgetChange.until}T12:00:00Z`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", timeZone: "UTC" })}</>}
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
         <span>
@@ -298,7 +308,7 @@ export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slu
   const items: (AdRow | CampaignRow)[] = inCampaigns ? ads.campaigns : ads.rows;
   const byCode = (codes: AdVerdictCode[]) => items.filter((r) => codes.includes(r.verdict.code));
   const visible = filter === "all" ? items : filter === "quiet" ? byCode(QUIET) : byCode([filter]);
-  const order: AdVerdictCode[] = ["stop", "scale", "watch", "early", "paused", "nospend", "noprice"];
+  const order: AdVerdictCode[] = ["stop", "scale", "cooldown", "watch", "early", "paused", "nospend", "noprice"];
   const sorted = [...visible].sort((a, b) => order.indexOf(a.verdict.code) - order.indexOf(b.verdict.code) || b.spend - a.spend);
   const what = inCampaigns ? "campanie" : "reclamă";
 
@@ -339,6 +349,7 @@ export default function AdsSection({ ads, slugFiltered }: { ads: AdsPayload; slu
         <ul className="mt-2 list-disc space-y-1 pl-5 text-zinc-300">
           <li><strong className="text-emerald-300">Scalează</strong>: CPA din perioada aleasă sub 70% din costul maxim pe comandă, cu cel puțin 10 comenzi pe campanie (5 pe o reclamă singură), <strong>și</strong> ultimele 3 zile sub costul maxim (nu scalezi o campanie care tocmai s-a stricat).</li>
           <li><strong className="text-red-300">Oprește</strong>: a cheltuit cel puțin de 2 ori costul maxim și are zero comenzi sau CPA peste 150% din el, fie în toată perioada, fie (doar la campanii) în ultimele 3 zile.</li>
+          <li><strong className="text-sky-300">Așteaptă</strong>: ai schimbat bugetul campaniei de curând (detectat automat din jurnalul Meta). Nu o mai propun pentru scalare timp de 3 zile, ziua schimbării numărând ca prima.</li>
           <li><strong className="text-amber-200">Urmărește</strong>: tot ce e între; nu e încă nici de scalat, nici de oprit.</li>
           <li><strong>Prea devreme</strong>: sub 50 de vizite și sub costul maxim cheltuit; nu o judecăm.</li>
           <li>Verificarea pe ultimele 3 zile se face automat când perioada aleasă e mai lungă de 3 zile. Pe „3 zile”, „Ieri” sau „Azi” perioada însăși e verificarea.</li>

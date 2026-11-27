@@ -1,8 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { bucharestDateKey, bucharestDayEndIso, bucharestDayStartIso, shiftDateKey } from "@/lib/romania-time";
-import { fetchAdInsights, fetchAdStatuses, type MetaAdInsightRow } from "@/lib/meta-ads";
+import { fetchAdInsights, fetchAdStatuses, fetchBudgetChanges, type MetaAdInsightRow, type MetaBudgetChange } from "@/lib/meta-ads";
 import { loadBreakEven } from "@/lib/break-even-data";
-import { buildAdIndex, cpaTrend, diagnose, judgeAd, normalizeKey, resolveAd, type AdThresholds, type Funnel } from "@/lib/ads-verdict";
+import { COOLDOWN_DAYS, buildAdIndex, cpaTrend, diagnose, judgeAd, normalizeKey, resolveAd, type AdThresholds, type Funnel } from "@/lib/ads-verdict";
 
 const PAGE_SIZE = 1000;
 const MAX_ROWS = 50000;
@@ -78,17 +78,31 @@ export async function buildAds(organizationId: string, from: string, to: string,
     const from3 = shiftDateKey(to, -2);
     const hasRecent3 = from3 > from;
 
-    const [current, recent3Rows, previous, statuses, prevVisits, breakEven, pages, landings, products] = await Promise.all([
+    const [current, recent3Rows, previous, statuses, budgetChanges, prevVisits, breakEven, pages, landings, products] = await Promise.all([
       perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: from, until: to })),
       hasRecent3 ? perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: from3, until: to })) : Promise.resolve([] as MetaAdInsightRow[]),
       perAccount((a) => fetchAdInsights({ accessToken: token, adAccountId: a, since: prevFrom, until: prevTo })),
       statusesOf() as Promise<Record<string, string>>,
+      perAccount((a) => fetchBudgetChanges(token, a, Math.floor(Date.now() / 1000) - 10 * 86400)),
       fetchAdVisits(organizationId, prevFrom, prevTo),
       loadBreakEven(organizationId),
       supabaseAdmin.from("landing_page_content").select("slug, blocks").eq("organization_id", organizationId),
       supabaseAdmin.from("landing_pages").select("slug, product_id").eq("organization_id", organizationId),
       supabaseAdmin.from("products").select("id, name").eq("organization_id", organizationId),
     ]);
+
+    // Latest budget change per campaign: for COOLDOWN_DAYS days after it the campaign is not suggested for another change
+    const todayKey = bucharestDateKey(new Date());
+    const lastChange = new Map<string, MetaBudgetChange>();
+    for (const c of budgetChanges) if (!lastChange.has(c.campaignId)) lastChange.set(c.campaignId, c);
+    const budgetChangeOf = (cid: string) => {
+      const c = lastChange.get(cid);
+      if (!c) return null;
+      const date = bucharestDateKey(new Date(c.time));
+      const until = shiftDateKey(date, COOLDOWN_DAYS);
+      const pct = c.oldBudget && c.newBudget ? Math.round(((c.newBudget - c.oldBudget) / c.oldBudget) * 100) : null;
+      return { date, until, oldBudget: c.oldBudget, newBudget: c.newBudget, pct, active: todayKey < until };
+    };
 
     // Page -> product -> break-even thresholds
     const productById = new Map((products.data ?? []).map((p: any) => [p.id, p.name as string]));
@@ -236,7 +250,9 @@ export async function buildAds(organizationId: string, from: string, to: string,
       const known = [...current, ...previous].filter((a) => a.campaignId === cid).map((a) => statuses[a.adId]).filter(Boolean);
       const active = known.length > 0 ? known.some((st) => st === "ACTIVE") : null;
       const recent3 = hasRecent3 ? { spend: recent3Rows.filter((a) => a.campaignId === cid).reduce((sum, a) => sum + a.spend, 0), orders: recentOrders.get(`camp:${cid}`) ?? 0 } : null;
-      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, minOrdersScale: 10, recent3 });
+      const budgetChange = budgetChangeOf(cid);
+      const cooldown = budgetChange?.active ? { changedOn: budgetChange.date, until: budgetChange.until, oldBudget: budgetChange.oldBudget, newBudget: budgetChange.newBudget } : null;
+      const verdict = judgeAd({ spend, visits: agg.visits, orders: agg.ordered, active, thresholds, minOrdersScale: 10, recent3, cooldown });
       const trend = cpaTrend(spend, agg.ordered, prevSpend, prevCampaignOrders.get(cid) ?? 0);
       const idle = inCampaign.filter((a) => a.spend > 0 && !matchedAdIds.has(a.adId));
       return {
@@ -258,6 +274,7 @@ export async function buildAds(organizationId: string, from: string, to: string,
         trend: trend.trend,
         trendPct: trend.changePct,
         recent3,
+        budgetChange,
         adCount: inCampaign.filter((a) => a.spend > 0).length,
         idleAds: { count: idle.length, spend: idle.reduce((sum, a) => sum + a.spend, 0) },
       };

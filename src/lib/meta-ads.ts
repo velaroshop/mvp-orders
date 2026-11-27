@@ -191,6 +191,40 @@ export async function fetchAdInsights({
   return rows;
 }
 
+export interface MetaBudgetChange {
+  campaignId: string;
+  campaignName: string;
+  time: string; // ISO
+  oldBudget: number | null; // per day, in the account currency
+  newBudget: number | null;
+}
+
+/** Campaign budget changes (CBO) from the account activity log since a Unix time, newest first. */
+export async function fetchBudgetChanges(accessToken: string, adAccountId: string, sinceUnix: number): Promise<MetaBudgetChange[]> {
+  const changes: MetaBudgetChange[] = [];
+  let url = `${META_API_BASE}/${adAccountId}/activities?fields=event_type,event_time,object_id,object_name,extra_data&since=${sinceUnix}&limit=200&access_token=${accessToken}`;
+  while (url) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) break; // the log is a convenience: without it, no waiting period is applied
+    const data = await res.json();
+    for (const row of data.data || []) {
+      if (row.event_type !== "update_campaign_budget") continue;
+      let oldBudget: number | null = null;
+      let newBudget: number | null = null;
+      try {
+        const extra = JSON.parse(row.extra_data);
+        if (typeof extra?.old_value?.old_value === "number") oldBudget = extra.old_value.old_value / 100;
+        if (typeof extra?.new_value?.new_value === "number") newBudget = extra.new_value.new_value / 100;
+      } catch {
+        // budget values stay unknown; the time of the change is what matters
+      }
+      changes.push({ campaignId: String(row.object_id), campaignName: row.object_name || "", time: new Date(row.event_time).toISOString(), oldBudget, newBudget });
+    }
+    url = data.paging?.next || "";
+  }
+  return changes.sort((a, b) => (a.time < b.time ? 1 : -1));
+}
+
 /** Delivery status of every ad of the account (ACTIVE, PAUSED, ...), by ad id. */
 export async function fetchAdStatuses(accessToken: string, adAccountId: string): Promise<Record<string, string>> {
   const statuses: Record<string, string> = {};

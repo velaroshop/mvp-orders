@@ -137,6 +137,7 @@ export async function buildAdsDigest(organizationId: string, now = new Date()): 
   const toScale = by("scale").sort((a, b) => b.spend - a.spend);
   const toStop = by("stop").sort((a, b) => b.spend - a.spend);
   const toWatch = by("watch").sort((a, b) => b.spend - a.spend);
+  const waiting = by("cooldown").sort((a, b) => b.spend - a.spend);
   const early = campaigns.filter((c) => ["early", "nospend", "noprice"].includes(c.verdict.code));
 
   // Ads inside the campaigns: to remove (stop) and winners (scale), only from campaigns that are running
@@ -150,13 +151,16 @@ export async function buildAdsDigest(organizationId: string, now = new Date()): 
   if (counts.scale) parts.push(`${counts.scale} de scalat`);
   if (counts.stop) parts.push(`${counts.stop} de oprit`);
   if (counts.watch) parts.push(`${counts.watch} de urmărit`);
+  if (waiting.length) parts.push(`${waiting.length} în așteptare`);
   const nothingToDo = counts.scale === 0 && counts.stop === 0;
   const headline = nothingToDo
     ? "Nimic de scalat sau de oprit azi."
     : [counts.scale ? `${counts.scale} ${counts.scale === 1 ? "campanie de scalat" : "campanii de scalat"}` : "", counts.stop ? `${counts.stop} ${counts.stop === 1 ? "campanie de oprit" : "campanii de oprit"}` : ""].filter(Boolean).join(" și ") + ".";
   const headTone = counts.stop ? "stop" : counts.scale ? "scale" : "info";
   const headSub = nothingToDo
-    ? counts.watch
+    ? waiting.length
+      ? `${waiting.length} ${waiting.length === 1 ? "campanie are" : "campanii au"} bugetul schimbat de curând și ${waiting.length === 1 ? "așteaptă" : "așteaptă"} înainte de o nouă schimbare. Nu modifica nimic.`
+      : counts.watch
       ? `${counts.watch} ${counts.watch === 1 ? "campanie rămâne" : "campanii rămân"} în urmărire; nu are rost să schimbi bugetul.`
       : "Toate campaniile sunt în ordine sau prea noi pentru o decizie."
     : counts.stop && counts.scale
@@ -183,6 +187,16 @@ export async function buildAdsDigest(organizationId: string, now = new Date()): 
   if (toScale.length) {
     body += section("De scalat", "CPA sub pragul de scalare pe 7 zile, iar ultimele 3 zile confirmă.", "scale",
       toScale.map((c) => card(c, "scale", `<div style="margin-top:8px;font-size:13px;font-weight:700;color:${COLORS.scale.main};">Acțiune: crește bugetul cu ${budgetStep(c)}, o singură dată. Verifică din nou peste 3 zile.</div>`)).join(""));
+  }
+  if (waiting.length) {
+    const noteOf = (c: Campaign) => {
+      const b = c.budgetChange;
+      if (!b) return "";
+      const budget = b.oldBudget !== null && b.newBudget !== null ? `${lei(b.oldBudget)} → ${lei(b.newBudget)} pe zi${b.pct !== null ? ` (${pctText(b.pct)})` : ""}` : "buget modificat";
+      return `<div style="margin-top:8px;font-size:13px;font-weight:700;color:${COLORS.info.main};">Buget schimbat pe ${esc(dayLabel(b.date))}: ${esc(budget)}. Nu îl mai schimba până pe ${esc(dayLabel(b.until))}</div>`;
+    };
+    body += section("Așteaptă după schimbarea de buget", "Ai schimbat bugetul de curând (detectat automat din Meta). Le lăsăm 3 zile să se așeze, apoi le judecăm din nou.", "info",
+      waiting.map((c) => card(c, "info", noteOf(c))).join(""));
   }
   if (toWatch.length) {
     const rows = toWatch.map((c) => {

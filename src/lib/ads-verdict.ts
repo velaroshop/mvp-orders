@@ -8,7 +8,7 @@ export interface AdThresholds {
   scaleBelow: number;
 }
 
-export type AdVerdictCode = "scale" | "watch" | "stop" | "early" | "paused" | "nospend" | "noprice";
+export type AdVerdictCode = "scale" | "watch" | "stop" | "early" | "paused" | "nospend" | "noprice" | "cooldown";
 
 export interface AdVerdict {
   code: AdVerdictCode;
@@ -23,6 +23,7 @@ export interface AdJudgeInput {
   thresholds: AdThresholds | null;
   minOrdersScale?: number; // campaigns need more orders than a single ad before they are scaled
   recent3?: { spend: number; orders: number } | null; // last 3 days of the period (null when the period itself is that short)
+  cooldown?: { changedOn: string; until: string; oldBudget: number | null; newBudget: number | null } | null; // budget changed less than 3 days ago
   stopOnRecent3?: boolean; // default true; a single ad has too few orders in 3 days to be stopped on them (inside a CBO it is noise)
 }
 
@@ -31,6 +32,9 @@ export const MIN_ORDERS_SCALE = 5;
 export const MIN_SPEND_STOP_MULT = 2; // spend needed to stop an ad, as a multiple of the CPA max
 
 const lei = (n: number) => `${Math.round(n)} lei`;
+const shortDay = (key: string) => new Date(`${key}T12:00:00Z`).toLocaleDateString("ro-RO", { day: "numeric", month: "short", timeZone: "UTC" });
+
+export const COOLDOWN_DAYS = 3; // after a budget change, no new change for this many days (the day of the change counts as the first)
 
 export function judgeAd(a: AdJudgeInput): AdVerdict {
   const t = a.thresholds;
@@ -61,6 +65,11 @@ export function judgeAd(a: AdJudgeInput): AdVerdict {
   if (cpa !== null && cpa < t.scaleBelow && a.orders >= (a.minOrdersScale ?? MIN_ORDERS_SCALE)) {
     if (r3 && (cpa3 === null || cpa3 > t.cpaMax)) {
       return { code: "watch", reason: `${cpaText} e bun, dar ${cpa3Text}, peste costul maxim (${lei(t.cpaMax)}). Nu scala până nu se repară` };
+    }
+    if (a.cooldown) {
+      const c = a.cooldown;
+      const budget = c.oldBudget !== null && c.newBudget !== null ? ` (${lei(c.oldBudget)} → ${lei(c.newBudget)} pe zi)` : "";
+      return { code: "cooldown", reason: `Ar fi de scalat (${cpaText}), dar ai schimbat bugetul pe ${shortDay(c.changedOn)}${budget}. Nu îl mai schimba până pe ${shortDay(c.until)}, ca să se vadă efectul.` };
     }
     return { code: "scale", reason: `${cpaText}, sub pragul de scalare (${lei(t.scaleBelow)}), din ${a.orders} comenzi${cpa3 !== null ? `; ${cpa3Text}` : ""}` };
   }

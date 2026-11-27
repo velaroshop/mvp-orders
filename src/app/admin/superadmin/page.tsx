@@ -73,6 +73,20 @@ export default function SuperadminPage() {
   }
   const [eventsSummary, setEventsSummary] = useState<EventSummary | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+
+  // The same events counted per person (unique session), loaded after the summary so that it does not slow it down
+  interface PeopleStats {
+    loaded: number;
+    pressed: number;
+    multiPress: number;
+    sent: number;
+    success: number;
+    blocked: { sessions: number; recovered: number; lost: number; lostEmptyOnly: number; lostPartial: number; emptyEvents: number; partialEvents: number };
+    byLanding: { landing: string; loaded: number; pressed: number; sent: number; success: number; blocked: number; lost: number }[];
+    truncated: boolean;
+  }
+  const [peopleStats, setPeopleStats] = useState<PeopleStats | null>(null);
+  const [isLoadingPeople, setIsLoadingPeople] = useState(false);
   const [eventsFilterOrg, setEventsFilterOrg] = useState("all");
   const [eventsFilterLanding, setEventsFilterLanding] = useState("");
   const [eventsFilterStart, setEventsFilterStart] = useState("");
@@ -128,11 +142,30 @@ export default function SuperadminPage() {
       if (res.ok) {
         const data = await res.json();
         setEventsSummary(data);
+        void fetchPeopleStats();
       }
     } catch (err) {
       console.error("Error fetching summary:", err);
     } finally {
       setIsLoadingSummary(false);
+    }
+  }
+
+  async function fetchPeopleStats() {
+    setIsLoadingPeople(true);
+    try {
+      const params = new URLSearchParams();
+      if (eventsFilterOrg !== "all") params.set("organizationId", eventsFilterOrg);
+      if (eventsFilterLanding) params.set("landingKey", eventsFilterLanding);
+      if (eventsFilterStart) params.set("startDate", eventsFilterStart);
+      if (eventsFilterEnd) params.set("endDate", eventsFilterEnd);
+      const res = await fetch(`/api/superadmin/widget-events/people?${params}`);
+      setPeopleStats(res.ok ? await res.json() : null);
+    } catch (err) {
+      console.error("Error fetching people stats:", err);
+      setPeopleStats(null);
+    } finally {
+      setIsLoadingPeople(false);
     }
   }
 
@@ -1055,6 +1088,98 @@ export default function SuperadminPage() {
             </div>
           );
         })()}
+
+        {/* Per person (unique session) */}
+        {(peopleStats || isLoadingPeople) && (
+          <div className="mb-6 space-y-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Pe oameni (sesiuni unice)</p>
+              {isLoadingPeople && <span className="text-xs text-zinc-400">Se calculează...</span>}
+            </div>
+            {peopleStats && (() => {
+              const p = peopleStats;
+              const pct = (a: number, b: number) => (b === 0 ? "—" : `${((a / b) * 100).toFixed(1).replace(".0", "")}%`);
+              const b = p.blocked;
+              return (
+                <>
+                  {p.truncated && <p className="text-xs text-amber-300">Perioada are foarte multe evenimente: cifrele sunt calculate pe primele rânduri. Alege o perioadă mai scurtă pentru cifre complete.</p>}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: "Au încărcat formularul", value: p.loaded, color: "text-zinc-200", sub: null as string | null },
+                      { label: "Au apăsat butonul", value: p.pressed, color: "text-blue-300", sub: `${pct(p.pressed, p.loaded)} din încărcări${p.multiPress > 0 ? ` · ${p.multiPress} au apăsat de mai multe ori` : ""}` },
+                      { label: "Au trimis cererea", value: p.sent, color: "text-amber-300", sub: `${pct(p.sent, p.pressed)} din cei care au apăsat` },
+                      { label: "Au plasat comanda", value: p.success, color: "text-emerald-300", sub: `${pct(p.success, p.loaded)} din încărcări` },
+                    ].map(card => (
+                      <div key={card.label} className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+                        <p className="text-xs text-zinc-400 mb-1">{card.label}</p>
+                        <p className={`text-2xl font-bold ${card.color}`}>{card.value.toLocaleString("ro-RO")}</p>
+                        {card.sub && <p className="text-xs text-zinc-400 mt-1">{card.sub}</p>}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+                    <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Oameni blocați de validare: {b.sessions.toLocaleString("ro-RO")}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-zinc-400">Au comandat totuși după blocare</p>
+                        <p className="text-xl font-bold text-emerald-300">{b.recovered.toLocaleString("ro-RO")} <span className="text-sm font-normal text-zinc-400">({pct(b.recovered, b.sessions)})</span></p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-400">Au plecat după blocare</p>
+                        <p className="text-xl font-bold text-red-300">{b.lost.toLocaleString("ro-RO")} <span className="text-sm font-normal text-zinc-400">({pct(b.lost, b.sessions)})</span></p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-400">Din cei plecați</p>
+                        <p className="text-sm text-zinc-200"><strong className="text-white">{b.lostEmptyOnly.toLocaleString("ro-RO")}</strong> au apăsat doar pe formular gol</p>
+                        <p className="text-sm text-zinc-200"><strong className="text-white">{b.lostPartial.toLocaleString("ro-RO")}</strong> începuseră să completeze</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-3">Cei care au început să completeze și au plecat sunt cei mai ușor de recuperat. Apăsările pe formular gol sunt, de obicei, curiozitate.</p>
+                  </div>
+
+                  {p.byLanding.length > 0 && (
+                    <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+                      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Pe pagină (sortat după cei pierduți după blocare)</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm min-w-[640px]">
+                          <thead>
+                            <tr className="border-b border-zinc-700 text-left text-xs text-zinc-400">
+                              <th className="pb-2 pr-3 font-medium">Pagină</th>
+                              <th className="pb-2 px-2 font-medium text-right">Încărcări</th>
+                              <th className="pb-2 px-2 font-medium text-right">Au apăsat</th>
+                              <th className="pb-2 px-2 font-medium text-right">Blocați</th>
+                              <th className="pb-2 px-2 font-medium text-right">Pierduți</th>
+                              <th className="pb-2 px-2 font-medium text-right">Comenzi</th>
+                              <th className="pb-2 pl-2 font-medium text-right">Comenzi / încărcări</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {p.byLanding.map(r => {
+                              const blockedShare = r.pressed > 0 ? r.blocked / r.pressed : 0;
+                              return (
+                                <tr key={r.landing} className="border-b border-zinc-800 text-zinc-200">
+                                  <td className="py-2 pr-3 font-mono text-xs">{r.landing}</td>
+                                  <td className="py-2 px-2 text-right">{r.loaded.toLocaleString("ro-RO")}</td>
+                                  <td className="py-2 px-2 text-right">{r.pressed} <span className="text-xs text-zinc-400">({pct(r.pressed, r.loaded)})</span></td>
+                                  <td className={`py-2 px-2 text-right ${blockedShare >= 0.4 ? "text-amber-300" : ""}`}>{r.blocked} <span className="text-xs text-zinc-400">({pct(r.blocked, r.pressed)})</span></td>
+                                  <td className="py-2 px-2 text-right font-semibold text-red-300">{r.lost}</td>
+                                  <td className="py-2 px-2 text-right font-semibold text-white">{r.success}</td>
+                                  <td className="py-2 pl-2 text-right">{pct(r.success, r.loaded)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-2">Procente: „Au apăsat” și „Comenzi / încărcări” sunt din încărcări; „Blocați” e din cei care au apăsat și apare în galben peste 40%.</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Results */}
         {widgetEvents.length === 0 && !isLoadingEvents ? (

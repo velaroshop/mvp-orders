@@ -195,6 +195,7 @@ export default function OwnOrderForm({
   // Button pressed on a completely empty form: one calm hint above the phone instead of five red errors
   const [emptyFormHint, setEmptyFormHint] = useState(false);
   const emptyHintRef = useRef<HTMLDivElement>(null);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<{
     phone?: string;
     fullName?: string;
@@ -202,6 +203,27 @@ export default function OwnOrderForm({
     city?: string;
     address?: string;
   }>({});
+
+  // What is still missing, in plain words, for the red summary above the delivery fields
+  function errorSummary(): { title: string; reason: string | null } | null {
+    const labels: string[] = [];
+    const phoneTooShort = !!errors.phone && errors.phone.includes("minim");
+    if (errors.phone) labels.push(phoneTooShort ? "telefon (minim 10 cifre)" : "telefon");
+    if (errors.fullName) labels.push("nume");
+    if (errors.county) labels.push("județ");
+    if (errors.city) labels.push("localitate");
+    if (errors.address) labels.push("adresă");
+    if (labels.length === 0) return null;
+    if (labels.length === 1 && errors.phone) {
+      return phoneTooShort
+        ? { title: "Verifică telefonul", reason: "Un număr de telefon are 10 cifre, de exemplu 0722 123 456." }
+        : { title: "Mai trebuie completat telefonul", reason: "Ai nevoie de el ca să confirmăm comanda și să te sune curierul." };
+    }
+    return {
+      title: `Mai trebuie completat: ${labels.join(", ")}`,
+      reason: errors.phone && !phoneTooShort ? "Telefonul ne trebuie ca să confirmăm comanda și să te sune curierul." : null,
+    };
+  }
 
   // Fire-and-forget widget event logger — never blocks the form
   function logEvent(eventType: string, extra?: Record<string, unknown>) {
@@ -785,15 +807,15 @@ export default function OwnOrderForm({
     if (!trimmedValue) {
       switch (fieldName) {
         case "phone":
-          return "Introduceți numărul de telefon";
+          return "Scrie numărul de telefon (10 cifre)";
         case "fullName":
-          return "Introduceți numele complet";
+          return "Scrie numele complet";
         case "county":
-          return "Introduceți județul";
+          return "Scrie județul";
         case "city":
-          return "Introduceți localitatea";
+          return "Scrie localitatea";
         case "address":
-          return "Introduceți strada și numărul";
+          return "Scrie strada și numărul";
         default:
           return "Acest câmp este obligatoriu";
       }
@@ -841,21 +863,21 @@ export default function OwnOrderForm({
     const newErrors: typeof errors = {};
 
     if (!phoneDigits) {
-      newErrors.phone = "Introduceți numărul de telefon";
+      newErrors.phone = "Scrie numărul de telefon (10 cifre)";
     } else if (phoneDigits.length < 10) {
       newErrors.phone = "Numărul de telefon trebuie să aibă minim 10 cifre";
     }
     if (!fullName.trim()) {
-      newErrors.fullName = "Introduceți numele complet";
+      newErrors.fullName = "Scrie numele complet";
     }
     if (!county.trim()) {
-      newErrors.county = "Introduceți județul";
+      newErrors.county = "Scrie județul";
     }
     if (!city.trim()) {
-      newErrors.city = "Introduceți localitatea";
+      newErrors.city = "Scrie localitatea";
     }
     if (!address.trim()) {
-      newErrors.address = "Introduceți strada și numărul";
+      newErrors.address = "Scrie strada și numărul";
     }
 
     // If there are errors, set them, focus first error field, and stop submission
@@ -876,16 +898,16 @@ export default function OwnOrderForm({
         }, 0);
         return;
       }
-      // Focus first empty field
+      // Show the red summary together with the first missing field, and focus that field
       const fieldOrder = ["phone", "fullName", "county", "city", "address"];
       const firstError = fieldOrder.find(f => newErrors[f as keyof typeof newErrors]);
-      if (firstError) {
-        const inputs = event.currentTarget.querySelectorAll<HTMLInputElement>("input");
-        const fieldIndex = fieldOrder.indexOf(firstError);
-        if (inputs[fieldIndex]) {
-          inputs[fieldIndex].focus();
+      setTimeout(() => {
+        errorSummaryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (firstError) {
+          const inputs = formElement.querySelectorAll<HTMLInputElement>("input");
+          inputs[fieldOrder.indexOf(firstError)]?.focus({ preventScroll: true });
         }
-      }
+      }, 0);
       return;
     }
 
@@ -1340,11 +1362,20 @@ export default function OwnOrderForm({
               <div
                 ref={emptyHintRef}
                 role="status"
-                className="mb-3 scroll-mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-center text-sm font-medium text-zinc-800 sm:text-base"
+                className="mb-3 scroll-mt-4 rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 text-center text-base font-semibold text-zinc-900 sm:text-lg"
               >
-                Completează mai întâi datele de livrare de mai jos (telefon, nume și adresă), apoi apasă din nou butonul.
+                👇 Completează <strong className="font-extrabold">telefon, nume și adresă</strong>, apoi apasă din nou butonul.
               </div>
             )}
+            {(() => {
+              const summary = errorSummary();
+              return summary ? (
+                <div ref={errorSummaryRef} role="alert" className="mb-3 scroll-mt-4 rounded-lg border-2 border-red-500 bg-red-50 px-4 py-3 text-zinc-900">
+                  <p className="text-base font-bold text-red-700 sm:text-lg">⚠ {summary.title}</p>
+                  {summary.reason && <p className="mt-1 text-sm text-zinc-700 sm:text-base">{summary.reason}</p>}
+                </div>
+              ) : null;
+            })()}
             <div className={isV3 ? "space-y-4" : "space-y-3"}>
               <div>
                 <label className={labelClass}>
@@ -1369,7 +1400,7 @@ export default function OwnOrderForm({
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
-                  style={errors.phone ? {} : { 
+                  style={errors.phone ? { borderWidth: 3 } : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
@@ -1412,7 +1443,7 @@ export default function OwnOrderForm({
                   }}
                 />
                 {errors.phone ? (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                  <p className="mt-1.5 text-base font-semibold text-red-600">⚠ {errors.phone}</p>
                 ) : (
                   !isV3 && <p className="mt-1 text-xs text-zinc-400">Format: 10 cifre, fără prefix internațional</p>
                 )}
@@ -1438,7 +1469,7 @@ export default function OwnOrderForm({
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
-                  style={errors.fullName ? {} : { 
+                  style={errors.fullName ? { borderWidth: 3 } : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
@@ -1452,7 +1483,7 @@ export default function OwnOrderForm({
                   }}
                 />
                 {errors.fullName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+                  <p className="mt-1.5 text-base font-semibold text-red-600">⚠ {errors.fullName}</p>
                 )}
               </div>
               <div className={isV3 ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-3"}>
@@ -1477,7 +1508,7 @@ export default function OwnOrderForm({
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
                     }`}
-                    style={errors.county ? {} : { 
+                    style={errors.county ? { borderWidth: 3 } : { 
                       '--tw-ring-color': accentColor 
                     } as React.CSSProperties & { '--tw-ring-color': string }}
                     onFocus={(e) => {
@@ -1491,7 +1522,7 @@ export default function OwnOrderForm({
                     }}
                   />
                   {errors.county && (
-                    <p className="mt-1 text-sm text-red-600">{errors.county}</p>
+                    <p className="mt-1.5 text-base font-semibold text-red-600">⚠ {errors.county}</p>
                   )}
                 </div>
                 <div>
@@ -1515,7 +1546,7 @@ export default function OwnOrderForm({
                         ? 'border-red-500 bg-red-50 focus:ring-red-500'
                         : 'border-zinc-300'
                     }`}
-                    style={errors.city ? {} : { 
+                    style={errors.city ? { borderWidth: 3 } : { 
                       '--tw-ring-color': accentColor 
                     } as React.CSSProperties & { '--tw-ring-color': string }}
                     onFocus={(e) => {
@@ -1529,7 +1560,7 @@ export default function OwnOrderForm({
                     }}
                   />
                   {errors.city && (
-                    <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                    <p className="mt-1.5 text-base font-semibold text-red-600">⚠ {errors.city}</p>
                   )}
                 </div>
               </div>
@@ -1554,7 +1585,7 @@ export default function OwnOrderForm({
                       ? 'border-red-500 bg-red-50 focus:ring-red-500'
                       : 'border-zinc-300'
                   }`}
-                  style={errors.address ? {} : { 
+                  style={errors.address ? { borderWidth: 3 } : { 
                     '--tw-ring-color': accentColor 
                   } as React.CSSProperties & { '--tw-ring-color': string }}
                   onFocus={(e) => {
@@ -1568,7 +1599,7 @@ export default function OwnOrderForm({
                   }}
                 />
                 {errors.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                  <p className="mt-1.5 text-base font-semibold text-red-600">⚠ {errors.address}</p>
                 )}
               </div>
             </div>

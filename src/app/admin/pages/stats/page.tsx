@@ -156,7 +156,7 @@ function HoursChart({ hours }: { hours: (Counts & { hour: number })[] }) {
 
 export default function PagesStatsPage() {
   const today = useMemo(() => bucharestDateKey(new Date()), []);
-  const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("7");
+  const [preset, setPreset] = useState<(typeof PRESETS)[number]["id"]>("today");
   const [slug, setSlug] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [pageOptions, setPageOptions] = useState<string[]>([]);
@@ -239,7 +239,7 @@ export default function PagesStatsPage() {
         <div className={`space-y-6 ${loading ? "opacity-60" : ""}`}>
           {stats.truncated && <div className="rounded-md border border-amber-800 bg-amber-900/20 p-3 text-sm text-amber-200">Perioada are foarte multe vizite: sunt luate în calcul primele 50.000.</div>}
 
-          <AdsSection ads={stats.ads} slugFiltered={slug !== ""} />
+          <AdsSection ads={stats.ads} slugFiltered={slug !== ""} decide={preset === "3" || preset === "7"} />
 
           <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
             <h2 className="mb-4 text-lg font-semibold text-white">Pâlnia de conversie</h2>

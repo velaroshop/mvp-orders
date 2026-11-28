@@ -2275,7 +2275,10 @@ export default function OwnOrderForm({
             <div className="pt-1.5 border-t" style={{ borderColor: `${sumText}40` }}>
               <div className="flex justify-center items-center gap-3">
                 <span className="text-sm sm:text-base font-bold" style={{ color: sumText }}>PREȚ TOTAL</span>
-                <span className="text-lg sm:text-xl font-bold" style={{ color: sumAccent }}>
+                <span
+                  className={`font-bold ${isV4 ? "px-2.5 py-0.5 text-xl sm:text-2xl leading-tight" : "text-lg sm:text-xl"}`}
+                  style={isV4 ? { backgroundColor: v4.tagBg || v4.accent, color: v4.tagColor || readableOn(v4.tagBg || v4.accent), borderRadius: v4.tagRadius } : { color: sumAccent }}
+                >
                   {cardStyle ? (
                     <>
                       {leiText(totalPrice)}
